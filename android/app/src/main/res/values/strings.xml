@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name" translatable="false">HealthyInstantTracker</string>
     <string name="tagline">Blood pressure diary</string>
-    <string name="refresh">Refresh</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="today">Today</string>

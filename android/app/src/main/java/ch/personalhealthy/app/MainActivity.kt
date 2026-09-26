@@ -227,6 +227,8 @@ fun App() {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
+            // back in the app: fresh readings and credit (there is no refresh button)
+            if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
             if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
                 rechargePending = false
                 if (me?.canRecharge == true) amountDialog = "topup" else toast(ctx, t(R.string.notif_user_hint))
@@ -317,10 +319,9 @@ fun App() {
                             onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true }
                         )
                         else -> HomeScreen(
-                            readings = readings, loading = loading, message = message, me = me,
+                            readings = readings, message = message, me = me,
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
-                            onRefresh = { reload() },
                             onDelete = { r ->
                                 val pid = personId ?: return@HomeScreen
                                 scope.launch {
@@ -527,12 +528,12 @@ fun SetupScreen(onDone: (String) -> Unit) {
 
 @Composable
 fun HomeScreen(
-    readings: List<Reading>, loading: Boolean, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onRefresh: () -> Unit, onDelete: (Reading) -> Unit
+    readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
+    onMeasure: () -> Unit, onDelete: (Reading) -> Unit
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header(t(R.string.app_name), t(R.string.tagline), if (loading) "…" else t(R.string.refresh), onRefresh, titleSize = 20)
+        Header(t(R.string.app_name), t(R.string.tagline), titleSize = 20)
 
         // a friend who pays for their own photos has no key yet
         if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)

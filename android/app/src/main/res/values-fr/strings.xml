@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tagline">Journal de tension</string>
-    <string name="refresh">Actualiser</string>
     <string name="cancel">Annuler</string>
     <string name="delete">Supprimer</string>
     <string name="today">Aujourd\'hui</string>
