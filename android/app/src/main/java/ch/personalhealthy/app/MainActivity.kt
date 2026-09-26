@@ -161,8 +161,20 @@ class MainActivity : FragmentActivity() {
         hiddenAt = SystemClock.elapsedRealtime()
     }
 
+    // The camera (or rotating the phone) can make Android rebuild this screen, or even restart the app:
+    // remember that it was already unlocked, so the photo is read instead of asking to unlock again.
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("locked", locked)
+        outState.putLong("hiddenAt", hiddenAt)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) {
+            locked = savedInstanceState.getBoolean("locked", true)
+            hiddenAt = savedInstanceState.getLong("hiddenAt", 0L)
+        }
         Txt.init(this)   // texts in the phone's language
         prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { asking = false; locked = false }
