@@ -82,6 +82,10 @@
     <string name="notif_low">The credit is enough for only one more photo.</string>
     <string name="notif_admin_hint">Open the Credit tab in HealthyInstantTracker and tap Recharge.</string>
     <string name="notif_user_hint">Let the app manager know.</string>
+    <string name="reminder_channel">Measurement reminders</string>
+    <string name="reminder_title" translatable="false">HINT</string>
+    <string name="reminder_morning">Good morning! Remember to measure your blood pressure.</string>
+    <string name="reminder_evening">Good evening! Remember to measure your blood pressure.</string>
     <string name="pdf_title">Blood pressure diary</string>
     <string name="pdf_period">Period of %1$d days: from %2$s to %3$s</string>
     <string name="pdf_counts">Readings: %1$d on %2$d days. Times: Swiss time (Europe/Zurich).</string>

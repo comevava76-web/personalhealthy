@@ -73,6 +73,9 @@ The chart is the same in the app and in the PDF: one point per day (the day's av
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
 That is for the doctor.
 
+Reminders: every day at 8:00 and 20:00 (the phone's time) the app sends a notification
+"Remember to measure your blood pressure", in the phone's language. They keep working after a restart of the phone.
+
 The code is ready for more tabs (for example a future "Analyses" tab for blood tests): see `Tab` in `MainActivity.kt`.
 
 ## Reading credit

@@ -117,6 +117,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Txt.init(this)   // texts in the phone's language
         Notif.schedule(this)
+        Reminders.schedule(this)
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
