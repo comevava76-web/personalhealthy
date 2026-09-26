@@ -404,6 +404,11 @@ object Repo {
         Api.call("POST", "/v1/bp/voice", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("spokenAt", spokenAt), pid)
     }
 
+    /** Deletes every measurement and photo reading of this person (the credit stays). */
+    suspend fun deleteAll(pid: String) {
+        Api.call("DELETE", "/v1/bp", null, pid)
+    }
+
     suspend fun delete(pid: String, id: String) {
         Api.call("DELETE", "/v1/bp/$id", null, pid)
     }
