@@ -487,6 +487,13 @@ fun App() {
                         catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                     }
                 },
+                onDeleteAll = {
+                    val pid = personId ?: return@AllReadingsScreen
+                    scope.launch {
+                        try { Repo.deleteAll(pid); toast(ctx, t(R.string.reset_done)); screen = "tabs"; reload() }
+                        catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                    }
+                },
                 onClose = { screen = "tabs" }
             )
             screen == "invite" && invite != null -> InviteScreen(invite!!) { screen = "tabs"; invite = null }
@@ -774,13 +781,17 @@ fun HomeScreen(
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
+        // only today's readings here; every other one is on the "All readings" screen
+        val todays = readings.filter { Z.date(it.takenAt) == Z.today() }
+        Text(t(R.string.today_readings), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
+        if (todays.isEmpty()) {
+            Panel { Text(t(R.string.no_readings_today), color = C.Muted, fontSize = 14.sp) }
+        } else {
+            todays.reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
+        }
         if (readings.isNotEmpty()) {
-            Text(t(R.string.recent), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
-            readings.takeLast(RECENT_ON_HOME).reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
-            if (readings.size > RECENT_ON_HOME) {
-                TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
-                    Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
-                }
+            TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
             }
         }
         Spacer(Modifier.height(24.dp))
@@ -788,9 +799,6 @@ fun HomeScreen(
 
     toDelete?.let { r -> DeleteDialog(r, onDelete = { onDelete(r); toDelete = null }, onDismiss = { toDelete = null }) }
 }
-
-/** How many readings the home lists; the rest are on the "All readings" screen. */
-const val RECENT_ON_HOME = 5
 
 @Composable
 fun DeleteDialog(r: Reading, onDelete: () -> Unit, onDismiss: () -> Unit) {
@@ -832,14 +840,34 @@ fun ReadingRow(r: Reading, onAskDelete: () -> Unit) {
 
 /** Every reading kept (newest first), to check or delete one. */
 @Composable
-fun AllReadingsScreen(readings: List<Reading>, onDelete: (Reading) -> Unit, onClose: () -> Unit) {
+fun AllReadingsScreen(readings: List<Reading>, onDelete: (Reading) -> Unit, onDeleteAll: () -> Unit, onClose: () -> Unit) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
+    var resetStep by remember { mutableIntStateOf(0) }   // 0 nothing, 1 first question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.all_readings), t(R.string.n_readings, readings.size), t(R.string.close), onClose, titleSize = 22)
+        if (readings.isEmpty()) Panel { Text(t(R.string.report_empty), color = C.Muted, fontSize = 14.sp) }
         readings.reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
+        if (readings.isNotEmpty()) {
+            Spacer(Modifier.height(18.dp))
+            BigButton(t(R.string.reset_all), color = C.Surface2, textColor = C.Alert) { resetStep = 1 }
+            Text(t(R.string.reset_all_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 4.dp))
+        }
         Spacer(Modifier.height(24.dp))
     }
     toDelete?.let { r -> DeleteDialog(r, onDelete = { onDelete(r); toDelete = null }, onDismiss = { toDelete = null }) }
+    // asked twice: the second time with the number of readings, and it cannot be undone
+    if (resetStep > 0) AlertDialog(
+        onDismissRequest = { resetStep = 0 },
+        title = { Text(t(if (resetStep == 1) R.string.reset_q1 else R.string.reset_q2)) },
+        text = { Text(if (resetStep == 1) t(R.string.reset_t1) else t(R.string.reset_t2, readings.size)) },
+        confirmButton = {
+            TextButton(onClick = { if (resetStep == 1) resetStep = 2 else { resetStep = 0; onDeleteAll() } }) {
+                Text(t(if (resetStep == 1) R.string.reset_continue else R.string.reset_confirm), color = C.Alert)
+            }
+        },
+        dismissButton = { TextButton(onClick = { resetStep = 0 }) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
 }
 
 /**

@@ -564,8 +564,18 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ items });
   }
 
-  // 4) Delete a measurement
-  const del = url.pathname.match(/^\/v1\/bp\/(bp_[a-f0-9]+)$/);
+  // 4b) Delete ALL of the caller's own measurements and photo readings (asked twice in the app).
+  // The credit movements stay: they are money, not measurements.
+  if (req.method === "DELETE" && url.pathname === "/v1/bp") {
+    const results = await env.DB.batch([
+      env.DB.prepare("DELETE FROM measurements WHERE person_id = ?1 AND kind = 'bp'").bind(pid),
+      env.DB.prepare("DELETE FROM scans WHERE person_id = ?1 AND kind = 'bp'").bind(pid),
+    ]);
+    return json({ ok: true, deleted: results[0]?.meta?.changes ?? 0 });
+  }
+
+  // 4) Delete a measurement (any id of the caller's own measurements)
+  const del = url.pathname.match(/^\/v1\/bp\/([A-Za-z0-9_]+)$/);
   if (req.method === "DELETE" && del) {
     await q("DELETE FROM measurements WHERE id = ?1 AND person_id = ?2 AND kind = 'bp'", [del[1], pid]);
     return json({ ok: true });
