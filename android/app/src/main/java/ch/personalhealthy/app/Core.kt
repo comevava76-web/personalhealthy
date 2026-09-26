@@ -59,19 +59,43 @@ data class Reading(val id: String, val takenAt: Long, val period: String, val si
 fun sourceLabel(s: String): String = if (s == "voice") t(R.string.source_voice) else t(R.string.source_photo)
 
 /**
- * Values said aloud, in this order: systolic, diastolic, pulse (for example "127, 80, 70").
- * Tries each transcription the phone offers and takes the first with plausible numbers; null if none.
+ * What was understood from values said aloud. [values] is null when they cannot be saved, and [problem]
+ * says why. [unusual] lists values that are possible but strange, shown before saving so a misheard
+ * number is noticed.
  */
-fun parseSpoken(texts: List<String>): Triple<Int, Int, Int?>? {
+class Spoken(val values: Triple<Int, Int, Int?>?, val problem: String?, val unusual: List<String> = emptyList())
+
+/**
+ * Values said aloud, in this order: systolic, diastolic, pulse (for example "127, 80, 70").
+ * Tries each transcription the phone offers and takes the first that passes every check;
+ * otherwise explains what is wrong with the first one that had numbers.
+ * Never saved: diastolic equal to or higher than systolic, or values outside what a monitor can show.
+ */
+fun parseSpoken(texts: List<String>): Spoken {
+    var firstProblem: String? = null
     for (text in texts) {
         val n = Regex("\\d{2,3}").findAll(text).map { it.value.toInt() }.toList()
         if (n.size < 2) continue
         val sis = n[0]; val dia = n[1]; val pul = n.getOrNull(2)
-        if (sis !in 50..260 || dia !in 30..160 || dia >= sis) continue
-        if (pul != null && pul !in 30..220) continue
-        return Triple(sis, dia, pul)
+        val problem = when {
+            n.size > 3 -> t(R.string.voice_too_many, n.joinToString(", "))
+            sis !in 50..260 -> t(R.string.voice_out_of_range, t(R.string.legend_sys), sis)
+            dia !in 30..160 -> t(R.string.voice_out_of_range, t(R.string.legend_dia), dia)
+            dia >= sis -> t(R.string.voice_dia_high, dia, sis)
+            pul != null && pul !in 30..220 -> t(R.string.voice_out_of_range, t(R.string.label_pul), pul)
+            else -> null
+        }
+        if (problem != null) { if (firstProblem == null) firstProblem = problem; continue }
+        val unusual = buildList {
+            if (sis - dia < 20) add(t(R.string.voice_unusual_gap, sis - dia))
+            if (sis >= 180 || sis < 90) add(t(R.string.voice_unusual_value, t(R.string.legend_sys), sis))
+            if (dia >= 110 || dia < 50) add(t(R.string.voice_unusual_value, t(R.string.legend_dia), dia))
+            if (pul != null && (pul < 40 || pul > 130)) add(t(R.string.voice_unusual_value, t(R.string.label_pul), pul))
+            if (pul == null) add(t(R.string.voice_no_pulse))
+        }
+        return Spoken(Triple(sis, dia, pul), null, unusual)
     }
-    return null
+    return Spoken(null, firstProblem ?: t(R.string.voice_not_understood))
 }
 
 data class ScanResult(

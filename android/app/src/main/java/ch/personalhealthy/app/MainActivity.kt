@@ -323,12 +323,16 @@ fun App() {
 
     // Values said aloud: the phone's speech recognition, then a confirmation before saving
     var voice by remember { mutableStateOf<Triple<Int, Int, Int?>?>(null) }
+    var voiceUnusual by remember { mutableStateOf<List<String>>(emptyList()) }
     var voiceSaving by remember { mutableStateOf(false) }
+    var voiceProblem by remember { mutableStateOf<String?>(null) }
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         if (res.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
         val texts = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).orEmpty()
-        voice = parseSpoken(texts)
-        if (voice == null) toast(ctx, t(R.string.voice_not_understood))
+        val sp = parseSpoken(texts)
+        voice = sp.values
+        voiceUnusual = sp.unusual
+        if (sp.problem != null) voiceProblem = sp.problem
     }
     fun openVoice() {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -428,7 +432,7 @@ fun App() {
 
     voice?.let { (sis, dia, pul) ->
         VoiceDialog(
-            sis, dia, pul, saving = voiceSaving,
+            sis, dia, pul, voiceUnusual, saving = voiceSaving,
             onRetry = { voice = null; openVoice() },
             onDismiss = { if (!voiceSaving) voice = null },
             onSave = {
@@ -445,6 +449,18 @@ fun App() {
                     finally { voiceSaving = false }
                 }
             }
+        )
+    }
+
+    // what was said cannot be saved: say why, and offer to say it again
+    voiceProblem?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { voiceProblem = null },
+            title = { Text(t(R.string.voice_confirm_title)) },
+            text = { Text(msg) },
+            confirmButton = { TextButton(onClick = { voiceProblem = null; openVoice() }) { Text(t(R.string.voice_retry), color = C.Sys) } },
+            dismissButton = { TextButton(onClick = { voiceProblem = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
         )
     }
 
@@ -970,7 +986,7 @@ fun ScanScreen(
 
 /** The values understood from speech, to check before saving. Date and time: now, set by the server. */
 @Composable
-fun VoiceDialog(sis: Int, dia: Int, pul: Int?, saving: Boolean, onSave: () -> Unit, onRetry: () -> Unit, onDismiss: () -> Unit) {
+fun VoiceDialog(sis: Int, dia: Int, pul: Int?, unusual: List<String>, saving: Boolean, onSave: () -> Unit, onRetry: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(t(R.string.voice_confirm_title)) },
@@ -980,6 +996,13 @@ fun VoiceDialog(sis: Int, dia: Int, pul: Int?, saving: Boolean, onSave: () -> Un
                     ValueBox(t(R.string.legend_sys), "$sis", C.Sys, Modifier.weight(1f))
                     ValueBox(t(R.string.legend_dia), "$dia", C.Dia, Modifier.weight(1f))
                     ValueBox(t(R.string.label_pul), pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
+                }
+                // possible but strange values: shown in amber, so a misheard number is noticed before saving
+                if (unusual.isNotEmpty()) {
+                    Text(
+                        t(R.string.voice_check) + "\n" + unusual.joinToString("\n") { "• $it" },
+                        color = Color(WARN_COLOR), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+                    )
                 }
                 Text(t(R.string.voice_confirm_when), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
             }

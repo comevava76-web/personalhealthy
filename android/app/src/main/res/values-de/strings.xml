@@ -120,6 +120,13 @@
     <string name="voice_confirm_when">Datum und Uhrzeit: jetzt, beim Speichern. In den Berichten als angesagt markiert.</string>
     <string name="voice_retry">Nochmal sagen</string>
     <string name="voice_not_understood">Ich habe die Zahlen nicht verstanden. Nochmal: systolisch, diastolisch und Puls.</string>
+    <string name="voice_too_many">Ich habe mehr als drei Zahlen gehört (%1$s). Sage nur systolisch, diastolisch und Puls.</string>
+    <string name="voice_out_of_range">%1$s %2$d kann kein Messgerät anzeigen. Bitte nochmal.</string>
+    <string name="voice_dia_high">Diastolisch (%1$d) kann nicht gleich oder höher als systolisch (%2$d) sein. Die erste Zahl ist systolisch, die zweite diastolisch.</string>
+    <string name="voice_check">Prüfe diese Werte vor dem Speichern:</string>
+    <string name="voice_unusual_gap">systolisch und diastolisch liegen nur %1$d auseinander</string>
+    <string name="voice_unusual_value">%1$s %2$d ist ungewöhnlich</string>
+    <string name="voice_no_pulse">kein Puls angesagt</string>
     <string name="voice_unavailable">Dieses Telefon hat keine Spracherkennung.</string>
     <string name="source_photo">Foto</string>
     <string name="source_voice">Stimme</string>

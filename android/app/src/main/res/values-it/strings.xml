@@ -120,6 +120,13 @@
     <string name="voice_confirm_when">Data e ora: adesso, al salvataggio. Nei report risultano come detti a voce.</string>
     <string name="voice_retry">Ripeti</string>
     <string name="voice_not_understood">Non ho capito i numeri. Riprova: massima, minima e battiti.</string>
+    <string name="voice_too_many">Ho sentito più di tre numeri (%1$s). Di\' solo massima, minima e battiti.</string>
+    <string name="voice_out_of_range">%1$s %2$d non è un valore che un misuratore può mostrare. Ripeti.</string>
+    <string name="voice_dia_high">La minima (%1$d) non può essere uguale o più alta della massima (%2$d). Il primo numero è la massima, il secondo la minima.</string>
+    <string name="voice_check">Controlla questi valori prima di salvare:</string>
+    <string name="voice_unusual_gap">tra massima e minima ci sono solo %1$d punti</string>
+    <string name="voice_unusual_value">%1$s %2$d è un valore insolito</string>
+    <string name="voice_no_pulse">non hai detto i battiti</string>
     <string name="voice_unavailable">Questo telefono non ha il riconoscimento vocale.</string>
     <string name="source_photo">Foto</string>
     <string name="source_voice">Voce</string>

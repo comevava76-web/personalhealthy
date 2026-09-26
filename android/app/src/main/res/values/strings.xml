@@ -122,6 +122,13 @@
     <string name="voice_confirm_when">Date and time: now, when you save. Marked as said aloud in the reports.</string>
     <string name="voice_retry">Say again</string>
     <string name="voice_not_understood">I did not understand the numbers. Try again: systolic, diastolic and pulse.</string>
+    <string name="voice_too_many">I heard more than three numbers (%1$s). Say only systolic, diastolic and pulse.</string>
+    <string name="voice_out_of_range">%1$s %2$d is not a value a monitor can show. Say it again.</string>
+    <string name="voice_dia_high">Diastolic (%1$d) cannot be equal to or higher than systolic (%2$d). The first number is systolic, the second diastolic.</string>
+    <string name="voice_check">Check these values before saving:</string>
+    <string name="voice_unusual_gap">systolic and diastolic are only %1$d apart</string>
+    <string name="voice_unusual_value">%1$s %2$d is unusual</string>
+    <string name="voice_no_pulse">no pulse was said</string>
     <string name="voice_unavailable">This phone has no speech recognition.</string>
     <string name="source_photo">Photo</string>
     <string name="source_voice">Voice</string>
