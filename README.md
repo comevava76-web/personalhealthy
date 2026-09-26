@@ -73,8 +73,10 @@ The chart is the same in the app and in the PDF: one point per day (the day's av
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
 That is for the doctor.
 
-Reminders: every day at 8:00 and 20:00 (the phone's time) the app sends a notification
-"Remember to measure your blood pressure", in the phone's language. They keep working after a restart of the phone.
+Reminders: every day at 9:00 and 17:00 (the phone's time) the app sends a notification
+"Remember to measure your blood pressure", in the phone's language, with a badge on the app icon.
+At midnight both are removed, so the badge never shows more than 2. They keep working after a restart of the phone.
+The app sends no notifications about the credit: the Credit tab and a short line on the home show it.
 
 The code is ready for more tabs (for example a future "Analyses" tab for blood tests): see `Tab` in `MainActivity.kt`.
 
@@ -86,7 +88,7 @@ In that case the app says "Your Anthropic credit is finished. Tap Recharge."
 - The **first phone activated** becomes the one of the person who manages the app: activate yours first.
 - In the **Credit** tab, **Recharge** opens the Anthropic billing page. When you come back to the app it asks how much you added.
 - If the estimate does not match Anthropic, tap "The balance is wrong?" and type the amount shown on Anthropic.
-- When about one photo is left, a notification arrives and a warning appears on the Blood pressure tab.
+- When about one photo is left, a warning appears on the Blood pressure tab (no notification).
 
 ## Inviting people
 In the **Credit** tab the app manager taps **Invite someone** and chooses:

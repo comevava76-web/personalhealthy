@@ -70,17 +70,12 @@
     <string name="file_failed">File could not be created: %s</string>
     <string name="share_title">Send report</string>
     <string name="report_subject">Blood pressure diary</string>
-    <string name="credit_title">Reading credit</string>
     <string name="credit_not_set_admin">Not set yet. Tap Recharge, then enter how much you added.</string>
     <string name="credit_not_set_user">Not set yet by the app manager.</string>
     <string name="amount_usd">Amount in dollars</string>
     <string name="enter_amount">Enter an amount, for example 5</string>
     <string name="topup_added">Top-up added</string>
     <string name="balance_updated">Balance updated</string>
-    <string name="notif_title">HealthyInstantTracker: credit running out</string>
-    <string name="notif_empty">The estimated credit is used up.</string>
-    <string name="notif_low">The credit is enough for only one more photo.</string>
-    <string name="notif_admin_hint">Open the Credit tab in HealthyInstantTracker and tap Recharge.</string>
     <string name="notif_user_hint">Let the app manager know.</string>
     <string name="reminder_channel">Measurement reminders</string>
     <string name="reminder_title" translatable="false">HINT</string>
