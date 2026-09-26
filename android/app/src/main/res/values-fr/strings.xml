@@ -22,14 +22,13 @@
     <string name="measure">Mesurer la tension</string>
     <string name="last7">7 derniers jours</string>
     <string name="chart_title">Évolution</string>
-    <string name="week_hint">En haut la systolique, en bas la diastolique (mmHg). Plusieurs mesures au même moment : la moyenne.</string>
+    <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. En haut la systolique, en bas la diastolique.</string>
     <string name="n_readings">%d mesures</string>
     <string name="peak_sys">Systolique la plus haute</string>
     <string name="recent">Mesures récentes</string>
     <string name="delete_q">Supprimer cette mesure ?</string>
     <string name="legend_sys">Systolique</string>
     <string name="legend_dia">Diastolique</string>
-    <string name="week_done">%d sur 14 moments</string>
     <string name="new_reading">Nouvelle mesure</string>
     <string name="new_reading_sub">L\'app lit les valeurs sur la photo</string>
     <string name="reading_display">Lecture de l\'écran…</string>

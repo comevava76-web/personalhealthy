@@ -632,25 +632,18 @@ fun Legend() {
 }
 
 /**
- * The last 7 days, today included (today in the last column): one column per day,
- * the values of each moment (systolic above, diastolic below) and a row with the pulse.
- * More readings in the same moment: their average. Afternoon row only when there is an afternoon reading.
+ * The last 7 days, today included (today in the last column): one column per day with one value per day,
+ * the average of all that day's readings (systolic above, diastolic below), and a row with the average pulse.
  */
 @Composable
 fun WeekPanel(readings: List<Reading>) {
     val today = Z.today()
     val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
     val byDay = days.associateWith { d -> readings.filter { Z.date(it.takenAt) == d } }
-    val done = days.sumOf { d ->
-        val l = byDay.getValue(d)
-        (if (l.any { it.period == "morning" }) 1 else 0) + (if (l.any { it.period == "evening" }) 1 else 0)
-    }
-    val periods = listOf("morning", "afternoon", "evening").filter { p ->
-        p != "afternoon" || byDay.values.any { l -> l.any { it.period == p } }
-    }
-    val labelW = 62.dp
+    val cell = Modifier.padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp)
+    val labelW = 52.dp
     Panel {
-        Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.week_done, done), color = C.Muted, fontSize = 13.sp) }
+        Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(labelW))
@@ -661,18 +654,16 @@ fun WeekPanel(readings: List<Reading>) {
                 }
             }
         }
-        periods.forEach { p ->
-            WeekRow(periodLabel(p), labelW) {
-                days.forEach { d ->
-                    val l = byDay.getValue(d).filter { it.period == p }
-                    Column(Modifier.weight(1f).padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (l.isEmpty()) {
-                            Text("·", color = C.Muted, fontSize = 13.sp)
-                            Text(" ", fontSize = 13.sp)
-                        } else {
-                            Text("${l.map { it.sis }.average().roundToInt()}", color = C.Sys, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                            Text("${l.map { it.dia }.average().roundToInt()}", color = C.Dia, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                        }
+        WeekRow("mmHg", labelW) {
+            days.forEach { d ->
+                val l = byDay.getValue(d)
+                Column(Modifier.weight(1f).then(cell), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (l.isEmpty()) {
+                        Text("·", color = C.Muted, fontSize = 13.sp)
+                        Text(" ", fontSize = 13.sp)
+                    } else {
+                        Text("${l.map { it.sis }.average().roundToInt()}", color = C.Sys, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        Text("${l.map { it.dia }.average().roundToInt()}", color = C.Dia, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
             }
@@ -683,7 +674,7 @@ fun WeekPanel(readings: List<Reading>) {
                 Text(
                     if (pul.isEmpty()) "·" else "${pul.average().roundToInt()}", color = if (pul.isEmpty()) C.Muted else C.Pul,
                     fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1,
-                    modifier = Modifier.weight(1f).padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp)
+                    modifier = Modifier.weight(1f).then(cell)
                 )
             }
         }

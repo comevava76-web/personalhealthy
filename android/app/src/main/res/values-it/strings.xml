@@ -22,14 +22,13 @@
     <string name="measure">Misura la pressione</string>
     <string name="last7">Ultimi 7 giorni</string>
     <string name="chart_title">Andamento</string>
-    <string name="week_hint">Sopra la massima, sotto la minima (mmHg). Più misure nello stesso momento: la media.</string>
+    <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. Sopra la massima, sotto la minima.</string>
     <string name="n_readings">%d misure</string>
     <string name="peak_sys">Massima più alta</string>
     <string name="recent">Ultime misure</string>
     <string name="delete_q">Eliminare questa misura?</string>
     <string name="legend_sys">Massima</string>
     <string name="legend_dia">Minima</string>
-    <string name="week_done">%d su 14 momenti</string>
     <string name="new_reading">Nuova misura</string>
     <string name="new_reading_sub">I numeri li legge l\'app dalla foto</string>
     <string name="reading_display">Sto leggendo il display…</string>

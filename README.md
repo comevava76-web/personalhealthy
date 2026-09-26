@@ -63,7 +63,7 @@ Later versions install over the previous one without losing anything.
 ## The app
 The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): the button to measure, the last reading, a table of the last 7 days (today included:
-  the values of each morning and evening, and the pulse), the 7-day chart and recent readings.
+  one value per day, the average of that day's readings, and the pulse), the 7-day chart and recent readings.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
 - **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
 
