@@ -23,6 +23,9 @@
     <string name="last7">Letzte 7 Tage</string>
     <string name="chart_title">Verlauf</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. Oben systolisch, unten diastolisch.</string>
+    <string name="summary_title">Übersicht 7 Tage</string>
+    <string name="summary_highest">Höchste</string>
+    <string name="summary_avg">Durchschnitt</string>
     <string name="n_readings">%d Messungen</string>
     <string name="peak_sys">Höchster systolischer Wert</string>
     <string name="recent">Letzte Messungen</string>

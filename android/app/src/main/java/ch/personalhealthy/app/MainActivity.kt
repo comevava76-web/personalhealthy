@@ -19,6 +19,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -415,8 +420,8 @@ fun BottomBar(tab: String, onSelect: (String) -> Unit) {
 @Composable
 fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier.fillMaxWidth().padding(vertical = 7.dp).clip(RoundedCornerShape(22.dp))
-            .background(C.Surface).border(1.dp, C.Line, RoundedCornerShape(22.dp)).padding(18.dp),
+        modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(22.dp))
+            .background(C.Surface).border(1.dp, C.Line, RoundedCornerShape(22.dp)).padding(horizontal = 18.dp, vertical = 14.dp),
         content = content
     )
 }
@@ -432,8 +437,12 @@ fun BigButton(text: String, color: Color = C.Sys, textColor: Color = Color.White
 }
 
 @Composable
-fun Header(title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null, titleSize: Int = 26) {
+fun Header(
+    title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null, titleSize: Int = 26,
+    leading: (@Composable () -> Unit)? = null
+) {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (leading != null) { leading(); Spacer(Modifier.width(12.dp)) }
         Column(Modifier.weight(1f)) {
             Text(title, color = C.Ink, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
             if (subtitle != null) Text(subtitle, color = C.Muted, fontSize = 14.sp)
@@ -455,10 +464,10 @@ fun EcgLine(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier: Modifier) {
+fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier: Modifier, pulse: Boolean = true) {
     Canvas(modifier) {
         drawIntoCanvas { canvas ->
-            drawBpChart(canvas.nativeCanvas, size.width, size.height, list, start, days, SCREEN_PAL, 11.sp.toPx())
+            drawBpChart(canvas.nativeCanvas, size.width, size.height, list, start, days, SCREEN_PAL, 11.sp.toPx(), pulse)
         }
     }
 }
@@ -523,7 +532,7 @@ fun HomeScreen(
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header(t(R.string.app_name), t(R.string.tagline), titleSize = 20)
+        Header("HINT", t(R.string.app_name), titleSize = 26, leading = { HintLogo() })
 
         // a friend who pays for their own photos has no key yet
         if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)
@@ -537,14 +546,15 @@ fun HomeScreen(
 
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)
+        SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
         val today = Z.today()
         val week = readings.filter { !Z.date(it.takenAt).isBefore(today.minusDays(6)) }
         Panel {
             Row { Text(t(R.string.chart_title), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, week.size), color = C.Muted, fontSize = 13.sp) }
             Spacer(Modifier.height(10.dp))
-            BpChart(week, today.minusDays(6), 7, Modifier.fillMaxWidth().height(210.dp))
-            Legend()
+            BpChart(week, today.minusDays(6), 7, Modifier.fillMaxWidth().height(180.dp), pulse = false)
+            Legend(pulse = false)
         }
 
         if (readings.isNotEmpty()) {
@@ -594,9 +604,9 @@ fun LastPanel(last: Reading?) {
             Text(t(R.string.last_fmt, Z.whenText(last.takenAt)), color = C.Muted, fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("${last.sis}", color = C.Sys, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
+                    Text("${last.sis}", color = C.Sys, fontSize = 64.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 66.sp)
                     EcgLine()
-                    Text("${last.dia}", color = C.Dia, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
+                    Text("${last.dia}", color = C.Dia, fontSize = 64.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 66.sp)
                     Text(t(R.string.mmhg_hint), color = C.Muted, fontSize = 12.sp)
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -621,9 +631,9 @@ fun WarnLine(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun Legend() {
+fun Legend(pulse: Boolean = true) {
     Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        listOf(t(R.string.legend_sys) to C.Sys, t(R.string.legend_dia) to C.Dia, t(R.string.label_pul) to C.Pul).forEach { (label, col) ->
+        listOfNotNull(t(R.string.legend_sys) to C.Sys, t(R.string.legend_dia) to C.Dia, if (pulse) t(R.string.label_pul) to C.Pul else null).forEach { (label, col) ->
             Box(Modifier.size(9.dp).clip(RoundedCornerShape(2.dp)).background(col))
             Text(" $label   ", color = C.Muted, fontSize = 12.sp)
         }
@@ -644,7 +654,7 @@ fun WeekPanel(readings: List<Reading>) {
     val labelW = 52.dp
     Panel {
         Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(labelW))
             days.forEach { d ->
@@ -679,6 +689,65 @@ fun WeekPanel(readings: List<Reading>) {
             }
         }
         Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+/** Summary of the last 7 days: the highest value and the average of systolic, diastolic and pulse. */
+@Composable
+fun SummaryPanel(week: List<Reading>) {
+    fun avg(l: List<Int>) = if (l.isEmpty()) "—" else "${l.average().roundToInt()}"
+    val sis = week.map { it.sis }
+    val dia = week.map { it.dia }
+    val pul = week.mapNotNull { it.pul }
+    val labelW = 72.dp
+    Panel {
+        Text(t(R.string.summary_title), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.width(labelW))
+            listOf(t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul)).forEach {
+                Text(it, color = C.Muted, fontSize = 12.sp, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f))
+            }
+        }
+        listOf(
+            t(R.string.summary_highest) to listOf(sis.maxOrNull()?.toString() ?: "—", dia.maxOrNull()?.toString() ?: "—", pul.maxOrNull()?.toString() ?: "—"),
+            t(R.string.summary_avg) to listOf(avg(sis), avg(dia), avg(pul))
+        ).forEach { (label, values) ->
+            WeekRow(label, labelW) {
+                values.zip(listOf(C.Sys, C.Dia, C.Pul)).forEach { (v, col) ->
+                    Text(
+                        v, color = if (v == "—") C.Muted else col, fontSize = 20.sp, fontWeight = FontWeight.Light, textAlign = TextAlign.Center, maxLines = 1,
+                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp).clip(RoundedCornerShape(8.dp)).background(C.Surface2).padding(vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The app's ECG trace (the same shape as the launcher icon), in the app's own colours,
+ * scrolling from right to left like on a heart monitor.
+ */
+@Composable
+fun HintLogo(size: Dp = 40.dp) {
+    val shift by rememberInfiniteTransition(label = "ecg").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "shift"
+    )
+    Canvas(Modifier.size(size).clip(RoundedCornerShape(11.dp)).background(C.Surface2)) {
+        // launcher trace from x 13 to 95 in a 108 box; both ends at the same height, so copies join seamlessly
+        val pts = listOf(13f to 57.2f, 33.5f to 57.2f, 38.9f to 49.7f, 44.3f to 57.2f, 48.6f to 57.2f, 55.1f to 27f,
+            62.1f to 84.2f, 68f to 57.2f, 74.5f to 57.2f, 79.9f to 51.8f, 85.3f to 57.2f, 95f to 57.2f)
+        val period = 82f
+        val k = this.size.width / period
+        val trace = Path()
+        for (copy in 0..1) pts.forEachIndexed { i, (x, y) ->
+            val px = (x - 13f + period * copy - shift * period) * k
+            val py = (y - 57.2f) * k * 0.9f + this.size.height / 2f
+            if (copy == 0 && i == 0) trace.moveTo(px, py) else trace.lineTo(px, py)
+        }
+        drawPath(trace, C.Sys.copy(alpha = 0.25f), style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(trace, C.Sys, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 

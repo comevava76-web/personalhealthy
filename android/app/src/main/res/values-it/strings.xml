@@ -23,6 +23,9 @@
     <string name="last7">Ultimi 7 giorni</string>
     <string name="chart_title">Andamento</string>
     <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. Sopra la massima, sotto la minima.</string>
+    <string name="summary_title">Riepilogo 7 giorni</string>
+    <string name="summary_highest">Più alti</string>
+    <string name="summary_avg">Media</string>
     <string name="n_readings">%d misure</string>
     <string name="peak_sys">Massima più alta</string>
     <string name="recent">Ultime misure</string>
