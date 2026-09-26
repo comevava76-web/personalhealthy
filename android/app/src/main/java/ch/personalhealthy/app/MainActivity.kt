@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,6 +79,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -86,6 +88,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import java.io.File
 
 /* ---------------- Colors ---------------- */
@@ -440,19 +443,6 @@ fun Header(title: String, subtitle: String? = null, action: String? = null, onAc
 }
 
 @Composable
-fun LevelChip(level: Level) {
-    val col = Color(level.color)
-    Row(
-        Modifier.clip(RoundedCornerShape(50)).background(col.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(col))
-        Spacer(Modifier.width(6.dp))
-        Text(level.label, color = col, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
 fun EcgLine(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxWidth().height(34.dp)) {
         val w = size.width
@@ -542,40 +532,16 @@ fun HomeScreen(
         if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
-        val last = readings.lastOrNull()
-        Panel {
-            if (last == null) {
-                Text(t(R.string.no_readings_title), color = C.Ink, fontSize = 20.sp)
-                Text(t(R.string.no_readings_text), color = C.Muted, fontSize = 14.sp)
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(t(R.string.last_fmt, Z.whenText(last.takenAt)), color = C.Muted, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    LevelChip(classify(last.sis, last.dia))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("${last.sis}", color = C.Sys, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
-                        EcgLine()
-                        Text("${last.dia}", color = C.Dia, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
-                        Text(t(R.string.mmhg_hint), color = C.Muted, fontSize = 12.sp)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(last.pul?.toString() ?: "—", color = C.Pul, fontSize = 32.sp, fontWeight = FontWeight.Light)
-                        Text(t(R.string.pulse_lower), color = C.Muted, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-
         BigButton(t(R.string.measure), onClick = onMeasure)
         Text(t(R.string.photo_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
+        LastPanel(readings.lastOrNull())
         WeekPanel(readings)
 
         val today = Z.today()
         val week = readings.filter { !Z.date(it.takenAt).isBefore(today.minusDays(6)) }
         Panel {
-            Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, week.size), color = C.Muted, fontSize = 13.sp) }
+            Row { Text(t(R.string.chart_title), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, week.size), color = C.Muted, fontSize = 13.sp) }
             Spacer(Modifier.height(10.dp))
             BpChart(week, today.minusDays(6), 7, Modifier.fillMaxWidth().height(210.dp))
             Legend()
@@ -617,10 +583,35 @@ fun HomeScreen(
     }
 }
 
+/** The last reading, large: systolic above, diastolic below, pulse on the right. No judgement on the values. */
+@Composable
+fun LastPanel(last: Reading?) {
+    Panel {
+        if (last == null) {
+            Text(t(R.string.no_readings_title), color = C.Ink, fontSize = 20.sp)
+            Text(t(R.string.no_readings_text), color = C.Muted, fontSize = 14.sp)
+        } else {
+            Text(t(R.string.last_fmt, Z.whenText(last.takenAt)), color = C.Muted, fontSize = 14.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("${last.sis}", color = C.Sys, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
+                    EcgLine()
+                    Text("${last.dia}", color = C.Dia, fontSize = 78.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 80.sp)
+                    Text(t(R.string.mmhg_hint), color = C.Muted, fontSize = 12.sp)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(last.pul?.toString() ?: "—", color = C.Pul, fontSize = 32.sp, fontWeight = FontWeight.Light)
+                    Text(t(R.string.pulse_lower), color = C.Muted, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
 /** One short amber line that opens where the problem is fixed. */
 @Composable
 fun WarnLine(text: String, onClick: () -> Unit) {
-    val col = Color(Level.WARN.color)
+    val col = Color(WARN_COLOR)
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(col.copy(alpha = 0.15f))
             .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp)
@@ -640,36 +631,71 @@ fun Legend() {
     Text(t(R.string.chart_daily), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
 }
 
+/**
+ * The last 7 days, today included (today in the last column): one column per day,
+ * the values of each moment (systolic above, diastolic below) and a row with the pulse.
+ * More readings in the same moment: their average. Afternoon row only when there is an afternoon reading.
+ */
 @Composable
 fun WeekPanel(readings: List<Reading>) {
     val today = Z.today()
     val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
+    val byDay = days.associateWith { d -> readings.filter { Z.date(it.takenAt) == d } }
     val done = days.sumOf { d ->
-        val l = readings.filter { Z.date(it.takenAt) == d }
+        val l = byDay.getValue(d)
         (if (l.any { it.period == "morning" }) 1 else 0) + (if (l.any { it.period == "evening" }) 1 else 0)
     }
+    val periods = listOf("morning", "afternoon", "evening").filter { p ->
+        p != "afternoon" || byDay.values.any { l -> l.any { it.period == p } }
+    }
+    val labelW = 62.dp
     Panel {
-        Row { Text(t(R.string.this_week), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.week_done, done), color = C.Muted, fontSize = 13.sp) }
+        Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.week_done, done), color = C.Muted, fontSize = 13.sp) }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.width(labelW))
             days.forEach { d ->
-                val l = readings.filter { Z.date(it.takenAt) == d }
-                val m = l.any { it.period == "morning" }
-                val e = l.any { it.period == "evening" }
-                Column(Modifier.weight(1f).padding(horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(Z.weekday(d).trimEnd('.'), color = C.Muted, fontSize = 12.sp)
-                    Text("${d.dayOfMonth}", color = if (d == today) C.Sys else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(4.dp))
-                    Box(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(5.dp)).background(if (m) C.Dia else C.Surface2))
-                    Spacer(Modifier.height(4.dp))
-                    Box(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(5.dp)).background(if (e) C.Sys else C.Surface2))
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(Z.weekday(d).trimEnd('.'), color = C.Muted, fontSize = 11.sp, maxLines = 1)
+                    Text("${d.dayOfMonth}", color = if (d == today) C.Sys else C.Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
-        Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(9.dp).clip(RoundedCornerShape(2.dp)).background(C.Dia)); Text(" " + t(R.string.legend_morning) + "   ", color = C.Muted, fontSize = 12.sp)
-            Box(Modifier.size(9.dp).clip(RoundedCornerShape(2.dp)).background(C.Sys)); Text(" " + t(R.string.legend_evening), color = C.Muted, fontSize = 12.sp)
+        periods.forEach { p ->
+            WeekRow(periodLabel(p), labelW) {
+                days.forEach { d ->
+                    val l = byDay.getValue(d).filter { it.period == p }
+                    Column(Modifier.weight(1f).padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (l.isEmpty()) {
+                            Text("·", color = C.Muted, fontSize = 13.sp)
+                            Text(" ", fontSize = 13.sp)
+                        } else {
+                            Text("${l.map { it.sis }.average().roundToInt()}", color = C.Sys, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Text("${l.map { it.dia }.average().roundToInt()}", color = C.Dia, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        }
+                    }
+                }
+            }
         }
+        WeekRow(t(R.string.label_pul), labelW) {
+            days.forEach { d ->
+                val pul = byDay.getValue(d).mapNotNull { it.pul }
+                Text(
+                    if (pul.isEmpty()) "·" else "${pul.average().roundToInt()}", color = if (pul.isEmpty()) C.Muted else C.Pul,
+                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1,
+                    modifier = Modifier.weight(1f).padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp)
+                )
+            }
+        }
+        Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.width(labelW))
+        cells()
     }
 }
 
@@ -724,13 +750,8 @@ fun ScanScreen(
                             ValueBox(t(R.string.label_pul), r.pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
                         }
                         Spacer(Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(Z.whenText(r.takenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                                Text(t(R.string.period_fmt, periodLabel(r.period)), color = C.Muted, fontSize = 13.sp)
-                            }
-                            LevelChip(classify(r.sis, r.dia))
-                        }
+                        Text(Z.whenText(r.takenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text(t(R.string.period_fmt, periodLabel(r.period)), color = C.Muted, fontSize = 13.sp)
                         if (r.note.isNotBlank()) Text(r.note, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                     }
                     Text(t(R.string.check_numbers), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 6.dp))
@@ -803,7 +824,6 @@ fun ReportScreen(readings: List<Reading>) {
         }
         Row(Modifier.fillMaxWidth()) {
             StatBox(t(R.string.lowest), st.minS?.let { "${it.sis}/${it.dia}" } ?: "—", st.minS?.let { Z.whenText(it.takenAt) }, modifier = Modifier.weight(1f))
-            StatBox(t(R.string.above_thr), "${st.over}", t(R.string.of_n, st.n), modifier = Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(8.dp))
@@ -814,7 +834,7 @@ fun ReportScreen(readings: List<Reading>) {
         BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
             try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
-        Text(t(R.string.threshold_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -834,7 +854,7 @@ fun CreditScreen(
         }
         val c = me.credit
         val set = c != null && c.configured
-        val col = if (set && c!!.low) Color(Level.WARN.color) else C.Ink
+        val col = if (set && c!!.low) Color(WARN_COLOR) else C.Ink
         Panel {
             Text(t(R.string.credit_money_left), color = C.Muted, fontSize = 14.sp)
             Text(if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
