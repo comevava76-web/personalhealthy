@@ -119,7 +119,11 @@ data class Credit(
  * "self": a friend who pays with their own Anthropic key ([hasKey] says whether it is stored on the server).
  * [credit] is always this person's own pool: friends never see the manager's, and the other way round.
  */
-data class Me(val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false) {
+/** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
+data class Me(
+    val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false,
+    val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false
+) {
     val selfPays: Boolean get() = pays == "self"
     /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
     val canRecharge: Boolean get() = isAdmin || selfPays
@@ -279,6 +283,13 @@ fun errorText(code: String): String = when (code) {
     "scan_invalid" -> t(R.string.err_scan_invalid)
     "voice_invalid" -> t(R.string.err_voice_invalid)
     "voice_time" -> t(R.string.err_voice_time)
+    "google_off" -> t(R.string.err_google_off)
+    "google_invalid", "google_failed" -> t(R.string.err_google_failed)
+    "google_no_account" -> t(R.string.err_google_no_account)
+    "google_other" -> t(R.string.err_google_other)
+    "phone_in_use" -> t(R.string.err_phone_in_use)
+    "consent_required" -> t(R.string.err_consent_required)
+    "admin_delete" -> t(R.string.err_admin_delete)
     "admin_only" -> t(R.string.err_admin_only)
     "bad_amount" -> t(R.string.err_bad_amount)
     "server" -> t(R.string.err_server)
@@ -339,6 +350,22 @@ object Repo {
         return Api.call("POST", "/v1/register", body, null).getString("personId")
     }
 
+    /**
+     * Sign in with Google: finds this person's account (and moves it to this phone), links Google to this phone's
+     * account, or creates a new one. [code] (optional): an invite or the family code, for photos paid by the app manager.
+     * [consent]: the privacy note was accepted. Returns the person id.
+     */
+    suspend fun google(idToken: String, code: String?, consent: Boolean): String {
+        val body = JSONObject().put("idToken", idToken).put("publicKey", Keys.publicKeyB64()).put("consent", consent)
+        if (!code.isNullOrBlank()) body.put("code", code.trim())
+        return Api.call("POST", "/v1/auth/google", body, null).getString("personId")
+    }
+
+    /** Deletes this person's account and every data of theirs on the server. */
+    suspend fun deleteAccount(pid: String) {
+        Api.call("DELETE", "/v1/me", null, pid)
+    }
+
     suspend fun list(pid: String): List<Reading> {
         val a = Api.call("GET", "/v1/bp?days=400", null, pid).getJSONArray("items")
         return (0 until a.length()).map {
@@ -365,7 +392,8 @@ object Repo {
         val j = Api.call("GET", "/v1/me", null, pid)
         return Me(
             j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")),
-            j.optString("pays", "owner"), j.optBoolean("hasKey", false)
+            j.optString("pays", "owner"), j.optBoolean("hasKey", false),
+            j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false)
         )
     }
 

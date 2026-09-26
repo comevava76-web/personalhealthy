@@ -19,7 +19,8 @@ Rules enforced by the server:
 - the blood-pressure values come from reading the photo, and the phone cannot change them; or they are said aloud
   (microphone next to Measure), and then they are marked "voice" in the list, the PDF and the Excel file;
 - date and time are those of the shot, checked by the server;
-- no names and no emails: each phone has an anonymous key protected inside the phone itself;
+- no names; with Sign in with Google, only the Google email (to find the account again); each phone signs its requests
+  with a key protected inside the phone itself;
 - only people who know the family code, or who received a single-use invite, can activate the app;
 - nobody sees anyone else's readings: each reading belongs to the anonymous code of one phone.
 
@@ -83,6 +84,14 @@ The app refuses a missing number, more than three, a diastolic equal to or highe
 cannot show, and warns in amber about unusual ones. Like a photo reading, the values are shown full screen and are
 saved only after the person taps Save. Date and time are those of the moment they were said (the server accepts
 them only within 15 minutes).
+
+Sign in with Google (when the repository variable `GOOGLE_WEB_CLIENT_ID` is set): Google is used only to create the
+account and to find it again on a new phone; every day the app opens with fingerprint or face. Anyone can set up the
+app alone: without an invite they pay their photos with their own Anthropic key; an invite (or the family code) is only
+for photos paid by the app manager. Signing in on a new phone moves the account there and disconnects the old phone.
+Accounts made before Google can be linked from the Credit tab. Each person can delete their account and all their data
+from the Credit tab (the app manager cannot). Stored: the Google email and a stable Google id, plus when the privacy note
+was accepted. Without the variable, the app keeps working with invite codes as before.
 
 App lock: the app opens with the phone's fingerprint, face or screen lock (no separate PIN),
 and locks again after 2 minutes away. Phones without any screen lock open without it.

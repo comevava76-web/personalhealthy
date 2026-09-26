@@ -5,6 +5,8 @@ plugins {
 
 val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 val apiUrl = System.getenv("BATTITO_API_URL")?.takeIf { it.isNotBlank() } ?: "https://example.invalid"
+// Google Cloud "Web client ID" for Sign in with Google (GitHub repository variable); empty = invite codes only
+val googleClientId = System.getenv("GOOGLE_WEB_CLIENT_ID")?.trim() ?: ""
 
 android {
     namespace = "ch.personalhealthy.app"
@@ -17,6 +19,7 @@ android {
         versionCode = runNumber
         versionName = "0.1.$runNumber"
         buildConfigField("String", "API_URL", "\"$apiUrl\"")
+        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
     }
 
     // Fixed signing key: every new version installs over the previous one without losing anything
@@ -77,6 +80,10 @@ dependencies {
     // app lock with the phone's fingerprint, face or screen lock
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.fragment:fragment-ktx:1.8.1") // recent FragmentActivity: works with the camera and QR launchers
+    // Sign in with Google (Credential Manager): only to create the account and to recover it on a new phone
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     // QR codes for invites: drawing them (core) and scanning them with the camera (embedded scanner)
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")

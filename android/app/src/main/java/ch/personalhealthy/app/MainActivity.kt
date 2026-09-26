@@ -56,6 +56,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -287,6 +289,7 @@ fun App() {
     var keyBusy by remember { mutableStateOf(false) }
     var keyError by remember { mutableStateOf<ApiException?>(null) }
     var deleteKeyAsk by remember { mutableStateOf(false) }
+    var linkAsk by remember { mutableStateOf(false) }   // linking Google: the privacy note is on screen
     val scope = rememberCoroutineScope()
 
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
@@ -503,7 +506,19 @@ fun App() {
                         Tab.REPORT.key -> ReportScreen(readings, onShowAll = { screen = "all" })
                         Tab.CREDIT.key -> CreditScreen(
                             me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
-                            onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true }
+                            onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
+                            onLinkGoogle = { linkAsk = true },
+                            onDeleteAccount = {
+                                val pid = personId ?: return@CreditScreen
+                                scope.launch {
+                                    try {
+                                        Repo.deleteAccount(pid)
+                                        prefs.edit().remove("personId").apply()
+                                        readings.clear(); me = null; personId = null
+                                        toast(ctx, t(R.string.account_deleted))
+                                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                }
+                            }
                         )
                         else -> HomeScreen(
                             readings = readings, message = message, me = me,
@@ -536,6 +551,30 @@ fun App() {
             containerColor = C.Surface
         )
     }
+
+    // link Google to this phone's account: the privacy note first, then Google's account chooser
+    if (linkAsk) AlertDialog(
+        onDismissRequest = { linkAsk = false },
+        title = { Text(t(R.string.privacy_title)) },
+        text = { Text(t(R.string.privacy_note)) },
+        confirmButton = {
+            TextButton(onClick = {
+                linkAsk = false
+                val pid = personId ?: return@TextButton
+                scope.launch {
+                    try {
+                        val token = GoogleSignIn.idToken(ctx) ?: return@launch
+                        val newPid = Repo.google(token, null, consent = true)
+                        if (newPid != pid) { prefs.edit().putString("personId", newPid).apply(); personId = newPid }
+                        toast(ctx, t(R.string.google_linked))
+                        reload()
+                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                }
+            }) { Text(t(R.string.privacy_accept_link), color = C.Sys) }
+        },
+        dismissButton = { TextButton(onClick = { linkAsk = false }) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
 
     amountDialog?.let { action ->
         AmountDialog(
@@ -707,6 +746,7 @@ fun LockScreen(onUnlock: () -> Unit) {
 
 @Composable
 fun SetupScreen(onDone: (String) -> Unit) {
+    if (GoogleSignIn.enabled) { GoogleSetupScreen(onDone); return }
     var code by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf<String?>(null) }
@@ -719,13 +759,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
         EcgLine(Modifier.padding(vertical = 8.dp))
         Text(t(R.string.setup_intro), color = C.Muted, fontSize = 15.sp)
         Spacer(Modifier.height(20.dp))
-        OutlinedTextField(
-            value = code, onValueChange = { code = it.trim() }, singleLine = true,
-            label = { Text(t(R.string.family_or_invite_code)) },
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
-            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
-            modifier = Modifier.fillMaxWidth()
-        )
+        CodeField(code) { code = it }
         Spacer(Modifier.height(12.dp))
         BigButton(if (busy) t(R.string.activating) else t(R.string.activate), enabled = code.length >= 4 && !busy) {
             busy = true; err = null
@@ -733,15 +767,88 @@ fun SetupScreen(onDone: (String) -> Unit) {
                 try { onDone(Repo.register(code)) } catch (e: Exception) { err = e.message } finally { busy = false }
             }
         }
-        BigButton(t(R.string.scan_qr), color = C.Surface2, textColor = C.Ink, enabled = !busy) {
-            qrScan.launch(
-                ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(t(R.string.scan_qr_prompt))
-                    .setBeepEnabled(false).setOrientationLocked(false)
-            )
-        }
+        BigButton(t(R.string.scan_qr), color = C.Surface2, textColor = C.Ink, enabled = !busy) { scanQr(qrScan) }
         err?.let { Text(it, color = C.Alert, modifier = Modifier.padding(top = 8.dp)) }
         Spacer(Modifier.height(18.dp))
         Text(t(R.string.setup_privacy), color = C.Muted, fontSize = 13.sp)
+    }
+}
+
+private fun scanQr(launcher: androidx.activity.result.ActivityResultLauncher<ScanOptions>) {
+    launcher.launch(
+        ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(t(R.string.scan_qr_prompt))
+            .setBeepEnabled(false).setOrientationLocked(false)
+    )
+}
+
+@Composable
+private fun CodeField(code: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = code, onValueChange = { onChange(it.trim()) }, singleLine = true,
+        label = { Text(t(R.string.family_or_invite_code)) },
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+/**
+ * First start with Sign in with Google: on their own, a new person creates their account (paying their photos with their
+ * own Anthropic key), and someone with a new phone finds their account again. An invite, optional, is only for photos
+ * paid by the app manager. After this, the app opens with fingerprint or face.
+ */
+@Composable
+fun GoogleSetupScreen(onDone: (String) -> Unit) {
+    val ctx = LocalContext.current
+    var consent by rememberSaveable { mutableStateOf(false) }
+    var showCode by rememberSaveable { mutableStateOf(false) }
+    var code by rememberSaveable { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var err by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val qrScan = rememberLauncherForActivityResult(ScanContract()) { res ->
+        res.contents?.let { code = it.trim(); err = null }
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.Center) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            HintLogo(40.dp)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text("HINT", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
+                Text(t(R.string.app_name), color = C.Muted, fontSize = 12.sp)
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(t(R.string.google_intro), color = C.Ink, fontSize = 15.sp)
+        Spacer(Modifier.height(14.dp))
+        Panel {
+            Text(t(R.string.privacy_title), color = C.Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(t(R.string.privacy_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+            Row(Modifier.padding(top = 8.dp).clickable { consent = !consent }, verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = consent, onCheckedChange = { consent = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
+                Text(t(R.string.privacy_accept), color = C.Ink, fontSize = 14.sp)
+            }
+        }
+        BigButton(if (busy) t(R.string.activating) else t(R.string.google_sign_in), enabled = consent && !busy) {
+            busy = true; err = null
+            scope.launch {
+                try {
+                    val token = GoogleSignIn.idToken(ctx)
+                    if (token != null) onDone(Repo.google(token, code.takeIf { showCode }, consent = true))
+                } catch (e: Exception) { err = e.message } finally { busy = false }
+            }
+        }
+        err?.let { Text(it, color = C.Alert, modifier = Modifier.padding(top = 8.dp)) }
+        Spacer(Modifier.height(10.dp))
+        if (!showCode) {
+            TextButton(onClick = { showCode = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.have_invite), color = C.Muted, fontSize = 13.sp)
+            }
+        } else {
+            Text(t(R.string.invite_optional), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
+            CodeField(code) { code = it }
+            BigButton(t(R.string.scan_qr), color = C.Surface2, textColor = C.Ink, enabled = !busy) { scanQr(qrScan) }
+        }
     }
 }
 
@@ -758,6 +865,8 @@ fun HomeScreen(
 
         // a friend who pays for their own photos has no key yet
         if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)
+        // not linked to Google yet: with a new phone this diary could not be found again
+        if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
         if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
@@ -1269,8 +1378,10 @@ fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
 @Composable
 fun CreditScreen(
     me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit,
-    onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit
+    onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit,
+    onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit
 ) {
+    var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.credit_page_title))
         if (me == null) {
@@ -1315,8 +1426,38 @@ fun CreditScreen(
             BigButton(t(R.string.invite_someone), color = C.Surface2, textColor = C.Ink, onClick = onInvite)
             Text(t(R.string.invite_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
         }
+
+        // Account: the Google account that finds this diary again on a new phone, and deleting it all
+        Spacer(Modifier.height(14.dp))
+        Text(t(R.string.account_title), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+        if (me.hasGoogle) {
+            Panel {
+                Text(me.email ?: "Google", color = C.Ink, fontSize = 15.sp)
+                Text(t(R.string.account_linked), color = C.Muted, fontSize = 13.sp)
+            }
+        } else if (me.googleOn) {
+            Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
+            BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
+        }
+        if (!me.isAdmin) {
+            TextButton(onClick = { deleteStep = 1 }, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
+            }
+        }
         Spacer(Modifier.height(24.dp))
     }
+    if (deleteStep > 0) AlertDialog(
+        onDismissRequest = { deleteStep = 0 },
+        title = { Text(t(if (deleteStep == 1) R.string.account_delete_q1 else R.string.reset_q2)) },
+        text = { Text(t(if (deleteStep == 1) R.string.account_delete_t1 else R.string.account_delete_t2)) },
+        confirmButton = {
+            TextButton(onClick = { if (deleteStep == 1) deleteStep = 2 else { deleteStep = 0; onDeleteAccount() } }) {
+                Text(t(if (deleteStep == 1) R.string.reset_continue else R.string.account_delete_confirm), color = C.Alert)
+            }
+        },
+        dismissButton = { TextButton(onClick = { deleteStep = 0 }) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
 }
 
 @Composable
