@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Battito</string>
+    <string name="app_name" translatable="false">HealthyInstantTracker</string>
     <string name="tagline">Blood pressure diary</string>
     <string name="refresh">Refresh</string>
     <string name="back">Back</string>
@@ -109,10 +109,10 @@
     <string name="mode_private_sub">Private use: all photos use your credit</string>
     <string name="mode_user">Each user pays</string>
     <string name="coming_soon">Coming soon</string>
-    <string name="notif_title">Battito: credit running out</string>
+    <string name="notif_title">HealthyInstantTracker: credit running out</string>
     <string name="notif_empty">The reading credit is used up.</string>
     <string name="notif_low">The credit is enough for only one more photo.</string>
-    <string name="notif_admin_hint">Top up on console.anthropic.com, then update the balance in Battito.</string>
+    <string name="notif_admin_hint">Top up on console.anthropic.com, then update the balance in HealthyInstantTracker.</string>
     <string name="notif_user_hint">Let the app manager know.</string>
     <string name="pdf_title">Blood pressure diary</string>
     <string name="pdf_period">Period of %1$d days: from %2$s to %3$s</string>

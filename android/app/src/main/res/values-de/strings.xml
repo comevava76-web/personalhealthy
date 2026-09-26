@@ -108,10 +108,10 @@
     <string name="mode_private_sub">Private Nutzung: Alle Fotos nutzen dein Guthaben</string>
     <string name="mode_user">Jeder zahlt selbst</string>
     <string name="coming_soon">Bald verfügbar</string>
-    <string name="notif_title">Battito: Guthaben fast aufgebraucht</string>
+    <string name="notif_title">HealthyInstantTracker: Guthaben fast aufgebraucht</string>
     <string name="notif_empty">Das Guthaben für Lesungen ist aufgebraucht.</string>
     <string name="notif_low">Das Guthaben reicht nur noch für ein Foto.</string>
-    <string name="notif_admin_hint">Lade auf console.anthropic.com auf und aktualisiere dann das Guthaben in Battito.</string>
+    <string name="notif_admin_hint">Lade auf console.anthropic.com auf und aktualisiere dann das Guthaben in HealthyInstantTracker.</string>
     <string name="notif_user_hint">Sag dem App-Verwalter Bescheid.</string>
     <string name="pdf_title">Blutdrucktagebuch</string>
     <string name="pdf_period">Zeitraum von %1$d Tagen: vom %2$s bis %3$s</string>

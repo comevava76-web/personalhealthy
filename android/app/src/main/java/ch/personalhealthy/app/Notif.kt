@@ -21,7 +21,7 @@ import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
 object Notif {
-    private const val CHANNEL = "credito"
+    private const val CHANNEL = "credito" // keep: existing notification channel id
     private const val ID_LOW = 1001
 
     private fun ensureChannel(ctx: Context) {
@@ -29,10 +29,10 @@ object Notif {
         nm.createNotificationChannel(NotificationChannel(CHANNEL, t(R.string.credit_title), NotificationManager.IMPORTANCE_DEFAULT))
     }
 
-    /** Avvisa una sola volta quando il credito basta al massimo per una foto; si riarma dopo una ricarica. */
+    /** Notifies once when the credit is enough for one more photo at most; re-arms after a top-up. */
     fun check(ctx: Context, c: Credit?, isAdmin: Boolean) {
         if (c == null || !c.configured) return
-        val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)
+        val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) // keep: existing storage name
         if (!c.low) {
             prefs.edit().putBoolean("lowNotified", false).apply()
             return
@@ -62,15 +62,16 @@ object Notif {
             NotificationManagerCompat.from(ctx).notify(ID_LOW, n)
             prefs.edit().putBoolean("lowNotified", true).apply()
         } catch (e: SecurityException) {
-            // permesso negato: riproveremo al prossimo controllo
+            // permission denied: we will try again at the next check
         }
     }
 
-    /** Controllo ogni ora, anche ad app chiusa: così avvisa anche se a consumare il credito è un altro familiare. */
+    /** Hourly check, even with the app closed: so it warns even when another family member uses up the credit. */
     fun schedule(ctx: Context) {
         val req = PeriodicWorkRequestBuilder<CreditWorker>(1, TimeUnit.HOURS)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
+        // keep the existing job name: renaming it would schedule a duplicate job
         WorkManager.getInstance(ctx).enqueueUniquePeriodicWork("controllo-credito", ExistingPeriodicWorkPolicy.KEEP, req)
     }
 }

@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/* ---------------- Colori ---------------- */
+/* ---------------- Colors ---------------- */
 
 object C {
     val Bg = Color(0xFF0F1D38)
@@ -95,7 +95,7 @@ object C {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Txt.init(this)   // testi nella lingua del telefono
+        Txt.init(this)   // texts in the phone's language
         Notif.schedule(this)
         setContent {
             MaterialTheme(
@@ -110,12 +110,12 @@ class MainActivity : ComponentActivity() {
 
 private fun toast(ctx: Context, msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
 
-/* ---------------- Navigazione e stato ---------------- */
+/* ---------------- Navigation and state ---------------- */
 
 @Composable
 fun App() {
     val ctx = LocalContext.current
-    val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) }
+    val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
     var screen by rememberSaveable { mutableStateOf("home") }
     val readings = remember { mutableStateListOf<Reading>() }
@@ -166,7 +166,7 @@ fun App() {
 
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         if (ok) {
-            takenAt = System.currentTimeMillis()   // data e ora: quelle dello scatto, non modificabili
+            takenAt = System.currentTimeMillis()   // date and time: those of the shot, cannot be changed
             screen = "scan"
             runScan()
         } else if (screen == "scan" && scan !is ScanState.Done) {
@@ -236,7 +236,7 @@ fun App() {
     }
 }
 
-/* ---------------- Elementi grafici comuni ---------------- */
+/* ---------------- Common UI elements ---------------- */
 
 @Composable
 fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -258,10 +258,10 @@ fun BigButton(text: String, color: Color = C.Sys, textColor: Color = Color.White
 }
 
 @Composable
-fun Header(title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null) {
+fun Header(title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null, titleSize: Int = 26) {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = C.Ink, fontSize = 26.sp, fontWeight = FontWeight.Light)
+            Text(title, color = C.Ink, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
             if (subtitle != null) Text(subtitle, color = C.Muted, fontSize = 14.sp)
         }
         if (action != null && onAction != null) TextButton(onClick = onAction) { Text(action, color = C.Muted) }
@@ -311,7 +311,7 @@ fun StatBox(label: String, value: String, note: String? = null, color: Color = C
     }
 }
 
-/* ---------------- Attivazione ---------------- */
+/* ---------------- Activation ---------------- */
 
 @Composable
 fun SetupScreen(onDone: (String) -> Unit) {
@@ -320,7 +320,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
     var err by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
-        Text("Battito", color = C.Ink, fontSize = 40.sp, fontWeight = FontWeight.ExtraLight)
+        Text(t(R.string.app_name), color = C.Ink, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight)
         EcgLine(Modifier.padding(vertical = 8.dp))
         Text(t(R.string.setup_intro), color = C.Muted, fontSize = 15.sp)
         Spacer(Modifier.height(20.dp))
@@ -353,7 +353,7 @@ fun HomeScreen(
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header("Battito", t(R.string.tagline), if (loading) "…" else t(R.string.refresh), onRefresh)
+        Header(t(R.string.app_name), t(R.string.tagline), if (loading) "…" else t(R.string.refresh), onRefresh, titleSize = 20)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
         val last = readings.lastOrNull()
@@ -462,7 +462,7 @@ fun WeekPanel(readings: List<Reading>) {
     val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
     val done = days.sumOf { d ->
         val l = readings.filter { Z.date(it.takenAt) == d }
-        (if (l.any { it.period == "mattina" }) 1 else 0) + (if (l.any { it.period == "sera" }) 1 else 0)
+        (if (l.any { it.period == "morning" }) 1 else 0) + (if (l.any { it.period == "evening" }) 1 else 0)
     }
     Panel {
         Row { Text(t(R.string.this_week), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.week_done, done), color = C.Muted, fontSize = 13.sp) }
@@ -470,8 +470,8 @@ fun WeekPanel(readings: List<Reading>) {
         Row(Modifier.fillMaxWidth()) {
             days.forEach { d ->
                 val l = readings.filter { Z.date(it.takenAt) == d }
-                val m = l.any { it.period == "mattina" }
-                val e = l.any { it.period == "sera" }
+                val m = l.any { it.period == "morning" }
+                val e = l.any { it.period == "evening" }
                 Column(Modifier.weight(1f).padding(horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(Z.weekday(d).trimEnd('.'), color = C.Muted, fontSize = 12.sp)
                     Text("${d.dayOfMonth}", color = if (d == today) C.Sys else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -489,7 +489,7 @@ fun WeekPanel(readings: List<Reading>) {
     }
 }
 
-/* ---------------- Lettura della foto ---------------- */
+/* ---------------- Photo reading ---------------- */
 
 @Composable
 fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit, onCancel: () -> Unit) {
@@ -620,7 +620,7 @@ fun ReportScreen(readings: List<Reading>, onBack: () -> Unit) {
 }
 
 
-/* ---------------- Credito ---------------- */
+/* ---------------- Credit ---------------- */
 
 @Composable
 fun CreditPanel(me: Me?, onSettings: () -> Unit) {
@@ -690,8 +690,8 @@ fun SettingsScreen(me: Me?, personId: String, onChanged: (Credit?) -> Unit, onBi
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
                 modifier = Modifier.fillMaxWidth()
             )
-            BigButton("Aggiungi ricarica", enabled = !busy) { send("topup") }
-            BigButton("Imposta come saldo attuale", color = C.Surface2, textColor = C.Ink, enabled = !busy) { send("set") }
+            BigButton(t(R.string.add_topup), enabled = !busy) { send("topup") }
+            BigButton(t(R.string.set_balance), color = C.Surface2, textColor = C.Ink, enabled = !busy) { send("set") }
             Text(
                 t(R.string.credit_help),
                 color = C.Muted, fontSize = 13.sp
@@ -701,13 +701,13 @@ fun SettingsScreen(me: Me?, personId: String, onChanged: (Credit?) -> Unit, onBi
         Panel {
             Text(t(R.string.who_pays), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            val mode = me?.billingMode ?: "privato"
-            ModeRow(t(R.string.mode_private), t(R.string.mode_private_sub), mode == "privato", true) {
-                if (mode != "privato") scope.launch {
-                    try { Repo.setBilling(personId, "privato"); onBillingChanged("privato") } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+            val mode = me?.billingMode ?: "private"
+            ModeRow(t(R.string.mode_private), t(R.string.mode_private_sub), mode == "private", true) {
+                if (mode != "private") scope.launch {
+                    try { Repo.setBilling(personId, "private"); onBillingChanged("private") } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                 }
             }
-            ModeRow(t(R.string.mode_user), t(R.string.coming_soon), mode == "utente", false) { }
+            ModeRow(t(R.string.mode_user), t(R.string.coming_soon), mode == "per_user", false) { }
         }
         Spacer(Modifier.height(24.dp))
     }

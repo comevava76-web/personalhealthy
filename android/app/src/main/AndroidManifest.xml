@@ -13,9 +13,9 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Battito"
+        android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Battito">
+        android:theme="@style/Theme.HealthyInstantTracker">
 
         <activity
             android:name=".MainActivity"

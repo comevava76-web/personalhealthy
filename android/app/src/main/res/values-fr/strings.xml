@@ -108,10 +108,10 @@
     <string name="mode_private_sub">Usage privé : toutes les photos utilisent votre crédit</string>
     <string name="mode_user">Chaque utilisateur paie</string>
     <string name="coming_soon">Bientôt disponible</string>
-    <string name="notif_title">Battito : crédit presque épuisé</string>
+    <string name="notif_title">HealthyInstantTracker : crédit presque épuisé</string>
     <string name="notif_empty">Le crédit de lecture est épuisé.</string>
     <string name="notif_low">Le crédit suffit pour une seule photo.</string>
-    <string name="notif_admin_hint">Rechargez sur console.anthropic.com, puis mettez à jour le solde dans Battito.</string>
+    <string name="notif_admin_hint">Rechargez sur console.anthropic.com, puis mettez à jour le solde dans HealthyInstantTracker.</string>
     <string name="notif_user_hint">Prévenez le gestionnaire de l\'app.</string>
     <string name="pdf_title">Journal de tension artérielle</string>
     <string name="pdf_period">Période de %1$d jours : du %2$s au %3$s</string>

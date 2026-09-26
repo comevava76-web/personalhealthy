@@ -108,10 +108,10 @@
     <string name="mode_private_sub">Uso privato: tutte le foto usano il tuo credito</string>
     <string name="mode_user">Ogni utente per sé</string>
     <string name="coming_soon">Presto disponibile</string>
-    <string name="notif_title">Battito: credito quasi finito</string>
+    <string name="notif_title">HealthyInstantTracker: credito quasi finito</string>
     <string name="notif_empty">Il credito per le letture è finito.</string>
     <string name="notif_low">Il credito basta ancora per una sola foto.</string>
-    <string name="notif_admin_hint">Ricarica su console.anthropic.com e poi aggiorna il saldo in Battito.</string>
+    <string name="notif_admin_hint">Ricarica su console.anthropic.com e poi aggiorna il saldo in HealthyInstantTracker.</string>
     <string name="notif_user_hint">Avvisa chi gestisce l\'app.</string>
     <string name="pdf_title">Diario della pressione arteriosa</string>
     <string name="pdf_period">Periodo di %1$d giorni: dal %2$s al %3$s</string>

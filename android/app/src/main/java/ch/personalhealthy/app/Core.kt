@@ -34,24 +34,24 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/* ---------------- Testi nella lingua del telefono ---------------- */
+/* ---------------- Texts in the phone's language ---------------- */
 
 object Txt {
     @Volatile var res: Resources? = null
     fun init(ctx: Context) { res = ctx.resources }
 }
 
-/** Testo tradotto (inglese, italiano, tedesco o francese secondo il telefono). */
+/** Translated text (English, Italian, German or French, following the phone). */
 fun t(id: Int, vararg args: Any): String = Txt.res?.getString(id, *args) ?: ""
 
 fun periodLabel(p: String): String = when (p) {
-    "mattina" -> t(R.string.period_morning)
-    "pomeriggio" -> t(R.string.period_afternoon)
-    "sera" -> t(R.string.period_evening)
+    "morning" -> t(R.string.period_morning)
+    "afternoon" -> t(R.string.period_afternoon)
+    "evening" -> t(R.string.period_evening)
     else -> p
 }
 
-/* ---------------- Modelli ---------------- */
+/* ---------------- Models ---------------- */
 
 data class Reading(val id: String, val takenAt: Long, val period: String, val sis: Int, val dia: Int, val pul: Int?)
 
@@ -60,7 +60,7 @@ data class ScanResult(
     val note: String, val takenAt: Long, val period: String, val credit: Credit?
 )
 
-/** Credito per le letture AI, tenuto dal server (in dollari). */
+/** Credit for AI readings, kept by the server (in dollars). */
 data class Credit(
     val configured: Boolean, val remaining: Double?, val avgCost: Double,
     val photosLeft: Int?, val low: Boolean, val empty: Boolean
@@ -98,17 +98,17 @@ enum class Level(private val labelRes: Int, val color: Long) {
     val label: String get() = t(labelRes)
 }
 
-const val SOGLIA_SIS = 135
-const val SOGLIA_DIA = 85
+const val THRESHOLD_SYS = 135
+const val THRESHOLD_DIA = 85
 
 fun classify(s: Int, d: Int): Level = when {
     s >= 160 || d >= 100 -> Level.ALERT
-    s >= SOGLIA_SIS || d >= SOGLIA_DIA -> Level.WARN
+    s >= THRESHOLD_SYS || d >= THRESHOLD_DIA -> Level.WARN
     s < 90 || d < 60 -> Level.LOW
     else -> Level.OK
 }
 
-/* ---------------- Date e orari (ora di Lugano) ---------------- */
+/* ---------------- Dates and times (Lugano time) ---------------- */
 
 object Z {
     val zone: ZoneId = ZoneId.of("Europe/Zurich")
@@ -136,7 +136,7 @@ object Z {
 
 fun cap(s: String) = s.replaceFirstChar { it.uppercase() }
 
-/* ---------------- Periodi e statistiche ---------------- */
+/* ---------------- Periods and statistics ---------------- */
 
 data class PeriodInfo(val ok: Boolean, val missing: Int, val start: LocalDate, val end: LocalDate, val list: List<Reading>)
 
@@ -163,8 +163,8 @@ data class Stats(
 private fun avg(l: List<Int>): Int? = if (l.isEmpty()) null else l.average().roundToInt()
 
 fun stats(list: List<Reading>): Stats {
-    val m = list.filter { it.period == "mattina" }
-    val e = list.filter { it.period == "sera" }
+    val m = list.filter { it.period == "morning" }
+    val e = list.filter { it.period == "evening" }
     return Stats(
         n = list.size,
         days = list.map { Z.date(it.takenAt) }.toSet().size,
@@ -173,14 +173,14 @@ fun stats(list: List<Reading>): Stats {
         mS = avg(m.map { it.sis }), mD = avg(m.map { it.dia }), mN = m.size,
         eS = avg(e.map { it.sis }), eD = avg(e.map { it.dia }), eN = e.size,
         maxS = list.maxByOrNull { it.sis }, maxD = list.maxByOrNull { it.dia }, minS = list.minByOrNull { it.sis },
-        over = list.count { it.sis >= SOGLIA_SIS || it.dia >= SOGLIA_DIA }
+        over = list.count { it.sis >= THRESHOLD_SYS || it.dia >= THRESHOLD_DIA }
     )
 }
 
-/* ---------------- Chiave anonima del telefono ---------------- */
+/* ---------------- The phone's anonymous key ---------------- */
 
 object Keys {
-    private const val ALIAS = "battito_device_key"
+    private const val ALIAS = "battito_device_key" // keep: renaming it would lose the key already on the phone
 
     private fun ensure(): KeyPair {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -208,7 +208,7 @@ object Keys {
     }
 }
 
-/* ---------------- Collegamento al server ---------------- */
+/* ---------------- Server connection ---------------- */
 
 class ApiException(val code: String) : Exception(errorText(code))
 
@@ -307,10 +307,10 @@ object Repo {
 
     suspend fun me(pid: String): Me {
         val j = Api.call("GET", "/v1/me", null, pid)
-        return Me(j.optBoolean("isAdmin", false), j.optString("billingMode", "privato"), parseCredit(j.optJSONObject("credit")))
+        return Me(j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")))
     }
 
-    /** action = "topup" (aggiungi una ricarica) oppure "set" (imposta il saldo attuale) */
+    /** action = "topup" (add a top-up) or "set" (set the current balance) */
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {
         val j = Api.call("POST", "/v1/admin/credit", JSONObject().put("action", action).put("amount", amount), pid)
         return parseCredit(j.optJSONObject("credit"))
@@ -329,7 +329,7 @@ object Repo {
     }
 }
 
-/* ---------------- Preparazione della foto ---------------- */
+/* ---------------- Photo preparation ---------------- */
 
 object Img {
     fun prepare(f: File): String {

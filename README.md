@@ -1,69 +1,69 @@
 # PersonalHealthy
 
-Archivio personale della salute. Primo modulo: **PersonalHealthy**, l'app Android per il diario della pressione.
+A personal health archive. First module: **HealthyInstantTracker**, the Android app for a blood-pressure diary.
 
-Battito serve a fotografare il misuratore di pressione, leggere i valori in automatico e preparare il report per il medico.
+HealthyInstantTracker lets you photograph your blood-pressure monitor, reads the values automatically and prepares the report for your doctor.
 
-## Come è fatto
+## How it is built
 
-- **app Android** (cartella `android`): fotocamera del telefono, lettura, grafico, report PDF ed Excel.
-- **server** (cartella `worker`): riceve la foto, fa leggere i numeri all'AI, salva le misure. Gira gratis su Cloudflare.
-- **database PersonalHealthy**: Cloudflare D1 chiamato `personalhealthy`, gratuito, con i dati vincolati all'Unione Europea.
-  Lo crea GitHub alla prima costruzione, insieme alle tabelle (`worker/schema.sql`).
-  Tutto l'accesso ai dati passa da un solo punto del server: il giorno in cui servirà PostgreSQL o Azure, il passaggio sarà piccolo.
-- **GitHub** costruisce tutto da solo: a ogni aggiornamento pubblica il server e prepara l'APK.
+- **Android app** (`android` folder): phone camera, reading, chart, PDF and Excel report.
+- **Server** (`worker` folder): receives the photo, has the AI read the numbers, stores the measurements. Runs for free on Cloudflare.
+- **PersonalHealthy database**: a free Cloudflare D1 database called `personalhealthy`, with data bound to the European Union.
+  GitHub creates it on the first build, together with its tables (`worker/schema.sql`).
+  All data access goes through a single point in the server: if PostgreSQL or Azure is needed one day, the move will be small.
+- **GitHub** builds everything by itself: on every update it deploys the server and prepares the APK.
 
-Regole garantite dal server:
-- i valori li decide solo la lettura della foto, il telefono non può cambiarli;
-- data e ora sono quelle dello scatto, controllate dal server;
-- nessun nome né email: ogni telefono ha una chiave anonima protetta al suo interno;
-- solo chi conosce il codice di famiglia può attivare l'app.
+Rules enforced by the server:
+- the blood-pressure values come only from reading the photo; the phone cannot change them;
+- date and time are those of the shot, checked by the server;
+- no names and no emails: each phone has an anonymous key protected inside the phone itself;
+- only people who know the family code can activate the app.
 
-## Da fare una volta sola
+## One-time setup
 
 ### 1. GitHub
-1. Crea un repository **privato** chiamato `battito`.
-2. Carica tutto il contenuto di questa cartella, **compresa la cartella `.github`** (su Mac è nascosta: premi Cmd+Shift+. per vederla).
+1. Create a **private** repository called `personalhealthy`.
+2. Upload the whole content of this folder, **including the `.github` folder** (on a Mac it is hidden: press Cmd+Shift+. to see it).
 
 ### 2. Cloudflare
-1. Nel pannello di Cloudflare apri **Workers e Pages** almeno una volta, così si attiva l'indirizzo `workers.dev`.
-2. Vai su Profilo → **API Tokens** → Create Token → modello **"Edit Cloudflare Workers"**.
-   Aggiungi anche il permesso **Account → D1 → Edit**. Crea il token e copialo.
+1. In the Cloudflare dashboard, open **Workers & Pages** at least once so the `workers.dev` address is activated.
+2. Go to Profile → **API Tokens** → Create Token → template **"Edit Cloudflare Workers"**.
+   Also add the permission **Account → D1 → Edit**. Create the token and copy it.
 
-### 3. Chiave per la lettura AI
-1. Vai su console.anthropic.com, carica un piccolo credito (bastano pochi dollari per mesi di uso familiare).
-2. API Keys → Create Key → copiala.
+### 3. Key for the AI reading
+1. Go to console.anthropic.com and load a small credit (a few dollars are enough for months of family use).
+2. API Keys → Create Key → copy it.
 
-### 4. Segreti su GitHub
-Nel repository: Settings → Secrets and variables → Actions → **New repository secret**. Creane tre (l'Account ID di Cloudflare è già nel progetto):
+### 4. Secrets on GitHub
+In the repository: Settings → Secrets and variables → Actions → **New repository secret**. Create three of them (the Cloudflare Account ID is already in the project):
 
-| Nome | Valore |
+| Name | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | il token del punto 2 |
-| `ANTHROPIC_API_KEY` | la chiave del punto 3 |
-| `FAMILY_CODE` | un codice inventato da te (almeno 6 caratteri), da dare solo ai familiari |
+| `CLOUDFLARE_API_TOKEN` | the token from step 2 |
+| `ANTHROPIC_API_KEY` | the key from step 3 |
+| `FAMILY_CODE` | a code you make up (at least 6 characters), to give only to family members |
 
-### 5. Costruzione
-Nel repository apri **Actions** → "Costruisci PersonalHealthy" → **Run workflow**. Dopo 5-8 minuti è pronto.
+### 5. Build
+In the repository open **Actions** → "Build PersonalHealthy" → **Run workflow**. It is ready after 5-8 minutes.
 
-### 6. Installazione sul telefono
-1. Dal telefono apri il repository → **Releases** → scarica `PersonalHealthy-0.1.x.apk`.
-2. Aprilo: Android chiederà di consentire l'installazione da questa fonte. Consenti.
-3. Apri Battito e inserisci il codice di famiglia.
+### 6. Install on the phone
+1. On the phone, open the repository → **Releases** → download `HealthyInstantTracker-0.1.x.apk`.
+2. Open it: Android will ask you to allow installs from this source. Allow it.
+3. Open HealthyInstantTracker and enter the family code.
 
-Le versioni successive si installano sopra la precedente, senza perdere nulla.
+Later versions install over the previous one without losing anything.
 
-## Credito per le letture
-- Il **primo telefono attivato** diventa quello di chi gestisce l'app: attivalo tu per primo.
-- In home, sotto "Credito letture", tocca **Gestisci** e scrivi quanto hai caricato (per esempio 5) con **Aggiungi ricarica**.
-- A ogni foto il server sottrae il costo reale della lettura e l'app mostra saldo e foto rimanenti.
-- Quando il credito basta per una sola foto arriva una notifica. A credito finito le foto non vengono più lette finché non ricarichi.
-- Il saldo è una stima tenuta dal server: se non coincide con la console, usa **Imposta come saldo attuale**.
+## Reading credit
+- The **first phone activated** becomes the one of the person who manages the app: activate yours first.
+- On the home screen, under "Reading credit", tap **Manage**, enter how much you loaded (for example 5) and tap **Add top-up**.
+- For every photo the server subtracts the real cost of the reading, and the app shows the balance and the photos left.
+- When the credit is enough for only one more photo, a notification arrives. When the credit is used up, photos are no longer read until you top up.
+- The balance is an estimate kept by the server: if it does not match the console, use **Set as current balance**.
 
-## Lingue
-L'app usa la lingua del telefono: inglese, italiano, tedesco o francese (in tutte le altre lingue appare in inglese).
-Anche report PDF ed Excel, notifiche e messaggi di errore seguono la lingua del telefono.
-I testi sono in `android/app/src/main/res/values*/strings.xml`: per aggiungere una lingua basta una nuova cartella `values-xx`.
+## Languages
+The app uses the phone's language: English, Italian, German or French (in any other language it appears in English).
+PDF and Excel reports, notifications and error messages also follow the phone's language.
+The texts are in `android/app/src/main/res/values*/strings.xml`: to add a language, just add a new `values-xx` folder.
 
-## Nota sul file personalhealthy.keystore
-Serve a firmare l'app sempre con la stessa chiave, così gli aggiornamenti si installano sopra. Per questo il repository deve restare **privato**.
+## About the personalhealthy.keystore file
+It signs the app always with the same key, so updates install over the previous version. This is why the repository must stay **private**.

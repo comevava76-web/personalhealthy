@@ -1,4 +1,4 @@
-name: Costruisci PersonalHealthy
+name: Build PersonalHealthy
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   server:
-    name: Pubblica il server
+    name: Deploy the server
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Database PersonalHealthy (D1, dati vincolati all'Unione Europea)
+      - name: PersonalHealthy database (D1, data bound to the European Union)
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -30,30 +30,30 @@ jobs:
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
           ID=$(curl -s -H "$AUTH" "$API?name=personalhealthy" | jq -r '.result[]? | select(.name=="personalhealthy") | .uuid' | head -1)
           if [ -z "$ID" ]; then
-            echo "Creo il database personalhealthy in Europa"
+            echo "Creating the personalhealthy database in Europe"
             ID=$(curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API" \
                  --data '{"name":"personalhealthy","jurisdiction":"eu"}' | jq -r '.result.uuid // empty')
           fi
-          if [ -z "$ID" ]; then echo "Database non creato: controlla che il token abbia il permesso D1 Edit"; exit 1; fi
+          if [ -z "$ID" ]; then echo "Database not created: check that the token has the D1 Edit permission"; exit 1; fi
           echo "Database: $ID"
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
           npx wrangler d1 execute personalhealthy --remote --file=schema.sql
 
-      - name: Sottodominio workers.dev
+      - name: workers.dev subdomain
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           U="https://api.cloudflare.com/client/v4/accounts/6c6de5312c59db866e1a8e07d3c21c63/workers/subdomain"
           R=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$U")
-          echo "Controllo: $(echo "$R" | jq -c '{success, subdomain: .result.subdomain, errors}')"
+          echo "Check: $(echo "$R" | jq -c '{success, subdomain: .result.subdomain, errors}')"
           if [ -z "$(echo "$R" | jq -r '.result.subdomain // empty')" ]; then
-            echo "Registro il sottodominio comevava76"
+            echo "Registering the comevava76 subdomain"
             curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
               "$U" --data '{"subdomain":"comevava76"}' | jq -c '{success, errors}'
           fi
 
       - id: deploy
-        name: Pubblica il server
+        name: Deploy the server
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -68,12 +68,12 @@ jobs:
           rm -f secrets.json
           URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
           if [ -z "$URL" ]; then URL="${{ vars.BATTITO_API_URL }}"; fi
-          if [ -z "$URL" ]; then echo "Indirizzo del server non trovato"; exit 1; fi
-          curl -sf "$URL/v1/health" && echo " <- server raggiungibile"
+          if [ -z "$URL" ]; then echo "Server address not found"; exit 1; fi
+          curl -sf "$URL/v1/health" && echo " <- server reachable"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
   apk:
-    name: Costruisci l'APK
+    name: Build the APK
     needs: server
     runs-on: ubuntu-latest
     steps:
@@ -85,21 +85,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Compila
+      - name: Compile
         working-directory: android
         env:
           BATTITO_API_URL: ${{ needs.server.outputs.url }}
         run: gradle assembleRelease --no-daemon --stacktrace
-      - name: Prepara il file
-        run: cp android/app/build/outputs/apk/release/app-release.apk "PersonalHealthy-0.1.${{ github.run_number }}.apk"
+      - name: Prepare the file
+        run: cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: PersonalHealthy-apk
-          path: PersonalHealthy-*.apk
-      - name: Pubblica tra le versioni (Releases)
+          name: HealthyInstantTracker-apk
+          path: HealthyInstantTracker-*.apk
+      - name: Publish to Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v0.1.${{ github.run_number }}" "PersonalHealthy-0.1.${{ github.run_number }}.apk" \
-            --title "PersonalHealthy 0.1.${{ github.run_number }}" \
-            --notes "Scarica il file .apk dal telefono e installalo." --repo "${{ github.repository }}"
+          gh release create "v0.1.${{ github.run_number }}" "HealthyInstantTracker-0.1.${{ github.run_number }}.apk" \
+            --title "HealthyInstantTracker 0.1.${{ github.run_number }}" \
+            --notes "Download the .apk file on your phone and install it." --repo "${{ github.repository }}"

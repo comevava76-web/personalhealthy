@@ -19,7 +19,7 @@ android {
         buildConfigField("String", "API_URL", "\"$apiUrl\"")
     }
 
-    // Chiave fissa: così ogni nuova versione si installa sopra la precedente senza perdere nulla
+    // Fixed signing key: every new version installs over the previous one without losing anything
     signingConfigs {
         create("family") {
             storeFile = file("personalhealthy.keystore")

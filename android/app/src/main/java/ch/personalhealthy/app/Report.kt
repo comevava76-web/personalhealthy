@@ -27,7 +27,7 @@ val PRINT_PAL = ChartPal(
     sys = 0xFFD93A52.toInt(), dia = 0xFF2F7FD6.toInt(), stick = 0x2E13223F
 )
 
-/** Grafico unico per schermo e PDF: fascia tra minima e massima, linee, soglie 135/85, picco. */
+/** One chart for screen and PDF: band between diastolic and systolic, lines, 135/85 thresholds, peak. */
 fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float) {
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
     p.color = pal.bg
@@ -54,7 +54,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.text; textSize = fs }
     val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.grid; strokeWidth = 1f; style = Paint.Style.STROKE }
 
-    // griglia orizzontale
+    // horizontal grid
     val step = if (hi - lo > 120) 30 else 20
     var v = ((lo + step - 1) / step) * step
     text.textAlign = Paint.Align.RIGHT
@@ -64,7 +64,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
         v += step
     }
 
-    // giorni
+    // days
     text.textAlign = Paint.Align.CENTER
     val every = if (days <= 7) 1 else if (days <= 15) 2 else 4
     for (i in 0 until days) {
@@ -77,17 +77,17 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
         }
     }
 
-    // soglie tratteggiate
+    // dashed thresholds
     val dash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = fs * 0.1f; pathEffect = DashPathEffect(floatArrayOf(fs * 0.5f, fs * 0.5f), 0f)
     }
-    if (SOGLIA_SIS in (lo + 1) until hi) { dash.color = pal.sys; dash.alpha = 140; c.drawLine(padL, y(SOGLIA_SIS), w - padR, y(SOGLIA_SIS), dash) }
-    if (SOGLIA_DIA in (lo + 1) until hi) { dash.color = pal.dia; dash.alpha = 140; c.drawLine(padL, y(SOGLIA_DIA), w - padR, y(SOGLIA_DIA), dash) }
+    if (THRESHOLD_SYS in (lo + 1) until hi) { dash.color = pal.sys; dash.alpha = 140; c.drawLine(padL, y(THRESHOLD_SYS), w - padR, y(THRESHOLD_SYS), dash) }
+    if (THRESHOLD_DIA in (lo + 1) until hi) { dash.color = pal.dia; dash.alpha = 140; c.drawLine(padL, y(THRESHOLD_DIA), w - padR, y(THRESHOLD_DIA), dash) }
 
     if (list.isEmpty()) return
     val pts = list.sortedBy { it.takenAt }
 
-    // fascia minima-massima
+    // diastolic-systolic band
     val bw = (cw / days / 6f).coerceIn(fs * 0.3f, fs * 0.8f)
     val stick = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.stick }
     pts.forEach { r ->
@@ -95,7 +95,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
         c.drawRoundRect(RectF(cx - bw / 2, y(r.sis), cx + bw / 2, y(r.dia)), bw / 2, bw / 2, stick)
     }
 
-    // linee e punti
+    // lines and points
     fun series(pick: (Reading) -> Int, col: Int, limit: Int) {
         val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = col; alpha = 140; strokeWidth = fs * 0.16f; style = Paint.Style.STROKE }
         val path = Path()
@@ -109,10 +109,10 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
             c.drawCircle(x(r.takenAt), y(pick(r)), fs * 0.36f, ring)
         }
     }
-    series({ it.sis }, pal.sys, SOGLIA_SIS)
-    series({ it.dia }, pal.dia, SOGLIA_DIA)
+    series({ it.sis }, pal.sys, THRESHOLD_SYS)
+    series({ it.dia }, pal.dia, THRESHOLD_DIA)
 
-    // picco della massima
+    // systolic peak
     val pk = pts.maxBy { it.sis }
     val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.sys; style = Paint.Style.STROKE; strokeWidth = fs * 0.12f }
     c.drawCircle(x(pk.takenAt), y(pk.sis), fs * 0.85f, ring)
@@ -143,7 +143,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         c.drawText(t(R.string.pdf_footer), left, 822f, small)
     }
 
-    // pagina 1: riepilogo e grafico
+    // page 1: summary and chart
     var page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo++).create())
     var c = page.canvas
     c.drawText(t(R.string.pdf_title), left, 60f, title)
@@ -176,7 +176,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     footer(c)
     doc.finishPage(page)
 
-    // pagine successive: tabella di tutte le misure
+    // following pages: table of all readings
     val cols = floatArrayOf(left, 120f, 170f, 250f, 320f, 390f, 460f)
     val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul), t(R.string.col_eval))
     val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
@@ -202,8 +202,8 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
             val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-", classify(r.sis, r.dia).label)
             cells.forEachIndexed { k, s ->
                 val pnt = when {
-                    k == 3 && r.sis >= SOGLIA_SIS -> red
-                    k == 4 && r.dia >= SOGLIA_DIA -> red
+                    k == 3 && r.sis >= THRESHOLD_SYS -> red
+                    k == 4 && r.dia >= THRESHOLD_DIA -> red
                     else -> cell
                 }
                 c.drawText(s, cols[k] + 4f, y + 13f, pnt)
@@ -222,7 +222,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     return file
 }
 
-/* ---------------- CSV per Excel ---------------- */
+/* ---------------- CSV for Excel ---------------- */
 
 fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
     val per = periodInfo(all, n)
