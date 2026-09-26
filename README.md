@@ -1,6 +1,6 @@
 # PersonalHealthy
 
-Archivio personale della salute. Primo modulo: **Battito**, l'app Android per il diario della pressione.
+Archivio personale della salute. Primo modulo: **PersonalHealthy**, l'app Android per il diario della pressione.
 
 Battito serve a fotografare il misuratore di pressione, leggere i valori in automatico e preparare il report per il medico.
 
