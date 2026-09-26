@@ -127,15 +127,32 @@ class MainActivity : FragmentActivity() {
     private var locked by mutableStateOf(true)
     private var hiddenAt = 0L
     private var asking = false   // the fingerprint / screen-lock window is open
+    private var dismissed = false // the person closed that window (back): wait for the Unlock button
     private lateinit var prompt: BiometricPrompt
 
     private fun lockAvailable(): Boolean =
         getSharedPreferences("battito", Context.MODE_PRIVATE).getString("personId", null) != null &&
             BiometricManager.from(this).canAuthenticate(LOCK_AUTH) == BiometricManager.BIOMETRIC_SUCCESS
 
-    fun unlock() {
+    /**
+     * [fromButton]: the Unlock button always opens the window again, at the first tap. Any window still
+     * closing is cancelled first, and the new one opens a moment later: the biometric library ignores a
+     * request made while the previous window is still going away, which needed several taps before.
+     */
+    fun unlock(fromButton: Boolean = false) {
         if (!lockAvailable()) { locked = false; return }
-        if (asking) return
+        if (fromButton) {
+            dismissed = false
+            asking = false
+            prompt.cancelAuthentication()
+            window.decorView.postDelayed({ if (locked && !asking) showPrompt() }, 350)
+            return
+        }
+        if (asking || dismissed) return
+        showPrompt()
+    }
+
+    private fun showPrompt() {
         asking = true
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()
@@ -160,6 +177,7 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         hiddenAt = SystemClock.elapsedRealtime()
+        dismissed = false   // next time the app is opened, ask again by itself
     }
 
     // The camera (or rotating the phone) can make Android rebuild this screen, or even restart the app:
@@ -178,9 +196,15 @@ class MainActivity : FragmentActivity() {
         }
         Txt.init(this)   // texts in the phone's language
         prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { asking = false; locked = false }
-            // cancelled or too many attempts: stays locked, the Unlock button tries again
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { asking = false }
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                asking = false; dismissed = false; locked = false
+            }
+            // closed with back, cancelled or too many attempts: stays locked, and does not reopen by itself
+            // (it would come back at once after back); the Unlock button opens it again
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                asking = false
+                dismissed = true
+            }
         })
         Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
@@ -194,7 +218,7 @@ class MainActivity : FragmentActivity() {
                 Box(Modifier.fillMaxSize()) {
                     App()
                     // drawn over the app, so what was on screen (a photo being read, for example) is kept
-                    if (locked) LockScreen { unlock() }
+                    if (locked) LockScreen { unlock(fromButton = true) }
                 }
             }
         }
