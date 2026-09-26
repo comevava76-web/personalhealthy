@@ -46,11 +46,11 @@ fun dailyAverages(list: List<Reading>): List<DayPoint> =
 
 /**
  * The one blood-pressure chart, used on the Blood pressure tab, the Report tab and in the PDF.
- * Points are daily averages; smooth lines for systolic, diastolic and pulse on one "mmHg / bpm" axis.
+ * Points are daily averages; smooth lines for systolic, diastolic and pulse (pulse can be left out) on one "mmHg / bpm" axis.
  * Plain background, no reference lines and no coloured zones: the app does not judge the values.
  * Only the day number under each day.
  */
-fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float) {
+fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float, pulse: Boolean = true) {
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
     p.color = pal.bg
     c.drawRect(0f, 0f, w, h, p)
@@ -65,7 +65,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     val bottom = padT + ch
 
     val pts = dailyAverages(list)
-    val vals = pts.flatMap { listOfNotNull(it.sis, it.dia, it.pul) }
+    val vals = pts.flatMap { listOfNotNull(it.sis, it.dia, if (pulse) it.pul else null) }
     val lo = ((minOf(vals.minOrNull() ?: 60, 60) - 10) / 10) * 10
     val hi = ((maxOf(vals.maxOrNull() ?: 150, 150) + 19) / 10) * 10
     fun y(v: Int): Float = padT + ch * (1f - (v - lo).toFloat() / (hi - lo).toFloat())
@@ -113,7 +113,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
             if (pal.outline != 0) c.drawCircle(px, py, fs * 0.3f, ring)
         }
     }
-    series(pul, PUL_COLOR)
+    if (pulse) series(pul, PUL_COLOR)
     series(dia, DIA_COLOR)
     series(sys, SYS_COLOR)
 }

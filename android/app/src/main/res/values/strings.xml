@@ -24,6 +24,9 @@
     <string name="last7">Last 7 days</string>
     <string name="chart_title">Trend</string>
     <string name="week_hint">One value per day: the average of all that day\'s readings. Top: systolic, bottom: diastolic.</string>
+    <string name="summary_title">7-day summary</string>
+    <string name="summary_highest">Highest</string>
+    <string name="summary_avg">Average</string>
     <string name="n_readings">%d readings</string>
     <string name="peak_sys">Highest systolic</string>
     <string name="recent">Recent readings</string>

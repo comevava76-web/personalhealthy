@@ -23,6 +23,9 @@
     <string name="last7">7 derniers jours</string>
     <string name="chart_title">Évolution</string>
     <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. En haut la systolique, en bas la diastolique.</string>
+    <string name="summary_title">Résumé sur 7 jours</string>
+    <string name="summary_highest">Plus élevées</string>
+    <string name="summary_avg">Moyenne</string>
     <string name="n_readings">%d mesures</string>
     <string name="peak_sys">Systolique la plus haute</string>
     <string name="recent">Mesures récentes</string>
