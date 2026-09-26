@@ -500,7 +500,7 @@ fun App() {
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
-                        Tab.REPORT.key -> ReportScreen(readings)
+                        Tab.REPORT.key -> ReportScreen(readings, onShowAll = { screen = "all" })
                         Tab.CREDIT.key -> CreditScreen(
                             me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true }
@@ -510,7 +510,6 @@ fun App() {
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
                             onVoice = { openVoice() },
-                            onShowAll = { screen = "all" },
                             onDelete = { r ->
                                 val pid = personId ?: return@HomeScreen
                                 scope.launch {
@@ -751,7 +750,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit, onShowAll: () -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -781,18 +780,13 @@ fun HomeScreen(
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
-        // only today's readings here; every other one is on the "All readings" screen
+        // only today's readings here; the full list is at the bottom of the Report tab
         val todays = readings.filter { Z.date(it.takenAt) == Z.today() }
         Text(t(R.string.today_readings), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
         if (todays.isEmpty()) {
             Panel { Text(t(R.string.no_readings_today), color = C.Muted, fontSize = 14.sp) }
         } else {
             todays.reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
-        }
-        if (readings.isNotEmpty()) {
-            TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
-            }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -1194,7 +1188,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 /* ---------------- Report ---------------- */
 
 @Composable
-fun ReportScreen(readings: List<Reading>) {
+fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
     val infos = listOf(7, 15, 30).associateWith { periodInfo(readings, it) }
@@ -1221,6 +1215,9 @@ fun ReportScreen(readings: List<Reading>) {
 
         if (per.list.isEmpty()) {
             Panel { Text(t(R.string.report_empty), color = C.Muted) }
+            if (readings.isNotEmpty()) TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
+            }
             return@Column
         }
 
@@ -1257,6 +1254,10 @@ fun ReportScreen(readings: List<Reading>) {
         }
         BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
             try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
+        }
+        // the archive: every reading, to check or delete one, and "Delete all readings"
+        TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
+            Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
         }
         Spacer(Modifier.height(24.dp))
     }
