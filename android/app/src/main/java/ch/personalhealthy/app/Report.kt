@@ -234,8 +234,8 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     doc.finishPage(page)
 
     // following pages: table of all readings
-    val cols = floatArrayOf(left, 120f, 170f, 250f, 330f, 410f)
-    val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul))
+    val cols = floatArrayOf(left, 120f, 170f, 250f, 320f, 390f, 460f)
+    val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul), t(R.string.col_source))
     val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
     val cell = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF13223F.toInt(); textSize = 10f }
     val band = Paint().apply { color = 0xFFF4F7FC.toInt() }
@@ -255,7 +255,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         while (i < list.size && y < 790f) {
             val r = list[i]
             if (row % 2 == 1) c.drawRect(left, y, right, y + 18f, band)
-            val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-")
+            val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-", sourceLabel(r.source))
             cells.forEachIndexed { k, s -> c.drawText(s, cols[k] + 4f, y + 13f, cell) }
             y += 18f; i++; row++
         }
@@ -276,10 +276,10 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
 fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
     val per = periodInfo(all, n)
     val sb = StringBuilder("\uFEFF")
-    sb.append(listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys) + " (mmHg)", t(R.string.legend_dia) + " (mmHg)", t(R.string.label_pul)).joinToString(";"))
+    sb.append(listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys) + " (mmHg)", t(R.string.legend_dia) + " (mmHg)", t(R.string.label_pul), t(R.string.col_source)).joinToString(";"))
     sb.append("\r\n")
     per.list.forEach { r ->
-        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis, r.dia, r.pul ?: "").joinToString(";"))
+        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis, r.dia, r.pul ?: "", sourceLabel(r.source)).joinToString(";"))
         sb.append("\r\n")
     }
     val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }

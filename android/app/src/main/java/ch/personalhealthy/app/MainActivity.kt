@@ -2,7 +2,10 @@ package ch.personalhealthy.app
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.app.Activity
 import android.content.Intent
+import android.speech.RecognizerIntent
+import java.util.Locale
 import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
@@ -48,6 +51,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +74,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -316,6 +321,30 @@ fun App() {
         try { camera.launch(photoUri) } catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.no_camera)) }
     }
 
+    // Values said aloud: the phone's speech recognition, then a confirmation before saving
+    var voice by remember { mutableStateOf<Triple<Int, Int, Int?>?>(null) }
+    var voiceAt by rememberSaveable { mutableLongStateOf(0L) }   // when the values were said
+    var voiceUnusual by remember { mutableStateOf<List<String>>(emptyList()) }
+    var voiceSaving by remember { mutableStateOf(false) }
+    var voiceProblem by remember { mutableStateOf<String?>(null) }
+    val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        if (res.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val texts = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).orEmpty()
+        val sp = parseSpoken(texts)
+        voice = sp.values
+        voiceUnusual = sp.unusual
+        if (sp.problem != null) voiceProblem = sp.problem
+        else { voiceAt = System.currentTimeMillis(); screen = "voice" }   // shown full screen: saved only after Save
+    }
+    fun openVoice() {
+        val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, t(R.string.voice_prompt))
+            .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+        try { speech.launch(i) } catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.voice_unavailable)) }
+    }
+
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(personId) {
         reload()
@@ -356,6 +385,25 @@ fun App() {
                 onReplaceKey = { openKeySteps() },
                 onCancel = { screen = "tabs"; scan = ScanState.Idle }
             )
+            screen == "voice" && voice != null -> VoiceScreen(
+                values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
+                onSave = {
+                    val pid = personId ?: return@VoiceScreen
+                    val (sis, dia, pul) = voice!!
+                    voiceSaving = true
+                    scope.launch {
+                        try {
+                            Repo.voice(pid, sis, dia, pul ?: return@launch, voiceAt)
+                            toast(ctx, t(R.string.saved))
+                            voice = null; screen = "tabs"; tab = Tab.BP.key
+                            reload()
+                        } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                        finally { voiceSaving = false }
+                    }
+                },
+                onRetry = { voice = null; screen = "tabs"; openVoice() },
+                onCancel = { voice = null; screen = "tabs" }
+            )
             screen == "key" -> KeyScreen(
                 hasKey = me?.hasKey == true, busy = keyBusy, error = keyError?.message, errorCode = keyError?.code,
                 onSave = { key, amount ->
@@ -387,6 +435,7 @@ fun App() {
                             readings = readings, message = message, me = me,
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
+                            onVoice = { openVoice() },
                             onDelete = { r ->
                                 val pid = personId ?: return@HomeScreen
                                 scope.launch {
@@ -400,6 +449,18 @@ fun App() {
                 BottomBar(tab) { tab = it }
             }
         }
+    }
+
+    // what was said cannot be saved: say why, and offer to say it again
+    voiceProblem?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { voiceProblem = null },
+            title = { Text(t(R.string.voice_confirm_title)) },
+            text = { Text(msg) },
+            confirmButton = { TextButton(onClick = { voiceProblem = null; openVoice() }) { Text(t(R.string.voice_retry), color = C.Sys) } },
+            dismissButton = { TextButton(onClick = { voiceProblem = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
+        )
     }
 
     amountDialog?.let { action ->
@@ -483,9 +544,12 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 }
 
 @Composable
-fun BigButton(text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true, onClick: () -> Unit) {
+fun BigButton(
+    text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true,
+    modifier: Modifier = Modifier, onClick: () -> Unit
+) {
     Box(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp).height(58.dp).clip(RoundedCornerShape(18.dp))
+        modifier.fillMaxWidth().padding(vertical = 6.dp).height(58.dp).clip(RoundedCornerShape(18.dp))
             .background(if (enabled) color else color.copy(alpha = 0.35f))
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
@@ -598,7 +662,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onDelete: (Reading) -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -611,8 +675,18 @@ fun HomeScreen(
         if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
-        BigButton(t(R.string.measure), onClick = onMeasure)
-        Text(t(R.string.photo_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
+        // photo of the display, or the microphone next to it to say the values aloud
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BigButton(t(R.string.measure), modifier = Modifier.weight(1f), onClick = onMeasure)
+            Spacer(Modifier.width(10.dp))
+            Box(
+                Modifier.size(58.dp).clip(RoundedCornerShape(18.dp)).background(C.Surface2).clickable(onClick = onVoice),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(painterResource(R.drawable.ic_mic), contentDescription = t(R.string.voice_button), tint = C.Ink, modifier = Modifier.size(26.dp))
+            }
+        }
+        Text(t(R.string.photo_tip) + " " + t(R.string.voice_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)
@@ -643,6 +717,7 @@ fun HomeScreen(
                         Text("/", color = C.Muted, fontSize = 20.sp)
                         Text("${r.dia}", color = C.Dia, fontSize = 20.sp, fontWeight = FontWeight.Light)
                         if (r.pul != null) Text("  ♥ ${r.pul}", color = C.Pul, fontSize = 13.sp)
+                        if (r.source == "voice") Text("  · " + t(R.string.source_voice).lowercase(), color = C.Muted, fontSize = 12.sp)
                     }
                     TextButton(onClick = { toDelete = r }) { Text(t(R.string.delete), color = C.Muted, fontSize = 12.sp) }
                 }
@@ -905,6 +980,41 @@ fun ScanScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Values understood from speech, full screen like a photo reading: nothing is saved until the person taps Save.
+ * Date and time are those of the moment the values were said.
+ */
+@Composable
+fun VoiceScreen(
+    values: Triple<Int, Int, Int?>, spokenAt: Long, unusual: List<String>, saving: Boolean,
+    onSave: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit
+) {
+    val (sis, dia, pul) = values
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.new_reading), t(R.string.voice_sub), t(R.string.cancel), onCancel)
+        Panel {
+            Row(Modifier.fillMaxWidth()) {
+                ValueBox(t(R.string.legend_sys), "$sis", C.Sys, Modifier.weight(1f))
+                ValueBox(t(R.string.legend_dia), "$dia", C.Dia, Modifier.weight(1f))
+                ValueBox(t(R.string.label_pul), pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(Z.whenText(spokenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(t(R.string.voice_when), color = C.Muted, fontSize = 13.sp)
+            // possible but strange values: in amber, so a misheard number is noticed before saving
+            if (unusual.isNotEmpty()) {
+                Text(
+                    t(R.string.voice_check) + "\n" + unusual.joinToString("\n") { "• $it" },
+                    color = Color(WARN_COLOR), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+        }
+        Text(t(R.string.check_voice), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 6.dp))
+        BigButton(if (saving) t(R.string.saving) else t(R.string.save), enabled = !saving, onClick = onSave)
+        BigButton(t(R.string.voice_retry), color = C.Surface2, textColor = C.Ink, enabled = !saving, onClick = onRetry)
     }
 }
 

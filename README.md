@@ -16,7 +16,8 @@ HealthyInstantTracker lets you photograph your blood-pressure monitor, reads the
 - **GitHub** builds everything by itself: on every update it deploys the server and prepares the APK.
 
 Rules enforced by the server:
-- the blood-pressure values come only from reading the photo; the phone cannot change them;
+- the blood-pressure values come from reading the photo, and the phone cannot change them; or they are said aloud
+  (microphone next to Measure), and then they are marked "voice" in the list, the PDF and the Excel file;
 - date and time are those of the shot, checked by the server;
 - no names and no emails: each phone has an anonymous key protected inside the phone itself;
 - only people who know the family code, or who received a single-use invite, can activate the app;
@@ -72,6 +73,13 @@ The bar at the bottom has three tabs:
 The chart is the same in the app and in the PDF: one point per day (the day's average) for systolic, diastolic and pulse,
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
 That is for the doctor.
+
+Values said aloud: the microphone next to Measure uses the phone's speech recognition (no AI cost).
+Say systolic, diastolic and pulse in this order, for example "127, 80, 70". All three are needed.
+The app refuses a missing number, more than three, a diastolic equal to or higher than the systolic, or values a monitor
+cannot show, and warns in amber about unusual ones. Like a photo reading, the values are shown full screen and are
+saved only after the person taps Save. Date and time are those of the moment they were said (the server accepts
+them only within 15 minutes).
 
 App lock: the app opens with the phone's fingerprint, face or screen lock (no separate PIN),
 and locks again after 2 minutes away. Phones without any screen lock open without it.
