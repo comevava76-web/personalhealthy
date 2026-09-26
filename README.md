@@ -75,8 +75,11 @@ on a plain background. The app never judges the values: no "normal" or "high" la
 That is for the doctor.
 
 Values said aloud: the microphone next to Measure uses the phone's speech recognition (no AI cost).
-Say systolic, diastolic and pulse in this order, for example "127, 80, 70"; the app shows them to confirm before saving.
-Date and time are the server's at the moment of saving.
+Say systolic, diastolic and pulse in this order, for example "127, 80, 70". All three are needed.
+The app refuses a missing number, more than three, a diastolic equal to or higher than the systolic, or values a monitor
+cannot show, and warns in amber about unusual ones. Like a photo reading, the values are shown full screen and are
+saved only after the person taps Save. Date and time are those of the moment they were said (the server accepts
+them only within 15 minutes).
 
 App lock: the app opens with the phone's fingerprint, face or screen lock (no separate PIN),
 and locks again after 2 minutes away. Phones without any screen lock open without it.

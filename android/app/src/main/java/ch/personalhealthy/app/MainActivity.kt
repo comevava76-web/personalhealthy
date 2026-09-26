@@ -323,6 +323,7 @@ fun App() {
 
     // Values said aloud: the phone's speech recognition, then a confirmation before saving
     var voice by remember { mutableStateOf<Triple<Int, Int, Int?>?>(null) }
+    var voiceAt by rememberSaveable { mutableLongStateOf(0L) }   // when the values were said
     var voiceUnusual by remember { mutableStateOf<List<String>>(emptyList()) }
     var voiceSaving by remember { mutableStateOf(false) }
     var voiceProblem by remember { mutableStateOf<String?>(null) }
@@ -333,6 +334,7 @@ fun App() {
         voice = sp.values
         voiceUnusual = sp.unusual
         if (sp.problem != null) voiceProblem = sp.problem
+        else { voiceAt = System.currentTimeMillis(); screen = "voice" }   // shown full screen: saved only after Save
     }
     fun openVoice() {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -383,6 +385,25 @@ fun App() {
                 onReplaceKey = { openKeySteps() },
                 onCancel = { screen = "tabs"; scan = ScanState.Idle }
             )
+            screen == "voice" && voice != null -> VoiceScreen(
+                values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
+                onSave = {
+                    val pid = personId ?: return@VoiceScreen
+                    val (sis, dia, pul) = voice!!
+                    voiceSaving = true
+                    scope.launch {
+                        try {
+                            Repo.voice(pid, sis, dia, pul ?: return@launch, voiceAt)
+                            toast(ctx, t(R.string.saved))
+                            voice = null; screen = "tabs"; tab = Tab.BP.key
+                            reload()
+                        } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                        finally { voiceSaving = false }
+                    }
+                },
+                onRetry = { voice = null; screen = "tabs"; openVoice() },
+                onCancel = { voice = null; screen = "tabs" }
+            )
             screen == "key" -> KeyScreen(
                 hasKey = me?.hasKey == true, busy = keyBusy, error = keyError?.message, errorCode = keyError?.code,
                 onSave = { key, amount ->
@@ -428,28 +449,6 @@ fun App() {
                 BottomBar(tab) { tab = it }
             }
         }
-    }
-
-    voice?.let { (sis, dia, pul) ->
-        VoiceDialog(
-            sis, dia, pul, voiceUnusual, saving = voiceSaving,
-            onRetry = { voice = null; openVoice() },
-            onDismiss = { if (!voiceSaving) voice = null },
-            onSave = {
-                val pid = personId ?: return@VoiceDialog
-                voiceSaving = true
-                scope.launch {
-                    try {
-                        Repo.voice(pid, sis, dia, pul)
-                        toast(ctx, t(R.string.saved))
-                        voice = null
-                        tab = Tab.BP.key
-                        reload()
-                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                    finally { voiceSaving = false }
-                }
-            }
-        )
     }
 
     // what was said cannot be saved: say why, and offer to say it again
@@ -984,33 +983,39 @@ fun ScanScreen(
     }
 }
 
-/** The values understood from speech, to check before saving. Date and time: now, set by the server. */
+/**
+ * Values understood from speech, full screen like a photo reading: nothing is saved until the person taps Save.
+ * Date and time are those of the moment the values were said.
+ */
 @Composable
-fun VoiceDialog(sis: Int, dia: Int, pul: Int?, unusual: List<String>, saving: Boolean, onSave: () -> Unit, onRetry: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(t(R.string.voice_confirm_title)) },
-        text = {
-            Column {
-                Row(Modifier.fillMaxWidth()) {
-                    ValueBox(t(R.string.legend_sys), "$sis", C.Sys, Modifier.weight(1f))
-                    ValueBox(t(R.string.legend_dia), "$dia", C.Dia, Modifier.weight(1f))
-                    ValueBox(t(R.string.label_pul), pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
-                }
-                // possible but strange values: shown in amber, so a misheard number is noticed before saving
-                if (unusual.isNotEmpty()) {
-                    Text(
-                        t(R.string.voice_check) + "\n" + unusual.joinToString("\n") { "• $it" },
-                        color = Color(WARN_COLOR), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
-                    )
-                }
-                Text(t(R.string.voice_confirm_when), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+fun VoiceScreen(
+    values: Triple<Int, Int, Int?>, spokenAt: Long, unusual: List<String>, saving: Boolean,
+    onSave: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit
+) {
+    val (sis, dia, pul) = values
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.new_reading), t(R.string.voice_sub), t(R.string.cancel), onCancel)
+        Panel {
+            Row(Modifier.fillMaxWidth()) {
+                ValueBox(t(R.string.legend_sys), "$sis", C.Sys, Modifier.weight(1f))
+                ValueBox(t(R.string.legend_dia), "$dia", C.Dia, Modifier.weight(1f))
+                ValueBox(t(R.string.label_pul), pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
             }
-        },
-        confirmButton = { TextButton(onClick = onSave, enabled = !saving) { Text(if (saving) t(R.string.saving) else t(R.string.save), color = C.Sys) } },
-        dismissButton = { TextButton(onClick = onRetry, enabled = !saving) { Text(t(R.string.voice_retry)) } },
-        containerColor = C.Surface
-    )
+            Spacer(Modifier.height(12.dp))
+            Text(Z.whenText(spokenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(t(R.string.voice_when), color = C.Muted, fontSize = 13.sp)
+            // possible but strange values: in amber, so a misheard number is noticed before saving
+            if (unusual.isNotEmpty()) {
+                Text(
+                    t(R.string.voice_check) + "\n" + unusual.joinToString("\n") { "• $it" },
+                    color = Color(WARN_COLOR), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+        }
+        Text(t(R.string.check_voice), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 6.dp))
+        BigButton(if (saving) t(R.string.saving) else t(R.string.save), enabled = !saving, onClick = onSave)
+        BigButton(t(R.string.voice_retry), color = C.Surface2, textColor = C.Ink, enabled = !saving, onClick = onRetry)
+    }
 }
 
 @Composable
