@@ -54,8 +54,8 @@ async function creditInfo(q: Q) {
     since: last ? Number(last.created_at) : null, // time of the last balance correction
     avgCost: avg / MICRO,
     photosLeft,
-    low: configured && remaining < 2 * avg,   // enough for one more photo at most
-    empty: configured && remaining < avg,     // not enough for another photo
+    low: configured && remaining < 2 * avg,   // estimate: enough for one more photo at most (only for warnings)
+    empty: configured && remaining < avg,     // estimate: not enough for another photo (only for warnings)
   };
 }
 
@@ -162,6 +162,8 @@ Reply ONLY with JSON in this format:
 
 const LANGS: Record<string, string> = { it: "Italian", en: "English", de: "German", fr: "French" };
 
+class NoAnthropicCredit extends Error {}
+
 async function readDisplay(env: Env, image: string, lang: string) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -184,7 +186,12 @@ async function readDisplay(env: Env, image: string, lang: string) {
       ],
     }),
   });
-  if (!res.ok) throw new Error("ai " + res.status + " " + (await res.text()).slice(0, 300));
+  if (!res.ok) {
+    const body = await res.text();
+    // Anthropic refuses when the prepaid account has no money left (billing / credit balance error)
+    if (res.status === 402 || /billing|credit balance|purchase credits/i.test(body)) throw new NoAnthropicCredit(body.slice(0, 300));
+    throw new Error("ai " + res.status + " " + body.slice(0, 300));
+  }
   const out: any = await res.json();
   const text = (out.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
   let j: any = {};
@@ -304,13 +311,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (!takenAt || takenAt > now + 2 * 60e3 || takenAt < now - 30 * 60e3)
       return fail("Invalid photo time. Retake the photo.", 400, "photo_time");
     if (typeof data.image !== "string" || data.image.length < 1000) return fail("Missing photo", 400, "no_photo");
-    const before = await creditInfo(q);
-    if (before.empty) return fail("Reading credit is used up. The app manager must top it up.", 402, "credit_empty");
+    // No limit here: the photo is always sent. The app's credit is only an estimate;
+    // only Anthropic knows the real balance and refuses when it is finished.
     let r, costMicro;
     try {
       ({ reading: r, costMicro } = await readDisplay(env, data.image, (req.headers.get("X-Lang") || "en").slice(0, 2).toLowerCase()));
     } catch (e: any) {
       console.error(e?.message);
+      if (e instanceof NoAnthropicCredit) return fail("Anthropic credit is finished", 402, "anthropic_no_credit");
       return fail("Reading failed. Try again shortly.", 502, "read_failed");
     }
     const scanId = newId("scn_");

@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.DashPathEffect
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
@@ -17,30 +19,43 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 import kotlin.math.sign
 
-class ChartPal(
-    val bg: Int, val grid: Int, val text: Int, val sys: Int, val dia: Int, val pul: Int,
-    val ref: Int, val outline: Int
-)
+class ChartPal(val bg: Int, val grid: Int, val text: Int, val outline: Int)
 
-val PULSE_COLOR = 0xFFFFD400.toInt()
+// Line colours, the same in the app and in the PDF
+val SYS_COLOR = 0xFFF2545B.toInt()    // systolic, coral
+val DIA_COLOR = 0xFF3FA7D6.toInt()    // diastolic, teal-blue
+val PUL_COLOR = 0xFFFFC145.toInt()    // pulse, amber
+private const val OK_GREEN = 0x3DDC97       // background below 135 (RGB, alpha added where used)
+private const val HIGH_ORANGE = 0xE8743B    // background above 135 and areas above the reference lines
 
-val SCREEN_PAL = ChartPal(
-    bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(),
-    sys = 0xFFFF7086.toInt(), dia = 0xFF62B6FF.toInt(), pul = PULSE_COLOR,
-    ref = 0x4DEAF0FA, outline = 0
-)
+val SCREEN_PAL = ChartPal(bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(), outline = 0)
 val PRINT_PAL = ChartPal(
     bg = 0xFFFFFFFF.toInt(), grid = 0xFFE6EBF2.toInt(), text = 0xFF5B6B88.toInt(),
-    sys = 0xFFD93A52.toInt(), dia = 0xFF2F7FD6.toInt(), pul = PULSE_COLOR,
-    ref = 0xFFB4BECF.toInt(), outline = 0x66000000 // thin dark ring so the yellow dots stay visible on white
+    outline = 0x66000000 // thin dark ring so the light dots stay visible on white
 )
 
+private fun alpha(rgb: Int, a: Float): Int = ((a * 255).toInt() shl 24) or rgb
+
+/** One point per day: the averages of that day's readings. */
+class DayPoint(val day: LocalDate, val sis: Int, val dia: Int, val pul: Int?)
+
+fun dailyAverages(list: List<Reading>): List<DayPoint> =
+    list.groupBy { Z.date(it.takenAt) }.toSortedMap().map { (day, l) ->
+        val pul = l.mapNotNull { it.pul }
+        DayPoint(
+            day, l.map { it.sis }.average().roundToInt(), l.map { it.dia }.average().roundToInt(),
+            if (pul.isEmpty()) null else pul.average().roundToInt()
+        )
+    }
+
 /**
- * The one blood-pressure chart, used on the Blood pressure tab, the Report tab and in the PDF:
- * smooth lines for systolic, diastolic and pulse on one "mmHg / bpm" axis,
- * light dashed reference lines at 135 and 85, and only the day number under each day.
+ * The one blood-pressure chart, used on the Blood pressure tab, the Report tab and in the PDF.
+ * Points are daily averages; smooth lines for systolic, diastolic and pulse on one "mmHg / bpm" axis.
+ * Green background below 135, orange band above it; orange areas where systolic goes above 135
+ * and diastolic above 85; dashed reference lines at 135 and 85; only the day number under each day.
  */
 fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float) {
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -48,22 +63,30 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     c.drawRect(0f, 0f, w, h, p)
 
     val padL = fs * 3.2f
-    val padR = fs * 1.2f
+    val padR = fs * 2.6f   // room for the "135" and "85" labels
     val padT = fs * 2.2f
     val padB = fs * 2.4f
     val cw = w - padL - padR
     val ch = h - padT - padB
+    val right = padL + cw
+    val bottom = padT + ch
 
-    val vals = list.flatMap { listOfNotNull(it.sis, it.dia, it.pul) }
+    val pts = dailyAverages(list)
+    val vals = pts.flatMap { listOfNotNull(it.sis, it.dia, it.pul) }
     val lo = ((minOf(vals.minOrNull() ?: 60, 60) - 10) / 10) * 10
     val hi = ((maxOf(vals.maxOrNull() ?: 150, 150) + 19) / 10) * 10
     fun y(v: Int): Float = padT + ch * (1f - (v - lo).toFloat() / (hi - lo).toFloat())
-    fun x(ts: Long): Float {
-        val z = Instant.ofEpochMilli(ts).atZone(Z.zone)
-        val di = ChronoUnit.DAYS.between(start, z.toLocalDate()).toFloat()
-        val hf = (z.hour + z.minute / 60f) / 24f
-        return padL + cw * (di + hf) / days
-    }
+    val slot = cw / days
+    fun x(d: LocalDate): Float = padL + slot * ChronoUnit.DAYS.between(start, d).toFloat() + slot / 2f
+    val y135 = y(THRESHOLD_SYS)
+    val y85 = y(THRESHOLD_DIA)
+
+    // background: soft green below 135 (fading upwards), transparent orange band above 135
+    p.shader = LinearGradient(0f, bottom, 0f, y135, alpha(OK_GREEN, 0.14f), alpha(OK_GREEN, 0f), Shader.TileMode.CLAMP)
+    c.drawRect(padL, y135, right, bottom, p)
+    p.shader = null
+    p.color = alpha(HIGH_ORANGE, 0.18f)
+    c.drawRect(padL, padT, right, y135, p)
 
     val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.text; textSize = fs }
     val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.grid; strokeWidth = 1f; style = Paint.Style.STROKE }
@@ -75,28 +98,52 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     var v = ((lo + step - 1) / step) * step
     text.textAlign = Paint.Align.RIGHT
     while (v <= hi) {
-        c.drawLine(padL, y(v), w - padR, y(v), line)
+        c.drawLine(padL, y(v), right, y(v), line)
         c.drawText(v.toString(), padL - fs * 0.5f, y(v) + fs * 0.35f, text)
         v += step
     }
 
     // days: thin separators, and only as many day numbers as fit without overlapping
     text.textAlign = Paint.Align.CENTER
-    val slot = cw / days
-    for (i in 1 until days) c.drawLine(padL + slot * i, padT, padL + slot * i, padT + ch, line)
+    for (i in 1 until days) c.drawLine(padL + slot * i, padT, padL + slot * i, bottom, line)
     for (i in dayLabelIndexes(days, slot, text.measureText("00") + fs * 0.8f)) {
-        c.drawText(start.plusDays(i.toLong()).dayOfMonth.toString(), padL + slot * i + slot / 2f, padT + ch + fs * 1.6f, text)
+        c.drawText(start.plusDays(i.toLong()).dayOfMonth.toString(), padL + slot * i + slot / 2f, bottom + fs * 1.6f, text)
     }
 
-    // reference lines at 135 and 85
+    val sys = pts.map { x(it.day) to y(it.sis) }
+    val dia = pts.map { x(it.day) to y(it.dia) }
+    val pul = pts.mapNotNull { d -> d.pul?.let { x(d.day) to y(it) } }
+
+    // orange areas between a line and its reference line, only where the line is above it
+    fun fillAbove(values: List<Pair<Float, Float>>, refY: Float, a: Float) {
+        if (values.size < 2) return
+        val area = monotonePath(values)
+        area.lineTo(values.last().first, refY)
+        area.lineTo(values.first().first, refY)
+        area.close()
+        c.save()
+        c.clipRect(padL, padT, right, refY)
+        c.drawPath(area, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = alpha(HIGH_ORANGE, a) })
+        c.restore()
+    }
+    fillAbove(dia, y85, 0.18f)
+    fillAbove(sys, y135, 0.28f)
+
+    // dashed reference lines, labelled at the right edge
     val dash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = pal.ref; style = Paint.Style.STROKE; strokeWidth = fs * 0.08f
+        style = Paint.Style.STROKE; strokeWidth = fs * 0.08f
         pathEffect = DashPathEffect(floatArrayOf(fs * 0.4f, fs * 0.4f), 0f)
     }
-    for (ref in listOf(THRESHOLD_SYS, THRESHOLD_DIA)) if (ref in (lo + 1) until hi) c.drawLine(padL, y(ref), w - padR, y(ref), dash)
+    text.textAlign = Paint.Align.LEFT
+    for ((ref, col) in listOf(THRESHOLD_SYS to SYS_COLOR, THRESHOLD_DIA to DIA_COLOR)) {
+        if (ref !in (lo + 1) until hi) continue
+        dash.color = col
+        c.drawLine(padL, y(ref), right, y(ref), dash)
+        text.color = col
+        c.drawText(ref.toString(), right + fs * 0.3f, y(ref) + fs * 0.35f, text)
+    }
 
-    // smooth lines with a small dot on each reading (pulse first, so blood pressure stays on top)
-    val pts = list.sortedBy { it.takenAt }
+    // smooth lines with a dot on each day (pulse first, so blood pressure stays on top)
     fun series(values: List<Pair<Float, Float>>, col: Int) {
         if (values.isEmpty()) return
         val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -107,13 +154,13 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
         val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = col }
         val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.outline; style = Paint.Style.STROKE; strokeWidth = fs * 0.06f }
         values.forEach { (px, py) ->
-            c.drawCircle(px, py, fs * 0.26f, dot)
-            if (pal.outline != 0) c.drawCircle(px, py, fs * 0.26f, ring)
+            c.drawCircle(px, py, fs * 0.3f, dot)
+            if (pal.outline != 0) c.drawCircle(px, py, fs * 0.3f, ring)
         }
     }
-    series(pts.mapNotNull { r -> r.pul?.let { x(r.takenAt) to y(it) } }, pal.pul)
-    series(pts.map { x(it.takenAt) to y(it.dia) }, pal.dia)
-    series(pts.map { x(it.takenAt) to y(it.sis) }, pal.sys)
+    series(pul, PUL_COLOR)
+    series(dia, DIA_COLOR)
+    series(sys, SYS_COLOR)
 }
 
 /** Which days get a number: every n-th day so labels never overlap, always the first and the last. */
@@ -170,7 +217,7 @@ fun drawChartLegend(c: Canvas, x: Float, y: Float, pal: ChartPal, fs: Float) {
     val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.text; textSize = fs }
     val sw = Paint(Paint.ANTI_ALIAS_FLAG)
     var cx = x
-    for ((label, col) in listOf(t(R.string.legend_sys) to pal.sys, t(R.string.legend_dia) to pal.dia, t(R.string.label_pul) to pal.pul)) {
+    for ((label, col) in listOf(t(R.string.legend_sys) to SYS_COLOR, t(R.string.legend_dia) to DIA_COLOR, t(R.string.label_pul) to PUL_COLOR)) {
         sw.color = col
         c.drawRoundRect(RectF(cx, y - fs * 0.8f, cx + fs * 0.8f, y), fs * 0.2f, fs * 0.2f, sw)
         c.drawText(label, cx + fs * 1.2f, y, text)

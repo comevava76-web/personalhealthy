@@ -70,9 +70,6 @@ data class Credit(
     val loaded: Double?, val spent: Double, val scans: Int, val since: Long?
 )
 
-/** One credit movement: kind = "topup", "set" (balance corrected) or "usage" (one photo read). */
-data class Movement(val kind: String, val amount: Double, val at: Long)
-
 data class Me(val isAdmin: Boolean, val billingMode: String, val credit: Credit?)
 
 fun parseCredit(o: JSONObject?): Credit? = o?.let {
@@ -97,7 +94,7 @@ sealed class ScanState {
     object Idle : ScanState()
     object Loading : ScanState()
     data class Done(val r: ScanResult) : ScanState()
-    data class Failed(val msg: String) : ScanState()
+    data class Failed(val msg: String, val code: String? = null) : ScanState()
 }
 
 enum class Level(private val labelRes: Int, val color: Long) {
@@ -229,15 +226,14 @@ fun errorText(code: String): String = when (code) {
     "unauthorized", "bad_key" -> t(R.string.err_unauthorized)
     "photo_time" -> t(R.string.err_photo_time)
     "no_photo" -> t(R.string.err_no_photo)
-    "credit_empty" -> t(R.string.err_credit_empty)
     "read_failed" -> t(R.string.err_read_failed)
+    "anthropic_no_credit" -> t(R.string.err_anthropic_no_credit)
     "not_found" -> t(R.string.err_not_found)
     "already_saved" -> t(R.string.err_already_saved)
     "scan_expired" -> t(R.string.err_scan_expired)
     "scan_invalid" -> t(R.string.err_scan_invalid)
     "admin_only" -> t(R.string.err_admin_only)
     "bad_amount" -> t(R.string.err_bad_amount)
-    "mode_unavailable" -> t(R.string.err_mode_unavailable)
     "server" -> t(R.string.err_server)
     "network" -> t(R.string.err_network)
     "photo_unreadable" -> t(R.string.err_photo_unreadable)
@@ -325,18 +321,6 @@ object Repo {
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {
         val j = Api.call("POST", "/v1/admin/credit", JSONObject().put("action", action).put("amount", amount), pid)
         return parseCredit(j.optJSONObject("credit"))
-    }
-
-    suspend fun creditHistory(pid: String): List<Movement> {
-        val a = Api.call("GET", "/v1/credit/history", null, pid).getJSONArray("items")
-        return (0 until a.length()).map {
-            val o = a.getJSONObject(it)
-            Movement(o.getString("kind"), o.getDouble("amount"), o.getLong("at"))
-        }
-    }
-
-    suspend fun setBilling(pid: String, mode: String) {
-        Api.call("POST", "/v1/admin/settings", JSONObject().put("billingMode", mode), pid)
     }
 
     suspend fun confirm(pid: String, scanId: String) {

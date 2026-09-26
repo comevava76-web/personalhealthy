@@ -59,17 +59,22 @@ Later versions install over the previous one without losing anything.
 The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): last reading, the button to measure, this week, the 7-day chart and recent readings.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
-- **Credit**: how much credit is left for reading photos, and the last 20 movements.
+- **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
+
+The chart is the same in the app and in the PDF: one point per day (the day's average) for systolic, diastolic and pulse,
+dashed reference lines at 135 and 85, green background below 135 and orange where values are above the reference lines.
+
+The code is ready for more tabs (for example a future "Analyses" tab for blood tests): see `Tab` in `MainActivity.kt`.
 
 ## Reading credit
 Each photo is read by an AI service (Anthropic) that you prepay on console.anthropic.com. The app cannot see that balance,
-so the server keeps its own estimate: the amount you loaded minus the real cost of every photo.
+so the server keeps an estimate: the amount you added minus the real cost of every photo.
+The estimate never blocks anything: photos are always sent, and only Anthropic stops them when its credit is really finished.
+In that case the app says "Your Anthropic credit is finished. Tap Recharge."
 - The **first phone activated** becomes the one of the person who manages the app: activate yours first.
-- In the **Credit** tab, under "I loaded more money on Anthropic", enter how much you loaded (for example 5) and tap **Add to credit**.
-- The tab shows Loaded, Spent, Left (estimate) and Photos left, plus the last 20 movements. Everyone can see it; only the manager can change it.
-- When the credit is enough for only one more photo, a notification arrives and a warning appears on the Blood pressure tab.
-  When the credit is used up, photos are no longer read until you top up, so you never spend more than you loaded.
-- If the estimate does not match the console, use **Correct the balance** and type the balance shown on console.anthropic.com.
+- In the **Credit** tab, **Recharge** opens the Anthropic billing page. When you come back to the app it asks how much you added.
+- If the estimate does not match Anthropic, tap "The balance is wrong?" and type the amount shown on Anthropic.
+- When about one photo is left, a notification arrives and a warning appears on the Blood pressure tab.
 
 ## Languages
 The app uses the phone's language: English, Italian, German or French (in any other language it appears in English).

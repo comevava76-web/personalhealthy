@@ -2,6 +2,8 @@ package ch.personalhealthy.app
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
@@ -47,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,6 +72,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -89,9 +95,9 @@ object C {
     val Ink = Color(0xFFEAF0FA)
     val Muted = Color(0xFF9AAACA)
     val Line = Color(0x1AEAF0FA)
-    val Sys = Color(0xFFFF7086)
-    val Dia = Color(0xFF62B6FF)
-    val Pul = Color(0xFFFFD400)
+    val Sys = Color(0xFFF2545B)   // systolic, coral
+    val Dia = Color(0xFF3FA7D6)   // diastolic, teal-blue
+    val Pul = Color(0xFFFFC145)   // pulse, amber
     val Alert = Color(0xFFFF6178)
 }
 
@@ -129,13 +135,26 @@ private fun toast(ctx: Context, msg: String) = Toast.makeText(ctx, msg, Toast.LE
 
 /* ---------------- Navigation and state ---------------- */
 
+/** Anthropic page where the prepaid credit is recharged. */
+const val RECHARGE_URL = "https://console.anthropic.com/settings/billing"
+
+/**
+ * Tabs of the bottom bar, in order. A future module (for example "analyses" for uploading
+ * blood tests) is added here with its label, plus one branch in App() that shows its screen.
+ */
+enum class Tab(val key: String, val label: Int) {
+    BP("bp", R.string.tab_bp),
+    REPORT("report", R.string.tab_report),
+    CREDIT("credit", R.string.tab_credit),
+}
+
 @Composable
 fun App() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
-    var screen by rememberSaveable { mutableStateOf("tabs") }   // "tabs" or "scan" (full screen, no bottom bar)
-    var tab by rememberSaveable { mutableStateOf("bp") }        // "bp", "report" or "credit"
+    var screen by rememberSaveable { mutableStateOf("tabs") }     // "tabs" or "scan" (full screen, no bottom bar)
+    var tab by rememberSaveable { mutableStateOf(Tab.BP.key) }
     val readings = remember { mutableStateListOf<Reading>() }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -143,16 +162,12 @@ fun App() {
     var saving by remember { mutableStateOf(false) }
     var takenAt by rememberSaveable { mutableLongStateOf(0L) }
     var me by remember { mutableStateOf<Me?>(null) }
-    var history by remember { mutableStateOf<List<Movement>?>(null) }
+    var rechargePending by rememberSaveable { mutableStateOf(false) } // true while the Anthropic page is open
+    var amountDialog by remember { mutableStateOf<String?>(null) }     // "topup" or "set" while the amount dialog is open
     val scope = rememberCoroutineScope()
 
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
-
-    fun loadHistory() {
-        val pid = personId ?: return
-        scope.launch { try { history = Repo.creditHistory(pid) } catch (e: Exception) { } }
-    }
 
     fun reload() {
         val pid = personId ?: return
@@ -168,7 +183,6 @@ fun App() {
                 message = e.message ?: t(R.string.err_generic)
             } finally { loading = false }
         }
-        loadHistory()
     }
 
     fun runScan() {
@@ -183,11 +197,32 @@ fun App() {
                     me = me?.copy(credit = res.credit)
                     Notif.check(ctx, res.credit, me?.isAdmin ?: false)
                 }
-                loadHistory()
             } catch (e: Exception) {
-                scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed))
+                scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed), (e as? ApiException)?.code)
             }
         }
+    }
+
+    // Recharge: open the Anthropic billing page; when the user comes back, ask how much was added
+    fun openRecharge() {
+        rechargePending = true
+        try {
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RECHARGE_URL)))
+        } catch (e: ActivityNotFoundException) {
+            rechargePending = false
+            toast(ctx, t(R.string.no_browser))
+        }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
+                rechargePending = false
+                if (me?.isAdmin == true) amountDialog = "topup" else toast(ctx, t(R.string.notif_user_hint))
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -210,8 +245,8 @@ fun App() {
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
-    BackHandler(enabled = screen != "tabs" || tab != "bp") {
-        if (screen != "tabs") { screen = "tabs"; scan = ScanState.Idle } else tab = "bp"
+    BackHandler(enabled = screen != "tabs" || tab != Tab.BP.key) {
+        if (screen != "tabs") { screen = "tabs"; scan = ScanState.Idle } else tab = Tab.BP.key
     }
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
@@ -229,7 +264,7 @@ fun App() {
                         try {
                             Repo.confirm(pid, r.scanId)
                             toast(ctx, t(R.string.saved))
-                            screen = "tabs"; tab = "bp"; scan = ScanState.Idle
+                            screen = "tabs"; tab = Tab.BP.key; scan = ScanState.Idle
                             reload()
                         } catch (e: Exception) {
                             toast(ctx, e.message ?: t(R.string.err_generic))
@@ -237,20 +272,17 @@ fun App() {
                     }
                 },
                 onRetake = { openCamera() },
+                onRecharge = { openRecharge() },
                 onCancel = { screen = "tabs"; scan = ScanState.Idle }
             )
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
-                        "report" -> ReportScreen(readings)
-                        "credit" -> CreditScreen(
-                            me = me, history = history, personId = personId ?: "",
-                            onChanged = { c -> me = me?.copy(credit = c); Notif.check(ctx, c, true); loadHistory() },
-                            onBillingChanged = { mode -> me = me?.copy(billingMode = mode) }
-                        )
+                        Tab.REPORT.key -> ReportScreen(readings)
+                        Tab.CREDIT.key -> CreditScreen(me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" })
                         else -> HomeScreen(
                             readings = readings, loading = loading, message = message, me = me,
-                            onOpenCredit = { tab = "credit" },
+                            onOpenCredit = { tab = Tab.CREDIT.key },
                             onMeasure = { openCamera() },
                             onRefresh = { reload() },
                             onDelete = { r ->
@@ -267,6 +299,25 @@ fun App() {
             }
         }
     }
+
+    amountDialog?.let { action ->
+        AmountDialog(
+            title = t(if (action == "topup") R.string.recharge_q else R.string.correct_q),
+            onDismiss = { amountDialog = null },
+            onSave = { v ->
+                val pid = personId ?: return@AmountDialog
+                amountDialog = null
+                scope.launch {
+                    try {
+                        val c = Repo.credit(pid, action, v)
+                        me = me?.copy(credit = c)
+                        Notif.check(ctx, c, true)
+                        toast(ctx, if (action == "topup") t(R.string.topup_added) else t(R.string.balance_updated))
+                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -274,16 +325,16 @@ fun BottomBar(tab: String, onSelect: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().background(C.Surface)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(C.Line))
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
-            listOf("bp" to R.string.tab_bp, "report" to R.string.tab_report, "credit" to R.string.tab_credit).forEach { (key, label) ->
-                val sel = key == tab
+            Tab.entries.forEach { item ->
+                val sel = item.key == tab
                 Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { onSelect(key) }.padding(vertical = 8.dp),
+                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { onSelect(item.key) }.padding(vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(Modifier.width(28.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (sel) C.Sys else Color.Transparent))
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        t(label), color = if (sel) C.Ink else C.Muted, fontSize = 13.sp, maxLines = 1,
+                        t(item.label), color = if (sel) C.Ink else C.Muted, fontSize = 13.sp, maxLines = 1,
                         fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
@@ -413,13 +464,13 @@ fun HomeScreen(
 
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
-        if (c != null && c.configured && (c.low || c.empty)) {
-            val col = if (c.empty) C.Alert else Color(Level.WARN.color)
+        if (c != null && c.configured && c.low) {
+            val col = Color(Level.WARN.color)
             Box(
                 Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(col.copy(alpha = 0.15f))
                     .clickable(onClick = onOpenCredit).padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
-                Text(t(if (c.empty) R.string.credit_warn_empty else R.string.credit_warn_low), color = col, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(t(R.string.credit_warn_low), color = col, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
@@ -507,6 +558,7 @@ fun Legend() {
             Text(" $label   ", color = C.Muted, fontSize = 12.sp)
         }
     }
+    Text(t(R.string.chart_daily), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
 }
 
 @Composable
@@ -545,7 +597,7 @@ fun WeekPanel(readings: List<Reading>) {
 /* ---------------- Photo reading ---------------- */
 
 @Composable
-fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit, onCancel: () -> Unit) {
+fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit, onRecharge: () -> Unit, onCancel: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.new_reading), t(R.string.new_reading_sub), t(R.string.cancel), onCancel)
         when (state) {
@@ -559,7 +611,8 @@ fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, 
             }
             is ScanState.Failed -> {
                 Panel { Text(state.msg, color = C.Ink, fontSize = 16.sp) }
-                BigButton(t(R.string.retake), onClick = onRetake)
+                if (state.code == "anthropic_no_credit") BigButton(t(R.string.recharge), onClick = onRecharge)
+                else BigButton(t(R.string.retake), onClick = onRetake)
             }
             is ScanState.Done -> {
                 val r = state.r
@@ -676,106 +729,56 @@ fun ReportScreen(readings: List<Reading>) {
 /* ---------------- Credit tab ---------------- */
 
 @Composable
-fun CreditScreen(me: Me?, history: List<Movement>?, personId: String, onChanged: (Credit?) -> Unit, onBillingChanged: (String) -> Unit) {
-    val ctx = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var topup by remember { mutableStateOf("") }
-    var balance by remember { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
-
-    // action = "topup" (add money loaded on Anthropic) or "set" (correct the balance)
-    fun send(action: String, text: String, clear: () -> Unit) {
-        val v = text.replace(',', '.').toDoubleOrNull()
-        if (v == null || v < 0 || (action == "topup" && v == 0.0)) { toast(ctx, t(R.string.enter_amount)); return }
-        busy = true
-        scope.launch {
-            try {
-                onChanged(Repo.credit(personId, action, v))
-                clear()
-                toast(ctx, if (action == "topup") t(R.string.topup_added) else t(R.string.balance_updated))
-            } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } finally { busy = false }
-        }
-    }
-
+fun CreditScreen(me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.credit_page_title))
-        Text(t(R.string.credit_explain), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
         if (me == null) {
             Panel { Text("…", color = C.Muted) }
             return@Column
         }
-
         val c = me.credit
-        if (c == null || !c.configured) {
-            Panel { Text(if (me.isAdmin) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user), color = C.Muted, fontSize = 14.sp) }
-        } else {
-            val leftColor = when { c.empty -> C.Alert; c.low -> Color(Level.WARN.color); else -> C.Ink }
-            Row(Modifier.fillMaxWidth()) {
-                StatBox(t(R.string.credit_loaded), usd(c.loaded ?: 0.0), modifier = Modifier.weight(1f))
-                StatBox(t(R.string.credit_spent), usd(c.spent), modifier = Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth()) {
-                StatBox(t(R.string.credit_left), usd(c.remaining ?: 0.0), color = leftColor, modifier = Modifier.weight(1f))
-                StatBox(t(R.string.credit_photos_left), "${c.photosLeft ?: 0}", color = leftColor, modifier = Modifier.weight(1f))
-            }
-            Text(
-                t(R.string.credit_avg_fmt, usdFine(c.avgCost)) + "\n" + t(R.string.credit_read_fmt, c.scans),
-                color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 6.dp)
-            )
-            c.since?.let { Text(t(R.string.credit_since_fmt, Z.dmy(Z.date(it))), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp)) }
-            if (c.empty) Text(t(R.string.credit_empty_msg), color = C.Alert, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
-            else if (c.low) Text(t(R.string.credit_low_msg), color = Color(Level.WARN.color), fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
-        }
-
-        if (me.isAdmin) {
-            Panel {
-                Text(t(R.string.topup_title), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                Text(t(R.string.topup_explain), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 6.dp))
-                AmountField(topup) { topup = it }
-                BigButton(t(R.string.topup_button), enabled = !busy) { send("topup", topup) { topup = "" } }
-            }
-            Panel {
-                Text(t(R.string.correct_title), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                Text(t(R.string.correct_explain), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 6.dp))
-                AmountField(balance) { balance = it }
-                BigButton(t(R.string.correct_button), color = C.Surface2, textColor = C.Ink, enabled = !busy) { send("set", balance) { balance = "" } }
-            }
-            Panel {
-                Text(t(R.string.who_pays), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                val mode = me.billingMode
-                ModeRow(t(R.string.mode_private), t(R.string.mode_private_sub), mode == "private", true) {
-                    if (mode != "private") scope.launch {
-                        try { Repo.setBilling(personId, "private"); onBillingChanged("private") } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                    }
-                }
-                ModeRow(t(R.string.mode_user), t(R.string.coming_soon), mode == "per_user", false) { }
-            }
-        } else {
-            Text(t(R.string.admin_only_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 10.dp))
-        }
-
+        val set = c != null && c.configured
+        val col = if (set && c!!.low) Color(Level.WARN.color) else C.Ink
         Panel {
-            Text(t(R.string.history_title), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(6.dp))
-            if (history.isNullOrEmpty()) Text(if (history == null) "…" else t(R.string.history_empty), color = C.Muted, fontSize = 14.sp)
-            history?.forEach { m ->
-                val (label, amount, col) = when (m.kind) {
-                    "topup" -> Triple(t(R.string.move_topup), "+ " + usd(m.amount), Color(Level.OK.color))
-                    "set" -> Triple(t(R.string.move_set), "= " + usd(m.amount), C.Ink)
-                    else -> Triple(t(R.string.move_usage), "− " + usdFine(m.amount), C.Muted)
-                }
-                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(label, color = C.Ink, fontSize = 14.sp)
-                        Text(Z.whenText(m.at), color = C.Muted, fontSize = 12.sp)
-                    }
-                    Text(amount, color = col, fontSize = 14.sp)
-                }
+            Text(t(R.string.credit_money_left), color = C.Muted, fontSize = 14.sp)
+            Text(if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(10.dp))
+            Text(t(R.string.credit_photos_can), color = C.Muted, fontSize = 14.sp)
+            Text(if (set) "${c!!.photosLeft ?: 0}" else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(10.dp))
+            Text(t(R.string.credit_avg_fmt, usdFine(c?.avgCost ?: 0.006)), color = C.Muted, fontSize = 13.sp)
+            if (!set) Text(
+                if (me.isAdmin) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user),
+                color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+        BigButton(t(R.string.recharge), onClick = onRecharge)
+        if (me.isAdmin) {
+            TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
             }
         }
         Spacer(Modifier.height(24.dp))
     }
+}
+
+@Composable
+fun AmountDialog(title: String, onDismiss: () -> Unit, onSave: (Double) -> Unit) {
+    val ctx = LocalContext.current
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { AmountField(text) { text = it } },
+        confirmButton = {
+            TextButton(onClick = {
+                val v = text.replace(',', '.').toDoubleOrNull()
+                if (v == null || v <= 0.0) toast(ctx, t(R.string.enter_amount)) else onSave(v)
+            }) { Text(t(R.string.confirm), color = C.Sys) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
 }
 
 @Composable
@@ -787,24 +790,4 @@ fun AmountField(value: String, onChange: (String) -> Unit) {
         colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
         modifier = Modifier.fillMaxWidth()
     )
-}
-
-@Composable
-fun ModeRow(title: String, sub: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp))
-            .background(if (selected) C.Surface2 else Color.Transparent)
-            .border(1.dp, if (selected) C.Sys else C.Line, RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled, onClick = onClick).padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(18.dp).clip(CircleShape).border(2.dp, if (selected) C.Sys else C.Muted, CircleShape), contentAlignment = Alignment.Center) {
-            if (selected) Box(Modifier.size(9.dp).clip(CircleShape).background(C.Sys))
-        }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(title, color = if (enabled) C.Ink else C.Muted, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Text(sub, color = C.Muted, fontSize = 12.sp)
-        }
-    }
 }
