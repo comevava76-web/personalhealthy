@@ -525,16 +525,36 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ id, takenAt: takenMs, period, sis: r.sis, dia: r.dia, pul: r.pul });
   }
 
+  // 2b) Values said aloud: saved as they are, marked 'voice' so reports can tell them from photo readings.
+  // Date and time are the server's, the phone cannot choose them. Same limits as a photo reading.
+  if (req.method === "POST" && url.pathname === "/v1/bp/voice") {
+    const num = (v: any, min: number, max: number) =>
+      typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v) : null;
+    const sis = num(data.sis, 50, 260), dia = num(data.dia, 30, 160);
+    const pul = data.pul == null ? null : num(data.pul, 30, 220);
+    if (sis == null || dia == null || dia >= sis || (data.pul != null && pul == null))
+      return fail("Values out of range", 400, "voice_invalid");
+    const id = newId("bp_");
+    const now = Date.now();
+    const period = periodOf(now);
+    await q(
+      "INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at, taken_at_local, created_at_local) " +
+      "VALUES (?1, ?2, 'bp', ?3, ?4, ?5, ?6, 'voice', ?3, ?7, ?7)",
+      [id, pid, now, TZ, period, JSON.stringify({ sis, dia, pul }), localStamp(now)]
+    );
+    return json({ id, takenAt: now, period, sis, dia, pul, source: "voice" });
+  }
+
   // 3) List of measurements
   if (req.method === "GET" && url.pathname === "/v1/bp") {
     const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 400);
     const rows = await q(
-      "SELECT id, taken_at, period, data FROM measurements WHERE person_id = ?1 AND kind = 'bp' AND taken_at >= ?2 ORDER BY taken_at",
+      "SELECT id, taken_at, period, data, source FROM measurements WHERE person_id = ?1 AND kind = 'bp' AND taken_at >= ?2 ORDER BY taken_at",
       [pid, Date.now() - days * 864e5]
     );
     const items = rows.map((r: any) => {
       const d = JSON.parse(r.data);
-      return { id: r.id, takenAt: Number(r.taken_at), period: r.period, sis: d.sis, dia: d.dia, pul: d.pul ?? null };
+      return { id: r.id, takenAt: Number(r.taken_at), period: r.period, sis: d.sis, dia: d.dia, pul: d.pul ?? null, source: r.source || "photo" };
     });
     return json({ items });
   }

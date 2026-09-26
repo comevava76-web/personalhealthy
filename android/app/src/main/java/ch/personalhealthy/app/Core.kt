@@ -53,7 +53,26 @@ fun periodLabel(p: String): String = when (p) {
 
 /* ---------------- Models ---------------- */
 
-data class Reading(val id: String, val takenAt: Long, val period: String, val sis: Int, val dia: Int, val pul: Int?)
+/** [source]: "photo" (read from the monitor's display) or "voice" (said aloud). */
+data class Reading(val id: String, val takenAt: Long, val period: String, val sis: Int, val dia: Int, val pul: Int?, val source: String = "photo")
+
+fun sourceLabel(s: String): String = if (s == "voice") t(R.string.source_voice) else t(R.string.source_photo)
+
+/**
+ * Values said aloud, in this order: systolic, diastolic, pulse (for example "127, 80, 70").
+ * Tries each transcription the phone offers and takes the first with plausible numbers; null if none.
+ */
+fun parseSpoken(texts: List<String>): Triple<Int, Int, Int?>? {
+    for (text in texts) {
+        val n = Regex("\\d{2,3}").findAll(text).map { it.value.toInt() }.toList()
+        if (n.size < 2) continue
+        val sis = n[0]; val dia = n[1]; val pul = n.getOrNull(2)
+        if (sis !in 50..260 || dia !in 30..160 || dia >= sis) continue
+        if (pul != null && pul !in 30..220) continue
+        return Triple(sis, dia, pul)
+    }
+    return null
+}
 
 data class ScanResult(
     val scanId: String, val readable: Boolean, val sis: Int?, val dia: Int?, val pul: Int?,
@@ -233,6 +252,7 @@ fun errorText(code: String): String = when (code) {
     "already_saved" -> t(R.string.err_already_saved)
     "scan_expired" -> t(R.string.err_scan_expired)
     "scan_invalid" -> t(R.string.err_scan_invalid)
+    "voice_invalid" -> t(R.string.err_voice_invalid)
     "admin_only" -> t(R.string.err_admin_only)
     "bad_amount" -> t(R.string.err_bad_amount)
     "server" -> t(R.string.err_server)
@@ -299,7 +319,8 @@ object Repo {
             val o = a.getJSONObject(it)
             Reading(
                 o.getString("id"), o.getLong("takenAt"), o.optString("period"),
-                o.getInt("sis"), o.getInt("dia"), if (o.isNull("pul")) null else o.getInt("pul")
+                o.getInt("sis"), o.getInt("dia"), if (o.isNull("pul")) null else o.getInt("pul"),
+                o.optString("source", "photo")
             )
         }.sortedBy { it.takenAt }
     }
@@ -350,6 +371,13 @@ object Repo {
 
     suspend fun confirm(pid: String, scanId: String) {
         Api.call("POST", "/v1/bp/confirm", JSONObject().put("scanId", scanId), pid)
+    }
+
+    /** Values said aloud; date and time are set by the server at the moment of saving. */
+    suspend fun voice(pid: String, sis: Int, dia: Int, pul: Int?) {
+        val body = JSONObject().put("sis", sis).put("dia", dia)
+        if (pul != null) body.put("pul", pul)
+        Api.call("POST", "/v1/bp/voice", body, pid)
     }
 
     suspend fun delete(pid: String, id: String) {

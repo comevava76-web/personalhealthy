@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS measurements (
   tz          TEXT NOT NULL,
   period      TEXT,                          -- 'morning', 'afternoon' or 'evening'
   data        TEXT NOT NULL,                 -- e.g. {"sis":128,"dia":82,"pul":67}
-  source      TEXT NOT NULL,                 -- 'photo'
+  source      TEXT NOT NULL,                 -- 'photo' (read from the display) or 'voice' (said aloud)
   scan_id     TEXT,
   lab         TEXT,                          -- for future lab tests
   city        TEXT,
