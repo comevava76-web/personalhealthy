@@ -41,6 +41,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -654,6 +656,12 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
+/** A row of boxes that all take the height of the tallest one. */
+@Composable
+fun StatRow(content: @Composable RowScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), content = content)
+}
+
 @Composable
 fun StatBox(label: String, value: String, note: String? = null, color: Color = C.Ink, modifier: Modifier = Modifier, period: String? = null) {
     Column(modifier.padding(4.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface2).padding(12.dp)) {
@@ -765,15 +773,6 @@ fun HomeScreen(
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
-
-        val today = Z.today()
-        val week = readings.filter { !Z.date(it.takenAt).isBefore(today.minusDays(6)) }
-        Panel {
-            Row { Text(t(R.string.chart_title), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, week.size), color = C.Muted, fontSize = 13.sp) }
-            Spacer(Modifier.height(10.dp))
-            BpChart(week, today.minusDays(6), 7, Modifier.fillMaxWidth().height(180.dp), pulse = false)
-            Legend(pulse = false)
-        }
 
         if (readings.isNotEmpty()) {
             Text(t(R.string.recent), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
@@ -1203,20 +1202,24 @@ fun ReportScreen(readings: List<Reading>) {
             BpChart(per.list, per.start, n, Modifier.fillMaxWidth().height(260.dp))
             Legend()
         }
-        Row(Modifier.fillMaxWidth()) {
-            StatBox(t(R.string.period_avg), "${st.sis}/${st.dia}", t(R.string.n_in_days, st.n, st.days), modifier = Modifier.weight(1f))
-            StatBox(t(R.string.avg_pulse), st.pul?.toString() ?: "—", t(R.string.per_minute), modifier = Modifier.weight(1f))
+        // boxes in pairs of the same height, dates written short so they fit on one line
+        fun shortWhen(r: Reading) = "${Z.dmy(Z.date(r.takenAt))}, ${Z.time(r.takenAt)}"
+        val puls = per.list.mapNotNull { it.pul }
+        StatRow {
+            StatBox(t(R.string.period_avg), "${st.sis}/${st.dia}", t(R.string.n_in_days, st.n, st.days), modifier = Modifier.weight(1f).fillMaxHeight())
+            StatBox(t(R.string.avg_pulse), st.pul?.toString() ?: "—", t(R.string.per_minute), modifier = Modifier.weight(1f).fillMaxHeight())
         }
-        Row(Modifier.fillMaxWidth()) {
-            StatBox(t(R.string.avg_short), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f), period = "morning")
-            StatBox(t(R.string.avg_short), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f), period = "evening")
+        StatRow {
+            StatBox(t(R.string.avg_short), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "morning")
+            StatBox(t(R.string.avg_short), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "evening")
         }
-        Row(Modifier.fillMaxWidth()) {
-            StatBox(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxS?.let { Z.whenText(it.takenAt) }, C.Sys, Modifier.weight(1f))
-            StatBox(t(R.string.max_dia), st.maxD?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxD?.let { Z.whenText(it.takenAt) }, C.Dia, Modifier.weight(1f))
+        StatRow {
+            StatBox(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxS?.let { shortWhen(it) }, C.Sys, Modifier.weight(1f).fillMaxHeight())
+            StatBox(t(R.string.max_dia), st.maxD?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxD?.let { shortWhen(it) }, C.Dia, Modifier.weight(1f).fillMaxHeight())
         }
-        Row(Modifier.fillMaxWidth()) {
-            StatBox(t(R.string.lowest), st.minS?.let { "${it.sis}/${it.dia}" } ?: "—", st.minS?.let { Z.whenText(it.takenAt) }, modifier = Modifier.weight(1f))
+        StatRow {
+            StatBox(t(R.string.lowest), st.minS?.let { "${it.sis}/${it.dia}" } ?: "—", st.minS?.let { shortWhen(it) }, modifier = Modifier.weight(1f).fillMaxHeight())
+            StatBox(t(R.string.pulse_range), if (puls.isEmpty()) "—" else "${puls.min()}–${puls.max()}", t(R.string.per_minute), C.Pul, Modifier.weight(1f).fillMaxHeight())
         }
 
         Spacer(Modifier.height(8.dp))
