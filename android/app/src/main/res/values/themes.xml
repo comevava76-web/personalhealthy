@@ -2,9 +2,10 @@
 <resources>
     <color name="bg">#FF0F1D38</color>
     <color name="icon_bg">#FF0F1D38</color>
-    <style name="Theme.HealthyInstantTracker" parent="android:Theme.Material.NoActionBar">
+    <style name="Base.Theme.HealthyInstantTracker" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@color/bg</item>
         <item name="android:navigationBarColor">@color/bg</item>
     </style>
+    <style name="Theme.HealthyInstantTracker" parent="Base.Theme.HealthyInstantTracker" />
 </resources>

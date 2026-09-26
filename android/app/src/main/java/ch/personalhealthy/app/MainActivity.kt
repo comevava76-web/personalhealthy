@@ -8,6 +8,9 @@ import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.input.KeyboardType
 import android.content.Context
 import android.os.Bundle
+import android.os.SystemClock
+import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -105,6 +108,20 @@ class MainActivity : ComponentActivity() {
                 )
             ) { App() }
         }
+        if (Build.VERSION.SDK_INT >= 31) keepSplashFor(1000)
+    }
+
+    /** Keeps the Android 12+ launch screen up long enough for the ECG trace animation to finish. */
+    private fun keepSplashFor(ms: Long) {
+        val start = SystemClock.uptimeMillis()
+        val content = findViewById<View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                if (SystemClock.uptimeMillis() - start < ms) return false
+                content.viewTreeObserver.removeOnPreDrawListener(this)
+                return true
+            }
+        })
     }
 }
 
