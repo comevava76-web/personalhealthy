@@ -19,7 +19,8 @@ Rules enforced by the server:
 - the blood-pressure values come only from reading the photo; the phone cannot change them;
 - date and time are those of the shot, checked by the server;
 - no names and no emails: each phone has an anonymous key protected inside the phone itself;
-- only people who know the family code can activate the app.
+- only people who know the family code, or who received a single-use invite, can activate the app;
+- nobody sees anyone else's readings: each reading belongs to the anonymous code of one phone.
 
 ## One-time setup
 
@@ -44,6 +45,10 @@ In the repository: Settings → Secrets and variables → Actions → **New repo
 | `CLOUDFLARE_API_TOKEN` | the token from step 2 |
 | `ANTHROPIC_API_KEY` | the key from step 3 |
 | `FAMILY_CODE` | a code you make up (at least 6 characters), to give only to family members |
+
+A fourth secret, `KEY_ENCRYPTION_KEY`, is created by the build by itself the first time, directly on the server
+(it never appears in GitHub, in the logs or in the app). It locks the friends' Anthropic keys (see below).
+It is never replaced: a new one would make the stored friend keys unreadable, and each friend would have to paste theirs again.
 
 ### 5. Build
 In the repository open **Actions** → "Build PersonalHealthy" → **Run workflow**. It is ready after 5-8 minutes.
@@ -75,6 +80,28 @@ In that case the app says "Your Anthropic credit is finished. Tap Recharge."
 - In the **Credit** tab, **Recharge** opens the Anthropic billing page. When you come back to the app it asks how much you added.
 - If the estimate does not match Anthropic, tap "The balance is wrong?" and type the amount shown on Anthropic.
 - When about one photo is left, a notification arrives and a warning appears on the Blood pressure tab.
+
+## Inviting people
+In the **Credit** tab the app manager taps **Invite someone** and chooses:
+- **Family member (I pay)**: their photos use your key and your credit, like everyone who uses the family code;
+- **Friend (pays own photos)**: their photos use their own Anthropic key and their own prepaid credit.
+
+The app creates a code such as `K7QM-3XRA-9TPE`, shown as text and as a QR code, with a **Share** button.
+It works once and for 7 days. On the new phone the person types the code or taps **Scan QR code**.
+The family code keeps working as before, as "family member (I pay)".
+
+A friend is guided right after activation: what it costs (about half a cent per photo, from their own credit),
+**Open Anthropic** to load credit, **Create my key**, then paste the key and type the amount shown on Anthropic.
+The server tests the key with a tiny request and stores it encrypted (AES-GCM) for that person only.
+The key is never sent back to the phone. The friend can replace or delete it in their Credit tab.
+
+Credit is kept in separate pools:
+- the app manager's pool covers everyone who is paid for (family code and "family member" invites);
+- each friend has their own pool: their starting amount, plus their top-ups, minus the cost of their own photos.
+
+Each Credit tab shows only its own pool: friends do not see the manager's balance, and the manager does not see
+friends' balances or keys. If a friend's key is refused or their credit is finished, the app tells them and offers
+**Recharge** and **Replace key**; the manager's key is never used in their place.
 
 ## Languages
 The app uses the phone's language: English, Italian, German or French (in any other language it appears in English).

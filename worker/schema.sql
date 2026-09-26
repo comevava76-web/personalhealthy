@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS persons (
   birth_date  TEXT,
   sex         TEXT,
   is_admin    INTEGER NOT NULL DEFAULT 0,
+  pays        TEXT NOT NULL DEFAULT 'owner', -- 'owner' = the owner's key and credit; 'self' = a friend with their own key
   created_at  INTEGER NOT NULL,
   created_at_local TEXT
 );
@@ -57,9 +58,33 @@ CREATE TABLE IF NOT EXISTS ledger (
   seq           INTEGER PRIMARY KEY AUTOINCREMENT,
   kind          TEXT NOT NULL,
   amount_micro  INTEGER NOT NULL,            -- millionths of a dollar
-  person_id     TEXT,
+  person_id     TEXT,                        -- who took the photo or entered the amount
+  payer         TEXT,                        -- whose money: 'owner', or the id of a friend who pays for themselves (empty = 'owner')
   scan_id       TEXT,
   created_at    INTEGER NOT NULL,
+  created_at_local TEXT
+);
+
+-- Single-use invites made by the administrator, valid 7 days
+CREATE TABLE IF NOT EXISTS invites (
+  code        TEXT PRIMARY KEY,              -- e.g. "K7QM-3XRA-9TPE"
+  type        TEXT NOT NULL,                 -- 'owner_pays' (family member, I pay) or 'self_pays' (friend, pays own photos)
+  created_by  TEXT,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  used_by     TEXT,                          -- person id created with this invite
+  used_at     INTEGER,
+  created_at_local TEXT,
+  expires_at_local TEXT,
+  used_at_local    TEXT
+);
+
+-- Friends' own Anthropic keys, encrypted with AES-GCM (server secret KEY_ENCRYPTION_KEY).
+-- Never sent back to the phone.
+CREATE TABLE IF NOT EXISTS person_keys (
+  person_id   TEXT PRIMARY KEY REFERENCES persons(id) ON DELETE CASCADE,
+  sealed_key  TEXT NOT NULL,                 -- "v1:<iv>:<ciphertext>", base64
+  created_at  INTEGER NOT NULL,
   created_at_local TEXT
 );
 

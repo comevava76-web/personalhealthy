@@ -81,6 +81,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -153,7 +155,8 @@ fun App() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
-    var screen by rememberSaveable { mutableStateOf("tabs") }     // "tabs" or "scan" (full screen, no bottom bar)
+    // "tabs", or a full screen without the bottom bar: "scan", "key" (a friend's own key), "invite"
+    var screen by rememberSaveable { mutableStateOf("tabs") }
     var tab by rememberSaveable { mutableStateOf(Tab.BP.key) }
     val readings = remember { mutableStateListOf<Reading>() }
     var loading by remember { mutableStateOf(false) }
@@ -164,6 +167,12 @@ fun App() {
     var me by remember { mutableStateOf<Me?>(null) }
     var rechargePending by rememberSaveable { mutableStateOf(false) } // true while the Anthropic page is open
     var amountDialog by remember { mutableStateOf<String?>(null) }     // "topup" or "set" while the amount dialog is open
+    var inviteDialog by remember { mutableStateOf(false) }             // choosing who to invite
+    var invite by remember { mutableStateOf<Invite?>(null) }           // the invite just created
+    var keyPromptShown by rememberSaveable { mutableStateOf(false) }  // friend's key steps shown once after opening the app
+    var keyBusy by remember { mutableStateOf(false) }
+    var keyError by remember { mutableStateOf<ApiException?>(null) }
+    var deleteKeyAsk by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
@@ -178,7 +187,9 @@ fun App() {
                 readings.clear(); readings.addAll(l); message = null
                 val m = Repo.me(pid)
                 me = m
-                Notif.check(ctx, m.credit, m.isAdmin)
+                Notif.check(ctx, m.credit, m.canRecharge)
+                // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
+                if (m.selfPays && !m.hasKey && !keyPromptShown && screen == "tabs") { keyPromptShown = true; screen = "key" }
             } catch (e: Exception) {
                 message = e.message ?: t(R.string.err_generic)
             } finally { loading = false }
@@ -195,7 +206,7 @@ fun App() {
                 scan = ScanState.Done(res)
                 if (res.credit != null) {
                     me = me?.copy(credit = res.credit)
-                    Notif.check(ctx, res.credit, me?.isAdmin ?: false)
+                    Notif.check(ctx, res.credit, me?.canRecharge ?: false)
                 }
             } catch (e: Exception) {
                 scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed), (e as? ApiException)?.code)
@@ -218,7 +229,7 @@ fun App() {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
                 rechargePending = false
-                if (me?.isAdmin == true) amountDialog = "topup" else toast(ctx, t(R.string.notif_user_hint))
+                if (me?.canRecharge == true) amountDialog = "topup" else toast(ctx, t(R.string.notif_user_hint))
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -246,8 +257,10 @@ fun App() {
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     BackHandler(enabled = screen != "tabs" || tab != Tab.BP.key) {
-        if (screen != "tabs") { screen = "tabs"; scan = ScanState.Idle } else tab = Tab.BP.key
+        if (screen != "tabs") { screen = "tabs"; scan = ScanState.Idle; keyError = null } else tab = Tab.BP.key
     }
+
+    fun openKeySteps() { keyError = null; scan = ScanState.Idle; screen = "key" }
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         when {
@@ -273,16 +286,39 @@ fun App() {
                 },
                 onRetake = { openCamera() },
                 onRecharge = { openRecharge() },
+                onReplaceKey = { openKeySteps() },
                 onCancel = { screen = "tabs"; scan = ScanState.Idle }
             )
+            screen == "key" -> KeyScreen(
+                hasKey = me?.hasKey == true, busy = keyBusy, error = keyError?.message, errorCode = keyError?.code,
+                onSave = { key, amount ->
+                    val pid = personId ?: return@KeyScreen
+                    keyBusy = true; keyError = null
+                    scope.launch {
+                        try {
+                            val c = Repo.saveKey(pid, key, amount)
+                            me = me?.copy(hasKey = true, credit = c ?: me?.credit)
+                            toast(ctx, t(R.string.key_saved))
+                            screen = "tabs"
+                        } catch (e: Exception) { keyError = e as? ApiException ?: ApiException("generic") }
+                        finally { keyBusy = false }
+                    }
+                },
+                onRecharge = { openRecharge() },
+                onLater = { screen = "tabs"; keyError = null }
+            )
+            screen == "invite" && invite != null -> InviteScreen(invite!!) { screen = "tabs"; invite = null }
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
                         Tab.REPORT.key -> ReportScreen(readings)
-                        Tab.CREDIT.key -> CreditScreen(me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" })
+                        Tab.CREDIT.key -> CreditScreen(
+                            me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
+                            onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true }
+                        )
                         else -> HomeScreen(
                             readings = readings, loading = loading, message = message, me = me,
-                            onOpenCredit = { tab = Tab.CREDIT.key },
+                            onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
                             onRefresh = { reload() },
                             onDelete = { r ->
@@ -318,6 +354,33 @@ fun App() {
             }
         )
     }
+
+    if (inviteDialog) InviteTypeDialog(onDismiss = { inviteDialog = false }) { type ->
+        val pid = personId ?: return@InviteTypeDialog
+        inviteDialog = false
+        scope.launch {
+            try { invite = Repo.invite(pid, type); screen = "invite" }
+            catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+        }
+    }
+
+    if (deleteKeyAsk) AlertDialog(
+        onDismissRequest = { deleteKeyAsk = false },
+        title = { Text(t(R.string.delete_key_q)) },
+        text = { Text(t(R.string.delete_key_text)) },
+        confirmButton = {
+            TextButton(onClick = {
+                deleteKeyAsk = false
+                val pid = personId ?: return@TextButton
+                scope.launch {
+                    try { Repo.deleteKey(pid); me = me?.copy(hasKey = false); toast(ctx, t(R.string.key_deleted)) }
+                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                }
+            }) { Text(t(R.string.delete), color = C.Alert) }
+        },
+        dismissButton = { TextButton(onClick = { deleteKeyAsk = false }) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
 }
 
 @Composable
@@ -426,14 +489,17 @@ fun SetupScreen(onDone: (String) -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
+    val qrScan = rememberLauncherForActivityResult(ScanContract()) { res ->
+        res.contents?.let { code = it.trim(); err = null }
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.Center) {
         Text(t(R.string.app_name), color = C.Ink, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight)
         EcgLine(Modifier.padding(vertical = 8.dp))
         Text(t(R.string.setup_intro), color = C.Muted, fontSize = 15.sp)
         Spacer(Modifier.height(20.dp))
         OutlinedTextField(
             value = code, onValueChange = { code = it.trim() }, singleLine = true,
-            label = { Text(t(R.string.family_code)) },
+            label = { Text(t(R.string.family_or_invite_code)) },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
             colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
             modifier = Modifier.fillMaxWidth()
@@ -445,6 +511,12 @@ fun SetupScreen(onDone: (String) -> Unit) {
                 try { onDone(Repo.register(code)) } catch (e: Exception) { err = e.message } finally { busy = false }
             }
         }
+        BigButton(t(R.string.scan_qr), color = C.Surface2, textColor = C.Ink, enabled = !busy) {
+            qrScan.launch(
+                ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(t(R.string.scan_qr_prompt))
+                    .setBeepEnabled(false).setOrientationLocked(false)
+            )
+        }
         err?.let { Text(it, color = C.Alert, modifier = Modifier.padding(top = 8.dp)) }
         Spacer(Modifier.height(18.dp))
         Text(t(R.string.setup_privacy), color = C.Muted, fontSize = 13.sp)
@@ -455,24 +527,18 @@ fun SetupScreen(onDone: (String) -> Unit) {
 
 @Composable
 fun HomeScreen(
-    readings: List<Reading>, loading: Boolean, message: String?, me: Me?, onOpenCredit: () -> Unit,
+    readings: List<Reading>, loading: Boolean, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
     onMeasure: () -> Unit, onRefresh: () -> Unit, onDelete: (Reading) -> Unit
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.app_name), t(R.string.tagline), if (loading) "…" else t(R.string.refresh), onRefresh, titleSize = 20)
 
+        // a friend who pays for their own photos has no key yet
+        if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
-        if (c != null && c.configured && c.low) {
-            val col = Color(Level.WARN.color)
-            Box(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(col.copy(alpha = 0.15f))
-                    .clickable(onClick = onOpenCredit).padding(horizontal = 14.dp, vertical = 10.dp)
-            ) {
-                Text(t(R.string.credit_warn_low), color = col, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
+        if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
         val last = readings.lastOrNull()
@@ -550,6 +616,18 @@ fun HomeScreen(
     }
 }
 
+/** One short amber line that opens where the problem is fixed. */
+@Composable
+fun WarnLine(text: String, onClick: () -> Unit) {
+    val col = Color(Level.WARN.color)
+    Box(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(col.copy(alpha = 0.15f))
+            .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp)
+    ) {
+        Text(text, color = col, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
 @Composable
 fun Legend() {
     Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -597,7 +675,10 @@ fun WeekPanel(readings: List<Reading>) {
 /* ---------------- Photo reading ---------------- */
 
 @Composable
-fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit, onRecharge: () -> Unit, onCancel: () -> Unit) {
+fun ScanScreen(
+    state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit,
+    onRecharge: () -> Unit, onReplaceKey: () -> Unit, onCancel: () -> Unit
+) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.new_reading), t(R.string.new_reading_sub), t(R.string.cancel), onCancel)
         when (state) {
@@ -611,8 +692,19 @@ fun ScanScreen(state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, 
             }
             is ScanState.Failed -> {
                 Panel { Text(state.msg, color = C.Ink, fontSize = 16.sp) }
-                if (state.code == "anthropic_no_credit") BigButton(t(R.string.recharge), onClick = onRecharge)
-                else BigButton(t(R.string.retake), onClick = onRetake)
+                when (state.code) {
+                    "anthropic_no_credit" -> BigButton(t(R.string.recharge), onClick = onRecharge)
+                    // a friend's own key or credit: never the app manager's as a fallback
+                    "friend_no_credit" -> {
+                        BigButton(t(R.string.recharge), onClick = onRecharge)
+                        BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onReplaceKey)
+                    }
+                    "friend_key_invalid", "friend_no_key" -> {
+                        BigButton(t(R.string.replace_key), onClick = onReplaceKey)
+                        BigButton(t(R.string.recharge), color = C.Surface2, textColor = C.Ink, onClick = onRecharge)
+                    }
+                    else -> BigButton(t(R.string.retake), onClick = onRetake)
+                }
             }
             is ScanState.Done -> {
                 val r = state.r
@@ -729,7 +821,10 @@ fun ReportScreen(readings: List<Reading>) {
 /* ---------------- Credit tab ---------------- */
 
 @Composable
-fun CreditScreen(me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit) {
+fun CreditScreen(
+    me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit,
+    onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit
+) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.credit_page_title))
         if (me == null) {
@@ -748,15 +843,31 @@ fun CreditScreen(me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             Text(t(R.string.credit_avg_fmt, usdFine(c?.avgCost ?: 0.006)), color = C.Muted, fontSize = 13.sp)
             if (!set) Text(
-                if (me.isAdmin) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user),
+                if (me.canRecharge) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user),
                 color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
             )
+            if (me.selfPays) Text(t(R.string.credit_own_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+        }
+        if (me.selfPays && !me.hasKey) {
+            Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
+            BigButton(t(R.string.add_my_key), onClick = onKey)
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
-        if (me.isAdmin) {
+        if (me.canRecharge) {
             TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
             }
+        }
+        if (me.selfPays && me.hasKey) {
+            BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
+            TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
+            }
+        }
+        if (me.isAdmin) {
+            Spacer(Modifier.height(10.dp))
+            BigButton(t(R.string.invite_someone), color = C.Surface2, textColor = C.Ink, onClick = onInvite)
+            Text(t(R.string.invite_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
         }
         Spacer(Modifier.height(24.dp))
     }

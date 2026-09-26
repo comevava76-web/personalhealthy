@@ -70,7 +70,19 @@ data class Credit(
     val loaded: Double?, val spent: Double, val scans: Int, val since: Long?
 )
 
-data class Me(val isAdmin: Boolean, val billingMode: String, val credit: Credit?)
+/**
+ * Who this phone is. [pays] = "owner": the app manager's key and credit pay for the photos;
+ * "self": a friend who pays with their own Anthropic key ([hasKey] says whether it is stored on the server).
+ * [credit] is always this person's own pool: friends never see the manager's, and the other way round.
+ */
+data class Me(val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false) {
+    val selfPays: Boolean get() = pays == "self"
+    /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
+    val canRecharge: Boolean get() = isAdmin || selfPays
+}
+
+/** Single-use invite code; [type] = "owner_pays" (family member, I pay) or "self_pays" (friend, pays own photos). */
+data class Invite(val code: String, val type: String, val expiresAt: Long)
 
 fun parseCredit(o: JSONObject?): Credit? = o?.let {
     Credit(
@@ -223,6 +235,12 @@ class ApiException(val code: String) : Exception(errorText(code))
 fun errorText(code: String): String = when (code) {
     "bad_clock" -> t(R.string.err_bad_clock)
     "family_code" -> t(R.string.err_family_code)
+    "invite_used" -> t(R.string.err_invite_used)
+    "invite_expired" -> t(R.string.err_invite_expired)
+    "friend_no_key" -> t(R.string.err_friend_no_key)
+    "friend_no_credit" -> t(R.string.err_friend_no_credit)
+    "friend_key_invalid" -> t(R.string.err_friend_key_invalid)
+    "key_test_failed" -> t(R.string.err_key_test_failed)
     "unauthorized", "bad_key" -> t(R.string.err_unauthorized)
     "photo_time" -> t(R.string.err_photo_time)
     "no_photo" -> t(R.string.err_no_photo)
@@ -287,7 +305,8 @@ object Api {
 
 object Repo {
     suspend fun register(code: String): String {
-        val body = JSONObject().put("familyCode", code).put("publicKey", Keys.publicKeyB64())
+        // the family code or an invite code: the server tells them apart
+        val body = JSONObject().put("code", code).put("publicKey", Keys.publicKeyB64())
         return Api.call("POST", "/v1/register", body, null).getString("personId")
     }
 
@@ -314,13 +333,36 @@ object Repo {
 
     suspend fun me(pid: String): Me {
         val j = Api.call("GET", "/v1/me", null, pid)
-        return Me(j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")))
+        return Me(
+            j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")),
+            j.optString("pays", "owner"), j.optBoolean("hasKey", false)
+        )
     }
 
-    /** action = "topup" (add a top-up) or "set" (set the current balance) */
+    /** action = "topup" (add a top-up) or "set" (set the current balance), always on this person's own pool */
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {
-        val j = Api.call("POST", "/v1/admin/credit", JSONObject().put("action", action).put("amount", amount), pid)
+        val j = Api.call("POST", "/v1/credit", JSONObject().put("action", action).put("amount", amount), pid)
         return parseCredit(j.optJSONObject("credit"))
+    }
+
+    /** New single-use invite, valid 7 days (app manager only). */
+    suspend fun invite(pid: String, type: String): Invite {
+        val j = Api.call("POST", "/v1/admin/invites", JSONObject().put("type", type), pid)
+        return Invite(j.getString("code"), j.getString("type"), j.getLong("expiresAt"))
+    }
+
+    /**
+     * A friend's own Anthropic key: the server tests it with a tiny request, then stores it encrypted.
+     * It is never sent back to the phone. [amount] = the balance shown on Anthropic now (null = unchanged).
+     */
+    suspend fun saveKey(pid: String, apiKey: String, amount: Double?): Credit? {
+        val body = JSONObject().put("apiKey", apiKey)
+        if (amount != null) body.put("amount", amount)
+        return parseCredit(Api.call("POST", "/v1/key", body, pid).optJSONObject("credit"))
+    }
+
+    suspend fun deleteKey(pid: String) {
+        Api.call("DELETE", "/v1/key", null, pid)
     }
 
     suspend fun confirm(pid: String, scanId: String) {

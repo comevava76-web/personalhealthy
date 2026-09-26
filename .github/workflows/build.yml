@@ -38,13 +38,21 @@ jobs:
           echo "Database: $ID"
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
           npx wrangler d1 execute personalhealthy --remote --file=schema.sql
-          # Readable Swiss-time columns (*_local): add them to existing tables if missing
+          # Columns added after the first version: add them to existing tables if missing
+          add_col() {
+            OUT=$(npx wrangler d1 execute personalhealthy --remote --command "ALTER TABLE $1 ADD COLUMN $2 $3" 2>&1) \
+              && echo "Added column $1.$2" \
+              || { echo "$OUT" | grep -qi "duplicate column" && echo "Column $1.$2 already there" || { echo "$OUT"; exit 1; }; }
+          }
+          # Readable Swiss-time columns (*_local)
           for col in persons.created_at_local scans.taken_at_local scans.created_at_local \
                      measurements.taken_at_local measurements.created_at_local ledger.created_at_local; do
-            OUT=$(npx wrangler d1 execute personalhealthy --remote --command "ALTER TABLE ${col%%.*} ADD COLUMN ${col#*.} TEXT" 2>&1) \
-              && echo "Added column $col" \
-              || { echo "$OUT" | grep -qi "duplicate column" && echo "Column $col already there" || { echo "$OUT"; exit 1; }; }
+            add_col "${col%%.*}" "${col#*.}" TEXT
           done
+          # Who pays: 'owner' (the owner's key and credit) or 'self' (a friend with their own key)
+          add_col persons pays "TEXT NOT NULL DEFAULT 'owner'"
+          # Whose money each credit movement belongs to (empty = the owner)
+          add_col ledger payer TEXT
 
       - name: workers.dev subdomain
         env:
@@ -73,6 +81,19 @@ jobs:
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
+          # KEY_ENCRYPTION_KEY encrypts friends' Anthropic keys. It is created once, here, and never
+          # printed or replaced: a new one would make every stored friend key unreadable.
+          # If the list of secrets cannot be read, stop rather than risk overwriting it.
+          LIST=$(npx wrangler secret list --format json 2>/dev/null) || { echo "Could not read the server's secrets"; exit 1; }
+          echo "$LIST" | jq -e 'type == "array"' > /dev/null || { echo "Could not read the server's secrets"; exit 1; }
+          if echo "$LIST" | jq -e 'any(.[]; .name == "KEY_ENCRYPTION_KEY")' > /dev/null; then
+            echo "KEY_ENCRYPTION_KEY already there: left as it is"
+          else
+            ( umask 077; jq -n --arg k "$(openssl rand -base64 32)" '{KEY_ENCRYPTION_KEY:$k}' > kek.json )
+            npx wrangler secret bulk kek.json
+            rm -f kek.json
+            echo "KEY_ENCRYPTION_KEY created"
+          fi
           URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
           if [ -z "$URL" ]; then URL="${{ vars.BATTITO_API_URL }}"; fi
           if [ -z "$URL" ]; then echo "Server address not found"; exit 1; fi

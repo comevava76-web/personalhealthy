@@ -7,8 +7,9 @@ type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
 interface Env {
   DB: any; // Cloudflare D1
-  ANTHROPIC_API_KEY: string;
-  FAMILY_CODE: string;
+  ANTHROPIC_API_KEY: string;    // the owner's key: pays for every person with pays = 'owner'
+  FAMILY_CODE: string;          // still works as an invite for "family member (I pay)"
+  KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
   MODEL?: string;
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
@@ -23,21 +24,30 @@ async function getSetting(q: Q, key: string, def: string): Promise<string> {
   return r ? String(r.value) : def;
 }
 
-// Credit is counted from the last balance correction ("set"): loaded = that balance + later top-ups,
+// Money pools. Everyone with pays = 'owner' shares the owner's pool ("owner"); each friend with
+// pays = 'self' has a pool of their own, named after their person id. Rows written before pools
+// existed have no payer and belong to the owner.
+type Pool = string;
+const OWNER_POOL = "owner";
+const poolOf = (person: any): Pool => (person.pays === "self" ? String(person.id) : OWNER_POOL);
+const POOL_WHERE = "COALESCE(payer, 'owner') = ?1";
+
+// Credit is counted from the pool's last balance correction ("set"): loaded = that balance + later top-ups,
 // spent = cost of the photos read since then, remaining = loaded - spent.
-async function creditInfo(q: Q) {
-  const [last] = await q("SELECT seq, amount_micro, created_at FROM ledger WHERE kind = 'set' ORDER BY seq DESC LIMIT 1");
+async function creditInfo(q: Q, pool: Pool) {
+  const [last] = await q(`SELECT seq, amount_micro, created_at FROM ledger WHERE ${POOL_WHERE} AND kind = 'set' ORDER BY seq DESC LIMIT 1`, [pool]);
   const fromSeq = last ? Number(last.seq) : 0;
   const base = last ? Number(last.amount_micro) : 0;
   const [sums] = await q(
     "SELECT COALESCE(SUM(CASE WHEN kind = 'topup' THEN amount_micro ELSE 0 END), 0) AS top, " +
     "COALESCE(SUM(CASE WHEN kind = 'usage' THEN amount_micro ELSE 0 END), 0) AS used, " +
     "COUNT(CASE WHEN kind = 'usage' THEN 1 END) AS scans, " +
-    "COUNT(CASE WHEN kind IN ('topup','set') THEN 1 END) AS money_rows FROM ledger WHERE seq > ?1",
-    [fromSeq]
+    `COUNT(CASE WHEN kind IN ('topup','set') THEN 1 END) AS money_rows FROM ledger WHERE ${POOL_WHERE} AND seq > ?2`,
+    [pool, fromSeq]
   );
   const [avgRow] = await q(
-    "SELECT AVG(amount_micro) AS avg FROM (SELECT amount_micro FROM ledger WHERE kind = 'usage' ORDER BY seq DESC LIMIT 20) t"
+    `SELECT AVG(amount_micro) AS avg FROM (SELECT amount_micro FROM ledger WHERE ${POOL_WHERE} AND kind = 'usage' ORDER BY seq DESC LIMIT 20) t`,
+    [pool]
   );
   const configured = !!last || Number(sums?.money_rows || 0) > 0;
   const loaded = base + Number(sums?.top || 0);
@@ -57,6 +67,14 @@ async function creditInfo(q: Q) {
     low: configured && remaining < 2 * avg,   // estimate: enough for one more photo at most (only for warnings)
     empty: configured && remaining < avg,     // estimate: not enough for another photo (only for warnings)
   };
+}
+
+async function addMoney(q: Q, pool: Pool, pid: string, kind: "set" | "topup", amount: number) {
+  const now = Date.now();
+  await q(
+    "INSERT INTO ledger (kind, amount_micro, person_id, payer, created_at, created_at_local) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+    [kind, Math.round(amount * MICRO), pid, pool, now, localStamp(now)]
+  );
 }
 
 const TZ = "Europe/Zurich";
@@ -115,6 +133,46 @@ function newId(prefix: string): string {
   return prefix + [...b].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 
+function bytesToB64(b: Uint8Array): string {
+  let s = "";
+  for (const x of b) s += String.fromCharCode(x);
+  return btoa(s);
+}
+
+/* ---------- friends' Anthropic keys: encrypted per person, never sent back to the phone ---------- */
+// AES-GCM with the server secret KEY_ENCRYPTION_KEY. The person id is bound to the ciphertext,
+// so an encrypted key copied onto another person's row cannot be decrypted.
+async function kek(env: Env): Promise<CryptoKey> {
+  const raw = env.KEY_ENCRYPTION_KEY ? b64ToBytes(env.KEY_ENCRYPTION_KEY) : new Uint8Array(0);
+  if (raw.length !== 32) throw new Error("KEY_ENCRYPTION_KEY missing or not 32 bytes");
+  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+async function sealKey(env: Env, pid: string, apiKey: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: enc.encode(pid) }, await kek(env), enc.encode(apiKey));
+  return `v1:${bytesToB64(iv)}:${bytesToB64(new Uint8Array(ct))}`;
+}
+async function openKey(env: Env, pid: string, sealed: string): Promise<string> {
+  const [v, iv, ct] = sealed.split(":");
+  if (v !== "v1") throw new Error("unknown key format");
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(iv), additionalData: enc.encode(pid) }, await kek(env), b64ToBytes(ct));
+  return new TextDecoder().decode(pt);
+}
+
+/* ---------- invites ---------- */
+const INVITE_DAYS = 7;
+const INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I/L: easy to read aloud and type
+function newInviteCode(): string {
+  const b = crypto.getRandomValues(new Uint8Array(12));
+  const c = [...b].map(x => INVITE_ALPHABET[x % INVITE_ALPHABET.length]).join("");
+  return `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8, 12)}`;
+}
+// Accepts what people type or scan: lower case, spaces, missing dashes
+function normInvite(s: string): string {
+  const c = s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return c.length === 12 ? `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8, 12)}` : "";
+}
+
 // Swiss time as readable text for the *_local columns, e.g. "09262026 14:32" (MMddyyyy HH:mm, 24-hour clock)
 const localFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
@@ -163,12 +221,32 @@ Reply ONLY with JSON in this format:
 const LANGS: Record<string, string> = { it: "Italian", en: "English", de: "German", fr: "French" };
 
 class NoAnthropicCredit extends Error {}
+class BadAnthropicKey extends Error {}
 
-async function readDisplay(env: Env, image: string, lang: string) {
+// Sorts Anthropic's refusals: no money left, key not valid, or anything else
+async function anthropicError(res: Response): Promise<Error> {
+  const body = await res.text();
+  // Anthropic refuses when the prepaid account has no money left (billing / credit balance error)
+  if (res.status === 402 || /billing|credit balance|purchase credits/i.test(body)) return new NoAnthropicCredit(body.slice(0, 300));
+  if (res.status === 401 || res.status === 403) return new BadAnthropicKey(body.slice(0, 300));
+  return new Error("ai " + res.status + " " + body.slice(0, 300));
+}
+
+// The smallest possible request, to check a friend's key before storing it
+async function testKey(env: Env, apiKey: string) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: env.MODEL || "claude-sonnet-5", max_tokens: 1, messages: [{ role: "user", content: "Hi" }] }),
+  });
+  if (!res.ok) throw await anthropicError(res);
+}
+
+async function readDisplay(env: Env, apiKey: string, image: string, lang: string) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      "x-api-key": env.ANTHROPIC_API_KEY,
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
@@ -186,12 +264,7 @@ async function readDisplay(env: Env, image: string, lang: string) {
       ],
     }),
   });
-  if (!res.ok) {
-    const body = await res.text();
-    // Anthropic refuses when the prepaid account has no money left (billing / credit balance error)
-    if (res.status === 402 || /billing|credit balance|purchase credits/i.test(body)) throw new NoAnthropicCredit(body.slice(0, 300));
-    throw new Error("ai " + res.status + " " + body.slice(0, 300));
-  }
+  if (!res.ok) throw await anthropicError(res);
   const out: any = await res.json();
   const text = (out.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
   let j: any = {};
@@ -243,54 +316,82 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     }
   }
 
-  // Phone activation: family code + anonymous key generated on the phone
+  // Phone activation: the family code (family member, the owner pays) or a single-use invite code,
+  // plus the anonymous key generated on the phone
   if (req.method === "POST" && url.pathname === "/v1/register") {
-    if (!env.FAMILY_CODE || data.familyCode !== env.FAMILY_CODE) return fail("Invalid family code", 403, "family_code");
+    const typed = String(data.code ?? data.familyCode ?? "").trim();
+    const isFamily = !!env.FAMILY_CODE && typed === env.FAMILY_CODE;
+    const invite = isFamily ? "" : normInvite(typed);
+    if (!isFamily && !invite) return fail("Invalid code", 403, "family_code");
     if (typeof data.publicKey !== "string" || !(await verify(data.publicKey, sig, message)))
       return fail("Invalid phone key", 401, "bad_key");
-    const [existing] = await q("SELECT id FROM persons WHERE public_key = ?1", [data.publicKey]);
-    if (existing) return json({ personId: existing.id });
+    const [existing] = await q("SELECT id, pays FROM persons WHERE public_key = ?1", [data.publicKey]);
+    if (existing) return json({ personId: existing.id, pays: existing.pays || "owner" });
     const id = newId("per_");
     const now = Date.now();
-    // the first activated phone manages credit and settings
-    await q(
-      "INSERT INTO persons (id, public_key, is_admin, created_at, created_at_local) VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), ?3, ?4)",
-      [id, data.publicKey, now, localStamp(now)]
-    );
-    return json({ personId: id });
+    if (isFamily) {
+      // the first activated phone manages credit, settings and invites
+      await q(
+        "INSERT INTO persons (id, public_key, is_admin, pays, created_at, created_at_local) " +
+        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'owner', ?3, ?4)",
+        [id, data.publicKey, now, localStamp(now)]
+      );
+      return json({ personId: id, pays: "owner" });
+    }
+    // Invite: one atomic step that marks the invite as used and creates the person, or does nothing
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE invites SET used_by = ?1, used_at = ?2, used_at_local = ?3 WHERE code = ?4 AND used_by IS NULL AND expires_at > ?2"
+      ).bind(id, now, localStamp(now), invite),
+      env.DB.prepare(
+        `INSERT INTO persons (id, public_key, is_admin, pays, created_at, created_at_local)
+         SELECT ?1, ?2, 0, CASE type WHEN 'self_pays' THEN 'self' ELSE 'owner' END, ?3, ?4 FROM invites WHERE code = ?5 AND used_by = ?1`
+      ).bind(id, data.publicKey, now, localStamp(now), invite),
+    ]);
+    if (!results[1]?.meta?.changes) {
+      const [inv] = await q("SELECT used_by, expires_at FROM invites WHERE code = ?1", [invite]);
+      if (!inv) return fail("Invalid code", 403, "family_code");
+      if (inv.used_by) return fail("Invite already used", 403, "invite_used");
+      return fail("Invite expired", 403, "invite_expired");
+    }
+    const [p] = await q("SELECT pays FROM persons WHERE id = ?1", [id]);
+    return json({ personId: id, pays: p?.pays || "owner" });
   }
 
   // Everything else requires the registered phone's signature
   const pid = req.headers.get("X-Person") || "";
-  const [person] = await q("SELECT id, public_key, is_admin FROM persons WHERE id = ?1", [pid]);
+  const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays FROM persons WHERE id = ?1", [pid]);
   if (!person || !(await verify(person.public_key, sig, message))) return fail("Unauthorized", 401, "unauthorized");
+  const pool = poolOf(person);
+  const selfPays = person.pays === "self";
+  const hasKey = async () => !!(await q("SELECT 1 FROM person_keys WHERE person_id = ?1", [pid]))[0];
 
-  // 0) Who am I, credit and settings
+  // 0) Who am I, and the credit of my own pool (a friend never sees the owner's pool, nor the other way round)
   if (req.method === "GET" && url.pathname === "/v1/me") {
     await fillLocalDates(q);
     return json({
       personId: pid,
       isAdmin: !!person.is_admin,
+      pays: person.pays,
+      hasKey: selfPays ? await hasKey() : false,
       billingMode: await getSetting(q, "billing_mode", "private"),
-      credit: await creditInfo(q),
+      credit: await creditInfo(q, pool),
     });
   }
-  if (req.method === "POST" && url.pathname === "/v1/admin/credit") {
-    if (!person.is_admin) return fail("Only the app manager can change the credit", 403, "admin_only");
+  // Money added or balance corrected, always on the caller's own pool.
+  // The owner's pool is managed only by the administrator; each friend manages their own.
+  if (req.method === "POST" && (url.pathname === "/v1/credit" || url.pathname === "/v1/admin/credit")) {
+    if (!selfPays && !person.is_admin) return fail("Only the app manager can change the credit", 403, "admin_only");
     const amount = Number(data.amount);
     if (!(amount >= 0 && amount <= 1000)) return fail("Invalid amount", 400, "bad_amount");
     const kind = data.action === "set" ? "set" : "topup";
     if (kind === "topup" && amount <= 0) return fail("Invalid amount", 400, "bad_amount");
-    const now = Date.now();
-    await q(
-      "INSERT INTO ledger (kind, amount_micro, person_id, created_at, created_at_local) VALUES (?1, ?2, ?3, ?4, ?5)",
-      [kind, Math.round(amount * MICRO), pid, now, localStamp(now)]
-    );
-    return json({ credit: await creditInfo(q) });
+    await addMoney(q, pool, pid, kind, amount);
+    return json({ credit: await creditInfo(q, pool) });
   }
-  // Last 20 credit movements: top-ups, balance corrections and the cost of each photo (readable by every registered phone)
+  // Last 20 movements of the caller's own pool: top-ups, balance corrections and the cost of each photo
   if (req.method === "GET" && url.pathname === "/v1/credit/history") {
-    const rows = await q("SELECT kind, amount_micro, created_at FROM ledger ORDER BY seq DESC LIMIT 20");
+    const rows = await q(`SELECT kind, amount_micro, created_at FROM ledger WHERE ${POOL_WHERE} ORDER BY seq DESC LIMIT 20`, [pool]);
     return json({
       items: rows.map((r: any) => ({ kind: r.kind, amount: Number(r.amount_micro) / MICRO, at: Number(r.created_at) })),
     });
@@ -304,6 +405,54 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ billingMode: mode });
   }
 
+  // Invite someone (administrator only): single-use code, valid 7 days
+  if (req.method === "POST" && url.pathname === "/v1/admin/invites") {
+    if (!person.is_admin) return fail("Only the app manager can invite", 403, "admin_only");
+    const type = data.type === "self_pays" ? "self_pays" : data.type === "owner_pays" ? "owner_pays" : "";
+    if (!type) return fail("Invalid invite type", 400, "generic");
+    const now = Date.now();
+    const expires = now + INVITE_DAYS * 864e5;
+    const code = newInviteCode();
+    await q(
+      "INSERT INTO invites (code, type, created_by, created_at, expires_at, created_at_local, expires_at_local) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+      [code, type, pid, now, expires, localStamp(now), localStamp(expires)]
+    );
+    return json({ code, type, expiresAt: expires });
+  }
+
+  // A friend's own Anthropic key: tested, then stored encrypted. It is never sent back to the phone.
+  if (url.pathname === "/v1/key") {
+    if (!selfPays) return fail("Only people who pay for their own photos have a key", 403, "not_self_pays");
+    if (req.method === "DELETE") {
+      await q("DELETE FROM person_keys WHERE person_id = ?1", [pid]);
+      return json({ hasKey: false, credit: await creditInfo(q, pool) });
+    }
+    if (req.method === "POST") {
+      const apiKey = String(data.apiKey || "").trim();
+      if (!/^sk-ant-[A-Za-z0-9_-]{20,300}$/.test(apiKey)) return fail("This does not look like an Anthropic key", 400, "friend_key_invalid");
+      const amount = data.amount == null || data.amount === "" ? null : Number(data.amount);
+      if (amount != null && !(amount >= 0 && amount <= 1000)) return fail("Invalid amount", 400, "bad_amount");
+      if (!env.KEY_ENCRYPTION_KEY) return fail("The server cannot store keys yet", 500, "server");
+      try {
+        await testKey(env, apiKey);
+      } catch (e: any) {
+        console.error("key test: " + String(e?.message).slice(0, 200)); // Anthropic's reply; never the key itself
+        if (e instanceof NoAnthropicCredit) return fail("Key works, but the Anthropic credit is empty", 402, "friend_no_credit");
+        if (e instanceof BadAnthropicKey) return fail("Anthropic does not accept this key", 400, "friend_key_invalid");
+        return fail("Could not check the key. Try again shortly.", 502, "key_test_failed");
+      }
+      const sealed = await sealKey(env, pid, apiKey);
+      const now = Date.now();
+      await q(
+        "INSERT INTO person_keys (person_id, sealed_key, created_at, created_at_local) VALUES (?1, ?2, ?3, ?4) " +
+        "ON CONFLICT (person_id) DO UPDATE SET sealed_key = excluded.sealed_key, created_at = excluded.created_at, created_at_local = excluded.created_at_local",
+        [pid, sealed, now, localStamp(now)]
+      );
+      if (amount != null) await addMoney(q, pool, pid, "set", amount);
+      return json({ hasKey: true, credit: await creditInfo(q, pool) });
+    }
+  }
+
   // 1) Photo reading: the numbers are decided only by the reading
   if (req.method === "POST" && url.pathname === "/v1/bp/scan") {
     const takenAt = Number(data.takenAt);
@@ -311,14 +460,28 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (!takenAt || takenAt > now + 2 * 60e3 || takenAt < now - 30 * 60e3)
       return fail("Invalid photo time. Retake the photo.", 400, "photo_time");
     if (typeof data.image !== "string" || data.image.length < 1000) return fail("Missing photo", 400, "no_photo");
+    // Whose key pays: a friend's own key, never the owner's as a fallback
+    let apiKey = env.ANTHROPIC_API_KEY;
+    if (selfPays) {
+      const [k] = await q("SELECT sealed_key FROM person_keys WHERE person_id = ?1", [pid]);
+      if (!k) return fail("No Anthropic key yet", 402, "friend_no_key");
+      try {
+        apiKey = await openKey(env, pid, String(k.sealed_key));
+      } catch (e: any) {
+        console.error("key open: " + e?.message);
+        return fail("Your key can no longer be used. Add it again.", 402, "friend_key_invalid");
+      }
+    }
     // No limit here: the photo is always sent. The app's credit is only an estimate;
     // only Anthropic knows the real balance and refuses when it is finished.
     let r, costMicro;
     try {
-      ({ reading: r, costMicro } = await readDisplay(env, data.image, (req.headers.get("X-Lang") || "en").slice(0, 2).toLowerCase()));
+      ({ reading: r, costMicro } = await readDisplay(env, apiKey, data.image, (req.headers.get("X-Lang") || "en").slice(0, 2).toLowerCase()));
     } catch (e: any) {
       console.error(e?.message);
-      if (e instanceof NoAnthropicCredit) return fail("Anthropic credit is finished", 402, "anthropic_no_credit");
+      if (e instanceof NoAnthropicCredit)
+        return selfPays ? fail("Your Anthropic credit is finished", 402, "friend_no_credit") : fail("Anthropic credit is finished", 402, "anthropic_no_credit");
+      if (e instanceof BadAnthropicKey && selfPays) return fail("Anthropic does not accept your key", 402, "friend_key_invalid");
       return fail("Reading failed. Try again shortly.", 502, "read_failed");
     }
     const scanId = newId("scn_");
@@ -328,10 +491,10 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       [scanId, pid, JSON.stringify(r), takenAt, now, localStamp(takenAt), localStamp(now)]
     );
     await q(
-      "INSERT INTO ledger (kind, amount_micro, person_id, scan_id, created_at, created_at_local) VALUES ('usage', ?1, ?2, ?3, ?4, ?5)",
-      [costMicro, pid, scanId, now, localStamp(now)]
+      "INSERT INTO ledger (kind, amount_micro, person_id, payer, scan_id, created_at, created_at_local) VALUES ('usage', ?1, ?2, ?3, ?4, ?5, ?6)",
+      [costMicro, pid, pool, scanId, now, localStamp(now)]
     );
-    return json({ scanId, ...r, takenAt, period: periodOf(takenAt), credit: await creditInfo(q) });
+    return json({ scanId, ...r, takenAt, period: periodOf(takenAt), credit: await creditInfo(q, pool) });
   }
 
   // 2) Confirm: save exactly what was read (the phone cannot change the numbers)

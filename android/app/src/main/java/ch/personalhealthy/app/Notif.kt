@@ -30,7 +30,8 @@ object Notif {
     }
 
     /** Notifies once when the credit is enough for one more photo at most; re-arms after a top-up. */
-    fun check(ctx: Context, c: Credit?, isAdmin: Boolean) {
+    /** [canRecharge]: this person tops up their own credit (app manager or friend); others ask the app manager. */
+    fun check(ctx: Context, c: Credit?, canRecharge: Boolean) {
         if (c == null || !c.configured) return
         val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) // keep: existing storage name
         if (!c.low) {
@@ -45,7 +46,7 @@ object Notif {
         if (Txt.res == null) Txt.init(ctx)
         ensureChannel(ctx)
         val what = if (c.empty) t(R.string.notif_empty) else t(R.string.notif_low)
-        val body = what + " " + if (isAdmin) t(R.string.notif_admin_hint) else t(R.string.notif_user_hint)
+        val body = what + " " + if (canRecharge) t(R.string.notif_admin_hint) else t(R.string.notif_user_hint)
         val open = PendingIntent.getActivity(
             ctx, 0, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -66,7 +67,7 @@ object Notif {
         }
     }
 
-    /** Hourly check, even with the app closed: so it warns even when another family member uses up the credit. */
+    /** Hourly check, even with the app closed: so it warns even when another family member uses up the shared credit. */
     fun schedule(ctx: Context) {
         val req = PeriodicWorkRequestBuilder<CreditWorker>(1, TimeUnit.HOURS)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
@@ -83,7 +84,7 @@ class CreditWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
             ?: return Result.success()
         return try {
             val me = Repo.me(pid)
-            Notif.check(applicationContext, me.credit, me.isAdmin)
+            Notif.check(applicationContext, me.credit, me.canRecharge)
             Result.success()
         } catch (e: Exception) {
             Result.success()
