@@ -11,6 +11,7 @@ interface Env {
   FAMILY_CODE: string;          // still works as an invite for "family member (I pay)"
   KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
   MODEL?: string;
+  GOOGLE_CLIENT_ID?: string;   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
 }
@@ -125,6 +126,45 @@ async function verify(pubB64: string, sigB64: string, message: string): Promise<
     return await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, derToRaw(b64ToBytes(sigB64)), enc.encode(message));
   } catch {
     return false;
+  }
+}
+
+/* ---------- Sign in with Google: the ID token the phone gets from Google, checked here ---------- */
+let googleJwks: { keys: any[]; at: number } | null = null;
+async function googleKeys(force = false): Promise<any[]> {
+  if (!force && googleJwks && Date.now() - googleJwks.at < 3600e3) return googleJwks.keys;
+  const r = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+  const j: any = await r.json();
+  googleJwks = { keys: Array.isArray(j.keys) ? j.keys : [], at: Date.now() };
+  return googleJwks.keys;
+}
+function b64urlToBytes(s: string): Uint8Array {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  return b64ToBytes(s);
+}
+// Returns the Google account (its stable id "sub" and its email) only if the token is genuine,
+// was made for this app, has not expired and the email is verified by Google.
+async function verifyGoogle(token: string, clientId: string): Promise<{ sub: string; email: string } | null> {
+  try {
+    const [h, p, sg] = token.split(".");
+    if (!h || !p || !sg) return null;
+    const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(h)));
+    const claims = JSON.parse(new TextDecoder().decode(b64urlToBytes(p)));
+    if (header.alg !== "RS256") return null;
+    let jwk = (await googleKeys()).find((k: any) => k.kid === header.kid);
+    if (!jwk) jwk = (await googleKeys(true)).find((k: any) => k.kid === header.kid);   // Google rotated its keys
+    if (!jwk) return null;
+    const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    if (!(await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64urlToBytes(sg), enc.encode(h + "." + p)))) return null;
+    if (claims.aud !== clientId) return null;
+    if (claims.iss !== "accounts.google.com" && claims.iss !== "https://accounts.google.com") return null;
+    if (!(Number(claims.exp) * 1000 > Date.now())) return null;
+    if (claims.email_verified !== true && claims.email_verified !== "true") return null;
+    if (!claims.sub) return null;
+    return { sub: String(claims.sub), email: String(claims.email || "") };
+  } catch {
+    return null;
   }
 }
 
@@ -358,9 +398,81 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ personId: id, pays: p?.pays || "owner" });
   }
 
+  // Sign in with Google. One call for everything:
+  //  - this Google account already has an account: this phone takes its place (new phone, reinstall);
+  //    the old phone is disconnected;
+  //  - this phone already has an account without Google (earlier versions): Google is linked to it;
+  //  - otherwise a new account: with an invite or the family code the app manager pays the photos,
+  //    without a code the person pays with their own Anthropic key.
+  // After this, day to day the phone only uses its own key, unlocked with fingerprint or face.
+  if (req.method === "POST" && url.pathname === "/v1/auth/google") {
+    if (!env.GOOGLE_CLIENT_ID) return fail("Google sign-in is not set up", 503, "google_off");
+    if (typeof data.publicKey !== "string" || !(await verify(data.publicKey, sig, message)))
+      return fail("Invalid phone key", 401, "bad_key");
+    const g = await verifyGoogle(String(data.idToken || ""), env.GOOGLE_CLIENT_ID);
+    if (!g) return fail("Google sign-in not valid", 401, "google_invalid");
+    const now = Date.now();
+    const [owner] = await q("SELECT id, COALESCE(pays, 'owner') AS pays FROM persons WHERE google_sub = ?1", [g.sub]);
+    const [onPhone] = await q("SELECT id, google_sub FROM persons WHERE public_key = ?1", [data.publicKey]);
+    if (owner) {
+      if (onPhone && onPhone.id !== owner.id) {
+        // this phone holds another account: only an empty one without Google may be replaced
+        const [used] = await q("SELECT 1 FROM measurements WHERE person_id = ?1 LIMIT 1", [onPhone.id]);
+        if (onPhone.google_sub || used) return fail("This phone is used by another account", 409, "phone_in_use");
+        await q("DELETE FROM persons WHERE id = ?1", [onPhone.id]);
+      }
+      await q("UPDATE persons SET public_key = ?1, email = ?2 WHERE id = ?3", [data.publicKey, g.email, owner.id]);
+      return json({ personId: owner.id, pays: owner.pays, recovered: true });
+    }
+    if (data.consent !== true) return fail("Consent needed", 400, "consent_required");
+    if (onPhone) {
+      if (onPhone.google_sub) return fail("This phone is linked to another Google account", 409, "google_other");
+      await q("UPDATE persons SET google_sub = ?1, email = ?2, consent_at = ?3 WHERE id = ?4", [g.sub, g.email, now, onPhone.id]);
+      const [p] = await q("SELECT COALESCE(pays, 'owner') AS pays FROM persons WHERE id = ?1", [onPhone.id]);
+      return json({ personId: onPhone.id, pays: p?.pays || "owner", linked: true });
+    }
+    const typed = String(data.code ?? "").trim();
+    const id = newId("per_");
+    if (!typed) {
+      await q(
+        "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
+        "VALUES (?1, ?2, 0, 'self', ?3, ?4, ?5, ?5, ?6)",
+        [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
+      );
+      return json({ personId: id, pays: "self" });
+    }
+    if (env.FAMILY_CODE && typed === env.FAMILY_CODE) {
+      await q(
+        "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
+        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'owner', ?3, ?4, ?5, ?5, ?6)",
+        [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
+      );
+      return json({ personId: id, pays: "owner" });
+    }
+    const invite = normInvite(typed);
+    if (!invite) return fail("Invalid code", 403, "family_code");
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE invites SET used_by = ?1, used_at = ?2, used_at_local = ?3 WHERE code = ?4 AND used_by IS NULL AND expires_at > ?2"
+      ).bind(id, now, localStamp(now), invite),
+      env.DB.prepare(
+        `INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local)
+         SELECT ?1, ?2, 0, CASE type WHEN 'self_pays' THEN 'self' ELSE 'owner' END, ?5, ?6, ?3, ?3, ?4 FROM invites WHERE code = ?7 AND used_by = ?1`
+      ).bind(id, data.publicKey, now, localStamp(now), g.sub, g.email, invite),
+    ]);
+    if (!results[1]?.meta?.changes) {
+      const [inv] = await q("SELECT used_by FROM invites WHERE code = ?1", [invite]);
+      if (!inv) return fail("Invalid code", 403, "family_code");
+      if (inv.used_by) return fail("Invite already used", 403, "invite_used");
+      return fail("Invite expired", 403, "invite_expired");
+    }
+    const [p] = await q("SELECT pays FROM persons WHERE id = ?1", [id]);
+    return json({ personId: id, pays: p?.pays || "owner" });
+  }
+
   // Everything else requires the registered phone's signature
   const pid = req.headers.get("X-Person") || "";
-  const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays FROM persons WHERE id = ?1", [pid]);
+  const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays, google_sub, email FROM persons WHERE id = ?1", [pid]);
   if (!person || !(await verify(person.public_key, sig, message))) return fail("Unauthorized", 401, "unauthorized");
   const pool = poolOf(person);
   const selfPays = person.pays === "self";
@@ -374,10 +486,28 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       isAdmin: !!person.is_admin,
       pays: person.pays,
       hasKey: selfPays ? await hasKey() : false,
+      hasGoogle: !!person.google_sub,
+      email: person.email || null,
+      googleOn: !!env.GOOGLE_CLIENT_ID,
       billingMode: await getSetting(q, "billing_mode", "private"),
       credit: await creditInfo(q, pool),
     });
   }
+  // Delete my account and all my data (right to erasure). The app asks twice. The app manager cannot:
+  // the family's credit and invites depend on them.
+  if (req.method === "DELETE" && url.pathname === "/v1/me") {
+    if (person.is_admin) return fail("The app manager cannot delete their account", 403, "admin_delete");
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM measurements WHERE person_id = ?1").bind(pid),
+      env.DB.prepare("DELETE FROM scans WHERE person_id = ?1").bind(pid),
+      env.DB.prepare("DELETE FROM person_keys WHERE person_id = ?1").bind(pid),
+      env.DB.prepare("DELETE FROM ledger WHERE payer = ?1").bind(pid),                     // their own money records
+      env.DB.prepare("UPDATE ledger SET person_id = NULL WHERE person_id = ?1").bind(pid),  // photos on the shared credit: kept, without who
+      env.DB.prepare("DELETE FROM persons WHERE id = ?1").bind(pid),
+    ]);
+    return json({ ok: true });
+  }
+
   // Money added or balance corrected, always on the caller's own pool.
   // The owner's pool is managed only by the administrator; each friend manages their own.
   if (req.method === "POST" && (url.pathname === "/v1/credit" || url.pathname === "/v1/admin/credit")) {

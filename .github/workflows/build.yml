@@ -53,6 +53,12 @@ jobs:
           add_col persons pays "TEXT NOT NULL DEFAULT 'owner'"
           # Whose money each credit movement belongs to (empty = the owner)
           add_col ledger payer TEXT
+          # Sign in with Google: the account's stable id, its email, and when the person accepted the privacy note
+          add_col persons google_sub TEXT
+          add_col persons email TEXT
+          add_col persons consent_at INTEGER
+          npx wrangler d1 execute personalhealthy --remote \
+            --command "CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub)"
 
       - name: workers.dev subdomain
         env:
@@ -75,9 +81,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
+          # Google Cloud "Web client ID" for Sign in with Google (repository variable; empty = sign-in off)
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
         run: |
           set -o pipefail
-          npx wrangler deploy 2>&1 | tee deploy.log
+          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" 2>&1 | tee deploy.log
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
@@ -117,6 +125,7 @@ jobs:
         working-directory: android
         env:
           BATTITO_API_URL: ${{ needs.server.outputs.url }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
         run: gradle assembleRelease --no-daemon --stacktrace
       - name: Prepare the file
         run: cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"

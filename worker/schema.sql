@@ -8,7 +8,7 @@
 
 CREATE TABLE IF NOT EXISTS persons (
   id          TEXT PRIMARY KEY,
-  public_key  TEXT NOT NULL UNIQUE,          -- the phone's anonymous key
+  public_key  TEXT NOT NULL UNIQUE,          -- the key of the phone in use (a new phone replaces it after Sign in with Google)
   birth_date  TEXT,
   sex         TEXT,
   is_admin    INTEGER NOT NULL DEFAULT 0,
