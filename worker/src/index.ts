@@ -23,13 +23,16 @@ async function getSetting(q: Q, key: string, def: string): Promise<string> {
   return r ? String(r.value) : def;
 }
 
+// Credit is counted from the last balance correction ("set"): loaded = that balance + later top-ups,
+// spent = cost of the photos read since then, remaining = loaded - spent.
 async function creditInfo(q: Q) {
-  const [last] = await q("SELECT seq, amount_micro FROM ledger WHERE kind = 'set' ORDER BY seq DESC LIMIT 1");
+  const [last] = await q("SELECT seq, amount_micro, created_at FROM ledger WHERE kind = 'set' ORDER BY seq DESC LIMIT 1");
   const fromSeq = last ? Number(last.seq) : 0;
   const base = last ? Number(last.amount_micro) : 0;
   const [sums] = await q(
     "SELECT COALESCE(SUM(CASE WHEN kind = 'topup' THEN amount_micro ELSE 0 END), 0) AS top, " +
     "COALESCE(SUM(CASE WHEN kind = 'usage' THEN amount_micro ELSE 0 END), 0) AS used, " +
+    "COUNT(CASE WHEN kind = 'usage' THEN 1 END) AS scans, " +
     "COUNT(CASE WHEN kind IN ('topup','set') THEN 1 END) AS money_rows FROM ledger WHERE seq > ?1",
     [fromSeq]
   );
@@ -37,12 +40,18 @@ async function creditInfo(q: Q) {
     "SELECT AVG(amount_micro) AS avg FROM (SELECT amount_micro FROM ledger WHERE kind = 'usage' ORDER BY seq DESC LIMIT 20) t"
   );
   const configured = !!last || Number(sums?.money_rows || 0) > 0;
-  const remaining = base + Number(sums?.top || 0) - Number(sums?.used || 0);
+  const loaded = base + Number(sums?.top || 0);
+  const spent = Number(sums?.used || 0);
+  const remaining = loaded - spent;
   const avg = Math.max(1, Math.round(Number(avgRow?.avg) || DEFAULT_PHOTO_COST));
   const photosLeft = configured ? Math.max(0, Math.floor(remaining / avg)) : null;
   return {
     configured,
     remaining: configured ? remaining / MICRO : null,
+    loaded: configured ? loaded / MICRO : null,
+    spent: spent / MICRO,
+    scans: Number(sums?.scans || 0),
+    since: last ? Number(last.created_at) : null, // time of the last balance correction
     avgCost: avg / MICRO,
     photosLeft,
     low: configured && remaining < 2 * avg,   // enough for one more photo at most
@@ -104,6 +113,35 @@ async function verify(pubB64: string, sigB64: string, message: string): Promise<
 function newId(prefix: string): string {
   const b = crypto.getRandomValues(new Uint8Array(12));
   return prefix + [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+// Swiss time as readable text for the *_local columns, e.g. "09262026 14:32" (MMddyyyy HH:mm, 24-hour clock)
+const localFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+});
+function localStamp(ms: number): string {
+  const p: Record<string, string> = {};
+  for (const part of localFmt.formatToParts(new Date(ms))) p[part.type] = part.value;
+  return `${p.month}${p.day}${p.year} ${p.hour}:${p.minute}`;
+}
+
+// Fills the *_local columns of rows written before those columns existed.
+// Only rows with an empty value are touched, so each row is filled once.
+const LOCAL_COLUMNS: [string, string, string[]][] = [
+  ["persons", "id", ["created_at"]],
+  ["scans", "id", ["taken_at", "created_at"]],
+  ["measurements", "id", ["taken_at", "created_at"]],
+  ["ledger", "seq", ["created_at"]],
+];
+async function fillLocalDates(q: Q) {
+  for (const [table, key, cols] of LOCAL_COLUMNS) {
+    const missing = cols.map(c => `${c}_local IS NULL`).join(" OR ");
+    const rows = await q(`SELECT ${key} AS k, ${cols.join(", ")} FROM ${table} WHERE ${missing} LIMIT 200`);
+    for (const r of rows) {
+      const sets = cols.map((c, i) => `${c}_local = ?${i + 1}`).join(", ");
+      await q(`UPDATE ${table} SET ${sets} WHERE ${key} = ?${cols.length + 1}`, [...cols.map(c => localStamp(Number(r[c]))), r.k]);
+    }
+  }
 }
 
 function periodOf(ms: number): string {
@@ -206,10 +244,11 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const [existing] = await q("SELECT id FROM persons WHERE public_key = ?1", [data.publicKey]);
     if (existing) return json({ personId: existing.id });
     const id = newId("per_");
+    const now = Date.now();
     // the first activated phone manages credit and settings
     await q(
-      "INSERT INTO persons (id, public_key, is_admin, created_at) VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), ?3)",
-      [id, data.publicKey, Date.now()]
+      "INSERT INTO persons (id, public_key, is_admin, created_at, created_at_local) VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), ?3, ?4)",
+      [id, data.publicKey, now, localStamp(now)]
     );
     return json({ personId: id });
   }
@@ -221,6 +260,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // 0) Who am I, credit and settings
   if (req.method === "GET" && url.pathname === "/v1/me") {
+    await fillLocalDates(q);
     return json({
       personId: pid,
       isAdmin: !!person.is_admin,
@@ -234,8 +274,19 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (!(amount >= 0 && amount <= 1000)) return fail("Invalid amount", 400, "bad_amount");
     const kind = data.action === "set" ? "set" : "topup";
     if (kind === "topup" && amount <= 0) return fail("Invalid amount", 400, "bad_amount");
-    await q("INSERT INTO ledger (kind, amount_micro, person_id, created_at) VALUES (?1, ?2, ?3, ?4)", [kind, Math.round(amount * MICRO), pid, Date.now()]);
+    const now = Date.now();
+    await q(
+      "INSERT INTO ledger (kind, amount_micro, person_id, created_at, created_at_local) VALUES (?1, ?2, ?3, ?4, ?5)",
+      [kind, Math.round(amount * MICRO), pid, now, localStamp(now)]
+    );
     return json({ credit: await creditInfo(q) });
+  }
+  // Last 20 credit movements: top-ups, balance corrections and the cost of each photo (readable by every registered phone)
+  if (req.method === "GET" && url.pathname === "/v1/credit/history") {
+    const rows = await q("SELECT kind, amount_micro, created_at FROM ledger ORDER BY seq DESC LIMIT 20");
+    return json({
+      items: rows.map((r: any) => ({ kind: r.kind, amount: Number(r.amount_micro) / MICRO, at: Number(r.created_at) })),
+    });
   }
   if (req.method === "POST" && url.pathname === "/v1/admin/settings") {
     if (!person.is_admin) return fail("Only the app manager can change the settings", 403, "admin_only");
@@ -264,10 +315,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     }
     const scanId = newId("scn_");
     await q(
-      "INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at) VALUES (?1, ?2, 'bp', ?3, ?4, 0, ?5)",
-      [scanId, pid, JSON.stringify(r), takenAt, now]
+      "INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at, taken_at_local, created_at_local) " +
+      "VALUES (?1, ?2, 'bp', ?3, ?4, 0, ?5, ?6, ?7)",
+      [scanId, pid, JSON.stringify(r), takenAt, now, localStamp(takenAt), localStamp(now)]
     );
-    await q("INSERT INTO ledger (kind, amount_micro, person_id, scan_id, created_at) VALUES ('usage', ?1, ?2, ?3, ?4)", [costMicro, pid, scanId, now]);
+    await q(
+      "INSERT INTO ledger (kind, amount_micro, person_id, scan_id, created_at, created_at_local) VALUES ('usage', ?1, ?2, ?3, ?4, ?5)",
+      [costMicro, pid, scanId, now, localStamp(now)]
+    );
     return json({ scanId, ...r, takenAt, period: periodOf(takenAt), credit: await creditInfo(q) });
   }
 
@@ -285,13 +340,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const id = newId("bp_");
     const takenMs = Number(s.taken_at);
     const period = periodOf(takenMs);
+    const now = Date.now();
     // A single atomic operation: the measurement is inserted only if the scan was not already used
     const results = await env.DB.batch([
       env.DB.prepare(
-        `INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, scan_id, created_at)
-         SELECT ?1, ?2, 'bp', ?3, ?4, ?5, ?6, 'photo', ?7, ?8
+        `INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, scan_id, created_at, taken_at_local, created_at_local)
+         SELECT ?1, ?2, 'bp', ?3, ?4, ?5, ?6, 'photo', ?7, ?8, ?9, ?10
          WHERE EXISTS (SELECT 1 FROM scans WHERE id = ?7 AND used = 0)`
-      ).bind(id, pid, takenMs, TZ, period, JSON.stringify({ sis: r.sis, dia: r.dia, pul: r.pul }), s.id, Date.now()),
+      ).bind(id, pid, takenMs, TZ, period, JSON.stringify({ sis: r.sis, dia: r.dia, pul: r.pul }), s.id, now, localStamp(takenMs), localStamp(now)),
       env.DB.prepare("UPDATE scans SET used = 1 WHERE id = ?1").bind(s.id),
     ]);
     if (!results[0]?.meta?.changes) return fail("Measurement already saved", 409, "already_saved");

@@ -38,6 +38,13 @@ jobs:
           echo "Database: $ID"
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
           npx wrangler d1 execute personalhealthy --remote --file=schema.sql
+          # Readable Swiss-time columns (*_local): add them to existing tables if missing
+          for col in persons.created_at_local scans.taken_at_local scans.created_at_local \
+                     measurements.taken_at_local measurements.created_at_local ledger.created_at_local; do
+            OUT=$(npx wrangler d1 execute personalhealthy --remote --command "ALTER TABLE ${col%%.*} ADD COLUMN ${col#*.} TEXT" 2>&1) \
+              && echo "Added column $col" \
+              || { echo "$OUT" | grep -qi "duplicate column" && echo "Column $col already there" || { echo "$OUT"; exit 1; }; }
+          done
 
       - name: workers.dev subdomain
         env:

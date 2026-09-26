@@ -1,6 +1,10 @@
 -- PersonalHealthy database (Cloudflare D1, data in the European Union).
 -- Safe to run as many times as you like: it only creates what is missing.
 -- Dates and times are in milliseconds (UTC); measurement values are JSON in the "data" column.
+-- Every time column has a readable companion "<name>_local" with the Swiss time (Europe/Zurich)
+-- as "MMddyyyy HH:mm", 24-hour clock (e.g. "09262026 14:32"). The server fills it on every insert.
+-- SQLite cannot "add a column if missing", so for databases created before these columns existed
+-- the build workflow adds them (step "PersonalHealthy database"), and the server fills old rows.
 
 CREATE TABLE IF NOT EXISTS persons (
   id          TEXT PRIMARY KEY,
@@ -8,7 +12,8 @@ CREATE TABLE IF NOT EXISTS persons (
   birth_date  TEXT,
   sex         TEXT,
   is_admin    INTEGER NOT NULL DEFAULT 0,
-  created_at  INTEGER NOT NULL
+  created_at  INTEGER NOT NULL,
+  created_at_local TEXT
 );
 
 CREATE TABLE IF NOT EXISTS scans (
@@ -18,7 +23,9 @@ CREATE TABLE IF NOT EXISTS scans (
   result      TEXT NOT NULL,                 -- what the AI read (JSON)
   taken_at    INTEGER NOT NULL,
   used        INTEGER NOT NULL DEFAULT 0,
-  created_at  INTEGER NOT NULL
+  created_at  INTEGER NOT NULL,
+  taken_at_local   TEXT,
+  created_at_local TEXT
 );
 
 CREATE TABLE IF NOT EXISTS measurements (
@@ -33,7 +40,9 @@ CREATE TABLE IF NOT EXISTS measurements (
   scan_id     TEXT,
   lab         TEXT,                          -- for future lab tests
   city        TEXT,
-  created_at  INTEGER NOT NULL
+  created_at  INTEGER NOT NULL,
+  taken_at_local   TEXT,
+  created_at_local TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_meas_person_kind_time ON measurements (person_id, kind, taken_at);
 
@@ -50,7 +59,8 @@ CREATE TABLE IF NOT EXISTS ledger (
   amount_micro  INTEGER NOT NULL,            -- millionths of a dollar
   person_id     TEXT,
   scan_id       TEXT,
-  created_at    INTEGER NOT NULL
+  created_at    INTEGER NOT NULL,
+  created_at_local TEXT
 );
 
 -- Convert values stored in Italian by earlier versions to English (safe to run again: changes nothing once done).

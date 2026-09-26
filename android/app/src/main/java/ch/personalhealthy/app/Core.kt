@@ -60,11 +60,18 @@ data class ScanResult(
     val note: String, val takenAt: Long, val period: String, val credit: Credit?
 )
 
-/** Credit for AI readings, kept by the server (in dollars). */
+/**
+ * Credit for AI readings, kept by the server (in dollars).
+ * loaded, spent and scans count from the last balance correction ([since], null if there was none).
+ */
 data class Credit(
     val configured: Boolean, val remaining: Double?, val avgCost: Double,
-    val photosLeft: Int?, val low: Boolean, val empty: Boolean
+    val photosLeft: Int?, val low: Boolean, val empty: Boolean,
+    val loaded: Double?, val spent: Double, val scans: Int, val since: Long?
 )
+
+/** One credit movement: kind = "topup", "set" (balance corrected) or "usage" (one photo read). */
+data class Movement(val kind: String, val amount: Double, val at: Long)
 
 data class Me(val isAdmin: Boolean, val billingMode: String, val credit: Credit?)
 
@@ -75,7 +82,11 @@ fun parseCredit(o: JSONObject?): Credit? = o?.let {
         avgCost = it.optDouble("avgCost", 0.006),
         photosLeft = if (it.isNull("photosLeft")) null else it.getInt("photosLeft"),
         low = it.optBoolean("low", false),
-        empty = it.optBoolean("empty", false)
+        empty = it.optBoolean("empty", false),
+        loaded = if (it.isNull("loaded")) null else it.getDouble("loaded"),
+        spent = it.optDouble("spent", 0.0),
+        scans = it.optInt("scans", 0),
+        since = if (it.isNull("since")) null else it.getLong("since")
     )
 }
 
@@ -314,6 +325,14 @@ object Repo {
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {
         val j = Api.call("POST", "/v1/admin/credit", JSONObject().put("action", action).put("amount", amount), pid)
         return parseCredit(j.optJSONObject("credit"))
+    }
+
+    suspend fun creditHistory(pid: String): List<Movement> {
+        val a = Api.call("GET", "/v1/credit/history", null, pid).getJSONArray("items")
+        return (0 until a.length()).map {
+            val o = a.getJSONObject(it)
+            Movement(o.getString("kind"), o.getDouble("amount"), o.getLong("at"))
+        }
     }
 
     suspend fun setBilling(pid: String, mode: String) {

@@ -11,6 +11,8 @@ HealthyInstantTracker lets you photograph your blood-pressure monitor, reads the
 - **PersonalHealthy database**: a free Cloudflare D1 database called `personalhealthy`, with data bound to the European Union.
   GitHub creates it on the first build, together with its tables (`worker/schema.sql`).
   All data access goes through a single point in the server: if PostgreSQL or Azure is needed one day, the move will be small.
+  Every time column (milliseconds, used for sorting and calculations) has a readable companion ending in `_local`
+  with the Swiss time, for example `09262026 14:32` (month, day, year, then 24-hour time).
 - **GitHub** builds everything by itself: on every update it deploys the server and prepares the APK.
 
 Rules enforced by the server:
@@ -53,12 +55,21 @@ In the repository open **Actions** → "Build PersonalHealthy" → **Run workflo
 
 Later versions install over the previous one without losing anything.
 
+## The app
+The bar at the bottom has three tabs:
+- **Blood pressure** (start screen): last reading, the button to measure, this week, the 7-day chart and recent readings.
+- **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
+- **Credit**: how much credit is left for reading photos, and the last 20 movements.
+
 ## Reading credit
+Each photo is read by an AI service (Anthropic) that you prepay on console.anthropic.com. The app cannot see that balance,
+so the server keeps its own estimate: the amount you loaded minus the real cost of every photo.
 - The **first phone activated** becomes the one of the person who manages the app: activate yours first.
-- On the home screen, under "Reading credit", tap **Manage**, enter how much you loaded (for example 5) and tap **Add top-up**.
-- For every photo the server subtracts the real cost of the reading, and the app shows the balance and the photos left.
-- When the credit is enough for only one more photo, a notification arrives. When the credit is used up, photos are no longer read until you top up.
-- The balance is an estimate kept by the server: if it does not match the console, use **Set as current balance**.
+- In the **Credit** tab, under "I loaded more money on Anthropic", enter how much you loaded (for example 5) and tap **Add to credit**.
+- The tab shows Loaded, Spent, Left (estimate) and Photos left, plus the last 20 movements. Everyone can see it; only the manager can change it.
+- When the credit is enough for only one more photo, a notification arrives and a warning appears on the Blood pressure tab.
+  When the credit is used up, photos are no longer read until you top up, so you never spend more than you loaded.
+- If the estimate does not match the console, use **Correct the balance** and type the balance shown on console.anthropic.com.
 
 ## Languages
 The app uses the phone's language: English, Italian, German or French (in any other language it appears in English).
