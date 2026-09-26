@@ -14,7 +14,9 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -68,6 +70,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -112,10 +115,55 @@ object C {
     val Alert = Color(0xFFFF6178)
 }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+    // App lock: fingerprint, face or the phone's own screen lock (no separate PIN).
+    // Locked at start and after more than LOCK_AFTER_MS away from the app.
+    private var locked by mutableStateOf(true)
+    private var hiddenAt = 0L
+    private var asking = false   // the fingerprint / screen-lock window is open
+    private lateinit var prompt: BiometricPrompt
+
+    private fun lockAvailable(): Boolean =
+        getSharedPreferences("battito", Context.MODE_PRIVATE).getString("personId", null) != null &&
+            BiometricManager.from(this).canAuthenticate(LOCK_AUTH) == BiometricManager.BIOMETRIC_SUCCESS
+
+    fun unlock() {
+        if (!lockAvailable()) { locked = false; return }
+        if (asking) return
+        asking = true
+        prompt.authenticate(
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle(t(R.string.lock_prompt_title))
+                .setSubtitle(t(R.string.lock_prompt_sub))
+                .setAllowedAuthenticators(LOCK_AUTH)
+                .build()
+        )
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (hiddenAt != 0L && SystemClock.elapsedRealtime() - hiddenAt > LOCK_AFTER_MS) locked = true
+        if (locked && !lockAvailable()) locked = false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (locked) unlock()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        hiddenAt = SystemClock.elapsedRealtime()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Txt.init(this)   // texts in the phone's language
+        prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { asking = false; locked = false }
+            // cancelled or too many attempts: stays locked, the Unlock button tries again
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { asking = false }
+        })
         Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
         setContent {
@@ -124,9 +172,20 @@ class MainActivity : ComponentActivity() {
                     background = C.Bg, surface = C.Surface, primary = C.Sys,
                     onPrimary = Color.White, onBackground = C.Ink, onSurface = C.Ink
                 )
-            ) { App() }
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    App()
+                    // drawn over the app, so what was on screen (a photo being read, for example) is kept
+                    if (locked) LockScreen { unlock() }
+                }
+            }
         }
         if (Build.VERSION.SDK_INT >= 31) keepSplashFor(1000)
+    }
+
+        companion object {
+        private const val LOCK_AUTH = BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        private const val LOCK_AFTER_MS = 2 * 60 * 1000L
     }
 
     /** Keeps the Android 12+ launch screen up long enough for the ECG trace animation to finish. */
@@ -475,6 +534,24 @@ fun StatBox(label: String, value: String, note: String? = null, color: Color = C
 }
 
 /* ---------------- Activation ---------------- */
+
+/** Shown over the app while it is locked: the logo and one button that opens fingerprint, face or screen lock. */
+@Composable
+fun LockScreen(onUnlock: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().background(C.Bg)
+            // take every touch, so nothing underneath can be used while locked
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } } }
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HintLogo(56.dp)
+        Spacer(Modifier.height(16.dp))
+        Text("HINT", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
+        Text(t(R.string.lock_text), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
+        BigButton(t(R.string.lock_unlock), onClick = onUnlock)
+    }
+}
 
 @Composable
 fun SetupScreen(onDone: (String) -> Unit) {

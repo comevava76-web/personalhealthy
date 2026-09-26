@@ -9,11 +9,15 @@
     <string name="period_morning">Mattina</string>
     <string name="period_afternoon">Pomeriggio</string>
     <string name="period_evening">Sera</string>
-    <string name="setup_intro">Per attivare l\'app su questo telefono inserisci il codice di famiglia o il codice di invito che hai ricevuto.</string>
+    <string name="setup_intro">Per attivare l\'app su questo telefono inquadra il QR code dell\'invito che hai ricevuto, oppure scrivi il suo codice.</string>
     <string name="family_code">Codice di famiglia</string>
     <string name="activate">Attiva</string>
     <string name="activating">Attivo…</string>
     <string name="setup_privacy">Nessun nome e nessuna email: il telefono riceve un codice anonimo, protetto dentro il telefono stesso.</string>
+    <string name="lock_prompt_title">Sblocca HINT</string>
+    <string name="lock_prompt_sub">Impronta, volto o blocco schermo del telefono</string>
+    <string name="lock_text">Le tue misure sono protette con l\'impronta, il volto o il blocco schermo del telefono.</string>
+    <string name="lock_unlock">Sblocca</string>
     <string name="no_readings_title">Nessuna misura ancora</string>
     <string name="no_readings_text">Misura la pressione e fotografa il display: i numeri li legge l\'app.</string>
     <string name="last_fmt">Ultima: %s</string>
@@ -122,7 +126,7 @@
     <string name="no_browser">Nessun browser trovato su questo telefono</string>
     <string name="err_anthropic_no_credit">Il tuo credito Anthropic è finito. Tocca Ricarica.</string>
     <string name="chart_daily">Punti: medie giornaliere</string>
-    <string name="family_or_invite_code">Codice di famiglia o di invito</string>
+    <string name="family_or_invite_code">Codice di invito</string>
     <string name="scan_qr">Scansiona il codice QR</string>
     <string name="scan_qr_prompt">Inquadra il codice QR dell\'invito</string>
     <string name="err_invite_used">Questo invito è già stato usato. Chiedine uno nuovo.</string>

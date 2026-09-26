@@ -9,11 +9,15 @@
     <string name="period_morning">Matin</string>
     <string name="period_afternoon">Après-midi</string>
     <string name="period_evening">Soir</string>
-    <string name="setup_intro">Pour activer l\'app sur ce téléphone, saisissez le code famille ou le code d\'invitation que vous avez reçu.</string>
+    <string name="setup_intro">Pour activer l\'app sur ce téléphone, scannez le QR code de l\'invitation reçue, ou tapez son code.</string>
     <string name="family_code">Code famille</string>
     <string name="activate">Activer</string>
     <string name="activating">Activation…</string>
     <string name="setup_privacy">Ni nom ni e-mail : le téléphone reçoit un code anonyme, protégé dans le téléphone lui-même.</string>
+    <string name="lock_prompt_title">Déverrouiller HINT</string>
+    <string name="lock_prompt_sub">Empreinte, visage ou verrouillage de l\'écran du téléphone</string>
+    <string name="lock_text">Vos mesures sont protégées par l\'empreinte, le visage ou le verrouillage de l\'écran du téléphone.</string>
+    <string name="lock_unlock">Déverrouiller</string>
     <string name="no_readings_title">Aucune mesure pour l\'instant</string>
     <string name="no_readings_text">Mesurez votre tension et photographiez l\'écran : l\'app lit les valeurs.</string>
     <string name="last_fmt">Dernière : %s</string>
@@ -122,7 +126,7 @@
     <string name="no_browser">Aucun navigateur trouvé sur ce téléphone</string>
     <string name="err_anthropic_no_credit">Votre crédit Anthropic est épuisé. Touchez Recharger.</string>
     <string name="chart_daily">Points : moyennes journalières</string>
-    <string name="family_or_invite_code">Code famille ou d\'invitation</string>
+    <string name="family_or_invite_code">Code d\'invitation</string>
     <string name="scan_qr">Scanner le code QR</string>
     <string name="scan_qr_prompt">Visez le code QR de l\'invitation</string>
     <string name="err_invite_used">Cette invitation a déjà été utilisée. Demandez-en une nouvelle.</string>

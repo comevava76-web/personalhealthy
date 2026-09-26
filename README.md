@@ -73,6 +73,11 @@ The chart is the same in the app and in the PDF: one point per day (the day's av
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
 That is for the doctor.
 
+App lock: the app opens with the phone's fingerprint, face or screen lock (no separate PIN),
+and locks again after 2 minutes away. Phones without any screen lock open without it.
+New people join with an invite (QR code or typed code). The family code still works in the same field,
+as a way back in for the app manager after a reinstall, but the app no longer asks for it.
+
 Reminders: every day at 9:00 and 17:00 (the phone's time) the app sends a notification
 "Remember to measure your blood pressure", in the phone's language, with a badge on the app icon.
 At midnight both are removed, so the badge never shows more than 2. They keep working after a restart of the phone.
