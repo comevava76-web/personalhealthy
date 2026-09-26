@@ -1,0 +1,17 @@
+name = "personalhealthy-api"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+# Database D1 "personalhealthy", con i dati vincolati all'Unione Europea.
+# Lo crea GitHub alla prima costruzione e inserisce qui il suo id al posto di D1_DATABASE_ID.
+[[d1_databases]]
+binding = "DB"
+database_name = "personalhealthy"
+database_id = "D1_DATABASE_ID"
+
+[vars]
+MODEL = "claude-sonnet-5"
+# prezzi di Claude Sonnet 5 in dollari per milione di token (aggiornali se cambiano)
+PRICE_IN_PER_MTOK = "2"
+PRICE_OUT_PER_MTOK = "10"
