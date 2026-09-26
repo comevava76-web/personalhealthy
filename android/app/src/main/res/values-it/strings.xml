@@ -81,6 +81,9 @@
     <string name="notif_low">Il credito basta ancora per una sola foto.</string>
     <string name="notif_admin_hint">Apri la scheda Credito in HealthyInstantTracker e tocca Ricarica.</string>
     <string name="notif_user_hint">Avvisa chi gestisce l\'app.</string>
+    <string name="reminder_channel">Promemoria misure</string>
+    <string name="reminder_morning">Buongiorno! Ricordati di misurare la pressione.</string>
+    <string name="reminder_evening">Buonasera! Ricordati di misurare la pressione.</string>
     <string name="pdf_title">Diario della pressione arteriosa</string>
     <string name="pdf_period">Periodo di %1$d giorni: dal %2$s al %3$s</string>
     <string name="pdf_counts">Misure: %1$d in %2$d giorni. Orari: ora svizzera (Europa/Zurigo).</string>

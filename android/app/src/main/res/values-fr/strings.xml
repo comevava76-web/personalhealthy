@@ -81,6 +81,9 @@
     <string name="notif_low">Le crédit suffit pour une seule photo.</string>
     <string name="notif_admin_hint">Ouvrez l\'onglet Crédit dans HealthyInstantTracker et touchez Recharger.</string>
     <string name="notif_user_hint">Prévenez le gestionnaire de l\'app.</string>
+    <string name="reminder_channel">Rappels de mesure</string>
+    <string name="reminder_morning">Bonjour ! Pensez à mesurer votre tension.</string>
+    <string name="reminder_evening">Bonsoir ! Pensez à mesurer votre tension.</string>
     <string name="pdf_title">Journal de tension artérielle</string>
     <string name="pdf_period">Période de %1$d jours : du %2$s au %3$s</string>
     <string name="pdf_counts">Mesures : %1$d sur %2$d jours. Heures : heure suisse (Europe/Zurich).</string>
