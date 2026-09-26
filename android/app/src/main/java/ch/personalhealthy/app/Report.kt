@@ -48,6 +48,7 @@ fun dailyAverages(list: List<Reading>): List<DayPoint> =
  * The one blood-pressure chart, used on the Blood pressure tab, the Report tab and in the PDF.
  * Points are daily averages; smooth lines for systolic, diastolic and pulse (pulse can be left out) on one "mmHg / bpm" axis.
  * Plain background, no reference lines and no coloured zones: the app does not judge the values.
+ * A grid line every 10 mmHg; up to 10 days, each day's systolic and diastolic are written next to the dots.
  * Only the day number under each day.
  */
 fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float, pulse: Boolean = true) {
@@ -78,7 +79,8 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     // shared vertical axis: unit on top, values on the horizontal grid lines
     text.textAlign = Paint.Align.LEFT
     c.drawText("mmHg / bpm", fs * 0.3f, fs * 1.2f, text)
-    val step = if (hi - lo > 120) 30 else 20
+    // a line and a number every 10 mmHg (120, 130, 140...): the scale can be read precisely
+    val step = 10
     var v = ((lo + step - 1) / step) * step
     text.textAlign = Paint.Align.RIGHT
     while (v <= hi) {
@@ -99,23 +101,35 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     val pul = pts.mapNotNull { d -> d.pul?.let { x(d.day) to y(it) } }
 
     // smooth lines with a dot on each day (pulse first, so blood pressure stays on top)
+    // thin lines and small dots: the exact position of each day stays readable
     fun series(values: List<Pair<Float, Float>>, col: Int) {
         if (values.isEmpty()) return
         val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = col; strokeWidth = fs * 0.16f; style = Paint.Style.STROKE
+            color = col; strokeWidth = fs * 0.11f; style = Paint.Style.STROKE
             strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND
         }
         if (values.size > 1) c.drawPath(monotonePath(values), lp)
         val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = col }
-        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.outline; style = Paint.Style.STROKE; strokeWidth = fs * 0.06f }
+        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = if (pal.outline != 0) pal.outline else pal.bg; style = Paint.Style.STROKE; strokeWidth = fs * 0.08f }
         values.forEach { (px, py) ->
-            c.drawCircle(px, py, fs * 0.3f, dot)
-            if (pal.outline != 0) c.drawCircle(px, py, fs * 0.3f, ring)
+            c.drawCircle(px, py, fs * 0.24f, dot)
+            c.drawCircle(px, py, fs * 0.24f, ring)
         }
     }
     if (pulse) series(pul, PUL_COLOR)
     series(dia, DIA_COLOR)
     series(sys, SYS_COLOR)
+
+    // up to 10 days there is room to write each day's value: systolic above its dot, diastolic below
+    if (days <= 10) {
+        val lab = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = fs * 0.85f; textAlign = Paint.Align.CENTER; typeface = Typeface.DEFAULT_BOLD }
+        pts.forEach { d ->
+            lab.color = SYS_COLOR
+            c.drawText(d.sis.toString(), x(d.day), y(d.sis) - fs * 0.55f, lab)
+            lab.color = DIA_COLOR
+            c.drawText(d.dia.toString(), x(d.day), y(d.dia) + fs * 1.25f, lab)
+        }
+    }
 }
 
 /** Which days get a number: every n-th day so labels never overlap, always the first and the last. */
@@ -182,87 +196,172 @@ fun drawChartLegend(c: Canvas, x: Float, y: Float, pal: ChartPal, fs: Float) {
 
 /* ---------------- PDF ---------------- */
 
+/**
+ * The report for the doctor, A4. Page 1: header, key figures, averages by moment of the day, extreme values
+ * with their date, the daily chart. Next pages: every reading, grouped by day. Every page says where the values
+ * come from and carries its number. No judgement on the values: that is the doctor's.
+ */
 fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     val per = periodInfo(all, n)
     val st = stats(per.list)
+    val list = per.list
     val doc = PdfDocument()
-    var pageNo = 1
+    val W = 595f
     val left = 40f
     val right = 555f
+    val ink = 0xFF13223F.toInt()
+    val muted = 0xFF5B6B88.toInt()
+    val lineCol = 0xFFD9E0EA.toInt()
 
-    val title = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF13223F.toInt(); textSize = 18f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
-    val sub = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF5B6B88.toInt(); textSize = 10.5f }
-    val small = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF8C96AA.toInt(); textSize = 8f }
-    val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF5B6B88.toInt(); textSize = 10.5f }
-    val value = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF13223F.toInt(); textSize = 10.5f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+    fun paint(size: Float, color: Int = ink, bold: Boolean = false, align: Paint.Align = Paint.Align.LEFT) =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = size; this.color = color; textAlign = align
+            typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        }
+    val h2 = paint(12f, ink, true)
+    val body = paint(9.5f, ink)
+    val bodyB = paint(9.5f, ink, true)
+    val note = paint(8f, muted)
+    val rule = Paint().apply { color = lineCol; strokeWidth = 0.8f }
+    val boxBg = Paint().apply { color = 0xFFF3F6FA.toInt() }
+
+    // pages: 1 summary + the readings table, 36 rows per page (a day separator takes no extra row)
+    val rowsPerPage = 36
+    val totalPages = 1 + maxOf(1, (list.size + rowsPerPage - 1) / rowsPerPage)
+    var pageNo = 0
+    val pages = mutableListOf<PdfDocument.Page>()
+
+    fun newPage(): Canvas {
+        val page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create())
+        pages.add(page)
+        return page.canvas
+    }
+
+    fun header(c: Canvas, subtitle: String) {
+        c.drawRect(0f, 0f, W, 74f, Paint().apply { color = ink })
+        c.drawRect(0f, 74f, W, 77f, Paint().apply { color = SYS_COLOR })
+        c.drawText("HINT · HealthyInstantTracker", left, 26f, paint(8.5f, 0xFFB9C6DD.toInt(), true))
+        c.drawText(t(R.string.pdf_title), left, 50f, paint(19f, 0xFFFFFFFF.toInt(), true))
+        c.drawText(subtitle, left, 66f, paint(9.5f, 0xFFD6DEEC.toInt()))
+        c.drawText(t(R.string.pdf_generated, Z.dmy(Z.today())), right, 26f, paint(8.5f, 0xFFB9C6DD.toInt(), align = Paint.Align.RIGHT))
+    }
 
     fun footer(c: Canvas) {
-        c.drawText(t(R.string.pdf_footer), left, 822f, small)
+        c.drawLine(left, 800f, right, 800f, rule)
+        c.drawText(t(R.string.pdf_source_note), left, 812f, note)
+        c.drawText(t(R.string.pdf_disclaimer), left, 824f, note)
+        c.drawText(t(R.string.pdf_page, pageNo, totalPages), right, 824f, paint(8f, muted, align = Paint.Align.RIGHT))
     }
 
-    // page 1: summary and chart
-    var page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo++).create())
-    var c = page.canvas
-    c.drawText(t(R.string.pdf_title), left, 60f, title)
-    c.drawText(t(R.string.pdf_period, n, Z.long(per.start), Z.long(per.end)), left, 80f, sub)
-    c.drawText(t(R.string.pdf_counts, st.n, st.days), left, 96f, sub)
+    fun section(c: Canvas, title: String, y: Float) {
+        c.drawText(title, left, y, h2)
+        c.drawLine(left, y + 5f, right, y + 5f, rule)
+    }
 
-    c.save()
-    c.translate(left, 112f)
-    drawBpChart(c, right - left, 250f, per.list, per.start, n, PRINT_PAL, 9f)
-    c.restore()
-    drawChartLegend(c, left, 380f, PRINT_PAL, 9f)
-    c.drawText(t(R.string.chart_daily), left, 396f, small)
+    val subtitle = t(R.string.pdf_period, n, Z.long(per.start), Z.long(per.end))
 
-    fun f(r: Reading?) = if (r == null) "-" else "${r.sis}/${r.dia}  (${t(R.string.when_fmt, Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt))})"
-    val rows = listOf(
-        t(R.string.period_avg) to "${st.sis ?: "-"}/${st.dia ?: "-"} mmHg",
-        t(R.string.avg_morning) to (if (st.mN > 0) "${st.mS}/${st.mD} mmHg  (${t(R.string.readings_short, st.mN)})" else "-"),
-        t(R.string.avg_evening) to (if (st.eN > 0) "${st.eS}/${st.eD} mmHg  (${t(R.string.readings_short, st.eN)})" else "-"),
-        t(R.string.avg_pulse) to (st.pul?.let { t(R.string.per_min_short, it) } ?: "-"),
-        t(R.string.peak_sys) to f(st.maxS),
-        t(R.string.max_dia) to f(st.maxD),
-        t(R.string.lowest) to f(st.minS)
+    // ---------- page 1 ----------
+    var c = newPage()
+    header(c, subtitle)
+    var y = 104f
+
+    // key figures: three boxes
+    section(c, t(R.string.pdf_summary), y); y += 16f
+    val boxW = (right - left - 20f) / 3f
+    val puls = list.mapNotNull { it.pul }
+    val keys = listOf(
+        Triple(t(R.string.period_avg), if (st.n > 0) "${st.sis}/${st.dia}" else "–", "mmHg"),
+        Triple(t(R.string.avg_pulse), st.pul?.toString() ?: "–", t(R.string.per_minute)),
+        Triple(t(R.string.pdf_measures), "${st.n}", t(R.string.pdf_in_days, st.days, n))
     )
-    var yy = 425f
-    rows.forEach { (k, v) ->
-        c.drawText(k, left, yy, label)
-        c.drawText(v, 210f, yy, value)
-        yy += 20f
+    keys.forEachIndexed { k, (lab, v, unit) ->
+        val x = left + k * (boxW + 10f)
+        c.drawRoundRect(RectF(x, y, x + boxW, y + 58f), 6f, 6f, boxBg)
+        c.drawText(lab, x + 10f, y + 16f, note)
+        c.drawText(v, x + 10f, y + 40f, paint(18f, ink, true))
+        c.drawText(unit, x + 10f, y + 52f, note)
     }
+    y += 80f
+
+    // averages by moment of the day
+    section(c, t(R.string.pdf_by_moment), y); y += 20f
+    val mc = floatArrayOf(left, 215f, 330f, 430f)
+    listOf(t(R.string.pdf_col_moment), t(R.string.pdf_col_avg), t(R.string.label_pul), t(R.string.pdf_measures))
+        .forEachIndexed { k, h -> c.drawText(h, mc[k], y, note) }
+    y += 14f
+    for ((key, label) in listOf("morning" to t(R.string.pdf_morning), "afternoon" to t(R.string.pdf_afternoon), "evening" to t(R.string.pdf_evening))) {
+        val l = list.filter { it.period == key }
+        fun avg(v: List<Int>) = if (v.isEmpty()) "–" else v.average().roundToInt().toString()
+        c.drawText(label, mc[0], y, body)
+        c.drawText(if (l.isEmpty()) "–" else "${avg(l.map { it.sis })}/${avg(l.map { it.dia })} mmHg", mc[1], y, bodyB)
+        c.drawText(avg(l.mapNotNull { it.pul }), mc[2], y, body)
+        c.drawText("${l.size}", mc[3], y, body)
+        y += 6f; c.drawLine(left, y, right, y, rule); y += 12f
+    }
+    y += 10f
+
+    // extreme values, each with its date
+    section(c, t(R.string.pdf_extremes), y); y += 20f
+    fun whenOf(r: Reading) = t(R.string.when_fmt, Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt)) + ", " + periodLabel(r.period).lowercase()
+    val ext = listOf(
+        Triple(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia} mmHg" }, st.maxS?.let { whenOf(it) }),
+        Triple(t(R.string.max_dia), st.maxD?.let { "${it.sis}/${it.dia} mmHg" }, st.maxD?.let { whenOf(it) }),
+        Triple(t(R.string.lowest), st.minS?.let { "${it.sis}/${it.dia} mmHg" }, st.minS?.let { whenOf(it) }),
+        Triple(t(R.string.pulse_range), if (puls.isEmpty()) null else "${puls.min()} – ${puls.max()} ${t(R.string.per_minute)}", null)
+    )
+    ext.forEach { (lab, v, w) ->
+        c.drawText(lab, mc[0], y, body)
+        c.drawText(v ?: "–", mc[1], y, bodyB)
+        if (w != null) c.drawText(w, mc[2], y, note)
+        y += 6f; c.drawLine(left, y, right, y, rule); y += 12f
+    }
+    y += 10f
+
+    // daily chart
+    section(c, t(R.string.pdf_chart), y); y += 12f
+    val chartH = minOf(290f, 770f - y)
+    c.save()
+    c.translate(left, y)
+    drawBpChart(c, right - left, chartH, list, per.start, n, PRINT_PAL, 8.5f)
+    c.restore()
+    drawChartLegend(c, left, y + chartH + 14f, PRINT_PAL, 8.5f)
     footer(c)
-    doc.finishPage(page)
+    doc.finishPage(pages.last())
 
-    // following pages: table of all readings
-    val cols = floatArrayOf(left, 120f, 170f, 250f, 320f, 390f, 460f)
+    // ---------- readings table ----------
+    val cols = floatArrayOf(left, 110f, 160f, 265f, 335f, 405f, 470f)
     val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul), t(R.string.col_source))
-    val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
-    val cell = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF13223F.toInt(); textSize = 10f }
-    val band = Paint().apply { color = 0xFFF4F7FC.toInt() }
-    val headBg = Paint().apply { color = 0xFF13223F.toInt() }
-
+    val head = paint(9f, 0xFFFFFFFF.toInt(), true)
+    val band = Paint().apply { color = 0xFFF6F8FB.toInt() }
+    val dayRule = Paint().apply { color = 0xFF9FB0C8.toInt(); strokeWidth = 0.8f }
     var i = 0
-    val list = per.list
-    while (i < list.size || i == 0) {
-        page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo++).create())
-        c = page.canvas
-        c.drawText(t(R.string.pdf_all), left, 56f, title)
-        var y = 76f
-        c.drawRect(left, y, right, y + 20f, headBg)
-        heads.forEachIndexed { k, s -> c.drawText(s, cols[k] + 4f, y + 14f, head) }
-        y += 20f
+    do {
+        c = newPage()
+        header(c, subtitle)
+        section(c, t(R.string.pdf_all), 104f)
+        y = 118f
+        c.drawRect(left, y, right, y + 18f, Paint().apply { color = ink })
+        heads.forEachIndexed { k, h -> c.drawText(h, cols[k] + 5f, y + 12.5f, head) }
+        y += 18f
         var row = 0
-        while (i < list.size && y < 790f) {
+        var lastDay: LocalDate? = null
+        if (list.isEmpty()) c.drawText(t(R.string.report_empty), left, y + 16f, body)
+        while (i < list.size && row < rowsPerPage) {
             val r = list[i]
-            if (row % 2 == 1) c.drawRect(left, y, right, y + 18f, band)
-            val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-", sourceLabel(r.source))
-            cells.forEachIndexed { k, s -> c.drawText(s, cols[k] + 4f, y + 13f, cell) }
-            y += 18f; i++; row++
+            val day = Z.date(r.takenAt)
+            if (row % 2 == 1) c.drawRect(left, y, right, y + 17f, band)
+            if (lastDay != null && day != lastDay) c.drawLine(left, y, right, y, dayRule)   // a new day starts
+            val cells = listOf(
+                if (day != lastDay) Z.dmy(day) else "", Z.time(r.takenAt), periodLabel(r.period),
+                r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "–", sourceLabel(r.source)
+            )
+            cells.forEachIndexed { k, v -> c.drawText(v, cols[k] + 5f, y + 12f, if (k in 3..4) bodyB else body) }
+            lastDay = day
+            y += 17f; i++; row++
         }
         footer(c)
-        doc.finishPage(page)
-        if (list.isEmpty()) break
-    }
+        doc.finishPage(pages.last())
+    } while (i < list.size)
 
     val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
     val file = File(dir, "blood-pressure_${n}d_${per.end}.pdf")

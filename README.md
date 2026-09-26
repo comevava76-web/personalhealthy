@@ -65,7 +65,7 @@ Later versions install over the previous one without losing anything.
 The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): the HINT title with the moving ECG trace, the button to measure, the last reading,
   a table of the last 7 days (today included: one value per day, the average of that day's readings, and the pulse),
-  a 7-day summary (highest and average systolic, diastolic and pulse), the 7-day chart (blood pressure only) and recent readings.
+  a 7-day summary (highest and average systolic, diastolic and pulse) and the last 5 readings (all of them one tap away).
   The Report tab, the PDF and the Excel file keep morning and evening apart.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
 - **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
