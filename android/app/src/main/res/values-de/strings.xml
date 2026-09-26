@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tagline">Blutdrucktagebuch</string>
-    <string name="refresh">Aktualisieren</string>
     <string name="cancel">Abbrechen</string>
     <string name="delete">Löschen</string>
     <string name="today">Heute</string>
