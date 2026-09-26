@@ -23,7 +23,7 @@
     <string name="last_fmt">Dernière : %s</string>
     <string name="mmhg_hint">mmHg, systolique en haut, diastolique en bas</string>
     <string name="pulse_lower">pouls</string>
-    <string name="measure">Mesurer la tension</string>
+    <string name="measure">Scanner la mesure</string>
     <string name="last7">7 derniers jours</string>
     <string name="chart_title">Évolution</string>
     <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. En haut la systolique, en bas la diastolique.</string>
@@ -33,6 +33,10 @@
     <string name="n_readings">%d mesures</string>
     <string name="peak_sys">Systolique la plus haute</string>
     <string name="recent">Mesures récentes</string>
+    <string name="all_readings">Toutes les mesures</string>
+    <string name="all_readings_fmt">Voir toutes les mesures (%1$d)</string>
+    <string name="close">Fermer</string>
+    <string name="avg_short">Moyenne</string>
     <string name="delete_q">Supprimer cette mesure ?</string>
     <string name="legend_sys">Systolique</string>
     <string name="legend_dia">Diastolique</string>
