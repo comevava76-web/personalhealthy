@@ -62,12 +62,14 @@ Later versions install over the previous one without losing anything.
 
 ## The app
 The bar at the bottom has three tabs:
-- **Blood pressure** (start screen): last reading, the button to measure, this week, the 7-day chart and recent readings.
+- **Blood pressure** (start screen): the button to measure, the last reading, a table of the last 7 days (today included:
+  the values of each morning and evening, and the pulse), the 7-day chart and recent readings.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
 - **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
 
 The chart is the same in the app and in the PDF: one point per day (the day's average) for systolic, diastolic and pulse,
-dashed reference lines at 135 and 85, green background below 135 and orange where values are above the reference lines.
+on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
+That is for the doctor.
 
 The code is ready for more tabs (for example a future "Analyses" tab for blood tests): see `Tab` in `MainActivity.kt`.
 

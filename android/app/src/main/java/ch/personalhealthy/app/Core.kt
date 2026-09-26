@@ -109,24 +109,8 @@ sealed class ScanState {
     data class Failed(val msg: String, val code: String? = null) : ScanState()
 }
 
-enum class Level(private val labelRes: Int, val color: Long) {
-    OK(R.string.level_ok, 0xFF4FD9A6),
-    WARN(R.string.level_warn, 0xFFFFB35C),
-    ALERT(R.string.level_alert, 0xFFFF6178),
-    LOW(R.string.level_low, 0xFFA99BFF);
-
-    val label: String get() = t(labelRes)
-}
-
-const val THRESHOLD_SYS = 135
-const val THRESHOLD_DIA = 85
-
-fun classify(s: Int, d: Int): Level = when {
-    s >= 160 || d >= 100 -> Level.ALERT
-    s >= THRESHOLD_SYS || d >= THRESHOLD_DIA -> Level.WARN
-    s < 90 || d < 60 -> Level.LOW
-    else -> Level.OK
-}
+/** Amber of the short warning lines (credit low, key missing). */
+const val WARN_COLOR = 0xFFFFB35C
 
 /* ---------------- Dates and times (Lugano time) ---------------- */
 
@@ -177,7 +161,7 @@ fun periodInfo(all: List<Reading>, n: Int): PeriodInfo {
 data class Stats(
     val n: Int, val days: Int, val sis: Int?, val dia: Int?, val pul: Int?,
     val mS: Int?, val mD: Int?, val mN: Int, val eS: Int?, val eD: Int?, val eN: Int,
-    val maxS: Reading?, val maxD: Reading?, val minS: Reading?, val over: Int
+    val maxS: Reading?, val maxD: Reading?, val minS: Reading?
 )
 
 private fun avg(l: List<Int>): Int? = if (l.isEmpty()) null else l.average().roundToInt()
@@ -192,8 +176,7 @@ fun stats(list: List<Reading>): Stats {
         pul = avg(list.mapNotNull { it.pul }),
         mS = avg(m.map { it.sis }), mD = avg(m.map { it.dia }), mN = m.size,
         eS = avg(e.map { it.sis }), eD = avg(e.map { it.dia }), eN = e.size,
-        maxS = list.maxByOrNull { it.sis }, maxD = list.maxByOrNull { it.dia }, minS = list.minByOrNull { it.sis },
-        over = list.count { it.sis >= THRESHOLD_SYS || it.dia >= THRESHOLD_DIA }
+        maxS = list.maxByOrNull { it.sis }, maxD = list.maxByOrNull { it.dia }, minS = list.minByOrNull { it.sis }
     )
 }
 

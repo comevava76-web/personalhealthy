@@ -3,12 +3,9 @@ package ch.personalhealthy.app
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
-import android.graphics.DashPathEffect
-import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
@@ -28,16 +25,12 @@ class ChartPal(val bg: Int, val grid: Int, val text: Int, val outline: Int)
 val SYS_COLOR = 0xFFF2545B.toInt()    // systolic, coral
 val DIA_COLOR = 0xFF3FA7D6.toInt()    // diastolic, teal-blue
 val PUL_COLOR = 0xFFFFC145.toInt()    // pulse, amber
-private const val OK_GREEN = 0x3DDC97       // background below 135 (RGB, alpha added where used)
-private const val HIGH_ORANGE = 0xE8743B    // background above 135 and areas above the reference lines
 
 val SCREEN_PAL = ChartPal(bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(), outline = 0)
 val PRINT_PAL = ChartPal(
     bg = 0xFFFFFFFF.toInt(), grid = 0xFFE6EBF2.toInt(), text = 0xFF5B6B88.toInt(),
     outline = 0x66000000 // thin dark ring so the light dots stay visible on white
 )
-
-private fun alpha(rgb: Int, a: Float): Int = ((a * 255).toInt() shl 24) or rgb
 
 /** One point per day: the averages of that day's readings. */
 class DayPoint(val day: LocalDate, val sis: Int, val dia: Int, val pul: Int?)
@@ -54,8 +47,8 @@ fun dailyAverages(list: List<Reading>): List<DayPoint> =
 /**
  * The one blood-pressure chart, used on the Blood pressure tab, the Report tab and in the PDF.
  * Points are daily averages; smooth lines for systolic, diastolic and pulse on one "mmHg / bpm" axis.
- * Green background below 135, orange band above it; orange areas where systolic goes above 135
- * and diastolic above 85; dashed reference lines at 135 and 85; only the day number under each day.
+ * Plain background, no reference lines and no coloured zones: the app does not judge the values.
+ * Only the day number under each day.
  */
 fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: LocalDate, days: Int, pal: ChartPal, fs: Float) {
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -63,7 +56,7 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     c.drawRect(0f, 0f, w, h, p)
 
     val padL = fs * 3.2f
-    val padR = fs * 2.6f   // room for the "135" and "85" labels
+    val padR = fs * 0.8f
     val padT = fs * 2.2f
     val padB = fs * 2.4f
     val cw = w - padL - padR
@@ -78,15 +71,6 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     fun y(v: Int): Float = padT + ch * (1f - (v - lo).toFloat() / (hi - lo).toFloat())
     val slot = cw / days
     fun x(d: LocalDate): Float = padL + slot * ChronoUnit.DAYS.between(start, d).toFloat() + slot / 2f
-    val y135 = y(THRESHOLD_SYS)
-    val y85 = y(THRESHOLD_DIA)
-
-    // background: soft green below 135 (fading upwards), transparent orange band above 135
-    p.shader = LinearGradient(0f, bottom, 0f, y135, alpha(OK_GREEN, 0.14f), alpha(OK_GREEN, 0f), Shader.TileMode.CLAMP)
-    c.drawRect(padL, y135, right, bottom, p)
-    p.shader = null
-    p.color = alpha(HIGH_ORANGE, 0.18f)
-    c.drawRect(padL, padT, right, y135, p)
 
     val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.text; textSize = fs }
     val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pal.grid; strokeWidth = 1f; style = Paint.Style.STROKE }
@@ -113,35 +97,6 @@ fun drawBpChart(c: Canvas, w: Float, h: Float, list: List<Reading>, start: Local
     val sys = pts.map { x(it.day) to y(it.sis) }
     val dia = pts.map { x(it.day) to y(it.dia) }
     val pul = pts.mapNotNull { d -> d.pul?.let { x(d.day) to y(it) } }
-
-    // orange areas between a line and its reference line, only where the line is above it
-    fun fillAbove(values: List<Pair<Float, Float>>, refY: Float, a: Float) {
-        if (values.size < 2) return
-        val area = monotonePath(values)
-        area.lineTo(values.last().first, refY)
-        area.lineTo(values.first().first, refY)
-        area.close()
-        c.save()
-        c.clipRect(padL, padT, right, refY)
-        c.drawPath(area, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = alpha(HIGH_ORANGE, a) })
-        c.restore()
-    }
-    fillAbove(dia, y85, 0.18f)
-    fillAbove(sys, y135, 0.28f)
-
-    // dashed reference lines, labelled at the right edge
-    val dash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = fs * 0.08f
-        pathEffect = DashPathEffect(floatArrayOf(fs * 0.4f, fs * 0.4f), 0f)
-    }
-    text.textAlign = Paint.Align.LEFT
-    for ((ref, col) in listOf(THRESHOLD_SYS to SYS_COLOR, THRESHOLD_DIA to DIA_COLOR)) {
-        if (ref !in (lo + 1) until hi) continue
-        dash.color = col
-        c.drawLine(padL, y(ref), right, y(ref), dash)
-        text.color = col
-        c.drawText(ref.toString(), right + fs * 0.3f, y(ref) + fs * 0.35f, text)
-    }
 
     // smooth lines with a dot on each day (pulse first, so blood pressure stays on top)
     fun series(values: List<Pair<Float, Float>>, col: Int) {
@@ -257,7 +212,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     drawBpChart(c, right - left, 250f, per.list, per.start, n, PRINT_PAL, 9f)
     c.restore()
     drawChartLegend(c, left, 380f, PRINT_PAL, 9f)
-    c.drawText(t(R.string.pdf_legend), left, 396f, small)
+    c.drawText(t(R.string.chart_daily), left, 396f, small)
 
     fun f(r: Reading?) = if (r == null) "-" else "${r.sis}/${r.dia}  (${t(R.string.when_fmt, Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt))})"
     val rows = listOf(
@@ -267,8 +222,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         t(R.string.avg_pulse) to (st.pul?.let { t(R.string.per_min_short, it) } ?: "-"),
         t(R.string.peak_sys) to f(st.maxS),
         t(R.string.max_dia) to f(st.maxD),
-        t(R.string.lowest) to f(st.minS),
-        t(R.string.above_thr) to "${st.over} / ${st.n}"
+        t(R.string.lowest) to f(st.minS)
     )
     var yy = 425f
     rows.forEach { (k, v) ->
@@ -280,11 +234,10 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     doc.finishPage(page)
 
     // following pages: table of all readings
-    val cols = floatArrayOf(left, 120f, 170f, 250f, 320f, 390f, 460f)
-    val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul), t(R.string.col_eval))
+    val cols = floatArrayOf(left, 120f, 170f, 250f, 330f, 410f)
+    val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul))
     val head = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
     val cell = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF13223F.toInt(); textSize = 10f }
-    val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFD93A52.toInt(); textSize = 10f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
     val band = Paint().apply { color = 0xFFF4F7FC.toInt() }
     val headBg = Paint().apply { color = 0xFF13223F.toInt() }
 
@@ -302,15 +255,8 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         while (i < list.size && y < 790f) {
             val r = list[i]
             if (row % 2 == 1) c.drawRect(left, y, right, y + 18f, band)
-            val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-", classify(r.sis, r.dia).label)
-            cells.forEachIndexed { k, s ->
-                val pnt = when {
-                    k == 3 && r.sis >= THRESHOLD_SYS -> red
-                    k == 4 && r.dia >= THRESHOLD_DIA -> red
-                    else -> cell
-                }
-                c.drawText(s, cols[k] + 4f, y + 13f, pnt)
-            }
+            val cells = listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "-")
+            cells.forEachIndexed { k, s -> c.drawText(s, cols[k] + 4f, y + 13f, cell) }
             y += 18f; i++; row++
         }
         footer(c)
@@ -330,10 +276,10 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
 fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
     val per = periodInfo(all, n)
     val sb = StringBuilder("\uFEFF")
-    sb.append(listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys) + " (mmHg)", t(R.string.legend_dia) + " (mmHg)", t(R.string.label_pul), t(R.string.col_eval)).joinToString(";"))
+    sb.append(listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys) + " (mmHg)", t(R.string.legend_dia) + " (mmHg)", t(R.string.label_pul)).joinToString(";"))
     sb.append("\r\n")
     per.list.forEach { r ->
-        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis, r.dia, r.pul ?: "", classify(r.sis, r.dia).label).joinToString(";"))
+        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis, r.dia, r.pul ?: "").joinToString(";"))
         sb.append("\r\n")
     }
     val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
