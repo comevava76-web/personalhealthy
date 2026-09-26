@@ -23,7 +23,7 @@
     <string name="last_fmt">Letzte: %s</string>
     <string name="mmhg_hint">mmHg, oben systolisch, unten diastolisch</string>
     <string name="pulse_lower">Puls</string>
-    <string name="measure">Blutdruck messen</string>
+    <string name="measure">Messung scannen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="chart_title">Verlauf</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. Oben systolisch, unten diastolisch.</string>
@@ -33,6 +33,10 @@
     <string name="n_readings">%d Messungen</string>
     <string name="peak_sys">Höchster systolischer Wert</string>
     <string name="recent">Letzte Messungen</string>
+    <string name="all_readings">Alle Messungen</string>
+    <string name="all_readings_fmt">Alle Messungen ansehen (%1$d)</string>
+    <string name="close">Schließen</string>
+    <string name="avg_short">Durchschnitt</string>
     <string name="delete_q">Diese Messung löschen?</string>
     <string name="legend_sys">Systolisch</string>
     <string name="legend_dia">Diastolisch</string>

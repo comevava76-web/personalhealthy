@@ -24,7 +24,7 @@
     <string name="last_fmt">Last: %s</string>
     <string name="mmhg_hint">mmHg, systolic on top and diastolic below</string>
     <string name="pulse_lower">pulse</string>
-    <string name="measure">Measure blood pressure</string>
+    <string name="measure">Scan reading</string>
     <string name="last7">Last 7 days</string>
     <string name="chart_title">Trend</string>
     <string name="week_hint">One value per day: the average of all that day\'s readings. Top: systolic, bottom: diastolic.</string>
@@ -34,6 +34,10 @@
     <string name="n_readings">%d readings</string>
     <string name="peak_sys">Highest systolic</string>
     <string name="recent">Recent readings</string>
+    <string name="all_readings">All readings</string>
+    <string name="all_readings_fmt">See all readings (%1$d)</string>
+    <string name="close">Close</string>
+    <string name="avg_short">Average</string>
     <string name="delete_q">Delete this reading?</string>
     <string name="legend_sys">Systolic</string>
     <string name="legend_dia">Diastolic</string>

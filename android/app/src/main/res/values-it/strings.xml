@@ -23,7 +23,7 @@
     <string name="last_fmt">Ultima: %s</string>
     <string name="mmhg_hint">mmHg, massima sopra e minima sotto</string>
     <string name="pulse_lower">battiti</string>
-    <string name="measure">Misura la pressione</string>
+    <string name="measure">Scansiona misura</string>
     <string name="last7">Ultimi 7 giorni</string>
     <string name="chart_title">Andamento</string>
     <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. Sopra la massima, sotto la minima.</string>
@@ -33,6 +33,10 @@
     <string name="n_readings">%d misure</string>
     <string name="peak_sys">Massima più alta</string>
     <string name="recent">Ultime misure</string>
+    <string name="all_readings">Tutte le misure</string>
+    <string name="all_readings_fmt">Vedi tutte le misure (%1$d)</string>
+    <string name="close">Chiudi</string>
+    <string name="avg_short">Media</string>
     <string name="delete_q">Eliminare questa misura?</string>
     <string name="legend_sys">Massima</string>
     <string name="legend_dia">Minima</string>

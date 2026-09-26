@@ -79,6 +79,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -475,6 +476,17 @@ fun App() {
                 onRecharge = { openRecharge() },
                 onLater = { screen = "tabs"; keyError = null }
             )
+            screen == "all" -> AllReadingsScreen(
+                readings = readings,
+                onDelete = { r ->
+                    val pid = personId ?: return@AllReadingsScreen
+                    scope.launch {
+                        try { Repo.delete(pid, r.id); toast(ctx, t(R.string.deleted)); reload() }
+                        catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                    }
+                },
+                onClose = { screen = "tabs" }
+            )
             screen == "invite" && invite != null -> InviteScreen(invite!!) { screen = "tabs"; invite = null }
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
@@ -489,6 +501,7 @@ fun App() {
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
                             onVoice = { openVoice() },
+                            onShowAll = { screen = "all" },
                             onDelete = { r ->
                                 val pid = personId ?: return@HomeScreen
                                 scope.launch {
@@ -642,9 +655,12 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
 }
 
 @Composable
-fun StatBox(label: String, value: String, note: String? = null, color: Color = C.Ink, modifier: Modifier = Modifier) {
+fun StatBox(label: String, value: String, note: String? = null, color: Color = C.Ink, modifier: Modifier = Modifier, period: String? = null) {
     Column(modifier.padding(4.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface2).padding(12.dp)) {
-        Text(label, color = C.Muted, fontSize = 12.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (period != null) { PeriodIcon(period, 14.dp, bg = C.Surface2); Spacer(Modifier.width(6.dp)) }
+            Text(label, color = C.Muted, fontSize = 12.sp)
+        }
         Text(value, color = color, fontSize = 22.sp, fontWeight = FontWeight.Light)
         if (note != null) Text(note, color = C.Muted, fontSize = 12.sp)
     }
@@ -655,11 +671,15 @@ fun StatBox(label: String, value: String, note: String? = null, color: Color = C
 /** Shown over the app while it is locked: the logo and one button that opens fingerprint, face or screen lock. */
 @Composable
 fun LockScreen(onUnlock: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+    // Takes the touches that miss the button, so nothing of the app underneath can be used while locked.
+    // It sits behind the content, not around it: wrapped around it, it also took the Unlock button's
+    // touches and cancelled most taps (that is why Unlock needed 5-7 taps).
+    Box(Modifier.matchParentSize().background(C.Bg).pointerInput(Unit) {
+        awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } }
+    })
     Column(
-        Modifier.fillMaxSize().background(C.Bg)
-            // take every touch, so nothing underneath can be used while locked
-            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } } }
-            .padding(32.dp),
+        Modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         HintLogo(56.dp)
@@ -667,6 +687,7 @@ fun LockScreen(onUnlock: () -> Unit) {
         Text("HINT", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
         Text(t(R.string.lock_text), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
         BigButton(t(R.string.lock_unlock), onClick = onUnlock)
+    }
     }
 }
 
@@ -715,7 +736,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit, onShowAll: () -> Unit
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -756,38 +777,102 @@ fun HomeScreen(
 
         if (readings.isNotEmpty()) {
             Text(t(R.string.recent), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
-            readings.takeLast(14).reversed().forEach { r ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(Modifier.width(96.dp)) {
-                        Text(Z.relDay(Z.date(r.takenAt)), color = C.Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("${Z.time(r.takenAt)}, ${periodLabel(r.period).lowercase()}", color = C.Muted, fontSize = 12.sp)
-                    }
-                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                        Text("${r.sis}", color = C.Sys, fontSize = 20.sp, fontWeight = FontWeight.Light)
-                        Text("/", color = C.Muted, fontSize = 20.sp)
-                        Text("${r.dia}", color = C.Dia, fontSize = 20.sp, fontWeight = FontWeight.Light)
-                        if (r.pul != null) Text("  ♥ ${r.pul}", color = C.Pul, fontSize = 13.sp)
-                        if (r.source == "voice") Text("  · " + t(R.string.source_voice).lowercase(), color = C.Muted, fontSize = 12.sp)
-                    }
-                    TextButton(onClick = { toDelete = r }) { Text(t(R.string.delete), color = C.Muted, fontSize = 12.sp) }
+            readings.takeLast(RECENT_ON_HOME).reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
+            if (readings.size > RECENT_ON_HOME) {
+                TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
+                    Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
                 }
             }
         }
         Spacer(Modifier.height(24.dp))
     }
 
-    toDelete?.let { r ->
-        AlertDialog(
-            onDismissRequest = { toDelete = null },
-            title = { Text(t(R.string.delete_q)) },
-            text = { Text("${r.sis}/${r.dia}, ${Z.whenText(r.takenAt)}") },
-            confirmButton = { TextButton(onClick = { onDelete(r); toDelete = null }) { Text(t(R.string.delete), color = C.Alert) } },
-            dismissButton = { TextButton(onClick = { toDelete = null }) { Text(t(R.string.cancel)) } },
-            containerColor = C.Surface
-        )
+    toDelete?.let { r -> DeleteDialog(r, onDelete = { onDelete(r); toDelete = null }, onDismiss = { toDelete = null }) }
+}
+
+/** How many readings the home lists; the rest are on the "All readings" screen. */
+const val RECENT_ON_HOME = 5
+
+@Composable
+fun DeleteDialog(r: Reading, onDelete: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(t(R.string.delete_q)) },
+        text = { Text("${r.sis}/${r.dia}, ${Z.whenText(r.takenAt)}") },
+        confirmButton = { TextButton(onClick = onDelete) { Text(t(R.string.delete), color = C.Alert) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
+}
+
+/** One reading: day, time with a sun or moon for the moment of the day, values, and Delete. */
+@Composable
+fun ReadingRow(r: Reading, onAskDelete: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.width(96.dp)) {
+            Text(Z.relDay(Z.date(r.takenAt)), color = C.Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(Z.time(r.takenAt), color = C.Muted, fontSize = 12.sp)
+                Spacer(Modifier.width(5.dp))
+                PeriodIcon(r.period, 13.dp)
+            }
+        }
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text("${r.sis}", color = C.Sys, fontSize = 20.sp, fontWeight = FontWeight.Light)
+            Text("/", color = C.Muted, fontSize = 20.sp)
+            Text("${r.dia}", color = C.Dia, fontSize = 20.sp, fontWeight = FontWeight.Light)
+            if (r.pul != null) Text("  ♥ ${r.pul}", color = C.Pul, fontSize = 13.sp)
+            if (r.source == "voice") Text("  · " + t(R.string.source_voice).lowercase(), color = C.Muted, fontSize = 12.sp)
+        }
+        TextButton(onClick = onAskDelete) { Text(t(R.string.delete), color = C.Muted, fontSize = 12.sp) }
+    }
+}
+
+/** Every reading kept (newest first), to check or delete one. */
+@Composable
+fun AllReadingsScreen(readings: List<Reading>, onDelete: (Reading) -> Unit, onClose: () -> Unit) {
+    var toDelete by remember { mutableStateOf<Reading?>(null) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.all_readings), t(R.string.n_readings, readings.size), t(R.string.close), onClose, titleSize = 22)
+        readings.reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
+        Spacer(Modifier.height(24.dp))
+    }
+    toDelete?.let { r -> DeleteDialog(r, onDelete = { onDelete(r); toDelete = null }, onDismiss = { toDelete = null }) }
+}
+
+/**
+ * The moment of the day as a small drawing instead of a word: sun (morning), sun on the horizon
+ * (afternoon), moon (evening). [bg] is the colour behind it (used to cut the crescent and the horizon).
+ */
+@Composable
+fun PeriodIcon(period: String, size: Dp = 14.dp, bg: Color = C.Surface) {
+    Canvas(Modifier.size(size)) {
+        val c = center
+        val r = this.size.minDimension / 2f
+        when (period) {
+            "evening" -> {
+                // crescent: a full disc with a second disc of the background colour over part of it
+                drawCircle(C.Ink.copy(alpha = 0.85f), radius = r * 0.8f, center = c)
+                drawCircle(bg, radius = r * 0.7f, center = Offset(c.x + r * 0.4f, c.y - r * 0.3f))
+            }
+            else -> {
+                val afternoon = period == "afternoon"
+                val sun = if (afternoon) Offset(c.x, c.y + r * 0.35f) else c
+                for (k in 0 until 8) {
+                    val a = Math.PI * k / 4
+                    val dx = Math.cos(a).toFloat(); val dy = Math.sin(a).toFloat()
+                    if (afternoon && dy > 0.1f) continue   // rays below the horizon are hidden
+                    drawLine(C.Pul, Offset(sun.x + dx * r * 0.62f, sun.y + dy * r * 0.62f), Offset(sun.x + dx * r * 0.95f, sun.y + dy * r * 0.95f),
+                        strokeWidth = r * 0.16f, cap = StrokeCap.Round)
+                }
+                drawCircle(C.Pul, radius = r * 0.42f, center = sun)
+                if (afternoon) drawRect(bg, topLeft = Offset(0f, sun.y + r * 0.08f), size = Size(this.size.width, this.size.height))
+                if (afternoon) drawLine(C.Muted, Offset(0f, sun.y + r * 0.08f), Offset(this.size.width, sun.y + r * 0.08f), strokeWidth = r * 0.12f)
+            }
+        }
     }
 }
 
@@ -1123,8 +1208,8 @@ fun ReportScreen(readings: List<Reading>) {
             StatBox(t(R.string.avg_pulse), st.pul?.toString() ?: "—", t(R.string.per_minute), modifier = Modifier.weight(1f))
         }
         Row(Modifier.fillMaxWidth()) {
-            StatBox(t(R.string.avg_morning), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f))
-            StatBox(t(R.string.avg_evening), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f))
+            StatBox(t(R.string.avg_short), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f), period = "morning")
+            StatBox(t(R.string.avg_short), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f), period = "evening")
         }
         Row(Modifier.fillMaxWidth()) {
             StatBox(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxS?.let { Z.whenText(it.takenAt) }, C.Sys, Modifier.weight(1f))
