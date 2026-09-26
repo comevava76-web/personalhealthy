@@ -22,14 +22,13 @@
     <string name="measure">Blutdruck messen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="chart_title">Verlauf</string>
-    <string name="week_hint">Oben systolisch, unten diastolisch (mmHg). Mehrere Messungen zum selben Zeitpunkt: der Durchschnitt.</string>
+    <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. Oben systolisch, unten diastolisch.</string>
     <string name="n_readings">%d Messungen</string>
     <string name="peak_sys">Höchster systolischer Wert</string>
     <string name="recent">Letzte Messungen</string>
     <string name="delete_q">Diese Messung löschen?</string>
     <string name="legend_sys">Systolisch</string>
     <string name="legend_dia">Diastolisch</string>
-    <string name="week_done">%d von 14 Zeitpunkten</string>
     <string name="new_reading">Neue Messung</string>
     <string name="new_reading_sub">Die App liest die Werte vom Foto</string>
     <string name="reading_display">Anzeige wird gelesen…</string>

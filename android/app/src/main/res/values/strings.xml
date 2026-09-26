@@ -23,14 +23,13 @@
     <string name="measure">Measure blood pressure</string>
     <string name="last7">Last 7 days</string>
     <string name="chart_title">Trend</string>
-    <string name="week_hint">Top: systolic, bottom: diastolic (mmHg). Several readings in the same moment: their average.</string>
+    <string name="week_hint">One value per day: the average of all that day\'s readings. Top: systolic, bottom: diastolic.</string>
     <string name="n_readings">%d readings</string>
     <string name="peak_sys">Highest systolic</string>
     <string name="recent">Recent readings</string>
     <string name="delete_q">Delete this reading?</string>
     <string name="legend_sys">Systolic</string>
     <string name="legend_dia">Diastolic</string>
-    <string name="week_done">%d of 14 slots</string>
     <string name="new_reading">New reading</string>
     <string name="new_reading_sub">The app reads the numbers from the photo</string>
     <string name="reading_display">Reading the display…</string>
