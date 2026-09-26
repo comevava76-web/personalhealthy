@@ -70,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -437,12 +438,8 @@ fun BigButton(text: String, color: Color = C.Sys, textColor: Color = Color.White
 }
 
 @Composable
-fun Header(
-    title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null, titleSize: Int = 26,
-    leading: (@Composable () -> Unit)? = null
-) {
+fun Header(title: String, subtitle: String? = null, action: String? = null, onAction: (() -> Unit)? = null, titleSize: Int = 26) {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (leading != null) { leading(); Spacer(Modifier.width(12.dp)) }
         Column(Modifier.weight(1f)) {
             Text(title, color = C.Ink, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
             if (subtitle != null) Text(subtitle, color = C.Muted, fontSize = 14.sp)
@@ -532,7 +529,7 @@ fun HomeScreen(
 ) {
     var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header("HINT", t(R.string.app_name), titleSize = 26, leading = { HintLogo() })
+        BrandHeader()
 
         // a friend who pays for their own photos has no key yet
         if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)
@@ -726,15 +723,18 @@ fun SummaryPanel(week: List<Reading>) {
 }
 
 /**
- * The app's ECG trace (the same shape as the launcher icon), in the app's own colours,
- * scrolling from right to left like on a heart monitor.
+ * The app's logo, the same as the launcher icon: coral ECG trace on the app's navy,
+ * here scrolling from right to left like on a heart monitor.
  */
 @Composable
-fun HintLogo(size: Dp = 40.dp) {
+fun HintLogo(size: Dp = 30.dp) {
     val shift by rememberInfiniteTransition(label = "ecg").animateFloat(
         0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "shift"
     )
-    Canvas(Modifier.size(size).clip(RoundedCornerShape(11.dp)).background(C.Surface2)) {
+    Canvas(
+        Modifier.size(size).clip(RoundedCornerShape(size * 0.28f))
+            .background(Brush.verticalGradient(listOf(C.Surface2, C.Bg))).border(1.dp, C.Line, RoundedCornerShape(size * 0.28f))
+    ) {
         // launcher trace from x 13 to 95 in a 108 box; both ends at the same height, so copies join seamlessly
         val pts = listOf(13f to 57.2f, 33.5f to 57.2f, 38.9f to 49.7f, 44.3f to 57.2f, 48.6f to 57.2f, 55.1f to 27f,
             62.1f to 84.2f, 68f to 57.2f, 74.5f to 57.2f, 79.9f to 51.8f, 85.3f to 57.2f, 95f to 57.2f)
@@ -746,8 +746,20 @@ fun HintLogo(size: Dp = 40.dp) {
             val py = (y - 57.2f) * k * 0.9f + this.size.height / 2f
             if (copy == 0 && i == 0) trace.moveTo(px, py) else trace.lineTo(px, py)
         }
-        drawPath(trace, C.Sys.copy(alpha = 0.25f), style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-        drawPath(trace, C.Sys, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(trace, C.Sys, style = Stroke(width = size.toPx() * 0.045f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
+/** Home title: logo, the HINT wordmark and the full name in small capitals-like spacing. */
+@Composable
+fun BrandHeader() {
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        HintLogo()
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text("HINT", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
+            Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
+        }
     }
 }
 
