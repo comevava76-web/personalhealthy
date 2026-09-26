@@ -69,17 +69,12 @@
     <string name="file_failed">Fichier non créé : %s</string>
     <string name="share_title">Envoyer le rapport</string>
     <string name="report_subject">Journal de tension</string>
-    <string name="credit_title">Crédit de lecture</string>
     <string name="credit_not_set_admin">Pas encore défini. Touchez Recharger, puis indiquez combien vous avez ajouté.</string>
     <string name="credit_not_set_user">Pas encore défini par le gestionnaire de l\'app.</string>
     <string name="amount_usd">Montant en dollars</string>
     <string name="enter_amount">Saisissez un montant, par exemple 5</string>
     <string name="topup_added">Recharge ajoutée</string>
     <string name="balance_updated">Solde mis à jour</string>
-    <string name="notif_title">HealthyInstantTracker : crédit presque épuisé</string>
-    <string name="notif_empty">Le crédit estimé est épuisé.</string>
-    <string name="notif_low">Le crédit suffit pour une seule photo.</string>
-    <string name="notif_admin_hint">Ouvrez l\'onglet Crédit dans HealthyInstantTracker et touchez Recharger.</string>
     <string name="notif_user_hint">Prévenez le gestionnaire de l\'app.</string>
     <string name="reminder_channel">Rappels de mesure</string>
     <string name="reminder_morning">Bonjour ! Pensez à mesurer votre tension.</string>

@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Txt.init(this)   // texts in the phone's language
-        Notif.schedule(this)
+        Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
         setContent {
             MaterialTheme(
@@ -197,7 +197,6 @@ fun App() {
                 readings.clear(); readings.addAll(l); message = null
                 val m = Repo.me(pid)
                 me = m
-                Notif.check(ctx, m.credit, m.canRecharge)
                 // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
                 if (m.selfPays && !m.hasKey && !keyPromptShown && screen == "tabs") { keyPromptShown = true; screen = "key" }
             } catch (e: Exception) {
@@ -214,10 +213,7 @@ fun App() {
                 val img = withContext(Dispatchers.IO) { Img.prepare(photoFile) }
                 val res = Repo.scan(pid, img, takenAt)
                 scan = ScanState.Done(res)
-                if (res.credit != null) {
-                    me = me?.copy(credit = res.credit)
-                    Notif.check(ctx, res.credit, me?.canRecharge ?: false)
-                }
+                if (res.credit != null) me = me?.copy(credit = res.credit)
             } catch (e: Exception) {
                 scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed), (e as? ApiException)?.code)
             }
@@ -358,7 +354,6 @@ fun App() {
                     try {
                         val c = Repo.credit(pid, action, v)
                         me = me?.copy(credit = c)
-                        Notif.check(ctx, c, true)
                         toast(ctx, if (action == "topup") t(R.string.topup_added) else t(R.string.balance_updated))
                     } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                 }

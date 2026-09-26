@@ -69,17 +69,12 @@
     <string name="file_failed">Datei konnte nicht erstellt werden: %s</string>
     <string name="share_title">Bericht senden</string>
     <string name="report_subject">Blutdrucktagebuch</string>
-    <string name="credit_title">Guthaben für Lesungen</string>
     <string name="credit_not_set_admin">Noch nicht eingerichtet. Tippe auf Aufladen und gib dann ein, wie viel du aufgeladen hast.</string>
     <string name="credit_not_set_user">Noch nicht vom App-Verwalter festgelegt.</string>
     <string name="amount_usd">Betrag in Dollar</string>
     <string name="enter_amount">Gib einen Betrag ein, zum Beispiel 5</string>
     <string name="topup_added">Aufladung hinzugefügt</string>
     <string name="balance_updated">Guthaben aktualisiert</string>
-    <string name="notif_title">HealthyInstantTracker: Guthaben fast aufgebraucht</string>
-    <string name="notif_empty">Das geschätzte Guthaben ist aufgebraucht.</string>
-    <string name="notif_low">Das Guthaben reicht nur noch für ein Foto.</string>
-    <string name="notif_admin_hint">Öffne den Tab Guthaben in HealthyInstantTracker und tippe auf Aufladen.</string>
     <string name="notif_user_hint">Sag dem App-Verwalter Bescheid.</string>
     <string name="reminder_channel">Erinnerungen zum Messen</string>
     <string name="reminder_morning">Guten Morgen! Denk daran, deinen Blutdruck zu messen.</string>

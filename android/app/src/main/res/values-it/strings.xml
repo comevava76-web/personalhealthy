@@ -69,17 +69,12 @@
     <string name="file_failed">File non creato: %s</string>
     <string name="share_title">Invia il report</string>
     <string name="report_subject">Diario della pressione</string>
-    <string name="credit_title">Credito letture</string>
     <string name="credit_not_set_admin">Non ancora impostato. Tocca Ricarica e poi scrivi quanto hai aggiunto.</string>
     <string name="credit_not_set_user">Non ancora impostato da chi gestisce l\'app.</string>
     <string name="amount_usd">Importo in dollari</string>
     <string name="enter_amount">Scrivi un importo, per esempio 5</string>
     <string name="topup_added">Ricarica aggiunta</string>
     <string name="balance_updated">Saldo aggiornato</string>
-    <string name="notif_title">HealthyInstantTracker: credito quasi finito</string>
-    <string name="notif_empty">Il credito stimato è finito.</string>
-    <string name="notif_low">Il credito basta ancora per una sola foto.</string>
-    <string name="notif_admin_hint">Apri la scheda Credito in HealthyInstantTracker e tocca Ricarica.</string>
     <string name="notif_user_hint">Avvisa chi gestisce l\'app.</string>
     <string name="reminder_channel">Promemoria misure</string>
     <string name="reminder_morning">Buongiorno! Ricordati di misurare la pressione.</string>
