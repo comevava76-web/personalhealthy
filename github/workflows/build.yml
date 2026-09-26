@@ -1,0 +1,92 @@
+name: Costruisci PersonalHealthy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  server:
+    name: Pubblica il server
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Database PersonalHealthy (D1, dati vincolati all'Unione Europea)
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+        run: |
+          npm install --no-audit --no-fund --silent
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ID=$(curl -s -H "$AUTH" "$API?name=personalhealthy" | jq -r '.result[]? | select(.name=="personalhealthy") | .uuid' | head -1)
+          if [ -z "$ID" ]; then
+            echo "Creo il database personalhealthy in Europa"
+            ID=$(curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API" \
+                 --data '{"name":"personalhealthy","jurisdiction":"eu"}' | jq -r '.result.uuid // empty')
+          fi
+          if [ -z "$ID" ]; then echo "Database non creato: controlla che il token abbia il permesso D1 Edit"; exit 1; fi
+          echo "Database: $ID"
+          sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
+          npx wrangler d1 execute personalhealthy --remote --file=schema.sql
+
+      - id: deploy
+        name: Pubblica il server
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
+        run: |
+          set -o pipefail
+          npx wrangler deploy 2>&1 | tee deploy.log
+          jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
+          npx wrangler secret bulk secrets.json
+          rm -f secrets.json
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          if [ -z "$URL" ]; then URL="${{ vars.BATTITO_API_URL }}"; fi
+          if [ -z "$URL" ]; then echo "Indirizzo del server non trovato"; exit 1; fi
+          curl -sf "$URL/v1/health" && echo " <- server raggiungibile"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+  apk:
+    name: Costruisci l'APK
+    needs: server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Compila
+        working-directory: android
+        env:
+          BATTITO_API_URL: ${{ needs.server.outputs.url }}
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: Prepara il file
+        run: cp android/app/build/outputs/apk/release/app-release.apk "PersonalHealthy-0.1.${{ github.run_number }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PersonalHealthy-apk
+          path: PersonalHealthy-*.apk
+      - name: Pubblica tra le versioni (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v0.1.${{ github.run_number }}" "PersonalHealthy-0.1.${{ github.run_number }}.apk" \
+            --title "PersonalHealthy 0.1.${{ github.run_number }}" \
+            --notes "Scarica il file .apk dal telefono e installalo." --repo "${{ github.repository }}"
