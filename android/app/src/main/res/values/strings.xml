@@ -10,11 +10,15 @@
     <string name="period_morning">Morning</string>
     <string name="period_afternoon">Afternoon</string>
     <string name="period_evening">Evening</string>
-    <string name="setup_intro">To activate the app on this phone, enter the family code or the invite code you received.</string>
+    <string name="setup_intro">To activate the app on this phone, scan the QR code of the invite you received, or type its code.</string>
     <string name="family_code">Family code</string>
     <string name="activate">Activate</string>
     <string name="activating">Activating…</string>
     <string name="setup_privacy">No name and no email: this phone gets an anonymous code, protected inside the phone itself.</string>
+    <string name="lock_prompt_title">Unlock HINT</string>
+    <string name="lock_prompt_sub">Fingerprint, face or your phone\'s screen lock</string>
+    <string name="lock_text">Your readings are protected with the phone\'s fingerprint, face or screen lock.</string>
+    <string name="lock_unlock">Unlock</string>
     <string name="no_readings_title">No readings yet</string>
     <string name="no_readings_text">Measure your blood pressure and photograph the display: the app reads the numbers.</string>
     <string name="last_fmt">Last: %s</string>
@@ -124,7 +128,7 @@
     <string name="no_browser">No browser found on this phone</string>
     <string name="err_anthropic_no_credit">Your Anthropic credit is finished. Tap Recharge.</string>
     <string name="chart_daily">Points: daily averages</string>
-    <string name="family_or_invite_code">Family code or invite code</string>
+    <string name="family_or_invite_code">Invite code</string>
     <string name="scan_qr">Scan QR code</string>
     <string name="scan_qr_prompt">Point the camera at the invite QR code</string>
     <string name="err_invite_used">This invite has already been used. Ask for a new one.</string>

@@ -9,11 +9,15 @@
     <string name="period_morning">Morgen</string>
     <string name="period_afternoon">Nachmittag</string>
     <string name="period_evening">Abend</string>
-    <string name="setup_intro">Gib den Familiencode oder den Einladungscode ein, den du bekommen hast, um die App auf diesem Telefon zu aktivieren.</string>
+    <string name="setup_intro">Um die App auf diesem Telefon zu aktivieren, scanne den QR-Code der erhaltenen Einladung oder gib ihren Code ein.</string>
     <string name="family_code">Familiencode</string>
     <string name="activate">Aktivieren</string>
     <string name="activating">Wird aktiviert…</string>
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
+    <string name="lock_prompt_title">HINT entsperren</string>
+    <string name="lock_prompt_sub">Fingerabdruck, Gesicht oder Bildschirmsperre des Telefons</string>
+    <string name="lock_text">Deine Messungen sind mit Fingerabdruck, Gesicht oder der Bildschirmsperre des Telefons geschützt.</string>
+    <string name="lock_unlock">Entsperren</string>
     <string name="no_readings_title">Noch keine Messungen</string>
     <string name="no_readings_text">Miss deinen Blutdruck und fotografiere die Anzeige: Die App liest die Werte.</string>
     <string name="last_fmt">Letzte: %s</string>
@@ -122,7 +126,7 @@
     <string name="no_browser">Kein Browser auf diesem Telefon gefunden</string>
     <string name="err_anthropic_no_credit">Dein Anthropic-Guthaben ist aufgebraucht. Tippe auf Aufladen.</string>
     <string name="chart_daily">Punkte: Tagesdurchschnitte</string>
-    <string name="family_or_invite_code">Familien- oder Einladungscode</string>
+    <string name="family_or_invite_code">Einladungscode</string>
     <string name="scan_qr">QR-Code scannen</string>
     <string name="scan_qr_prompt">Richte die Kamera auf den QR-Code der Einladung</string>
     <string name="err_invite_used">Diese Einladung wurde schon benutzt. Bitte um eine neue.</string>
