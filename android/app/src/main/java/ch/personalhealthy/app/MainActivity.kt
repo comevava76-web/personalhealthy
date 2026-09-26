@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import java.util.Locale
 import android.net.Uri
 import android.content.pm.PackageManager
@@ -339,16 +340,27 @@ fun App() {
     var voiceUnusual by remember { mutableStateOf<List<String>>(emptyList()) }
     var voiceSaving by remember { mutableStateOf(false) }
     var voiceProblem by remember { mutableStateOf<String?>(null) }
-    val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-        if (res.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
-        val texts = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).orEmpty()
+    fun onSpoken(texts: List<String>) {
         val sp = parseSpoken(texts)
         voice = sp.values
         voiceUnusual = sp.unusual
-        if (sp.problem != null) voiceProblem = sp.problem
+        if (sp.problem != null) { voiceProblem = sp.problem; screen = "tabs" }
         else { voiceAt = System.currentTimeMillis(); screen = "voice" }   // shown full screen: saved only after Save
     }
+    // the phone's standard speech window: only when listening inside the app is not possible
+    val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        if (res.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        onSpoken(res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).orEmpty())
+    }
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) screen = "listen" else toast(ctx, t(R.string.voice_permission))
+    }
     fun openVoice() {
+        if (SpeechRecognizer.isRecognitionAvailable(ctx)) {
+            if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) screen = "listen"
+            else micPermission.launch(Manifest.permission.RECORD_AUDIO)
+            return
+        }
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
@@ -396,6 +408,11 @@ fun App() {
                 onRecharge = { openRecharge() },
                 onReplaceKey = { openKeySteps() },
                 onCancel = { screen = "tabs"; scan = ScanState.Idle }
+            )
+            screen == "listen" -> ListenScreen(
+                onResult = { onSpoken(it) },
+                onFail = { msg -> screen = "tabs"; voiceProblem = msg },
+                onCancel = { screen = "tabs" }
             )
             screen == "voice" && voice != null -> VoiceScreen(
                 values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,

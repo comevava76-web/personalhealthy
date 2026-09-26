@@ -119,6 +119,9 @@
     <string name="voice_confirm_title">Angesagte Werte</string>
     <string name="voice_retry">Nochmal sagen</string>
     <string name="voice_not_understood">Ich habe die Zahlen nicht verstanden. Nochmal: systolisch, diastolisch und Puls.</string>
+    <string name="listening">Ich höre zu…</string>
+    <string name="voice_permission">Um die Werte anzusagen, erlaube HINT das Mikrofon.</string>
+    <string name="voice_network">Die Spracherkennung braucht Internet. Prüfe die Verbindung und versuche es nochmal.</string>
     <string name="voice_missing">Ich habe nur %1$s gehört: eine Zahl fehlt. Sage alle drei: systolisch, diastolisch und Puls.</string>
     <string name="voice_sub">Per Stimme erfasst: prüfe die Zahlen</string>
     <string name="voice_when">Datum und Uhrzeit: als du die Werte gesagt hast.</string>

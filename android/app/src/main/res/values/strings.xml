@@ -121,6 +121,9 @@
     <string name="voice_confirm_title">Values said aloud</string>
     <string name="voice_retry">Say again</string>
     <string name="voice_not_understood">I did not understand the numbers. Try again: systolic, diastolic and pulse.</string>
+    <string name="listening">Listening…</string>
+    <string name="voice_permission">To say the values aloud, allow HINT to use the microphone.</string>
+    <string name="voice_network">Speech recognition needs the internet. Check the connection and try again.</string>
     <string name="voice_missing">I heard only %1$s: a number is missing. Say all three: systolic, diastolic and pulse.</string>
     <string name="voice_sub">Acquired by voice: check the numbers</string>
     <string name="voice_when">Date and time: when you said the values.</string>

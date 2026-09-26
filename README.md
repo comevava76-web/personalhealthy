@@ -74,7 +74,8 @@ The chart is the same in the app and in the PDF: one point per day (the day's av
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
 That is for the doctor.
 
-Values said aloud: the microphone next to Measure uses the phone's speech recognition (no AI cost).
+Values said aloud: the microphone next to Measure listens inside the app (bars that follow the voice, the words shown
+as they are said, it stops by itself), using the phone's speech recognition (no AI cost).
 Say systolic, diastolic and pulse in this order, for example "127, 80, 70". All three are needed.
 The app refuses a missing number, more than three, a diastolic equal to or higher than the systolic, or values a monitor
 cannot show, and warns in amber about unusual ones. Like a photo reading, the values are shown full screen and are
