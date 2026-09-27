@@ -60,12 +60,15 @@ async function creditInfo(q: Q, pool: Pool) {
   const spent = Number(sums?.used || 0);
   const remaining = loaded - spent;
   const avg = Math.max(1, Math.round(Number(avgRow?.avg) || DEFAULT_PHOTO_COST));
+  // everything spent on photo readings since the start (exact: tokens × price of each reading)
+  const [all] = await q(`SELECT COALESCE(SUM(amount_micro), 0) AS used FROM ledger WHERE ${POOL_WHERE} AND kind = 'usage'`, [pool]);
   const photosLeft = configured ? Math.max(0, Math.floor(remaining / avg)) : null;
   return {
     configured,
     remaining: configured ? remaining / MICRO : null,
     loaded: configured ? loaded / MICRO : null,
     spent: spent / MICRO,
+    spentAll: Number(all?.used || 0) / MICRO,
     scans: Number(sums?.scans || 0),
     since: last ? Number(last.created_at) : null, // time of the last balance correction
     avgCost: avg / MICRO,

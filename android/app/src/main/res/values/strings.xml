@@ -315,4 +315,12 @@
     <string name="ai_state_no_credit">Anthropic: credit used up</string>
     <string name="ai_state_invalid">Anthropic: key not accepted</string>
     <string name="ai_check_now">Check again with Anthropic</string>
+    <string name="credit_state">Credit</string>
+    <string name="credit_state_ok">Available</string>
+    <string name="credit_state_empty">Used up</string>
+    <string name="credit_state_key">Key?</string>
+    <string name="credit_spent">Spent with HINT</string>
+    <string name="credit_how">Anthropic lets no app read the balance. HINT asks Anthropic whether there is credit (Scan switches on only when it says yes) and adds up exactly what you spent on photos. The exact balance is on your Anthropic page: “Top up” opens it.</string>
+    <string name="version_standard">Standard version</string>
+    <string name="version_premium">Premium version ✦</string>
 </resources>

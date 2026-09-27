@@ -313,4 +313,12 @@
     <string name="ai_state_no_credit">Anthropic: credito finito</string>
     <string name="ai_state_invalid">Anthropic: chiave non accettata</string>
     <string name="ai_check_now">Ricontrolla con Anthropic</string>
+    <string name="credit_state">Credito</string>
+    <string name="credit_state_ok">Disponibile</string>
+    <string name="credit_state_empty">Finito</string>
+    <string name="credit_state_key">Chiave?</string>
+    <string name="credit_spent">Speso con HINT</string>
+    <string name="credit_how">Anthropic non permette alle app di leggere il saldo. HINT chiede ad Anthropic se il credito c’è (Scan si accende solo se risponde di sì) e somma con precisione quanto hai speso con le foto. Il saldo esatto è sulla tua pagina Anthropic: «Ricarica» la apre.</string>
+    <string name="version_standard">Versione Standard</string>
+    <string name="version_premium">Versione Premium ✦</string>
 </resources>

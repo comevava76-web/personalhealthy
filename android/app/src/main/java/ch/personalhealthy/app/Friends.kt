@@ -67,10 +67,8 @@ fun KeyScreen(
 ) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var key by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    val amountValue = amount.replace(',', '.').toDoubleOrNull()
-    // the first time the balance is needed to count the photos; when replacing the key it can stay as it is
-    val canSave = !busy && key.length >= 20 && (amountValue != null || (hasKey && amount.isBlank()))
+    // no amount to type: Anthropic answers whether there is credit when the key is tested
+    val canSave = !busy && key.length >= 20
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         if (welcome) {
@@ -137,10 +135,8 @@ fun KeyScreen(
                 else android.widget.Toast.makeText(ctx, t(R.string.key_clipboard_empty), android.widget.Toast.LENGTH_LONG).show()
             }) { Text(t(R.string.key_paste), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
             Spacer(Modifier.height(4.dp))
-            Text(t(if (hasKey) R.string.key_amount_optional else R.string.correct_q), color = C.Muted, fontSize = 14.sp)
-            AmountField(amount) { amount = it }
             Spacer(Modifier.height(6.dp))
-            BigButton(if (busy) t(R.string.key_checking) else t(R.string.key_save), enabled = canSave) { onSave(key, amountValue) }
+            BigButton(if (busy) t(R.string.key_checking) else t(R.string.key_save), enabled = canSave) { onSave(key, null) }
             if (error != null) {
                 Text(error, color = C.Alert, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
                 if (errorCode == "friend_no_credit") BigButton(t(R.string.recharge), color = C.Surface2, textColor = C.Ink) { openUrl(ctx, RECHARGE_URL) }

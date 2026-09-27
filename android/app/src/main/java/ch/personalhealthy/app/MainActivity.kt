@@ -83,6 +83,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import kotlinx.coroutines.flow.first
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -267,6 +269,7 @@ enum class Tab(val key: String, val label: Int) {
     CREDIT("credit", R.string.tab_credit),
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
     val ctx = LocalContext.current
@@ -365,7 +368,9 @@ fun App() {
             if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
             if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
                 rechargePending = false
-                if (me?.canRecharge == true) amountDialog = "topup" else toast(ctx, t(R.string.notif_user_hint))
+                // after a top-up on Anthropic: check with Anthropic again, Scan follows the answer
+                val pid = personId
+                if (pid != null && me?.hasKey == true) scope.launch { try { Repo.checkAi(pid); reload() } catch (_: Exception) { } }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -530,7 +535,7 @@ fun App() {
                     keyBusy = true; keyError = null
                     scope.launch {
                         try {
-                            val c = Repo.saveKey(pid, key, amount)
+                            val c = Repo.saveKey(pid, key, null)
                             // the server has just tested the key with Anthropic: Scan can switch on straight away
                             me = me?.copy(hasKey = true, credit = c ?: me?.credit, aiStatus = "ok", aiCheckedAt = System.currentTimeMillis())
                             reload()
@@ -562,7 +567,19 @@ fun App() {
                 onClose = { screen = "tabs" }
             )
             else -> Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f)) {
+                // pull down with the thumb: fresh readings, and the AI state checked again with Anthropic
+                val pull = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+                if (pull.isRefreshing) {
+                    LaunchedEffect(true) {
+                        val pid = personId
+                        if (pid != null && me?.selfPays == true && me?.hasKey == true) try { Repo.checkAi(pid) } catch (_: Exception) { }
+                        reload()
+                        kotlinx.coroutines.delay(400)
+                        androidx.compose.runtime.snapshotFlow { loading }.first { !it }
+                        pull.endRefresh()
+                    }
+                }
+                Box(Modifier.weight(1f).nestedScroll(pull.nestedScrollConnection)) {
                     when (tab) {
                         Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" }, onDash = {
                             val pid = personId ?: return@ReportScreen
@@ -621,6 +638,10 @@ fun App() {
                             onVoice = { openVoice() },
                         )
                     }
+                    androidx.compose.material3.pulltorefresh.PullToRefreshContainer(
+                        state = pull, modifier = Modifier.align(Alignment.TopCenter),
+                        containerColor = C.Surface2, contentColor = C.Sys
+                    )
                 }
                 BottomBar(tab) { tab = it }
             }
@@ -1046,14 +1067,13 @@ fun HomeScreen(
     onMeasure: () -> Unit, onVoice: () -> Unit, onTerms: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null)
+        BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null, premium = me != null && me.selfPays && me.hasKey)
 
         // a friend who pays for their own photos has no key yet
         // not linked to Google yet: with a new phone this diary could not be found again
         if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
-        if (c != null && c.configured && c.low && me?.aiStatus == "ok") WarnLine(t(R.string.credit_warn_low), onOpenCredit)
         // Anthropic said no at the last check: Scan is off, and this says why
         if (me != null && me.selfPays && me.hasKey && me.aiStatus == "no_credit") WarnLine(t(R.string.ai_no_credit), onOpenCredit)
         if (me != null && me.selfPays && me.hasKey && me.aiStatus == "invalid") WarnLine(t(R.string.ai_key_invalid), onOpenCredit)
@@ -1354,7 +1374,7 @@ fun HintLogo(size: Dp = 30.dp) {
 
 /** Home title: logo, the HINT wordmark and the full name in small capitals-like spacing. */
 @Composable
-fun BrandHeader(onUpgrade: (() -> Unit)? = null) {
+fun BrandHeader(onUpgrade: (() -> Unit)? = null, premium: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 22.dp), verticalAlignment = Alignment.CenterVertically) {
         HintLogo(34.dp)
         Spacer(Modifier.width(12.dp))
@@ -1362,8 +1382,13 @@ fun BrandHeader(onUpgrade: (() -> Unit)? = null) {
             Text("HINT 365", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
             Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
         }
-        // not upgraded yet: the way to the AI features stays in sight
-        if (onUpgrade != null) {
+        // the version in use: Premium once the AI key is in; otherwise the way to the Upgrade stays in sight
+        if (premium) {
+            Text(
+                "✦ PREMIUM", color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(C.Sys.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        } else if (onUpgrade != null) {
             Text(
                 "✦ " + t(R.string.upgrade).uppercase(), color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
                 modifier = Modifier.clip(RoundedCornerShape(50)).border(1.dp, C.Sys.copy(alpha = 0.6f), RoundedCornerShape(50))
@@ -1585,31 +1610,30 @@ fun CreditScreen(
         // Credits: the money left for the AI readings, and adding to it
         SectionTitle(t(R.string.section_credits))
         val c = me.credit
-        // without a key a balance would refer to nothing: the digits are shown as empty places until the key is added
         val noKey = me.selfPays && !me.hasKey
-        val set = !noKey && c != null && c.configured
-        val col = if (set && c!!.low) Color(WARN_COLOR) else if (noKey) C.Muted else C.Ink
-        // three figures side by side: balance, photos left, cost of one photo (always shown, to decide whether to recharge)
+        // Anthropic lets no app read the balance: shown instead is what Anthropic answered (credit there or not),
+        // what was spent with HINT (exact, from each reading) and the cost of one photo
         Panel {
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                CreditFigure(t(R.string.credit_balance), if (noKey) "_,__ $" else if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", col, Modifier.weight(1.2f))
-                CreditFigure(t(R.string.credit_photos), if (noKey) "___" else if (set) "${c!!.photosLeft ?: 0}" else "—", col, Modifier.weight(1f))
+                val (stateText, stateCol) = when {
+                    noKey -> "—" to C.Muted
+                    me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
+                    me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
+                    else -> t(R.string.credit_state_key) to C.Alert
+                }
+                CreditFigure(t(R.string.credit_state), stateText, stateCol, Modifier.weight(1.2f))
+                CreditFigure(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0), C.Ink, Modifier.weight(1f))
                 CreditFigure(t(R.string.credit_per_photo), usdFine(c?.avgCost ?: 0.006), C.Ink, Modifier.weight(1.2f))
             }
-            Text(
-                t(when { noKey -> R.string.credit_needs_key; !set && me.canRecharge -> R.string.credit_not_set_admin; !set -> R.string.credit_not_set_user; else -> R.string.credit_estimate }),
-                color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp)
-            )
+            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
-        if (me.canRecharge && !noKey) {
-            TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp)
-            }
-        }
 
         // Token: the Anthropic key that pays the readings
         SectionTitle(t(R.string.section_token))
+        // Standard until the AI key is in, then Premium
+        Text(t(if (me.selfPays && me.hasKey) R.string.version_premium else R.string.version_standard), color = if (me.hasKey) C.Sys else C.Muted,
+            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
         if (me.selfPays) {
             if (!me.hasKey) {
                 Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
