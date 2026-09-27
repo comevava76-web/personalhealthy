@@ -20,7 +20,7 @@ Mancano gli screenshot dell'app Android: vanno fatti sul telefono con dati di pr
 2. Schermata Pressione (ultima misura, settimana)
 3. Registra a voce: ascolto e conferma dei valori
 4. Scansiona (Upgrade): foto del display e valori letti
-5. Report: 7/14 giorni, grafico, riquadri, PDF ed Excel
+5. Report: 7 giorni, grafico, riquadri, PDF ed Excel
 6. Report → My Dash (si apre il browser già collegato)
 7. Admin: crediti, chiave, identità, «Esci da questo telefono»
 
