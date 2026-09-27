@@ -251,7 +251,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "12";
+const DISCLAIMER_VERSION = "13";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -587,6 +587,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     // an account from before: its Google id becomes a fingerprint and its email is erased, right now
     if (person.email || (person.google_sub && !String(person.google_sub).startsWith("h1:"))) await anonymizeGoogle(env);
     await fillLocalDates(q);
+    // when the app was last opened: shown to the owner as a usage figure, nothing more
+    await q("UPDATE persons SET last_seen_at = ?1 WHERE id = ?2", [Date.now(), pid]);
     return json({
       personId: pid,
       isAdmin: !!person.is_admin,

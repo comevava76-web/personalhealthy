@@ -134,11 +134,11 @@
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
         <li>Scan is on only when Anthropic has just said yes (valid key, credit): a minimal request on opening if the last check is over an hour old, after every error and when the screen is pulled down.</li>
         <li>Readings kept at most 365 days, deleted nightly; only the acceptances of the terms remain, as proof.</li>
-        <li>Only the owner can switch installed apps off remotely.</li>
+        <li>The app stays simple: the owner's controls are only in the web Admin area.</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.80</span><span>1 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.81</span><span>1 / 2</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
@@ -212,6 +212,8 @@
       </table>
       <h2>Database tables</h2>
       <p><code>persons</code> accounts (anonymous code, encrypted fingerprint of the Google account, no email; subscription <code>sub_token</code>, <code>sub_until</code>, <code>sub_state</code>) · <code>measurements</code> readings · <code>scans</code> photo readings · <code>ledger</code> credit and costs · <code>person_keys</code> encrypted Anthropic keys · <code>acceptances</code> accepted terms (append-only) · <code>web_codes</code>, <code>web_sessions</code>, <code>web_shares</code> web access and doctor links · <code>settings</code>, <code>invites</code>.</p>
+      <h2>Extending</h2>
+      <p>Modular: lab reports will be a new module in <code>web.ts</code> and <code>app.js</code>.</p>
     </div>
     <div>
       <h2>Security and data</h2>
@@ -219,8 +221,9 @@
         <li><b>Phone</b>: a private key that never leaves the phone signs every request; the server refuses bad signatures or clocks off by more than 5 minutes.</li>
         <li><b>Web</b>: a 60 s one-time code in the <code>#</code> part of the address becomes the only cookie, <code>hint_s</code> (technical, 7 days, HttpOnly, Secure, SameSite=Strict), set only after the cookie notice is accepted; the choice stays in local storage. The app uses no cookies.</li>
         <li><b>Doctor links</b>: read-only, fixed period, expire in 1–30 days, withdrawable; no email, no account, no cookie.</li>
-        <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only.</li>
-        <li><b>Subscription</b>: Google Play Billing, checked by the server with the Play Developer API; when it runs out, a courteous message to renew.</li>
+        <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only, from the web Admin area.</li>
+        <li><b>Owner's area</b> (web, owner only): usage numbers per anonymous code (joined, last opened, readings, AI on), D1 size against the 500 MB free limit. Never readings, reports or names.</li>
+        <li><b>Subscription</b> (ready, off until Google Play): Play Billing, checked with the Play Developer API.</li>
         <li><b>Database</b>: only SHA-256 fingerprints of codes, cookies and links; Anthropic keys encrypted with AES-GCM.</li>
         <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an append-only register.</li>
         <li><b>Personal data</b>: no name, no email (of the Google account only an HMAC-SHA256 fingerprint; the email stays on the phone); photos and files processed and discarded; data in the EU.</li>
@@ -231,11 +234,10 @@
         <li>GitHub Actions updates D1, deploys the Worker, builds the APK and the AAB, creates release <code>v0.1.N</code> and puts the APK at <code>/download</code>.</li>
         <li>The site changes at once; the app updates by installing the new APK.</li>
       </ol>
-      <h2>Extending</h2>
-      <p>The dashboard is modular: lab reports will be a new module in <code>web.ts</code> and <code>app.js</code>, with sign-in, periods, sending and export already in place.</p>
+
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.80</span><span>2 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.81</span><span>2 / 2</span></div>
 </section>
 </body>
 </html>

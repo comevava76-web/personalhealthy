@@ -630,20 +630,6 @@ fun App() {
                         })
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
-                            onSubscriptionOn = { on ->
-                                val pid = personId ?: return@CreditScreen
-                                scope.launch {
-                                    try { Repo.setSubscriptionOn(pid, on); reload(); toast(ctx, t(R.string.versions_saved)) }
-                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                                }
-                            },
-                            onAppMinVersion = { v ->
-                                val pid = personId ?: return@CreditScreen
-                                scope.launch {
-                                    try { Repo.setAppMinVersion(pid, v); reload(); toast(ctx, t(R.string.versions_saved)) }
-                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                                }
-                            },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             // after a recharge on Anthropic: ask Anthropic again, Scan follows the answer
@@ -1711,11 +1697,9 @@ fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit, onAppMinVersion: (Int) -> Unit = {}, onSubscriptionOn: (Boolean) -> Unit = {}
+    onTerms: () -> Unit
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
-    var appOffAsk by remember { mutableStateOf<Int?>(null) }
-    var subAsk by remember { mutableStateOf<Boolean?>(null) }   // owner: subscription on (true) / off (false) waiting for confirmation   // administrator: the minimum version waiting for confirmation
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.tab_credit))
@@ -1808,20 +1792,9 @@ fun CreditScreen(
         SectionTitle(t(R.string.section_costs))
         CostsTable()
 
-        // Subscription: the owner switches it on for everyone else; a subscriber sees until when it is paid.
-        // Everything below this title is shown to the owner only: nobody else sees it, and the server refuses it to anyone else.
-        if (me.isAdmin) {
-            SectionTitle(t(R.string.section_owner))
-            Text(t(R.string.owner_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
-            Panel {
-                Text(t(R.string.section_subscription), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-                Text(t(if (me.subscriptionOn) R.string.sub_admin_on else R.string.sub_admin_off), color = C.Ink, fontSize = 14.sp)
-                Text(t(R.string.sub_admin_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-            }
-            BigButton(t(if (me.subscriptionOn) R.string.sub_admin_turn_off else R.string.sub_admin_turn_on), color = C.Surface2, textColor = C.Ink) {
-                subAsk = !me.subscriptionOn
-            }
-        } else if (me.sub.required && me.sub.active) {
+        // Subscription (only once it is switched on, for a paying person): until when it is paid, and where to cancel.
+        // The owner's controls (subscription, app versions) live in the web dashboard's Admin area, not in the app.
+        if (!me.isAdmin && me.sub.required && me.sub.active) {
             SectionTitle(t(R.string.section_subscription))
             Panel {
                 Text(t(R.string.sub_active_until, me.sub.until?.let { Z.long(Z.date(it)) } ?: "—"), color = C.Ink, fontSize = 14.sp)
@@ -1832,45 +1805,7 @@ fun CreditScreen(
                 try { subCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { }
             }
         }
-
-        // App versions (administrator): switch off the apps installed with older versions, or let them all work again
-        if (me.isAdmin) {
-            val mine = BuildConfig.VERSION_CODE
-            Panel {
-                Text(t(R.string.section_versions), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-                Text(t(R.string.versions_state, BuildConfig.VERSION_NAME), color = C.Ink, fontSize = 14.sp)
-                Text(if (me.appMinVersion > 0) t(R.string.versions_blocked_below, "0.1." + me.appMinVersion) else t(R.string.versions_blocked_none),
-                    color = C.Ink, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
-                Text(t(R.string.versions_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-            }
-            if (me.appMinVersion < mine)
-                BigButton(t(R.string.versions_off_older), color = C.Surface2, textColor = C.Ink) { appOffAsk = mine }
-            if (me.appMinVersion > 0)
-                TextButton(onClick = { appOffAsk = 0 }, modifier = Modifier.fillMaxWidth()) {
-                    Text(t(R.string.versions_all_on), color = C.Muted, fontSize = 13.sp)
-                }
-        }
         Colophon(onTerms)
-    }
-    subAsk?.let { on ->
-        AlertDialog(
-            onDismissRequest = { subAsk = null },
-            title = { Text(t(if (on) R.string.sub_admin_turn_on else R.string.sub_admin_turn_off)) },
-            text = { Text(t(if (on) R.string.sub_admin_on_q else R.string.sub_admin_off_q)) },
-            confirmButton = { TextButton(onClick = { subAsk = null; onSubscriptionOn(on) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
-            dismissButton = { TextButton(onClick = { subAsk = null }) { Text(t(R.string.cancel)) } },
-            containerColor = C.Surface
-        )
-    }
-    appOffAsk?.let { v ->
-        AlertDialog(
-            onDismissRequest = { appOffAsk = null },
-            title = { Text(t(if (v > 0) R.string.versions_off_older else R.string.versions_all_on)) },
-            text = { Text(if (v > 0) t(R.string.versions_off_q, "0.1.$v") else t(R.string.versions_on_q)) },
-            confirmButton = { TextButton(onClick = { appOffAsk = null; onAppMinVersion(v) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
-            dismissButton = { TextButton(onClick = { appOffAsk = null }) { Text(t(R.string.cancel)) } },
-            containerColor = C.Surface
-        )
     }
     if (signOutAsk) AlertDialog(
         onDismissRequest = { signOutAsk = false },

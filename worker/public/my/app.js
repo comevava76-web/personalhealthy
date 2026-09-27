@@ -398,13 +398,113 @@
     let me;
     try { me = await api("/my/api/me"); } catch (e) { return signedOut(); }
     $("actions").hidden = false;
-    $("modules").innerHTML = me.modules.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("");
-    $("modules").onclick = (e) => { const id = e.target.dataset.m; if (!id || !MODULES[id]) return; current.module = id; [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id)); load(); };
+    $("modules").innerHTML = me.modules.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("")
+      // the owner's area: only the owner gets this tab, and the server answers it only for the owner
+      + (me.isOwner ? `<button type="button" data-m="admin">${AD.tab}</button>` : "");
+    $("modules").onclick = (e) => {
+      const id = e.target.dataset.m; if (!id || (!MODULES[id] && id !== "admin")) return;
+      [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id));
+      if (id === "admin") { $("actions").hidden = true; return loadAdmin(); }
+      $("actions").hidden = false; current.module = id; load();
+    };
     $("btn-pdf").onclick = printReport;
     $("btn-csv").onclick = () => current.data && download(`hint-${current.module}-${current.days}d.csv`, MODULES[current.module].csv(current.data.items), "text/csv");
     $("btn-out").onclick = async () => { try { await api("/my/session", { method: "DELETE" }); } catch {} signedOut(); };
     setupShare();
     load();
+  }
+
+  /* ---------- the owner's area ----------
+     Usage numbers per anonymous account code: when it joined, when it was last used, how many readings.
+     Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
+  const AD = IT ? {
+    tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo numeri d'uso, legati al codice anonimo: nessuna misura, nessun report, nessun nome",
+    upd: "Aggiornato", users: "Utenti", new30: (n) => `${n} nuovi in 30 giorni`, act7: "Attivi 7 giorni", act30: "Attivi 30 giorni",
+    act: "hanno aperto l'app o misurato", rd: "Misure", rd7: "Misure 7 giorni", rd30: "Misure 30 giorni", total: "in totale",
+    split: (v, f) => `${v} a voce · ${f} da foto`, ai: "AI attiva", aiU: "utenti con chiave Anthropic", aiSp: "Spesa AI", aiSpU: "sui crediti Anthropic degli utenti",
+    web: "Web Dashboard", webU: "sessioni aperte", links: "Link al medico", linksU: "attivi ora",
+    stT: "Spazio su Cloudflare", stDb: (a, b, pc) => `Database D1: ${a} su ${b} (${pc}) del piano gratuito`, stRows: "Righe per tabella",
+    stNote: "Il limite di 500 MB è quello di un database D1 nel piano gratuito di Cloudflare. Le misure oltre 365 giorni vengono cancellate ogni notte.",
+    vT: "Versioni dell'app", vNew: (v) => `Versione più recente installata: ${v}`, vNone: "Nessuna versione bloccata: tutte le app installate funzionano.",
+    vMin: (v) => `Bloccate tutte le versioni precedenti alla ${v}: mostrano solo il link per scaricare l'ultima.`,
+    vOff: (v) => `Blocca le versioni precedenti alla ${v}`, vOn: "Sblocca tutte le versioni",
+    vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
+    vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
+    uT: "Utenti", uNote: "Codice anonimo dell'account e numeri d'uso. «tu» è il tuo account.",
+    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "7 gg", "30 gg", "Voce / foto", "AI", "App", "Link medico"],
+    aiS: { none: "—", ok: "attiva", no_credit: "credito finito", invalid: "chiave non valida" }, you: "tu", never: "—",
+  } : {
+    tab: "Admin", title: "Owner's area", sub: "Only you see it · usage numbers only, tied to the anonymous code: no readings, no reports, no names",
+    upd: "Updated", users: "Users", new30: (n) => `${n} new in 30 days`, act7: "Active 7 days", act30: "Active 30 days",
+    act: "opened the app or measured", rd: "Readings", rd7: "Readings 7 days", rd30: "Readings 30 days", total: "in total",
+    split: (v, f) => `${v} by voice · ${f} by photo`, ai: "AI on", aiU: "users with an Anthropic key", aiSp: "AI spending", aiSpU: "on the users' own Anthropic credit",
+    web: "Web Dashboard", webU: "open sessions", links: "Doctor links", linksU: "active now",
+    stT: "Space on Cloudflare", stDb: (a, b, pc) => `D1 database: ${a} of ${b} (${pc}) on the free plan`, stRows: "Rows per table",
+    stNote: "500 MB is the size limit of one D1 database on Cloudflare's free plan. Readings older than 365 days are deleted every night.",
+    vT: "App versions", vNew: (v) => `Newest version installed: ${v}`, vNone: "No version blocked: every installed app works.",
+    vMin: (v) => `Every version older than ${v} is blocked: it shows only the link to download the latest.`,
+    vOff: (v) => `Block versions older than ${v}`, vOn: "Unblock every version",
+    vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
+    vAskOn: "Every installed version works again. Confirm?",
+    uT: "Users", uNote: "Anonymous account code and usage numbers. “you” is your own account.",
+    cols: ["Code", "Joined", "Last opened", "Readings", "7 d", "30 d", "Voice / photo", "AI", "App", "Doctor links"],
+    aiS: { none: "—", ok: "on", no_credit: "credit out", invalid: "key refused" }, you: "you", never: "—",
+  };
+  const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const mb = (b) => (b / 1048576).toLocaleString(LOCALE, { maximumFractionDigits: b < 10485760 ? 2 : 0 }) + " MB";
+  const ver = (n) => "0.1." + n;
+  async function loadAdmin() {
+    main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
+    let d;
+    try { d = await api("/my/api/admin/overview"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
+    const t = d.totals, st = d.storage, v = d.versions;
+    const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
+    const pc = st.freeLimitBytes ? Math.min(100, (st.dbBytes / st.freeLimitBytes) * 100) : 0;
+    const when = (ms) => (ms ? `${day(ms)} ${time(ms)}` : AD.never);
+    main.innerHTML = `
+      <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
+      <p class="note">${AD.sub}</p>
+      <section class="tiles adm">
+        ${tile(AD.users, t.users, AD.new30(t.newUsers30))}
+        ${tile(AD.act7, t.active7, AD.act)}
+        ${tile(AD.act30, t.active30, AD.act)}
+        ${tile(AD.rd, t.readings, AD.split(t.voice, t.photo))}
+        ${tile(AD.rd7, t.readings7, AD.total)}
+        ${tile(AD.rd30, t.readings30, AD.total)}
+        ${tile(AD.ai, t.aiOn, AD.aiU)}
+        ${tile(AD.aiSp, "$" + t.aiSpentUsd.toFixed(2), AD.aiSpU)}
+        ${tile(AD.links, t.doctorLinks, AD.linksU)}
+      </section>
+      <div class="card"><div class="card-h"><h2>${AD.stT}</h2></div>
+        <p>${AD.stDb(mb(st.dbBytes), mb(st.freeLimitBytes), (pc < 0.1 ? "< 0,1%".replace(",", IT ? "," : ".") : pc.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) + "%"))}</p>
+        <div class="meter"><i style="width:${Math.max(pc, 0.5)}%"></i></div>
+        <p class="muted small" style="margin-top:10px">${AD.stRows}: ${Object.entries(st.rows).map(([k, n]) => `<code>${esc(k)}</code> ${n}`).join(" · ")}</p>
+        <p class="muted small">${AD.stNote}</p>
+      </div>
+      <div class="card"><div class="card-h"><h2>${AD.vT}</h2></div>
+        <p>${v.newest ? AD.vNew(ver(v.newest)) : ""}</p>
+        <p>${v.min ? AD.vMin(ver(v.min)) : AD.vNone}</p>
+        <div class="send" style="margin:8px 0 6px">
+          ${v.newest && v.min < v.newest ? `<button class="btn" type="button" id="adm-off">${AD.vOff(ver(v.newest))}</button>` : ""}
+          ${v.min ? `<button class="btn ghost" type="button" id="adm-on">${AD.vOn}</button>` : ""}
+        </div>
+      </div>
+      <div class="card"><div class="card-h"><h2>${AD.uT}</h2><span class="sub">${AD.uNote}</span></div>
+        <div class="tbl"><table class="list"><thead><tr>${AD.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+          ${d.users.map((u) => `<tr>
+            <td><code>${esc(u.id)}</code>${u.owner ? ` <b class="you">${AD.you}</b>` : ""}</td>
+            <td>${day(u.since)}</td><td>${when(u.lastSeen)}</td>
+            <td>${u.readings}</td><td>${u.last7}</td><td>${u.last30}</td><td>${u.voice} / ${u.photo}</td>
+            <td>${AD.aiS[u.ai] || esc(u.ai)}</td><td>${u.app ? esc(u.app) : "—"}</td><td>${u.shares}</td></tr>`).join("")}
+        </tbody></table></div>
+      </div>`;
+    const setMin = async (min, ask) => {
+      if (!confirm(ask)) return;
+      try { await api("/my/api/admin/app-min-version", { method: "POST", body: JSON.stringify({ minVersion: min }) }); } catch { alert(T.err); }
+      loadAdmin();
+    };
+    const off = $("adm-off"); if (off) off.onclick = () => setMin(v.newest, AD.vAskOff(ver(v.newest)));
+    const on = $("adm-on"); if (on) on.onclick = () => setMin(0, AD.vAskOn);
   }
 
   // PDF: the same A4 report as the app, built from the readings on screen, then the browser's "Save as PDF"
