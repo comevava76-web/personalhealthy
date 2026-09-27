@@ -1,6 +1,6 @@
 # HINT · regole per chi lavora su questo repository
 
-- **Documentazione sempre aggiornata.** `docs/architecture/architettura.html` (pagina 1 funzionale, pagina 2 tecnologie)
+- **Documentazione sempre aggiornata, e sempre solo in inglese.** `docs/architecture/architecture.html` (pagina 1 funzionale, pagina 2 tecnologie)
   va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
   `node docs/architecture/render.cjs` e si committano HTML, PDF e anteprime insieme alla modifica.
 - **Materiale demo** in `docs/demo/`: se cambia l'aspetto della dashboard o del PDF, rifare gli screenshot (solo dati di prova,
@@ -23,3 +23,6 @@
 - **Abbonamento**: 3 US$ all'anno via Google Play (`hint365_annual`), spento finché l'owner non lo accende; l'owner non paga.
   Senza abbonamento valido solo il messaggio di cortesia per rinnovare; i dati restano. Del pagamento si salvano solo token,
   stato e scadenza. Solo l'owner (primo account, `is_admin`) può accendere l'abbonamento o disattivare versioni dell'app.
+- **Accesso e cookie dichiarati**: l'accesso è Sign in with Google (OAuth 2.0 / OpenID Connect) e va scritto così in condizioni,
+  privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
+  nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.

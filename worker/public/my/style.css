@@ -136,3 +136,12 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .a4 svg { width: 210mm; height: 297mm; display: block; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* cookie notice: shown before the session cookie is set */
+.cookie { position: fixed; inset: 0; background: rgba(8, 14, 28, .72); display: flex; align-items: flex-end; justify-content: center; z-index: 50; padding: 16px; }
+.cookie-in { background: var(--panel, #16213A); border: 1px solid #33476F; border-radius: 14px; max-width: 560px; width: 100%; padding: 18px 18px 14px; }
+.cookie-in h3 { margin: 0 0 8px; }
+.cookie-in p { margin: 0 0 14px; line-height: 1.5; font-size: 14px; }
+.cookie-in a { color: var(--accent); }
+.cookie-b { display: flex; gap: 10px; justify-content: flex-end; }
+@media print { .cookie { display: none; } }

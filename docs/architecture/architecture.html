@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HINT 365 · Functional and architecture document</title>
+<!--
+  Functional (page 1) and architecture (page 2) document of HINT 365 · HealthyInstantTracker. Always in English.
+  Update it with every change to a flow, a technology or a rule; then rebuild the PDF:
+  node docs/architecture/render.cjs   →   docs/architecture/HINT-Architecture.pdf
+-->
+<style>
+  @page { size: A4; margin: 0; }
+  :root { --ink:#13223F; --muted:#5B6B88; --rule:#D9E0EA; --panel:#F4F7FB; --navy:#0F1C36; --red:#6D5BD0; --blue:#0F9C8E; --amber:#B7860B; --green:#1E9A5B; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink); font: 8.6pt/1.38 Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; break-after: page; padding: 0 14mm; }
+  .page:last-child { break-after: auto; }
+  .band { margin: 0 -14mm 5mm; padding: 7mm 14mm 5mm; background: linear-gradient(135deg, #0F1C36, #1F3D72); color: #fff; border-bottom: 1mm solid var(--red); }
+  .band .k { font-size: 7.5pt; letter-spacing: 1.6pt; font-weight: 700; color: #AFC0DC; }
+  .band h1 { margin: 1.5mm 0 1mm; font-size: 19pt; }
+  .band p { margin: 0; color: #DCE5F3; font-size: 9pt; }
+  h2 { font-size: 10.5pt; margin: 4mm 0 1.5mm; }
+  h2 small { font-weight: 400; color: var(--muted); font-size: 8pt; margin-left: 2mm; }
+  p { margin: 0 0 1.5mm; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .box { background: var(--panel); border-radius: 2mm; padding: 2.5mm 3.5mm; }
+  ol, ul { margin: 0; padding-left: 4.5mm; }
+  li { margin: 0 0 0.9mm; }
+  b.sys { color: var(--red); } b.dia { color: var(--blue); } b.pul { color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  th { text-align: left; background: var(--navy); color: #fff; padding: 1.3mm 2mm; font-weight: 700; }
+  td { padding: 1.1mm 2mm; border-bottom: 0.3mm solid var(--rule); vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  code { font-family: "Roboto Mono", Menlo, monospace; font-size: 7.4pt; background: #EEF2F7; padding: 0 1mm; border-radius: 0.8mm; }
+  .tag { display: inline-block; font-size: 7pt; font-weight: 700; padding: 0.3mm 1.6mm; border-radius: 1mm; color: #fff; }
+  .free { background: var(--green); } .up { background: var(--red); }
+  .foot { position: absolute; left: 14mm; right: 14mm; bottom: 7mm; border-top: 0.3mm solid var(--rule); padding-top: 1.5mm; color: var(--muted); font-size: 7pt; display: flex; justify-content: space-between; }
+  svg text { font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ======================= PAGE 1: FUNCTIONAL OVERVIEW ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 1 OF 2</div>
+    <h1>Functional overview</h1>
+    <p>What the app does, who does what and in which order. A blood-pressure diary for Android, with a web dashboard and reports for the doctor.</p>
+  </div>
+
+  <h2>The flow <small>from the phone to the doctor</small></h2>
+  <svg viewBox="0 0 520 250" width="100%" role="img" aria-label="Functional flow of HINT 365">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker>
+    </defs>
+    <style>
+      .b { fill:#fff; stroke:#C7D2E1; stroke-width:1; } .t { font-size:8.2px; fill:#13223F; font-weight:700; } .s { font-size:6.6px; fill:#5B6B88; }
+      .l { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#a); } .lb { font-size:6.4px; fill:#5B6B88; }
+    </style>
+    <!-- user -->
+    <circle cx="28" cy="46" r="9" fill="#6D5BD0"/><rect x="18" y="57" width="20" height="18" rx="6" fill="#6D5BD0"/>
+    <text x="28" y="88" text-anchor="middle" class="s">User</text>
+    <line x1="42" y1="62" x2="72" y2="62" class="l"/>
+    <!-- app -->
+    <rect x="74" y="10" width="170" height="130" rx="8" fill="#F4F7FB" stroke="#13223F" stroke-width="1.2"/>
+    <text x="84" y="26" class="t">HINT 365 app (Android)</text>
+    <rect x="84" y="33" width="150" height="20" rx="4" class="b"/><text x="90" y="46" class="s">1 · Google (OAuth) once, then fingerprint</text>
+    <rect x="84" y="57" width="150" height="20" rx="4" class="b" stroke="#6D5BD0" stroke-width="1.4"/><text x="90" y="70" class="s">2 · Terms accepted (recorded)</text>
+    <rect x="84" y="81" width="72" height="24" rx="4" class="b"/><text x="90" y="92" class="s">3a · Voice</text><text x="90" y="100" class="s">included</text>
+    <rect x="162" y="81" width="72" height="24" rx="4" class="b"/><text x="168" y="92" class="s">3b · Display photo</text><text x="168" y="100" class="s">Upgrade · AI</text>
+    <rect x="84" y="109" width="150" height="24" rx="4" class="b"/><text x="90" y="120" class="s">4 · Home, charts, 7-day Report</text><text x="90" y="128" class="s">A4 PDF · Excel · reminders 9:00 / 17:00</text>
+    <!-- server -->
+    <line x1="244" y1="75" x2="290" y2="75" class="l"/><line x1="290" y1="85" x2="244" y2="85" class="l"/>
+    <text x="267" y="70" text-anchor="middle" class="lb">readings</text>
+    <rect x="292" y="40" width="112" height="80" rx="8" fill="#0F1C36"/>
+    <text x="302" y="58" class="t" fill="#fff" style="fill:#fff">HINT 365 server</text>
+    <text x="302" y="70" class="s" style="fill:#AFC0DC">checks, stores, computes</text>
+    <rect x="302" y="80" width="92" height="30" rx="4" fill="#1F3D72"/>
+    <text x="308" y="93" class="s" style="fill:#fff">Database in Europe</text>
+    <text x="308" y="102" class="s" style="fill:#AFC0DC">anonymous code, no names</text>
+    <!-- providers -->
+    <line x1="404" y1="60" x2="440" y2="40" class="l"/>
+    <rect x="442" y="22" width="72" height="30" rx="6" class="b"/><text x="448" y="35" class="t">Anthropic</text><text x="448" y="45" class="s">reads photos (AI)</text>
+    <line x1="404" y1="100" x2="440" y2="118" class="l"/>
+    <rect x="442" y="104" width="72" height="30" rx="6" class="b"/><text x="448" y="117" class="t">Google</text><text x="448" y="127" class="s">OAuth sign-in · Play</text>
+    <!-- web dashboard -->
+    <line x1="160" y1="140" x2="160" y2="176" class="l"/>
+    <text x="165" y="162" class="lb">“Web Dashboard”: one-time link, 60 s</text>
+    <rect x="74" y="178" width="170" height="52" rx="8" fill="#F4F7FB" stroke="#13223F" stroke-width="1.2"/>
+    <text x="84" y="194" class="t">Web Dashboard (browser)</text>
+    <text x="84" y="206" class="s">cookie notice first · then signed in</text>
+    <text x="84" y="215" class="s">7 dots = mean of each day · 9 tiles · list</text>
+    <text x="84" y="224" class="s">the same A4 PDF as the app</text>
+    <line x1="348" y1="120" x2="348" y2="176" class="l"/><line x1="244" y1="204" x2="290" y2="204" class="l"/>
+    <text x="267" y="198" text-anchor="middle" class="lb">sends</text>
+    <rect x="292" y="178" width="112" height="52" rx="8" class="b" stroke="#1E9A5B" stroke-width="1.4"/>
+    <text x="302" y="194" class="t">Link for the doctor</text>
+    <text x="302" y="206" class="s">read-only · 1/7/30 days</text>
+    <text x="302" y="215" class="s">no email, no account, no cookie</text>
+    <text x="302" y="224" class="s">withdrawable · A4 PDF</text>
+    <line x1="404" y1="204" x2="440" y2="204" class="l"/>
+    <rect x="442" y="186" width="72" height="36" rx="6" class="b"/><text x="448" y="200" class="t">Doctor</text><text x="448" y="211" class="s">WhatsApp · email</text>
+  </svg>
+
+  <div class="cols">
+    <div>
+      <h2>The user's path</h2>
+      <ol>
+        <li><b>Installs</b> the app from the public link <code>/download</code> (later from Google Play).</li>
+        <li><b>Signs in with Google</b> once, through OAuth 2.0 / OpenID Connect (a signed ID token, never the password), and gives privacy consent.</li>
+        <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (anonymous code, phone, versions, text fingerprint, date).</li>
+        <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
+        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (Upgrade).</li>
+        <li><b>Looks back</b>: last reading, the week, the Report with charts and tiles.</li>
+        <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
+        <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Tiers</h2>
+      <div class="box">
+        <p><span class="tag free">BASE · 3 $ A YEAR</span> through Google Play, cancel any time: voice readings, charts, PDF and Excel reports, reminders, Web Dashboard, doctor links.</p>
+        <p style="margin:0"><span class="tag up">UPGRADE</span> scanning with AI: a photo of the monitor's display and, coming, medical documents (values into tables and charts). Uses the user's own Anthropic key: they pay Anthropic directly.</p>
+      </div>
+      <h2>Fixed rules</h2>
+      <ul>
+        <li>No diagnosis, no advice, no judgement of the values: no coloured zones, no “normal”.</li>
+        <li>Labels always <b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>. Pressure and pulse never in the same chart.</li>
+        <li>Charts: 7 days, one dot per day = the mean of that day's readings (explained before the charts), value next to it, axis with day numbers only.</li>
+        <li>The same A4 PDF from the app and from the web; the web downloads it at once as a file.</li>
+        <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
+        <li>Scan is on only when Anthropic has just said yes (valid key, credit): a minimal request on opening if the last check is over an hour old, after every error and with “Check again”.</li>
+        <li>Readings kept at most 365 days, deleted nightly; only the acceptances of the terms remain, as proof.</li>
+        <li>The owner pays only the server (free tier) and alone can switch installed apps off remotely; every user pays their own AI.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.77</span><span>1 / 2</span></div>
+</section>
+
+<!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 2</div>
+    <h1>Architecture and technology</h1>
+    <p>The components, how they talk, where the data live and how a new version is released.</p>
+  </div>
+
+  <svg viewBox="0 0 520 190" width="100%" role="img" aria-label="Technical architecture of HINT 365">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
+    <style>
+      .n { fill:#fff; stroke:#C7D2E1; } .h { font-size:8px; font-weight:700; fill:#13223F; } .x { font-size:6.4px; fill:#5B6B88; }
+      .ar { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#b); marker-start:url(#b); } .one { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#b); }
+      .lb2 { font-size:6.2px; fill:#5B6B88; }
+    </style>
+    <!-- phone -->
+    <rect x="4" y="10" width="140" height="92" rx="8" class="n" stroke="#13223F"/>
+    <text x="14" y="26" class="h">Android phone</text>
+    <text x="14" y="38" class="x">Kotlin · Jetpack Compose (Material 3)</text>
+    <text x="14" y="47" class="x">Android Keystore: ECDSA P-256 key</text>
+    <text x="14" y="56" class="x">BiometricPrompt · Credential Manager</text>
+    <text x="14" y="65" class="x">SpeechRecognizer · Camera · Play Billing</text>
+    <text x="14" y="74" class="x">PdfDocument (A4 PDF) · CSV</text>
+    <text x="14" y="82" class="x">WorkManager (reminders)</text>
+    <text x="14" y="95" class="x" style="font-weight:700">every request signed by the phone</text>
+    <!-- browser -->
+    <rect x="4" y="118" width="140" height="64" rx="8" class="n" stroke="#13223F"/>
+    <text x="14" y="134" class="h">Browser · Web Dashboard</text>
+    <text x="14" y="146" class="x">HTML, CSS, JavaScript, no framework</text>
+    <text x="14" y="155" class="x">SVG charts drawn by the page</text>
+    <text x="14" y="164" class="x">A4 PDF: SVG → jsPDF + svg2pdf</text>
+    <text x="14" y="173" class="x">one cookie, after consent</text>
+    <!-- worker -->
+    <line x1="146" y1="60" x2="190" y2="70" class="ar"/><text x="148" y="50" class="lb2">HTTPS</text><text x="148" y="57" class="lb2">signed</text>
+    <line x1="146" y1="150" x2="190" y2="130" class="ar"/><text x="150" y="162" class="lb2">HTTPS</text><text x="150" y="169" class="lb2">+ cookie</text>
+    <rect x="192" y="40" width="150" height="110" rx="8" fill="#0F1C36"/>
+    <text x="202" y="57" class="h" style="fill:#fff">Cloudflare Worker</text>
+    <text x="202" y="69" class="x" style="fill:#AFC0DC">TypeScript · worker/src (index, web, billing)</text>
+    <text x="202" y="80" class="x" style="fill:#AFC0DC">API /v1/… for the app · /my/…, /s/… for the web</text>
+    <text x="202" y="91" class="x" style="fill:#AFC0DC">pages: /privacy · /terms · /download</text>
+    <rect x="202" y="100" width="130" height="40" rx="5" fill="#1F3D72"/>
+    <text x="210" y="113" class="h" style="fill:#fff">D1 (SQLite) · EU</text>
+    <text x="210" y="123" class="x" style="fill:#AFC0DC">readings, accounts, acceptances</text>
+    <text x="210" y="132" class="x" style="fill:#AFC0DC">sessions, links: SHA-256 fingerprints</text>
+    <!-- externals -->
+    <line x1="342" y1="60" x2="388" y2="40" class="one"/>
+    <rect x="390" y="18" width="126" height="42" rx="6" class="n"/><text x="398" y="31" class="h">Anthropic API</text><text x="398" y="42" class="x">Claude Sonnet 5 reads the photos</text><text x="398" y="51" class="x">user's key, encrypted with AES-GCM</text>
+    <line x1="342" y1="95" x2="388" y2="95" class="one"/>
+    <rect x="390" y="74" width="126" height="42" rx="6" class="n"/><text x="398" y="87" class="h">Google</text><text x="398" y="98" class="x">OAuth 2.0 / OpenID Connect ID token</text><text x="398" y="107" class="x">Play Developer API: subscriptions</text>
+    <line x1="388" y1="150" x2="342" y2="130" class="one"/>
+    <rect x="390" y="134" width="126" height="48" rx="6" class="n" stroke="#1E9A5B"/><text x="398" y="147" class="h">GitHub Actions</text>
+    <text x="398" y="158" class="x">builds APK + AAB, release vN</text><text x="398" y="167" class="x">updates D1, deploys the Worker</text><text x="398" y="176" class="x">publishes the APK at /download</text>
+  </svg>
+
+  <div class="cols">
+    <div>
+      <h2>Components</h2>
+      <table>
+        <tr><th>Part</th><th>Technology</th><th>Folder</th></tr>
+        <tr><td>Android app</td><td>Kotlin, Compose, minSdk 26, target 34</td><td><code>android/</code></td></tr>
+        <tr><td>Server</td><td>Cloudflare Workers, TypeScript</td><td><code>worker/src/</code></td></tr>
+        <tr><td>Database</td><td>Cloudflare D1 (SQLite), EU jurisdiction</td><td><code>worker/schema.sql</code></td></tr>
+        <tr><td>Web dashboard</td><td>HTML/JS, own SVG charts, jsPDF + svg2pdf</td><td><code>worker/public/my/</code></td></tr>
+        <tr><td>Photo reading</td><td>Anthropic Messages API</td><td><code>index.ts</code></td></tr>
+        <tr><td>Sign-in</td><td>Sign in with Google (OAuth 2.0 / OpenID Connect) + phone key</td><td><code>Google.kt</code></td></tr>
+        <tr><td>Subscription</td><td>Google Play Billing + Play Developer API</td><td><code>Billing.kt</code>, <code>billing.ts</code></td></tr>
+        <tr><td>Build, release</td><td>GitHub Actions, Gradle, Wrangler</td><td><code>.github/workflows/</code></td></tr>
+        <tr><td>Guides, documents</td><td>HTML → PDF (Playwright)</td><td><code>docs/</code></td></tr>
+      </table>
+      <h2>Database tables</h2>
+      <p><code>persons</code> accounts (anonymous code, encrypted fingerprint of the Google account, no email; subscription <code>sub_token</code>, <code>sub_until</code>, <code>sub_state</code>) · <code>measurements</code> readings · <code>scans</code> photo readings · <code>ledger</code> credit and costs · <code>person_keys</code> encrypted Anthropic keys · <code>acceptances</code> accepted terms (append-only) · <code>web_codes</code>, <code>web_sessions</code>, <code>web_shares</code> web access and doctor links · <code>settings</code>, <code>invites</code>.</p>
+    </div>
+    <div>
+      <h2>Security and data</h2>
+      <ul>
+        <li><b>Phone</b>: a private key that never leaves the phone signs every request; the server refuses bad signatures or clocks off by more than 5 minutes.</li>
+        <li><b>Web</b>: a 60 s one-time code in the <code>#</code> part of the address becomes the only cookie, <code>hint_s</code> (technical, 7 days, HttpOnly, Secure, SameSite=Strict), set only after the cookie notice is accepted; the choice stays in local storage. The app uses no cookies.</li>
+        <li><b>Doctor links</b>: read-only, fixed period, expire in 1–30 days, withdrawable; no email, no account, no cookie.</li>
+        <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only.</li>
+        <li><b>Subscription</b>: Google Play Billing, checked by the server with the Play Developer API; when it runs out, a courteous message to renew.</li>
+        <li><b>Database</b>: only SHA-256 fingerprints of codes, cookies and links; Anthropic keys encrypted with AES-GCM.</li>
+        <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an append-only register.</li>
+        <li><b>Personal data</b>: no name, no email (of the Google account only an HMAC-SHA256 fingerprint; the email stays on the phone); photos and files processed and discarded; data in the EU.</li>
+      </ul>
+      <h2>Releasing a version</h2>
+      <ol>
+        <li>Change on a branch → pull request → merge into <code>main</code>.</li>
+        <li>GitHub Actions updates D1, deploys the Worker, builds the APK and the AAB, creates release <code>v0.1.N</code> and puts the APK at <code>/download</code>.</li>
+        <li>The site changes at once; the app updates by installing the new APK.</li>
+      </ol>
+      <h2>Extending</h2>
+      <p>The dashboard is modular: lab reports will be a new module in <code>web.ts</code> and <code>app.js</code>, with sign-in, periods, sending and export already in place.</p>
+    </div>
+  </div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.77</span><span>2 / 2</span></div>
+</section>
+</body>
+</html>

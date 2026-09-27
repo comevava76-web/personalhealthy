@@ -312,19 +312,6 @@ fun App() {
     LaunchedEffect(AppGate.disabled) {
         if (AppGate.disabled) prefs.edit().putInt("appOff", BuildConfig.VERSION_CODE).apply()
     }
-    // the yearly subscription: Google Play's answers come back here
-    LaunchedEffect(Unit) {
-        Billing.onChanged = { reload() }
-        Billing.onError = { m -> toast(ctx, m) }
-    }
-    // the server said it has run out: fetch the account again, the invitation to renew follows from it
-    LaunchedEffect(AppGate.subExpired) { if (AppGate.subExpired) reload() }
-    // not paid (or run out): read the price and hand the server a renewal already made on Google Play
-    LaunchedEffect(personId, me?.sub?.blocked) {
-        val pid = personId
-        if (pid != null && me?.sub?.blocked == true) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
-    }
-
     fun checkAppGate() = scope.launch {
         when (Repo.appAllowed()) {
             false -> AppGate.disabled = true
@@ -388,6 +375,19 @@ fun App() {
             toast(ctx, t(R.string.no_browser))
         }
     }
+    // the yearly subscription: Google Play's answers come back here
+    LaunchedEffect(Unit) {
+        Billing.onChanged = { reload() }
+        Billing.onError = { m -> toast(ctx, m) }
+    }
+    // the server said it has run out: fetch the account again, the invitation to renew follows from it
+    LaunchedEffect(AppGate.subExpired) { if (AppGate.subExpired) reload() }
+    // not paid (or run out): read the price and hand the server a renewal already made on Google Play
+    LaunchedEffect(personId, me?.sub?.blocked) {
+        val pid = personId
+        if (pid != null && me?.sub?.blocked == true) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
