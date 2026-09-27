@@ -900,6 +900,33 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
+/**
+ * The two costs, side by side and plainly: the app (paid to its owner through Google Play) and the optional
+ * AI features (paid by the user to Anthropic, from their own credit). One block per cost: readable on a phone.
+ */
+@Composable
+fun CostsTable() {
+    Panel {
+        Text(t(R.string.costs_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
+        listOf(
+            Triple(R.string.cost_app_what, R.string.cost_app_cost, R.string.cost_app_to),
+            Triple(R.string.cost_ai_what, R.string.cost_ai_cost, R.string.cost_ai_to),
+        ).forEach { (what, cost, to) ->
+            Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
+            Text(t(what), color = C.Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                Text(t(R.string.costs_col_cost), color = C.Muted, fontSize = 13.sp, modifier = Modifier.width(78.dp))
+                Text(t(cost), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                Text(t(R.string.costs_col_to), color = C.Muted, fontSize = 13.sp, modifier = Modifier.width(78.dp))
+                Text(t(to), color = C.Ink.copy(alpha = 0.85f), fontSize = 13.sp)
+            }
+        }
+        Text(t(R.string.costs_note), color = C.Muted, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 12.dp))
+    }
+}
+
 /** One figure of the credit panel: a hairline above, the label on the left, the value on the right. */
 @Composable
 fun CreditRow(label: String, value: String) {
@@ -1032,6 +1059,7 @@ fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -
             Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp))
         }
         BigButton(t(if (expired) R.string.sub_renew else R.string.sub_buy, p), enabled = !busy, onClick = onBuy)
+        CostsTable()
         if (expired) BigButton(t(R.string.sub_manage), color = C.Surface2, textColor = C.Ink, onClick = onManage)
         TextButton(onClick = onTerms, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_title), color = C.Muted, fontSize = 13.sp) }
     }
@@ -1469,10 +1497,10 @@ fun BrandHeader(onUpgrade: (() -> Unit)? = null, premium: Boolean = false) {
             Text("HINT 365", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
             Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
         }
-        // the version in use: Premium once the AI key is in; otherwise the way to the Upgrade stays in sight
+        // the AI features: "AI on" once the user's own Anthropic key is in; otherwise the way to turn them on stays in sight
         if (premium) {
             Text(
-                "✦ PREMIUM", color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
+                "✦ " + t(R.string.ai_badge_on), color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(C.Sys.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)
             )
         } else if (onUpgrade != null) {
@@ -1720,7 +1748,7 @@ fun CreditScreen(
 
         // Token: the Anthropic key that pays the readings
         SectionTitle(t(R.string.section_token))
-        // Standard until the AI key is in, then Premium
+        // AI features off until the user's own Anthropic key is in, then on
         Text(t(if (me.selfPays && me.hasKey) R.string.version_premium else R.string.version_standard), color = if (me.hasKey) C.Sys else C.Muted,
             fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
         if (me.selfPays) {
@@ -1776,6 +1804,10 @@ fun CreditScreen(
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
             }
         }
+
+        // What costs what, and who is paid
+        SectionTitle(t(R.string.section_costs))
+        CostsTable()
 
         // Subscription: the owner switches it on for everyone else; a subscriber sees until when it is paid
         if (me.isAdmin) {

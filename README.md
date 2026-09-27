@@ -148,7 +148,7 @@ Each Admin tab shows only its own pool: friends do not see the manager's balance
 friends' balances or keys. If a friend's key is refused or their credit is finished, the app tells them and offers
 **Recharge** and **Replace key**; the manager's key is never used in their place.
 
-## Subscription (Google Play, 3 US$ a year)
+## Subscription (Google Play, 5 US$ a year)
 The app can require a yearly subscription, bought and renewed through Google Play (people pay with Google Pay or
 any method Google Play offers, and cancel in Google Play at any time). It is **off** until the owner switches it on
 in the app (Admin → Subscription); the owner never pays. Without a valid subscription the app and the Web Dashboard
@@ -157,7 +157,7 @@ show only a courteous invitation to renew; the readings stay and come back as so
 To make it work, once:
 1. Play Console (one-off 25 US$ developer fee): create the app `ch.personalhealthy.app` and upload the `.aab`
    attached to each release (`HINT365-0.1.N.aab`), at least to the internal-testing track.
-2. Monetize → Subscriptions: create `hint365_annual` with one base plan, yearly, auto-renewing, 3 US$.
+2. Monetize → Subscriptions: create `hint365_annual` with one base plan, yearly, auto-renewing, 5 US$.
 3. Google Cloud: enable the *Google Play Android Developer API*, create a service account and a JSON key for it.
 4. Play Console → Users and permissions: invite the service account's email with *View financial data* and
    *Manage orders and subscriptions*.

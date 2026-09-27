@@ -99,6 +99,7 @@ fun KeyScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(t(R.string.upgrade_cost), color = C.Muted, fontSize = 13.sp)
             }
+            CostsTable()
         } else {
             Header(t(R.string.key_title_replace), null, t(R.string.later), onLater)
         }
