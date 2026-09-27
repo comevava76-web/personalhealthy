@@ -1436,7 +1436,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Unit) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
-    val infos = listOf(7, 15, 30).associateWith { periodInfo(readings, it) }
+    val infos = listOf(7, 14).associateWith { periodInfo(readings, it) }
     val per = infos.getValue(n)
     val st = stats(per.list)
 
@@ -1447,7 +1447,7 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
         Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(4.dp)) {
-            listOf(7, 15, 30).forEach { d ->
+            listOf(7, 14).forEach { d ->
                 val info = infos.getValue(d)
                 val sel = d == n
                 Column(
@@ -1469,8 +1469,9 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
         Panel {
             Text(t(R.string.range_fmt, Z.short(per.start), Z.long(per.end)), color = C.Muted, fontSize = 13.sp)
             Spacer(Modifier.height(8.dp))
-            BpChart(per.list, per.start, n, Modifier.fillMaxWidth().height(260.dp))
-            Legend()
+            // blood pressure only: the pulse is never drawn on the same chart
+            BpChart(per.list, per.start, n, Modifier.fillMaxWidth().height(260.dp), pulse = false)
+            Legend(pulse = false)
         }
         // boxes in pairs of the same height, dates written short so they fit on one line
         fun shortWhen(r: Reading) = "${Z.dmy(Z.date(r.takenAt))}, ${Z.time(r.takenAt)}"

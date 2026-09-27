@@ -273,7 +273,7 @@
     <string name="pdf_count">%1$d misure in %2$d giorni · ora svizzera</string>
     <string name="pdf_chart_all">Andamento del periodo</string>
     <string name="pdf_chart_all_sub">ogni misura, nell\'ordine in cui è stata presa</string>
-    <string name="pdf_units">SYS e DIA in mmHg · PUL in battiti al minuto</string>
+    <string name="pdf_units">SYS e DIA in mmHg</string>
     <string name="pdf_units_pul">battiti al minuto</string>
     <string name="pdf_morning_t">Mattina</string>
     <string name="pdf_morning_sub">prima delle 12</string>

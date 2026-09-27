@@ -275,7 +275,7 @@
     <string name="pdf_count">%1$d readings on %2$d days · Swiss time</string>
     <string name="pdf_chart_all">The whole period</string>
     <string name="pdf_chart_all_sub">every reading, in the order it was taken</string>
-    <string name="pdf_units">SYS and DIA in mmHg · PUL in beats per minute</string>
+    <string name="pdf_units">SYS and DIA in mmHg</string>
     <string name="pdf_units_pul">beats per minute</string>
     <string name="pdf_morning_t">Morning</string>
     <string name="pdf_morning_sub">before 12:00</string>

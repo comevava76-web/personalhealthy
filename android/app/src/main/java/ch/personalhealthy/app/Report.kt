@@ -334,6 +334,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     val diaL = Line(t(R.string.legend_dia), P_DIA, P_DIA_T) { it.dia }
     val pulL = Line(t(R.string.label_pul), P_PUL, P_PUL_T) { it.pul }
     val three = listOf(sysL, diaL, pulL)
+    val bpOnly = listOf(sysL, diaL)   // blood pressure charts: the pulse has its own chart
 
     val rowsPerPage = 40
     val totalPages = 3 + maxOf(1, (list.size + rowsPerPage - 1) / rowsPerPage)
@@ -377,7 +378,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     c.drawText(range, left, 82f, pdfPaint(10.5f, 0xFFDCE5F3.toInt()))
     c.drawText(t(R.string.pdf_count, list.size, list.map { Z.date(it.takenAt) }.toSet().size), left, 98f, pdfPaint(8f, 0xFFAFC0DC.toInt()))
 
-    pdfChart(c, left, 146f, cw, 300f, list, three, t(R.string.pdf_chart_all), t(R.string.pdf_chart_all_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 146f, cw, 300f, list, bpOnly, t(R.string.pdf_chart_all), t(R.string.pdf_chart_all_sub), t(R.string.pdf_units), per.start, n)
 
     // nine boxes: for SYS, DIA and PUL the highest and the lowest (with day and time) and the average
     var y = 486f
@@ -425,8 +426,8 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     // ---------- page 2: morning and evening ----------
     c = newPage()
     smallHeader(c)
-    pdfChart(c, left, 74f, cw, 330f, list.filter { it.period == "morning" }, three, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
-    pdfChart(c, left, 440f, cw, 330f, list.filter { it.period == "evening" }, three, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 74f, cw, 330f, list.filter { it.period == "morning" }, bpOnly, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 440f, cw, 330f, list.filter { it.period == "evening" }, bpOnly, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
     footer(c)
     doc.finishPage(pages.last())
 
