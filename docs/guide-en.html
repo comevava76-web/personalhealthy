@@ -14,78 +14,87 @@ p { margin:4px 0 8px; }
 ul, ol { margin:4px 0 8px 18px; padding:0; }
 li { margin:2px 0; }
 .box { background:#F3F6FA; border-radius:10px; padding:10px 14px; margin:8px 0; }
-.warn { background:#FFF4EC; border-left:4px solid #E8743B; border-radius:6px; padding:10px 14px; margin:8px 0; }
-.free { color:#1E8E5A; font-weight:700; } .paid { color:#D6481F; font-weight:700; }
+.warn { background:#F3F1FD; border-left:4px solid #6D5BD0; border-radius:6px; padding:10px 14px; margin:8px 0; }
+.free { color:#0F9C8E; font-weight:700; } .paid { color:#6D5BD0; font-weight:700; }
 table { border-collapse:collapse; width:100%; margin:6px 0 10px; font-size:9.8pt; }
 th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #D9E0EA; vertical-align:top; }
 th { background:#13223F; color:#fff; font-weight:600; }
-.sys { color:#D93A52; font-weight:700; } .dia { color:#2A86B8; font-weight:700; } .pul { color:#C9941F; font-weight:700; }
+.sys { color:#6D5BD0; font-weight:700; } .dia { color:#0F9C8E; font-weight:700; } .pul { color:#B7860B; font-weight:700; }
 .small { color:#5B6B88; font-size:9pt; }
 h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 </style></head><body>
+
 <div class="cover"><div class="brand"><svg viewBox="0 0 108 108" width="46" height="46"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs><rect width="108" height="108" rx="24" fill="url(#g)"/><path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95" fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><div class="sub">HealthyInstantTracker</div></div></div>
 <h2>User guide</h2><p>The blood-pressure diary: record readings by voice or with a photo, and prepare the report for the doctor.</p></div>
 
 <h2>1. What HINT 365 is</h2>
 <p>HINT 365 is a <b>diary</b>: it records the values of your blood-pressure monitor, <span class="sys">SYS</span> (systolic), <span class="dia">DIA</span> (diastolic) and <span class="pul">PUL</span> (pulse), with date and time, and shows them in tables, charts and reports.</p>
-<div class="warn"><b>HINT 365 is not a medical device and gives no medical advice.</b> It does not assess the values, does not say whether they are normal or high, makes no diagnosis and does not replace the doctor. The assessment is always the doctor's.</div>
+<div class="warn"><b>HINT 365 is not a medical device and gives no medical advice.</b> It does not assess the values, never says whether they are normal or high, makes no diagnosis and does not replace your doctor. Assessment is always up to the doctor.</div>
 
-<h2>2. Free, and optional: what is paid</h2>
-<table><tr><th>Feature</th><th>Cost</th></tr>
-<tr><td>Recording readings by voice, tables, charts, PDF and Excel reports, reminders, recovery on a new phone</td><td class="free">Free</td></tr>
-<tr><td>Scanning: reading the numbers from a photo of the monitor with artificial intelligence</td><td class="paid">Optional, paid</td></tr></table>
-<p>Scanning uses <b>Anthropic</b>'s artificial intelligence and costs about <b>half a US cent per photo</b>. You pay it, with your own prepaid Anthropic credit: nobody else pays for your photos and you do not pay for theirs. Without it, everything else in the app works.</p>
+<h2>2. Costs, plainly</h2>
+<table><tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
+<tr><td>HINT 365: the app, charts, reports, Web Dashboard, keeping your readings</td><td class="free">Free today. Once it is on the Play Store: 5 $ a year, cancel any time</td><td>The owner of the app, through Google Play</td></tr>
+<tr><td>AI features, optional: <b>Scan</b> of the monitor (available now); medical documents made anonymous (coming)</td><td class="paid">Pay-per-use, about 0.006 $ a photo</td><td>Anthropic, from your own credit</td></tr></table>
+<p>Without the AI features you pay nothing more. The Anthropic credit is yours: you manage it on Anthropic, it goes down only when you use the AI, and you can use it for other things too. The owner of HINT 365 receives none of it.</p>
 
-<h2>3. Installing</h2>
-<ol><li>On the Android phone open <b>https://personalhealthy-api.comevava76.workers.dev/download</b> and download <b>HINT.apk</b>.</li>
-<li>Open the file: Android asks to allow installs from this source. Allow it.</li>
-<li>Open HINT 365, read the note about your data, tick <b>"I have read and accept"</b> and tap <b>"Sign in with Google"</b>.</li>
+<h2>3. Installing and updating</h2>
+<ol><li>On your Android phone open <b>https://personalhealthy-api.comevava76.workers.dev/download</b> and download <b>HINT.apk</b>.</li>
+<li>Open the file: Android asks to allow installing from this source. Allow it.</li>
+<li>Tap <b>"Sign in with Google"</b>: sign-in uses the OAuth 2.0 and OpenID Connect standards, and HINT 365 never receives your password.</li>
+<li>Read the <b>terms of use</b> and accept them: they appear at the first installation and after <b>every update</b>. Without acceptance the app does not open.</li>
 <li>From then on the app opens with the phone's <b>fingerprint, face or screen lock</b>.</li></ol>
-<p class="small">Google is used only to create your diary and to find it again on a new phone. It is not asked day to day.</p>
+<p class="small">To update, install the new version <b>over</b> the existing one, without uninstalling. If an old version is switched off, the app shows only the button to download the latest: your data stay.</p>
 
 <h2>4. Recording a reading</h2>
-<h3>🎤 Record (free)</h3>
-<ol><li>Tap <b>Record</b> and say the three values in order: <span class="sys">SYS</span>, <span class="dia">DIA</span>, <span class="pul">PUL</span> (e.g. "127, 80, 70"). Pauses are fine.</li>
-<li>The app stops by itself once it has heard three numbers and shows them.</li>
-<li>Check them and tap <b>Save</b>. Date and time are those of the moment you spoke.</li></ol>
-<p>The app refuses impossible values (for example DIA higher than SYS, a missing number) and marks unusual ones in amber, to check again.</p>
-<h3>📷 Scan (optional, paid)</h3>
-<ol><li>Tap <b>Scan</b> and photograph the monitor's display: close, straight, without reflections.</li>
-<li>The app reads the numbers and shows them. Check they match the display and tap <b>Save</b>.</li></ol>
+<h3>🎤 Record</h3>
+<ol><li>Tap <b>Record</b> and say the three values in order: <span class="sys">SYS</span>, <span class="dia">DIA</span>, <span class="pul">PUL</span> (e.g. "127, 80, 70"). You can pause.</li>
+<li>The app stops by itself once it has heard three numbers and shows you the values.</li>
+<li>Check them and tap <b>Save reading</b>. Date and time are those of the moment you spoke.</li></ol>
+<p>The app refuses impossible values (for example DIA higher than SYS, a missing number) and marks unusual ones in orange, to check again.</p>
+<h3>✦ Scan (AI feature)</h3>
+<ol><li>Tap <b>Scan</b> and photograph the monitor's display: close, straight, without glare.</li>
+<li>The app reads the numbers and shows them. Check they match the display and tap <b>Save reading</b>. The photo is not kept.</li></ol>
+<p class="small">Scan is on only when Anthropic confirms that the key is valid and there is credit. The check is automatic: when the app opens, after an error and when you pull the screen down. If the credit runs out, Scan switches off and the app tells you.</p>
 
-<h2>5. Turning on scanning (AI credit)</h2>
-<p>At first start the app shows a welcome screen explaining the two ways: you can tap <b>"Continue without scanning"</b> and turn it on later from <b>Admin → Token → "Add my key"</b>. There are four steps, each with its button:</p>
+<h2>5. Turning on the AI features</h2>
+<p>Tap <b>✦ Turn on AI</b> (at the top of the Blood pressure screen, or in Admin). There are four steps, each with its own button:</p>
 <ol><li><b>Create an Anthropic account</b> (free, with your email).</li>
-<li><b>Add credit:</b> load a small prepaid credit (a few dollars last for months).</li>
+<li><b>Add credit:</b> load a small prepaid credit (a few dollars last for many photos).</li>
 <li><b>Create a key:</b> it starts with <b>sk-ant-</b>; copy it.</li>
-<li><b>Save the key here:</b> back in the app, tap <b>"Paste the key"</b>, type the credit you see on Anthropic and tap <b>Save</b>.</li></ol>
-<p class="small">The key is tested and stored encrypted on the server; it is never shown again, not even to you. You can replace or delete it at any time. The balance in the app is an estimate: the real one is on Anthropic.</p>
+<li><b>Save the key here:</b> back in the app, paste it and tap <b>Save</b>.</li></ol>
+<p class="small">The key is tested with Anthropic and stored encrypted on the server; it is never shown again, not even to you. You can replace or delete it at any time. Anthropic lets no app read the balance: the app shows your <b>estimated spending</b>, and the exact balance is on your Anthropic page.</p>
 
 <h2>6. The screens</h2>
 <table><tr><th>Tab</th><th>What you find</th></tr>
-<tr><td><b>Blood pressure</b></td><td>The Record and Scan buttons, the last reading, the last 7 days table (one average per day) and the summary with highest values and averages.</td></tr>
-<tr><td><b>Report</b></td><td>7, 15 or 30 days: daily chart, period averages, <b>Day average</b> and <b>Evening average</b>, extreme values, sending the <b>PDF</b> for the doctor and the <b>Excel</b> file.</td></tr>
-<tr><td><b>Admin</b></td><td><b>Credits</b> (estimated balance, recharge), <b>Token</b> (your key), <b>Readings database</b> (delete one reading or all), <b>Identity</b> (Google account, share the app, delete the account).</td></tr></table>
+<tr><td><b>Blood pressure</b></td><td>The Record and Scan buttons, the last reading, the week (one mean per day) and the summary.</td></tr>
+<tr><td><b>Report</b></td><td>The last 7 days: charts with one dot per day (the mean of the day), means, morning and evening, extremes; the <b>PDF</b> for the doctor, the <b>Excel</b> file and the <b>Web Dashboard</b> button.</td></tr>
+<tr><td><b>Admin</b></td><td><b>Credits</b> (estimated spending, link to the balance on Anthropic, Recharge), <b>AI features</b> (state, replace or delete the key), <b>Costs</b>, <b>Readings database</b> (delete one reading or all), <b>Identity</b> (Google account, sign out, delete the account) and, at the bottom, <b>Share the app</b>.</td></tr></table>
 
-<h2>7. Reminders</h2>
-<p>Every day at <b>9:00</b> and <b>17:00</b> "Remember to measure your blood pressure" arrives, with a number on the icon. At midnight they are cleared. Turn them off in the phone settings ("Measurement reminders").</p>
+<h2>7. Web Dashboard and the doctor</h2>
+<ol><li>In the Report tap <b>Web Dashboard</b>: the browser opens already signed in to your account (the link lasts 60 seconds).</li>
+<li>The first time, accept the <b>technical cookie</b> that keeps you signed in for 7 days. It is the only cookie: no advertising, statistics or third parties.</li>
+<li>You see large charts of the last 7 days and the list of readings, and you can download the same A4 PDF as the app.</li>
+<li><b>Send to the doctor</b> creates a read-only link valid for 1, 7 or 30 days, to send by WhatsApp or email. You can withdraw it at any time.</li></ol>
 
-<h2>8. New or lost phone</h2>
-<p>Install HINT 365 on the new phone and tap <b>"Sign in with Google"</b> with the same account: all your readings are there. The old phone is disconnected. To update the app, install the new version <b>over</b> the existing one, without uninstalling.</p>
+<h2>8. Reminders</h2>
+<p>Every day at <b>9:00</b> and <b>17:00</b> "Remember to measure your blood pressure" arrives, with a number on the icon. They reset at midnight. Turn them off in the phone's settings ("Measurement reminders").</p>
 
-<h2>9. Your data</h2>
-<ul><li><b>What is saved:</b> the email and identifier of your Google account (only to find your diary again), your readings with date and time and their source (photo or voice), and your encrypted Anthropic key if you add it.</li>
-<li><b>Photos and voice:</b> the photo is sent to Anthropic only to read the numbers and is not kept by the app. Speech is transcribed by the phone; only the three numbers reach the app.</li>
-<li><b>Where:</b> on <b>Cloudflare</b> servers, with the database in the <b>European Union</b>. The app's code is on <b>GitHub</b>.</li>
-<li><b>Who sees it:</b> only you. Other users do not. The person who runs the service can reach the database only for maintenance.</li>
-<li><b>Deleting:</b> in Admin you can delete one reading, all readings, or the account with all its data. It is immediate and final.</li></ul>
-<p class="small">Full privacy policy: https://personalhealthy-api.comevava76.workers.dev/privacy</p>
+<h2>9. New or lost phone</h2>
+<p>Install HINT 365 on the new phone and tap <b>"Sign in with Google"</b> with the same account: you find all your readings. The old phone is signed out.</p>
 
-<h2>10. Responsibility</h2>
+<h2>10. Your data</h2>
+<ul><li><b>What is saved:</b> your readings with date, time and source (voice or photo); of your Google account only an encrypted fingerprint, <b>never the email</b>, which stays on your phone; your Anthropic key, encrypted, if you add it.</li>
+<li><b>Photo and voice:</b> the photo goes to Anthropic only to read the numbers and is not kept. Speech is transcribed by the phone; only the three numbers reach the server.</li>
+<li><b>Where and for how long:</b> on <b>Cloudflare</b>, database in the <b>European Union</b>. Readings are kept for at most <b>365 days</b>: older ones are deleted every night. Export PDF or Excel to keep them longer.</li>
+<li><b>Who sees them:</b> only you, and the doctor with the link you send. The owner of the app sees only usage numbers tied to an anonymous code (when you joined, last opened, how many readings), never values or reports.</li>
+<li><b>Deletion:</b> in Admin you can delete one reading, all readings or the account. It is immediate and final; only the proof of the accepted terms remains.</li></ul>
+<p class="small">Full privacy policy: https://personalhealthy-api.comevava76.workers.dev/privacy · Terms of use: https://personalhealthy-api.comevava76.workers.dev/terms</p>
+
+<h2>11. Responsibility</h2>
 <div class="warn">
-<p><b>No medical advice.</b> HINT 365 collects and shows the data you enter. Every health decision is to be made with the doctor. The operator of HINT 365 is not responsible for medical choices made on the basis of the app's data.</p>
+<p><b>No medical advice.</b> HINT 365 collects and shows the data you enter. Every health decision is to be taken with your doctor.</p>
 <p><b>Always check the values.</b> Photo reading and speech recognition can be wrong: before saving, compare the numbers with the monitor's display.</p>
-<p><b>Service without warranties.</b> HINT 365 is offered free of charge, as it is, with no guarantee of continuous availability. Data is kept on third-party cloud infrastructure (Cloudflare) and the code on GitHub. To the extent permitted by law, the operator is not liable for service interruptions, errors or data loss.</p>
-<p><b>Keep a copy.</b> Regularly export the PDF or Excel file from the Report tab and keep it.</p></div>
+<p><b>No warranty.</b> HINT 365 is offered as is, without a guarantee of continuous availability; the terms of use accepted in the app apply.</p>
+<p><b>Keep a copy.</b> Regularly export the PDF or the Excel file from the Report and keep it.</p></div>
 <p class="small">This document describes the service and is not legal advice.</p>
 </body></html>

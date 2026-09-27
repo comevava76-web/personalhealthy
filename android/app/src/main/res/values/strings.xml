@@ -55,7 +55,7 @@
     <string name="scan_cost_note">Scanning a photo uses paid, optional AI credit (about half a cent per photo). Everything else, voice included, is free.</string>
     <string name="scan_needs_key_title">Scanning is optional</string>
     <string name="scan_needs_key_text">Reading the numbers from a photo uses artificial intelligence, paid with your Anthropic credit (about half a cent per photo). You can add it now, or say the values aloud, for free.</string>
-    <string name="scan_needs_key_add">Upgrade</string>
+    <string name="scan_needs_key_add">Turn on AI</string>
     <string name="scan_needs_key_voice">Use voice</string>
     <string name="last7">Last 7 days</string>
     <string name="week_hint">One value per day: the average of all that day\'s readings. SYS on top, DIA below.</string>

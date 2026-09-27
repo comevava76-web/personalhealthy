@@ -1,0 +1,84 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>HINT 365 · Privacy</title><style>
+  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; }
+  * { box-sizing:border-box; }
+  table.costs { width:100%; border-collapse:collapse; margin:8px 0 14px; font-size:14px; }
+  table.costs th, table.costs td { text-align:left; vertical-align:top; padding:8px; border-bottom:1px solid #2A3F66; }
+  table.costs th { color:var(--muted); font-weight:600; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:32px 20px 56px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+  header svg { width:52px; height:52px; flex:none; }
+  h1 { font-size:28px; letter-spacing:3px; margin:0; }
+  header p { margin:0; color:var(--muted); font-size:14px; }
+  h2 { font-size:20px; margin:32px 0 8px; }
+  h3 { font-size:16px; margin:20px 0 4px; }
+  p, li { color:#D6DEEC; }
+  a { color:var(--accent); }
+  .box { background:var(--panel); border-radius:14px; padding:4px 20px 16px; margin-top:18px; }
+  .muted { color:var(--muted); font-size:14px; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
+  hr { border:0; border-top:1px solid #2A3F66; margin:36px 0; }
+</style></head>
+<body><main><header><svg viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs>
+  <rect width="108" height="108" rx="24" fill="url(#g)"/>
+  <path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95"
+   fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><p>HealthyInstantTracker</p></div></header>
+<h2>Informativa sulla privacy</h2>
+<p class="muted">Ultimo aggiornamento: 27 settembre 2026</p>
+<div class="box">
+<h3>Chi tratta i dati</h3>
+<p>HINT 365 è un'app privata, gestita da una persona per sé, la famiglia e gli amici. Per domande o per esercitare i tuoi diritti usa l'email di assistenza mostrata nella schermata di accesso Google di HINT 365.</p>
+<h3>Quali dati</h3>
+<ul>
+<li><strong>Account Google:</strong> solo un'impronta cifrata del codice che Google assegna al tuo account, per ritrovare il tuo diario anche su un nuovo telefono. La tua email non viene salvata: resta sul tuo telefono. Non leggiamo nient'altro del tuo account Google.</li>
+<li><strong>Misure:</strong> SYS, DIA e PUL (massima, minima, battiti), data e ora di ogni misura, il momento della giornata, e se il valore viene da una foto o dalla voce.</li>
+<li><strong>Chiave del telefono:</strong> una chiave anonima creata e custodita nel telefono, che firma le richieste. L'app si apre con impronta, volto o blocco schermo del telefono; questi restano nel telefono e non ci arrivano mai.</li>
+<li><strong>Credito:</strong> il costo stimato di ogni lettura di foto.</li>
+<li><strong>Chiave Anthropic:</strong> la tua chiave, con cui paghi le letture delle tue foto, conservata cifrata e mai rimandata al telefono.</li>
+<li><strong>Abbonamento:</strong> il codice dell'acquisto che Google Play assegna all'abbonamento, il suo stato e la data di scadenza, per sapere se è pagato. Il pagamento lo gestisce Google Play: non vediamo né carta né nome.</li>
+</ul>
+<h3>Foto e voce</h3>
+<p>La foto del display viene inviata ad <strong>Anthropic</strong> (Claude) solo per leggere i numeri e non viene conservata da HINT 365. La voce viene trascritta dal riconoscimento vocale del telefono (di solito Google); a HINT 365 arrivano solo i tre numeri.</p>
+<h3 id="cookie">Accesso (OAuth) e cookie</h3>
+<p>L'accesso usa <strong>Accedi con Google</strong> (standard OAuth 2.0 e OpenID Connect): Google ci consegna un token firmato, che verifichiamo; non riceviamo mai la tua password. L'app non usa cookie. La Web Dashboard usa un solo cookie tecnico, <code>hint_s</code> (codice casuale, di prima parte, HttpOnly, Secure, SameSite=Strict, durata 7 giorni), salvato solo dopo che lo accetti; nel browser resta anche la tua scelta (<code>hint.cookies</code>). Nessun cookie di profilazione, statistica, pubblicità o di terze parti. Puoi rivedere la scelta dal link «Cookie» in fondo alla Web Dashboard.</p>
+<h3>Dove stanno i dati e chi li vede</h3>
+<p>Il proprietario dell'app vede solo numeri d'uso legati al codice anonimo (data di iscrizione, ultimo accesso, quante misure, quali funzioni usi), mai i valori delle misure, i report o il tuo nome. Su server <strong>Cloudflare</strong>, con il database vincolato all'<strong>Unione Europea</strong>. Gli altri utenti non vedono i tuoi dati. Chi gestisce il servizio può accedere al database solo per manutenzione. Non vendiamo né cediamo i dati e non facciamo pubblicità. Condizioni dei fornitori: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (condizioni)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
+<h3>Per quanto tempo</h3>
+<p>Le misure al massimo 365 giorni: ogni giorno quelle più vecchie di un anno vengono cancellate automaticamente (dalle copie di sicurezza del database spariscono entro 30 giorni). Il resto finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Admin, "Elimina il mio account"). La cancellazione è immediata e definitiva. Resta solo la registrazione della tua accettazione delle <a href="/terms">condizioni d'uso</a> (account, telefono, data e ora), conservata come prova.</p>
+<h3>Perché</h3>
+<p>Solo per offrirti il diario che hai chiesto, con il tuo consenso dato al primo accesso. Sono dati sulla salute: li usiamo per nient'altro.</p>
+<h3>I tuoi diritti</h3>
+<p>Puoi chiedere di vedere, correggere o cancellare i tuoi dati, e revocare il consenso eliminando l'account. Puoi anche rivolgerti all'autorità per la protezione dei dati del tuo paese (in Svizzera l'IFPDT, in Italia il Garante).</p>
+</div>
+<hr>
+<h2>Privacy policy</h2>
+<p class="muted">Last updated: 27 September 2026</p>
+<div class="box">
+<h3>Who handles the data</h3>
+<p>HINT 365 is a private app, run by one person for themselves, their family and friends. For questions or to exercise your rights, use the support email shown on HINT 365's Google sign-in screen.</p>
+<h3>What data</h3>
+<ul>
+<li><strong>Google account:</strong> only an encrypted fingerprint of the identifier Google gives your account, to find your diary again, also on a new phone. Your email is not saved: it stays on your phone. Nothing else of your Google account is read.</li>
+<li><strong>Readings:</strong> SYS, DIA and PUL (systolic, diastolic, pulse), date and time of each reading, the time of day, and whether it came from a photo or your voice.</li>
+<li><strong>Phone key:</strong> an anonymous key created and kept inside the phone, which signs the requests. The app opens with the phone's fingerprint, face or screen lock; these stay on the phone and never reach us.</li>
+<li><strong>Credit:</strong> the estimated cost of each photo reading.</li>
+<li><strong>Anthropic key:</strong> your key, which pays for your photo readings, stored encrypted and never sent back to the phone.</li>
+<li><strong>Subscription:</strong> the purchase code Google Play gives the subscription, its state and its end date, to know whether it is paid. Google Play handles the payment: we see neither card nor name.</li>
+</ul>
+<h3>Photos and voice</h3>
+<p>The photo of the display is sent to <strong>Anthropic</strong> (Claude) only to read the numbers, and is not kept by HINT 365. Speech is transcribed by the phone's speech recognition (usually Google); only the three numbers reach HINT 365.</p>
+<h3 id="cookie-en">Sign-in (OAuth) and cookies</h3>
+<p>Sign-in uses <strong>Sign in with Google</strong> (the OAuth 2.0 and OpenID Connect standards): Google hands us a signed token, which we check; we never receive your password. The app uses no cookies. The Web Dashboard uses a single technical cookie, <code>hint_s</code> (a random code, first-party, HttpOnly, Secure, SameSite=Strict, lasting 7 days), saved only after you accept it; your choice is also kept in the browser (<code>hint.cookies</code>). No profiling, statistics, advertising or third-party cookies. You can review the choice from the “Cookies” link at the bottom of the Web Dashboard.</p>
+<h3>Where the data is and who sees it</h3>
+<p>The owner of the app sees only usage numbers tied to the anonymous code (when you joined, when you last opened the app, how many readings, which features you use), never the values of your readings, your reports or your name. On <strong>Cloudflare</strong> servers, with the database bound to the <strong>European Union</strong>. Other users cannot see your data. The person who runs the service can reach the database only for maintenance. Data is not sold or shared, and there is no advertising. Providers' terms: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (terms)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
+<h3>How long</h3>
+<p>Readings for at most 365 days: every day, those older than one year are deleted automatically (they disappear from the database backups within 30 days). Everything else as long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Admin tab, "Delete my account"). Deletion is immediate and final. Only the record of your acceptance of the <a href="/terms">terms of use</a> (account, phone, date and time) is kept, as proof.</p>
+<h3>Why</h3>
+<p>Only to provide the diary you asked for, with the consent you give at your first sign-in. This is health data: it is used for nothing else.</p>
+<h3>Your rights</h3>
+<p>You can ask to see, correct or delete your data, and withdraw consent by deleting your account. You can also contact your country's data-protection authority (in Switzerland the FDPIC, in Italy the Garante).</p>
+</div>
+<footer class="muted"><hr>HINT 365 · HealthyInstantTracker · © 2026 · Tutti i diritti riservati · All rights reserved<br>
+<a href="/">Home</a> · <a href="/terms">Condizioni d'uso · Terms of use</a> · <a href="/privacy">Privacy</a></footer></main></body></html>

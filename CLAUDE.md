@@ -36,3 +36,6 @@
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Angelo è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat.
+- **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
+  stesso commit i documenti che tocca: architettura (3 pagine), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`). Il workflow *Docs check* lo verifica.

@@ -14,15 +14,16 @@ p { margin:4px 0 8px; }
 ul, ol { margin:4px 0 8px 18px; padding:0; }
 li { margin:2px 0; }
 .box { background:#F3F6FA; border-radius:10px; padding:10px 14px; margin:8px 0; }
-.warn { background:#FFF4EC; border-left:4px solid #E8743B; border-radius:6px; padding:10px 14px; margin:8px 0; }
-.free { color:#1E8E5A; font-weight:700; } .paid { color:#D6481F; font-weight:700; }
+.warn { background:#F3F1FD; border-left:4px solid #6D5BD0; border-radius:6px; padding:10px 14px; margin:8px 0; }
+.free { color:#0F9C8E; font-weight:700; } .paid { color:#6D5BD0; font-weight:700; }
 table { border-collapse:collapse; width:100%; margin:6px 0 10px; font-size:9.8pt; }
 th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #D9E0EA; vertical-align:top; }
 th { background:#13223F; color:#fff; font-weight:600; }
-.sys { color:#D93A52; font-weight:700; } .dia { color:#2A86B8; font-weight:700; } .pul { color:#C9941F; font-weight:700; }
+.sys { color:#6D5BD0; font-weight:700; } .dia { color:#0F9C8E; font-weight:700; } .pul { color:#B7860B; font-weight:700; }
 .small { color:#5B6B88; font-size:9pt; }
 h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 </style></head><body>
+
 <div class="cover"><div class="brand"><svg viewBox="0 0 108 108" width="46" height="46"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs><rect width="108" height="108" rx="24" fill="url(#g)"/><path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95" fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><div class="sub">HealthyInstantTracker</div></div></div>
 <h2>Guida all'uso</h2><p>Il diario della pressione: registri le misure a voce o con una foto e prepari il report per il medico.</p></div>
 
@@ -30,62 +31,70 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <p>HINT 365 è un <b>diario</b>: registra i valori del tuo misuratore di pressione, <span class="sys">SYS</span> (massima), <span class="dia">DIA</span> (minima) e <span class="pul">PUL</span> (pulsazioni), con data e ora, e li mostra in tabelle, grafici e report.</p>
 <div class="warn"><b>HINT 365 non è un dispositivo medico e non dà consigli medici.</b> Non valuta i valori, non dice se sono normali o alti, non fa diagnosi e non sostituisce il medico. La valutazione spetta sempre al medico.</div>
 
-<h2>2. Gratis e facoltativo: cosa si paga</h2>
-<table><tr><th>Funzione</th><th>Costo</th></tr>
-<tr><td>Registrare le misure a voce, tabelle, grafici, report PDF ed Excel, promemoria, recupero su nuovo telefono</td><td class="free">Gratis</td></tr>
-<tr><td>Scansione: leggere i numeri da una foto del misuratore con l'intelligenza artificiale</td><td class="paid">Facoltativa, a pagamento</td></tr></table>
-<p>La scansione usa l'intelligenza artificiale di <b>Anthropic</b> e costa circa <b>mezzo centesimo di dollaro a foto</b>. La paghi tu, con un tuo credito prepagato su Anthropic: nessun altro paga le tue foto e tu non paghi quelle degli altri. Se non la attivi, l'app funziona comunque in tutto il resto.</p>
+<h2>2. I costi, in chiaro</h2>
+<table><tr><th>Cosa</th><th>Costo</th><th>A chi va</th></tr>
+<tr><td>HINT 365: app, grafici, report, Web Dashboard, conservazione delle misure</td><td class="free">Oggi gratuita. Quando uscirà sul Play Store: 5 $ all'anno, disdici quando vuoi</td><td>Al proprietario dell'app, tramite Google Play</td></tr>
+<tr><td>Funzionalità AI, facoltative: <b>Scan</b> del misuratore (già disponibile); documenti medici resi anonimi (in arrivo)</td><td class="paid">A consumo, circa 0,006 $ a foto</td><td>Ad Anthropic, dal tuo credito</td></tr></table>
+<p>Senza funzionalità AI non paghi nient'altro. Il credito Anthropic è tuo: lo gestisci su Anthropic, scala solo quando usi l'AI e puoi usarlo anche per altri scopi. Il proprietario di HINT 365 non ne incassa nulla.</p>
 
-<h2>3. Installazione</h2>
+<h2>3. Installazione e aggiornamenti</h2>
 <ol><li>Sul telefono Android apri <b>https://personalhealthy-api.comevava76.workers.dev/download</b> e scarica <b>HINT.apk</b>.</li>
 <li>Apri il file: Android chiede di consentire l'installazione da questa fonte. Consenti.</li>
-<li>Apri HINT 365, leggi la nota sui dati, spunta <b>"Ho letto e accetto"</b> e tocca <b>"Accedi con Google"</b>.</li>
+<li>Tocca <b>"Accedi con Google"</b>: l'accesso usa gli standard OAuth 2.0 e OpenID Connect, e HINT 365 non riceve mai la tua password.</li>
+<li>Leggi le <b>condizioni d'uso</b> e accettale: compaiono alla prima installazione e a <b>ogni aggiornamento</b> dell'app. Senza accettazione l'app non si apre.</li>
 <li>Da quel momento l'app si apre con <b>impronta, volto o blocco schermo</b> del telefono.</li></ol>
-<p class="small">Google serve solo a creare il tuo diario e a ritrovarlo se cambi telefono. Nel giorno per giorno non viene più chiesto.</p>
+<p class="small">Per aggiornare installa la nuova versione <b>sopra</b> quella esistente, senza disinstallare. Se una versione vecchia viene disattivata, l'app mostra solo il pulsante per scaricare l'ultima: i dati restano.</p>
 
 <h2>4. Registrare una misura</h2>
-<h3>🎤 Registra (gratis)</h3>
+<h3>🎤 Registra</h3>
 <ol><li>Tocca <b>Registra</b> e pronuncia i tre valori nell'ordine: <span class="sys">SYS</span>, <span class="dia">DIA</span>, <span class="pul">PUL</span> (es. "127, 80, 70"). Puoi fare pause.</li>
 <li>L'app si ferma da sola quando ha sentito tre numeri e ti mostra i valori.</li>
-<li>Controlla e tocca <b>Salva</b>. Data e ora sono quelle del momento in cui hai parlato.</li></ol>
+<li>Controlla e tocca <b>Salva misura</b>. Data e ora sono quelle del momento in cui hai parlato.</li></ol>
 <p>L'app rifiuta valori impossibili (per esempio DIA più alta di SYS, un numero mancante) e segnala in arancione quelli insoliti, da ricontrollare.</p>
-<h3>📷 Scansiona (facoltativo, a pagamento)</h3>
-<ol><li>Tocca <b>Scansiona</b> e fotografa il display del misuratore: da vicino, dritto, senza riflessi.</li>
-<li>L'app legge i numeri e te li mostra. Controlla che siano uguali al display e tocca <b>Salva</b>.</li></ol>
+<h3>✦ Scan (funzionalità AI)</h3>
+<ol><li>Tocca <b>Scan</b> e fotografa il display del misuratore: da vicino, dritto, senza riflessi.</li>
+<li>L'app legge i numeri e te li mostra. Controlla che siano uguali al display e tocca <b>Salva misura</b>. La foto non viene conservata.</li></ol>
+<p class="small">Scan è acceso solo quando Anthropic conferma che la chiave è valida e che c'è credito. Il controllo è automatico: all'apertura, dopo un errore e quando trascini lo schermo in giù. Se il credito finisce, Scan si spegne e l'app te lo dice.</p>
 
-<h2>5. Attivare la scansione (credito AI)</h2>
-<p>Al primo avvio l'app mostra una schermata di benvenuto che spiega le due modalità: puoi toccare <b>"Continua senza scansione"</b> e attivarla più avanti da <b>Admin → Token → "Aggiungi la mia chiave"</b>. I passaggi sono quattro, ognuno con il suo pulsante:</p>
+<h2>5. Attivare le funzionalità AI</h2>
+<p>Tocca <b>✦ Attiva AI</b> (in alto nella schermata Pressione, oppure in Admin). I passaggi sono quattro, ognuno con il suo pulsante:</p>
 <ol><li><b>Crea un account su Anthropic</b> (gratis, con la tua email).</li>
-<li><b>Aggiungi credito:</b> carica un piccolo credito prepagato (bastano pochi dollari per mesi).</li>
+<li><b>Aggiungi credito:</b> carica un piccolo credito prepagato (pochi dollari bastano per molte foto).</li>
 <li><b>Crea una chiave:</b> inizia con <b>sk-ant-</b>; copiala.</li>
-<li><b>Salva la chiave qui:</b> torna nell'app, tocca <b>"Incolla la chiave"</b>, scrivi il credito che vedi su Anthropic e tocca <b>Salva</b>.</li></ol>
-<p class="small">La chiave viene provata e salvata cifrata sul server; non viene più mostrata, nemmeno a te. Puoi sostituirla o cancellarla quando vuoi. Il saldo mostrato nell'app è una stima: il valore vero è quello su Anthropic.</p>
+<li><b>Salva la chiave qui:</b> torna nell'app, incollala e tocca <b>Salva</b>.</li></ol>
+<p class="small">La chiave viene provata con Anthropic e salvata cifrata sul server; non viene più mostrata, nemmeno a te. Puoi sostituirla o cancellarla quando vuoi. Anthropic non permette alle app di leggere il saldo: nell'app vedi i <b>consumi stimati</b>, il saldo esatto è sulla tua pagina Anthropic.</p>
 
 <h2>6. Le schermate</h2>
 <table><tr><th>Scheda</th><th>Cosa trovi</th></tr>
-<tr><td><b>Pressione</b></td><td>I pulsanti Registra e Scansiona, l'ultima misura, la tabella degli ultimi 7 giorni (una media al giorno) e il riepilogo con valori più alti e medie.</td></tr>
-<tr><td><b>Report</b></td><td>7, 15 o 30 giorni: grafico giornaliero, medie del periodo, <b>Media giorno</b> e <b>Media serale</b>, valori estremi, invio del <b>PDF</b> per il medico e del file <b>Excel</b>.</td></tr>
-<tr><td><b>Admin</b></td><td><b>Crediti</b> (saldo stimato, ricarica), <b>Token</b> (la tua chiave), <b>Database misure</b> (cancellare una misura o tutte), <b>Identity</b> (account Google, condividi l'app, elimina l'account).</td></tr></table>
+<tr><td><b>Pressione</b></td><td>I pulsanti Registra e Scan, l'ultima misura, la settimana (una media al giorno) e il riepilogo.</td></tr>
+<tr><td><b>Report</b></td><td>Gli ultimi 7 giorni: grafici con un punto per giorno (la media del giorno), medie, mattina e sera, valori estremi; il <b>PDF</b> per il medico, il file <b>Excel</b> e il pulsante <b>Web Dashboard</b>.</td></tr>
+<tr><td><b>Admin</b></td><td><b>Crediti</b> (consumi stimati, link al saldo su Anthropic, Ricarica), <b>Funzionalità AI</b> (stato, sostituisci o cancella la chiave), <b>Costi</b>, <b>Database misure</b> (cancellare una misura o tutte), <b>Identity</b> (account Google, esci, elimina l'account) e in fondo <b>Condividi l'app</b>.</td></tr></table>
 
-<h2>7. Promemoria</h2>
+<h2>7. Web Dashboard e medico</h2>
+<ol><li>Nel Report tocca <b>Web Dashboard</b>: il browser si apre già collegato al tuo account (il link vale 60 secondi).</li>
+<li>La prima volta accetta il <b>cookie tecnico</b> che ti tiene collegato per 7 giorni. È l'unico cookie: niente pubblicità, statistiche o terze parti.</li>
+<li>Vedi i grafici grandi degli ultimi 7 giorni, l'elenco delle misure e scarichi lo stesso PDF A4 dell'app.</li>
+<li><b>Invia al medico</b> crea un link di sola lettura valido 1, 7 o 30 giorni, da mandare con WhatsApp o email. Puoi ritirarlo quando vuoi.</li></ol>
+
+<h2>8. Promemoria</h2>
 <p>Ogni giorno alle <b>9:00</b> e alle <b>17:00</b> arriva "Ricordati di misurare la pressione", con un numero sull'icona. A mezzanotte si azzerano. Si spengono dalle impostazioni del telefono ("Promemoria misure").</p>
 
-<h2>8. Nuovo telefono o telefono perso</h2>
-<p>Installa HINT 365 sul nuovo telefono e tocca <b>"Accedi con Google"</b> con lo stesso account: ritrovi tutte le misure. Il telefono vecchio viene scollegato. Per aggiornare l'app installa la nuova versione <b>sopra</b> quella esistente, senza disinstallare.</p>
+<h2>9. Nuovo telefono o telefono perso</h2>
+<p>Installa HINT 365 sul nuovo telefono e tocca <b>"Accedi con Google"</b> con lo stesso account: ritrovi tutte le misure. Il telefono vecchio viene scollegato.</p>
 
-<h2>9. I tuoi dati</h2>
-<ul><li><b>Cosa viene salvato:</b> l'email e l'identificativo del tuo account Google (solo per ritrovare il diario), le misure con data e ora e la loro fonte (foto o voce), la tua chiave Anthropic cifrata se la inserisci.</li>
-<li><b>Foto e voce:</b> la foto viene inviata ad Anthropic solo per leggere i numeri e non viene conservata dall'app. La voce viene trascritta dal telefono; all'app arrivano solo i tre numeri.</li>
-<li><b>Dove:</b> su server <b>Cloudflare</b>, con il database nell'<b>Unione Europea</b>. Il codice dell'app è su <b>GitHub</b>.</li>
-<li><b>Chi li vede:</b> solo tu. Gli altri utenti no. Chi gestisce il servizio può accedere al database solo per manutenzione.</li>
-<li><b>Cancellazione:</b> in Admin puoi cancellare una misura, tutte le misure, oppure l'account con tutti i dati. È immediata e definitiva.</li></ul>
-<p class="small">Informativa completa: https://personalhealthy-api.comevava76.workers.dev/privacy</p>
+<h2>10. I tuoi dati</h2>
+<ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce o foto); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono; la tua chiave Anthropic cifrata, se la inserisci.</li>
+<li><b>Foto e voce:</b> la foto va ad Anthropic solo per leggere i numeri e non viene conservata. La voce viene trascritta dal telefono; al server arrivano solo i tre numeri.</li>
+<li><b>Dove e per quanto:</b> su <b>Cloudflare</b>, database nell'<b>Unione Europea</b>. Le misure si conservano al massimo <b>365 giorni</b>: quelle più vecchie vengono cancellate ogni notte. Esporta PDF o Excel se vuoi tenerle più a lungo.</li>
+<li><b>Chi li vede:</b> solo tu, e il medico con il link che gli mandi. Il proprietario dell'app vede solo numeri d'uso legati a un codice anonimo (iscrizione, ultimo accesso, quante misure), mai i valori o i report.</li>
+<li><b>Cancellazione:</b> in Admin puoi cancellare una misura, tutte le misure oppure l'account. È immediata e definitiva; resta solo la prova delle condizioni accettate.</li></ul>
+<p class="small">Informativa completa: https://personalhealthy-api.comevava76.workers.dev/privacy · Condizioni d'uso: https://personalhealthy-api.comevava76.workers.dev/terms</p>
 
-<h2>10. Responsabilità</h2>
+<h2>11. Responsabilità</h2>
 <div class="warn">
-<p><b>Nessun consiglio medico.</b> HINT 365 raccoglie e mostra i dati che inserisci. Ogni decisione sulla salute va presa con il medico. Il gestore di HINT 365 non risponde di scelte mediche fatte sulla base dei dati dell'app.</p>
+<p><b>Nessun consiglio medico.</b> HINT 365 raccoglie e mostra i dati che inserisci. Ogni decisione sulla salute va presa con il medico.</p>
 <p><b>Controlla sempre i valori.</b> La lettura della foto e il riconoscimento della voce possono sbagliare: prima di salvare, confronta i numeri con il display del misuratore.</p>
-<p><b>Servizio senza garanzie.</b> HINT 365 è offerto gratuitamente, così com'è, senza garanzia di disponibilità continua. I dati sono conservati su infrastruttura cloud di terzi (Cloudflare) e il codice su GitHub. Nei limiti consentiti dalla legge, il gestore non risponde di interruzioni del servizio, errori o perdite di dati.</p>
+<p><b>Servizio senza garanzie.</b> HINT 365 è offerto così com'è, senza garanzia di disponibilità continua; valgono le condizioni d'uso accettate nell'app.</p>
 <p><b>Tieni una copia.</b> Esporta regolarmente il PDF o il file Excel dal Report e conservalo.</p></div>
 <p class="small">Questo documento descrive il servizio e non costituisce consulenza legale.</p>
 </body></html>

@@ -54,7 +54,7 @@
     <string name="scan_cost_note">Scanner une photo utilise du crédit IA payant et facultatif (environ un demi-centime par photo). Tout le reste, voix comprise, est gratuit.</string>
     <string name="scan_needs_key_title">Le scan est facultatif</string>
     <string name="scan_needs_key_text">Lire les nombres sur la photo utilise l\'intelligence artificielle, payée avec votre crédit Anthropic (environ un demi-centime par photo). Vous pouvez l\'ajouter maintenant, ou dicter les valeurs, gratuitement.</string>
-    <string name="scan_needs_key_add">Upgrade</string>
+    <string name="scan_needs_key_add">Activer l\'IA</string>
     <string name="scan_needs_key_voice">Utiliser la voix</string>
     <string name="last7">7 derniers jours</string>
     <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. SYS en haut, DIA en bas.</string>

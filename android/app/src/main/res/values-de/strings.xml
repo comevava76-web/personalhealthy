@@ -54,7 +54,7 @@
     <string name="scan_cost_note">Das Scannen eines Fotos nutzt kostenpflichtiges, optionales KI-Guthaben (etwa einen halben Cent pro Foto). Alles andere, Stimme inklusive, ist kostenlos.</string>
     <string name="scan_needs_key_title">Scannen ist optional</string>
     <string name="scan_needs_key_text">Das Lesen der Zahlen vom Foto nutzt künstliche Intelligenz, bezahlt mit deinem Anthropic-Guthaben (etwa einen halben Cent pro Foto). Du kannst es jetzt hinzufügen oder die Werte kostenlos ansagen.</string>
-    <string name="scan_needs_key_add">Upgrade</string>
+    <string name="scan_needs_key_add">KI aktivieren</string>
     <string name="scan_needs_key_voice">Stimme nutzen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>
