@@ -13,6 +13,8 @@
 // Modules: each part of the dashboard (blood pressure today, lab results later) is one entry of MODULES.
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
+import { logError, recentErrors } from "./errors";
+
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
 const CODE_TTL = 60e3;                 // the one-time code from the app
@@ -134,10 +136,17 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     const shares = await q("SELECT COUNT(*) AS n FROM web_shares WHERE person_id = ?1 AND expires_at > ?2", [pid, Date.now()]);
     return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0), isOwner });
   }
+  // An error met in the browser (a script error, a page that failed): into the grouped error log
+  if (p === "/my/api/log" && req.method === "POST") {
+    let b: any = {};
+    try { b = await req.json(); } catch {}
+    await logError(q, { source: "web", code: String(b.code || "web_error"), place: String(b.place || ""), message: String(b.message || ""), personId: pid });
+    return json({ ok: true });
+  }
   // The owner's area: usage numbers only, per anonymous account code. Never a reading, a report or a name.
   if (p.startsWith("/my/api/admin/")) {
     if (!isOwner) return fail("Only the app owner", 403, "admin_only");
-    if (p === "/my/api/admin/overview" && req.method === "GET") return json(await adminOverview(env, q));
+    if (p === "/my/api/admin/overview" && req.method === "GET") return json({ ...(await adminOverview(env, q)), errors: await recentErrors(q) });
     if (p === "/my/api/admin/app-min-version" && req.method === "POST") {
       let b: any = {};
       try { b = await req.json(); } catch {}
@@ -193,7 +202,7 @@ const DAY = 864e5;
 
 /** The newest app version number seen in the acceptances ("0.1.80" → 80). */
 async function newestVersion(q: Q): Promise<number> {
-  const rows = await q("SELECT DISTINCT app_version FROM acceptances WHERE app_version IS NOT NULL");
+  const rows = await q("SELECT DISTINCT app_version FROM acceptances WHERE app_version IS NOT NULL UNION SELECT DISTINCT app_version FROM persons WHERE app_version IS NOT NULL");
   return Math.max(0, ...rows.map((r: any) => Number(String(r.app_version).split(".").pop()) || 0));
 }
 
@@ -207,7 +216,7 @@ async function adminOverview(env: any, q: Q) {
   const rows: Record<string, number> = {};
   for (const t of tables) rows[t] = await one(`SELECT COUNT(*) AS n FROM ${t}`);
   const users = await q(`
-    SELECT p.id, p.created_at, p.is_admin, p.last_seen_at, p.sub_until, p.sub_state,
+    SELECT p.id, p.created_at, p.is_admin, p.last_seen_at, p.sub_until, p.sub_state, p.app_version AS app_now,
       (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id) AS n,
       (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?1) AS n7,
       (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?2) AS n30,
@@ -222,7 +231,7 @@ async function adminOverview(env: any, q: Q) {
     id: String(u.id), owner: !!u.is_admin, since: Number(u.created_at), lastSeen: u.last_seen_at == null ? null : Number(u.last_seen_at),
     readings: Number(u.n), last7: Number(u.n7), last30: Number(u.n30), voice: Number(u.voice), photo: Number(u.photo),
     lastReading: u.last_reading == null ? null : Number(u.last_reading), ai: u.ai == null ? "none" : String(u.ai),
-    shares: Number(u.shares), app: u.app ? String(u.app) : null,
+    shares: Number(u.shares), app: u.app_now ? String(u.app_now) : u.app ? String(u.app) : null,
     subUntil: u.sub_until == null ? null : Number(u.sub_until),
   }));
   const active = (since: number) => list.filter((u) => (u.lastSeen || 0) > since || (u.lastReading || 0) > since).length;
@@ -240,6 +249,7 @@ async function adminOverview(env: any, q: Q) {
       aiSpentUsd: (await one("SELECT COALESCE(SUM(amount_micro), 0) AS n FROM ledger WHERE kind = 'usage'")) / 1e6,
       webSessions: await one("SELECT COUNT(*) AS n FROM web_sessions WHERE expires_at > ?1", [now]),
       doctorLinks: await one("SELECT COUNT(*) AS n FROM web_shares WHERE expires_at > ?1", [now]),
+      errors7: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log WHERE last_at > ?1", [d7]),
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024, rows },
     versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: await newestVersion(q) },

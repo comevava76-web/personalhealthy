@@ -93,6 +93,19 @@
     return j;
   }
 
+  /* ---------- error log ----------
+     Script errors met in the browser go to the grouped error log (worker/src/errors.ts): at most 5 per page,
+     only when signed in (never on a doctor's link). The server already logs the errors it answers. */
+  let logged = 0;
+  function logError(code, place, message) {
+    if (logged >= 5 || location.pathname.startsWith("/s/")) return;
+    logged++;
+    fetch("/my/api/log", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code, place, message: String(message || "").slice(0, 300) }) }).catch(() => {});
+  }
+  window.addEventListener("error", (e) => logError("script", (e.filename || "").split("/").pop() + ":" + (e.lineno || 0), e.message));
+  window.addEventListener("unhandledrejection", (e) => logError("promise", "app.js", e.reason && (e.reason.message || e.reason)));
+
   /* ---------- charts ---------- */
   // Drawn here as SVG at the exact size of the screen: sharp on any phone, nothing from third parties.
   // The week has 7 places, one per day; each day is one dot, the average of that day's readings, with its value
@@ -431,8 +444,11 @@
     vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
     vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
     uT: "Utenti", uNote: "Codice anonimo dell'account e numeri d'uso. «tu» è il tuo account.",
-    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "7 gg", "30 gg", "Voce / foto", "AI", "App", "Link medico"],
-    aiS: { none: "—", ok: "attiva", no_credit: "credito finito", invalid: "chiave non valida" }, you: "tu", never: "—",
+    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "7 gg", "30 gg", "Voce / foto", "Funzionalità AI", "Versione app"],
+    errT: "Errori degli ultimi 30 giorni", errNote: "Raggruppati per giorno, punto e versione: il numero dice quante volte è successo. Nessun valore delle misure.",
+    errNone: "Nessun errore registrato.", errCols: ["Giorno", "Dove", "Codice", "Volte", "Versione", "Messaggio"], errTile: "Errori 7 giorni", errTileU: "registrati dal sistema",
+    src: { server: "Server", app: "App", web: "Web" },
+    aiS: { none: "Non attive", ok: "Attive", no_credit: "Attive · credito finito", invalid: "Attive · chiave non valida" }, you: "tu", never: "—",
   } : {
     tab: "Admin", title: "Owner's area", sub: "Only you see it · usage numbers only, tied to the anonymous code: no readings, no reports, no names",
     upd: "Updated", users: "Users", new30: (n) => `${n} new in 30 days`, act7: "Active 7 days", act30: "Active 30 days",
@@ -447,8 +463,11 @@
     vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
     vAskOn: "Every installed version works again. Confirm?",
     uT: "Users", uNote: "Anonymous account code and usage numbers. “you” is your own account.",
-    cols: ["Code", "Joined", "Last opened", "Readings", "7 d", "30 d", "Voice / photo", "AI", "App", "Doctor links"],
-    aiS: { none: "—", ok: "on", no_credit: "credit out", invalid: "key refused" }, you: "you", never: "—",
+    cols: ["Code", "Joined", "Last opened", "Readings", "7 d", "30 d", "Voice / photo", "AI features", "App version"],
+    errT: "Errors of the last 30 days", errNote: "Grouped by day, place and version: the number says how many times it happened. No reading values.",
+    errNone: "No errors logged.", errCols: ["Day", "Where", "Code", "Times", "Version", "Message"], errTile: "Errors 7 days", errTileU: "logged by the system",
+    src: { server: "Server", app: "App", web: "Web" },
+    aiS: { none: "Off", ok: "On", no_credit: "On · credit out", invalid: "On · key refused" }, you: "you", never: "—",
   };
   const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const mb = (b) => (b / 1048576).toLocaleString(LOCALE, { maximumFractionDigits: b < 10485760 ? 2 : 0 }) + " MB";
@@ -473,7 +492,7 @@
         ${tile(AD.rd30, t.readings30, AD.total)}
         ${tile(AD.ai, t.aiOn, AD.aiU)}
         ${tile(AD.aiSp, "$" + t.aiSpentUsd.toFixed(2), AD.aiSpU)}
-        ${tile(AD.links, t.doctorLinks, AD.linksU)}
+        ${tile(AD.errTile, t.errors7 || 0, AD.errTileU)}
       </section>
       <div class="card"><div class="card-h"><h2>${AD.stT}</h2></div>
         <p>${AD.stDb(mb(st.dbBytes), mb(st.freeLimitBytes), (pc < 0.1 ? "< 0,1%".replace(",", IT ? "," : ".") : pc.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) + "%"))}</p>
@@ -489,13 +508,19 @@
           ${v.min ? `<button class="btn ghost" type="button" id="adm-on">${AD.vOn}</button>` : ""}
         </div>
       </div>
+      <div class="card"><div class="card-h"><h2>${AD.errT}</h2><span class="sub">${AD.errNote}</span></div>
+        ${(d.errors || []).length ? `<div class="tbl"><table class="list"><thead><tr>${AD.errCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+          ${d.errors.map((x) => { const L = AD.errCols; return `<tr><td data-l="${L[0]}">${esc(x.day)}</td><td data-l="${L[1]}"><span>${esc(AD.src[x.source] || x.source)} · <code>${esc(x.place)}</code></span></td><td data-l="${L[2]}"><code>${esc(x.code)}</code></td>
+            <td data-l="${L[3]}">${x.count}</td><td data-l="${L[4]}">${x.app ? esc(x.app) : "—"}</td><td data-l="${L[5]}" class="muted small">${esc(x.message)}</td></tr>`; }).join("")}
+        </tbody></table></div>` : `<p class="muted">${AD.errNone}</p>`}
+      </div>
       <div class="card"><div class="card-h"><h2>${AD.uT}</h2><span class="sub">${AD.uNote}</span></div>
         <div class="tbl"><table class="list"><thead><tr>${AD.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-          ${d.users.map((u) => `<tr>
-            <td><code>${esc(u.id)}</code>${u.owner ? ` <b class="you">${AD.you}</b>` : ""}</td>
-            <td>${day(u.since)}</td><td>${when(u.lastSeen)}</td>
-            <td>${u.readings}</td><td>${u.last7}</td><td>${u.last30}</td><td>${u.voice} / ${u.photo}</td>
-            <td>${AD.aiS[u.ai] || esc(u.ai)}</td><td>${u.app ? esc(u.app) : "—"}</td><td>${u.shares}</td></tr>`).join("")}
+          ${d.users.map((u) => { const L = AD.cols; return `<tr>
+            <td data-l="${L[0]}"><span><code>${esc(u.id)}</code>${u.owner ? ` <b class="you">${AD.you}</b>` : ""}</span></td>
+            <td data-l="${L[1]}">${day(u.since)}</td><td data-l="${L[2]}">${when(u.lastSeen)}</td>
+            <td data-l="${L[3]}">${u.readings}</td><td data-l="${L[4]}">${u.last7}</td><td data-l="${L[5]}">${u.last30}</td><td data-l="${L[6]}">${u.voice} / ${u.photo}</td>
+            <td data-l="${L[7]}" class="${u.ai === "none" ? "muted" : ""}">${AD.aiS[u.ai] || esc(u.ai)}</td><td data-l="${L[8]}"><b>${u.app ? esc(u.app) : "—"}</b></td></tr>`; }).join("")}
         </tbody></table></div>
       </div>`;
     const setMin = async (min, ask) => {

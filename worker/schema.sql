@@ -141,3 +141,19 @@ CREATE TABLE IF NOT EXISTS web_shares (
 );
 CREATE INDEX IF NOT EXISTS idx_web_sessions_person ON web_sessions (person_id);
 CREATE INDEX IF NOT EXISTS idx_web_shares_person ON web_shares (person_id);
+
+-- The error log (worker/src/errors.ts): grouped per day, source, code, place and app version, with a counter.
+-- No reading values (digits are removed from messages); the anonymous account code only. Kept 90 days.
+CREATE TABLE IF NOT EXISTS error_log (
+  day          TEXT NOT NULL,                -- UTC date, e.g. 2026-09-27
+  source       TEXT NOT NULL,                -- 'server', 'app' or 'web'
+  code         TEXT NOT NULL,
+  place        TEXT NOT NULL,                -- endpoint ("POST /v1/bp/scan") or screen ("Report/PDF")
+  app_version  TEXT NOT NULL DEFAULT '',
+  count        INTEGER NOT NULL DEFAULT 1,
+  first_at     INTEGER NOT NULL,
+  last_at      INTEGER NOT NULL,
+  message      TEXT,
+  person_id    TEXT,                         -- last anonymous account that met it
+  PRIMARY KEY (day, source, code, place, app_version)
+);
