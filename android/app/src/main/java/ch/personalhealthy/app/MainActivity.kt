@@ -611,7 +611,7 @@ fun App() {
                                 scope.launch {
                                     try {
                                         Repo.signOut(pid)
-                                        prefs.edit().remove("personId").apply()
+                                        prefs.edit().remove("personId").remove("googleEmail").apply()
                                         readings.clear(); me = null; personId = null
                                         toast(ctx, t(R.string.signed_out))
                                     } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
@@ -622,7 +622,7 @@ fun App() {
                                 scope.launch {
                                     try {
                                         Repo.deleteAccount(pid)
-                                        prefs.edit().remove("personId").apply()
+                                        prefs.edit().remove("personId").remove("googleEmail").apply()
                                         readings.clear(); me = null; personId = null
                                         toast(ctx, t(R.string.account_deleted))
                                     } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
@@ -1664,7 +1664,9 @@ fun CreditScreen(
         SectionTitle(t(R.string.section_identity))
         if (me.hasGoogle) {
             Panel {
-                Text(me.email ?: "Google", color = C.Ink, fontSize = 15.sp)
+                // the email is kept only on this phone; the server keeps just an encrypted fingerprint of the Google account
+                val localEmail = LocalContext.current.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("googleEmail", null)
+                Text(localEmail ?: "Google", color = C.Ink, fontSize = 15.sp)
                 Text(t(R.string.account_linked), color = C.Muted, fontSize = 13.sp)
             }
         } else if (me.googleOn) {
@@ -1690,7 +1692,7 @@ fun CreditScreen(
     if (signOutAsk) AlertDialog(
         onDismissRequest = { signOutAsk = false },
         title = { Text(t(R.string.sign_out_q)) },
-        text = { Text(t(R.string.sign_out_t, me?.email ?: "Google")) },
+        text = { Text(t(R.string.sign_out_t, LocalContext.current.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("googleEmail", null) ?: "Google")) },
         confirmButton = { TextButton(onClick = { signOutAsk = false; onSignOut() }) { Text(t(R.string.sign_out), color = C.Sys) } },
         dismissButton = { TextButton(onClick = { signOutAsk = false }) { Text(t(R.string.cancel)) } },
         containerColor = C.Surface

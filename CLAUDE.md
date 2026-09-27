@@ -11,4 +11,6 @@
   un giudizio (né problema né «bene»).
 - **Conservazione**: misure al massimo 365 giorni (cancellazione automatica ogni notte); le accettazioni delle condizioni restano
   come prova. Se cambia, aggiornare condizioni d'uso (nuova versione), privacy e documento.
+- **Nessuna email nel database**: dell'account Google si salva solo un'impronta HMAC (`googleId` in `worker/src/index.ts`);
+  l'email resta sul telefono. Nessuna funzione deve reintrodurla.
 - **Mai segreti nel repository**: chiavi e token solo nei secrets di GitHub o sul server.

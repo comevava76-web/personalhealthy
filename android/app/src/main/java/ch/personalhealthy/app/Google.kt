@@ -26,7 +26,10 @@ object GoogleSignIn {
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         return try {
             val result = CredentialManager.create(ctx).getCredential(ctx, request)
-            GoogleIdTokenCredential.createFrom(result.credential.data).idToken
+            val cred = GoogleIdTokenCredential.createFrom(result.credential.data)
+            // the email stays on this phone only (to show which account is linked): the server never stores it
+            ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putString("googleEmail", cred.id).apply()
+            cred.idToken
         } catch (e: GetCredentialCancellationException) {
             null
         } catch (e: NoCredentialException) {

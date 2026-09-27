@@ -209,7 +209,7 @@
         <tr><td>Guide e documenti</td><td>HTML → PDF (Playwright)</td><td><code>docs/</code></td></tr>
       </table>
       <h2>Tabelle del database</h2>
-      <p><code>persons</code> account (codice anonimo, email Google) · <code>measurements</code> misure · <code>scans</code> letture foto · <code>ledger</code> credito e costi · <code>person_keys</code> chiavi Anthropic cifrate · <code>acceptances</code> condizioni accettate (solo aggiunte) · <code>web_codes</code>, <code>web_sessions</code>, <code>web_shares</code> accesso web e link al medico · <code>settings</code>, <code>invites</code>.</p>
+      <p><code>persons</code> account (codice anonimo, impronta cifrata dell'account Google, nessuna email) · <code>measurements</code> misure · <code>scans</code> letture foto · <code>ledger</code> credito e costi · <code>person_keys</code> chiavi Anthropic cifrate · <code>acceptances</code> condizioni accettate (solo aggiunte) · <code>web_codes</code>, <code>web_sessions</code>, <code>web_shares</code> accesso web e link al medico · <code>settings</code>, <code>invites</code>.</p>
     </div>
     <div>
       <h2>Sicurezza e dati</h2>
@@ -219,7 +219,7 @@
         <li><b>Link al medico</b>: sola lettura, periodo fisso, scadenza 1–30 giorni, ritirabili; niente email né account.</li>
         <li><b>Database</b>: solo impronte SHA-256 di codici, cookie e link; chiavi Anthropic cifrate AES-GCM legate all'account.</li>
         <li><b>Conservazione</b>: misure e letture foto oltre 365 giorni cancellate ogni notte; accettazioni in un registro a sola aggiunta (tabella <code>acceptances</code>, D1 in UE).</li>
-        <li><b>Dati personali</b>: nessun nome; foto e file elaborati e scartati; dati in UE; cancellazione account immediata (resta solo la prova dell'accettazione).</li>
+        <li><b>Dati personali</b>: nessun nome e nessuna email (dell'account Google solo un'impronta HMAC-SHA256 con chiave del server; l'email resta sul telefono); foto e file elaborati e scartati; dati in UE; cancellazione account immediata (resta solo la prova dell'accettazione).</li>
       </ul>
       <h2>Pubblicare una versione</h2>
       <ol>
