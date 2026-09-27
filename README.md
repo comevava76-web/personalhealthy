@@ -85,7 +85,7 @@ cannot show, and warns in amber about unusual ones. Like a photo reading, the va
 saved only after the person taps Save. Date and time are those of the moment they were said (the server accepts
 them only within 15 minutes).
 
-Sign in with Google (when the repository variable `GOOGLE_WEB_CLIENT_ID` is set): Google is used only to create the
+Sign in with Google (Web client ID in the build workflow, or the repository variable `GOOGLE_WEB_CLIENT_ID`): Google is used only to create the
 account and to find it again on a new phone; every day the app opens with fingerprint or face. Anyone can set up the
 app alone: without an invite they pay their photos with their own Anthropic key; an invite (or the family code) is only
 for photos paid by the app manager. Signing in on a new phone moves the account there and disconnects the old phone.
