@@ -1370,24 +1370,27 @@ fun CreditScreen(
         // Credits: the money left for the AI readings, and adding to it
         SectionTitle(t(R.string.section_credits))
         val c = me.credit
-        val set = c != null && c.configured
-        val col = if (set && c!!.low) Color(WARN_COLOR) else C.Ink
+        // without a key a balance would refer to nothing: the digits are shown as empty places until the key is added
+        val noKey = me.selfPays && !me.hasKey
+        val set = !noKey && c != null && c.configured
+        val col = if (set && c!!.low) Color(WARN_COLOR) else if (noKey) C.Muted else C.Ink
         Panel {
             Text(t(R.string.credit_money_left), color = C.Muted, fontSize = 14.sp)
-            Text(if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
+            Text(if (noKey) "_,__ $" else if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
             Spacer(Modifier.height(10.dp))
             Text(t(R.string.credit_photos_can), color = C.Muted, fontSize = 14.sp)
-            Text(if (set) "${c!!.photosLeft ?: 0}" else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
+            Text(if (noKey) "___" else if (set) "${c!!.photosLeft ?: 0}" else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
             Spacer(Modifier.height(10.dp))
-            Text(t(R.string.credit_avg_fmt, usdFine(c?.avgCost ?: 0.006)), color = C.Muted, fontSize = 13.sp)
-            if (!set) Text(
+            Text(t(R.string.credit_avg_fmt, if (noKey) "_,____ $" else usdFine(c?.avgCost ?: 0.006)), color = C.Muted, fontSize = 13.sp)
+            if (noKey) Text(t(R.string.credit_needs_key), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+            else if (!set) Text(
                 if (me.canRecharge) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user),
                 color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
             )
             if (me.selfPays) Text(t(R.string.credit_own_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
-        if (me.canRecharge) {
+        if (me.canRecharge && !noKey) {
             TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
             }
