@@ -73,7 +73,6 @@
     <string name="all_readings">Alle Messungen</string>
     <string name="manage_readings">Messungen verwalten (eine oder alle löschen)</string>
     <string name="close">Schließen</string>
-    <string name="avg_short">Durchschnitt</string>
     <string name="delete_q">Diese Messung löschen?</string>
     <string name="legend_sys">SYS</string>
     <string name="legend_dia">DIA</string>
@@ -101,6 +100,9 @@
     <string name="report_empty">Der Bericht füllt sich mit deinen Messungen.</string>
     <string name="range_fmt">Vom %1$s bis %2$s</string>
     <string name="period_avg">Durchschnitt des Zeitraums</string>
+    <string name="avg_day">Tagesdurchschnitt</string>
+    <string name="avg_evening_label">Abenddurchschnitt</string>
+    <string name="camera_permission">Um das Messgerät zu fotografieren, erlaube HINT die Kamera.</string>
     <string name="n_in_days">%1$d Messungen an %2$d Tagen</string>
     <string name="avg_pulse">PUL im Durchschnitt</string>
     <string name="per_minute">pro Minute</string>

@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- camera: the QR scanner needs it, and with it declared the photo of the monitor needs the person's OK too -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <!-- microphone: values said aloud, listened to inside the app -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
