@@ -895,7 +895,6 @@ fun HomeScreen(
             val scanOn = me == null || !me.selfPays || (me.hasKey && !(c0 != null && c0.configured && (c0.remaining ?: 0.0) <= 0.0))
             BigButton(t(R.string.scan_short) + "*", enabled = scanOn, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onMeasure)
         }
-        Text(t(R.string.photo_tip) + " " + t(R.string.voice_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp))
         Text("* " + t(R.string.scan_cost_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 6.dp))
 
         LastPanel(readings.lastOrNull())

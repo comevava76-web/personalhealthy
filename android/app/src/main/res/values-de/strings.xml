@@ -175,9 +175,7 @@
     <string name="token_own_set">Dein Anthropic-Schlüssel ist verschlüsselt gespeichert. Nur deine Fotos nutzen ihn.</string>
     <string name="token_owner_admin">Die Messungen nutzen den auf dem Server hinterlegten Anthropic-Schlüssel (das Secret ANTHROPIC_API_KEY auf GitHub).</string>
     <string name="token_owner_member">Deine Fotos nutzen den Anthropic-Schlüssel der Person, die die App verwaltet.</string>
-    <string name="photo_tip">Tipp: Fotografiere das Display von nah, gerade und ohne Spiegelung.</string>
     <string name="voice_button">Werte ansagen</string>
-    <string name="voice_tip">Oder tippe auf das Mikrofon und sprich die Werte der Messung: Max Min, Puls</string>
     <string name="voice_prompt">Sage SYS, DIA und PUL, zum Beispiel: 127, 80, 70</string>
     <string name="voice_confirm_title">Angesagte Werte</string>
     <string name="voice_retry">Nochmal sagen</string>
