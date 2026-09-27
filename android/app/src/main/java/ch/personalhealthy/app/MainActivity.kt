@@ -1746,7 +1746,7 @@ fun CreditScreen(
                     Text(t(st) + (me.aiCheckedAt?.let { " · " + Z.whenText(it) } ?: ""), color = if (me.aiStatus == "ok") C.Muted else C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
                     Text(t(R.string.ai_auto_check), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 }
-                BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
+                BigButton(t(R.string.replace_key), onClick = onKey)
                 TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
                     Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 }
@@ -1758,7 +1758,7 @@ fun CreditScreen(
         // Readings database: every reading, to delete a wrong one or all of them
         SectionTitle(t(R.string.section_db))
         Panel { Text(t(R.string.db_count, readingsCount), color = C.Ink, fontSize = 14.sp) }
-        BigButton(t(R.string.manage_readings), color = C.Surface2, textColor = C.Ink, onClick = onManageReadings)
+        BigButton(t(R.string.manage_readings), onClick = onManageReadings)
 
         // Identity: the Google account, who can join, and deleting it all
         SectionTitle(t(R.string.section_identity))
@@ -1771,11 +1771,8 @@ fun CreditScreen(
             }
         } else if (me.googleOn) {
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
-            BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
+            BigButton(t(R.string.google_link), onClick = onLinkGoogle)
         }
-        // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
-        val shareCtx = LocalContext.current
-        BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }
         // leave this phone: only with Google linked, otherwise there would be no way back in
         if (me.hasGoogle) {
             TextButton(onClick = { signOutAsk = true }, modifier = Modifier.fillMaxWidth()) {
@@ -1801,10 +1798,14 @@ fun CreditScreen(
                 Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
             val subCtx = LocalContext.current
-            BigButton(t(R.string.sub_manage), color = C.Surface2, textColor = C.Ink) {
+            BigButton(t(R.string.sub_manage)) {
                 try { subCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { }
             }
         }
+        // the download link, for anyone who wants the app, at the bottom: with Sign in with Google they set it up on their own
+        val shareCtx = LocalContext.current
+        Spacer(Modifier.height(12.dp))
+        BigButton(t(R.string.share_app)) { shareApp(shareCtx) }
         Colophon(onTerms)
     }
     if (signOutAsk) AlertDialog(
