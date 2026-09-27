@@ -200,6 +200,7 @@
     <string name="credit_warn_low">Crédit presque épuisé : il reste environ 1 photo. Touchez ici.</string>
     <string name="credit_avg_fmt">Coût moyen par photo : %1$s</string>
     <string name="credit_money_left">Argent restant sur Anthropic (estimation)</string>
+    <string name="credit_needs_key">Ajoutez votre clé Anthropic (Jeton, plus bas) : le crédit s\'affiche à partir de là.</string>
     <string name="credit_photos_can">Photos que vous pouvez encore prendre (environ)</string>
     <string name="recharge">Recharger</string>
     <string name="recharge_q">Combien avez-vous ajouté sur Anthropic ?</string>

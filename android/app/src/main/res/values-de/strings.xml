@@ -200,6 +200,7 @@
     <string name="credit_warn_low">Guthaben fast aufgebraucht: noch etwa 1 Foto. Hier tippen.</string>
     <string name="credit_avg_fmt">Durchschnittliche Kosten pro Foto: %1$s</string>
     <string name="credit_money_left">Restguthaben bei Anthropic (Schätzung)</string>
+    <string name="credit_needs_key">Füge deinen Anthropic-Schlüssel hinzu (Token, unten): ab dann wird das Guthaben angezeigt.</string>
     <string name="credit_photos_can">Fotos, die du noch machen kannst (etwa)</string>
     <string name="recharge">Aufladen</string>
     <string name="recharge_q">Wie viel hast du bei Anthropic aufgeladen?</string>
