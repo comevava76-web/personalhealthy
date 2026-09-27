@@ -18,7 +18,7 @@ type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 const CODE_TTL = 60e3;                 // the one-time code from the app
 const SESSION_TTL = 7 * 864e5;         // the browser stays signed in for 7 days
 const SHARE_MAX_DAYS = 30;             // a share link lasts at most 30 days
-const MAX_PERIOD_DAYS = 14;            // charts show at most two weeks: every reading readable on one phone screen
+const MAX_PERIOD_DAYS = 7;             // charts show one week: every reading and its value readable on a phone screen
 const COOKIE = "hint_s";
 
 const enc = new TextEncoder();
@@ -136,7 +136,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
   if (p === "/my/api/data" && req.method === "GET") {
     const mod = MODULES[url.searchParams.get("module") || "bp"];
     if (!mod) return fail("Unknown module", 404);
-    const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 14, 1), MAX_PERIOD_DAYS);
+    const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 7, 1), MAX_PERIOD_DAYS);
     const to = Date.now();
     const from = periodStart(to, days);
     return json({ shared: false, from, to, items: await mod.load(q, pid, from, to) });
@@ -145,7 +145,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
   if (p === "/my/api/share" && req.method === "POST") {
     let b: any = {};
     try { b = await req.json(); } catch {}
-    const days = Math.min(Math.max(Math.round(Number(b.days) || 14), 1), MAX_PERIOD_DAYS);
+    const days = Math.min(Math.max(Math.round(Number(b.days) || 7), 1), MAX_PERIOD_DAYS);
     const valid = Math.min(Math.max(Math.round(Number(b.validDays) || 7), 1), SHARE_MAX_DAYS);
     const now = Date.now();
     const t = randomToken();

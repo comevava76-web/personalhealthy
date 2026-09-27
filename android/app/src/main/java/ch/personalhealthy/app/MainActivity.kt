@@ -1436,7 +1436,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Unit) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
-    val infos = listOf(7, 14).associateWith { periodInfo(readings, it) }
+    val infos = listOf(7).associateWith { periodInfo(readings, it) }
     val per = infos.getValue(n)
     val st = stats(per.list)
 
@@ -1447,7 +1447,7 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
         Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(4.dp)) {
-            listOf(7, 14).forEach { d ->
+            listOf(7).forEach { d ->
                 val info = infos.getValue(d)
                 val sel = d == n
                 Column(

@@ -2,10 +2,9 @@
 // Opened from the app already signed in (see worker/src/web.ts), or as a read-only link shared with the doctor (/s/...).
 // Each part of the dashboard is a module in MODULES: blood pressure now, lab results later. A module gets its data
 // from /my/api/data?module=<id> and draws itself in the page; sign-in, periods, sharing and export are shared by all.
-// The charts use TradingView Lightweight Charts (Apache 2.0), served from this site: no request leaves for third parties.
+// The charts are drawn by this file as SVG: no library and no request to third parties.
 (function () {
   "use strict";
-  const LC = window.LightweightCharts;
   const $ = (id) => document.getElementById(id);
   const IT = (navigator.language || "en").toLowerCase().startsWith("it");
   const LOCALE = IT ? "it-CH" : "en-GB";
@@ -15,7 +14,7 @@
   const T = IT ? {
     share: "Invia al medico", pdf: "PDF", csv: "Excel", out: "Esci",
     bp: "Pressione", labs: "Analisi",
-    range: { 7: "7 giorni", 14: "14 giorni" },
+    range: { 7: "7 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
     last: "Ultima misura", avg: "Media del periodo", count: "Misure", days: (d, n) => `in ${d} giorni su ${n}`,
     whole: "Andamento del periodo", wholeSub: "ogni misura, giorno e ora",
@@ -35,12 +34,12 @@
     shText: (a, b, url, e) => `Report della pressione (HINT), misure dal ${a} al ${b}: ${url} — link valido fino al ${e}.`,
     shSubject: "Report della pressione",
     footNote: "HINT non fa diagnosi e non valuta i valori: ogni valutazione spetta al medico.",
-    rights: "Tutti i diritti riservati", terms: "Condizioni d'uso", tv: "Grafici: TradingView Lightweight Charts™",
+    rights: "Tutti i diritti riservati", terms: "Condizioni d'uso",
     err: "Qualcosa non ha funzionato. Riprova.",
   } : {
     share: "Send to doctor", pdf: "PDF", csv: "Excel", out: "Sign out",
     bp: "Blood pressure", labs: "Lab results",
-    range: { 7: "7 days", 14: "14 days" },
+    range: { 7: "7 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
     last: "Last reading", avg: "Period average", count: "Readings", days: (d, n) => `on ${d} of ${n} days`,
     whole: "The whole period", wholeSub: "every reading, day and time",
@@ -60,7 +59,7 @@
     shText: (a, b, url, e) => `Blood pressure report (HINT), readings from ${a} to ${b}: ${url} — link valid until ${e}.`,
     shSubject: "Blood pressure report",
     footNote: "HINT makes no diagnosis and does not assess the values: every assessment is up to the doctor.",
-    rights: "All rights reserved", terms: "Terms of use", tv: "Charts: TradingView Lightweight Charts™",
+    rights: "All rights reserved", terms: "Terms of use",
     err: "Something went wrong. Please try again.",
   };
 
@@ -76,7 +75,7 @@
     return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) / 1000;
   }
   const fTip = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  const when = (ms) => fTip.format(chartTime(ms) * 1000);   // the same words as under the finger, e.g. "dom 27 set, 11:58"
+  const when = (ms) => fTip.format(chartTime(ms) * 1000);   // e.g. "dom 27 set, 11:58"
 
   /* ---------- server ---------- */
   async function api(path, opts = {}) {
@@ -87,89 +86,107 @@
   }
 
   /* ---------- charts ---------- */
+  // Drawn here as SVG at the exact size of the screen: sharp on any phone, nothing from third parties.
+  // Every reading is a dot with its value next to it (SYS and PUL above, DIA below), placed where it hits no other
+  // number or dot, like in the PDF. Readings are evenly spaced one after the other; a thin line marks where each day
+  // starts and the day is written below. Touching or pointing at the chart shows day, time and values above it.
   const COL = { sys: "#F2545B", dia: "#3FA7D6", pul: "#FFC145" };
-  const rgba = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
-  const charts = [];
-  const DARK = { text: "#8C9BBA", grid: "rgba(40,58,98,0.55)", cross: "#5B6E96" };
+  const TXT = { sys: "#FF8A8F", dia: "#7CC6EA", pul: "#FFD37A" };
+  const NS = "http://www.w3.org/2000/svg";
+  const fAxis = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, weekday: "short", day: "numeric" });
+  const fDayNum = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric" });
+  const redraws = [];
+  let resizeTimer;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => redraws.forEach((f) => f()), 150); });
 
-  function theme(t) {
-    return {
-      layout: { background: { type: "solid", color: "transparent" }, textColor: t.text, fontSize: 11,
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", attributionLogo: false },
-      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
-      crosshair: { mode: LC.CrosshairMode.Normal,
-        vertLine: { color: t.cross, width: 1, style: LC.LineStyle.Dashed, labelVisible: false },
-        horzLine: { visible: false, labelVisible: false } },
-    };
+  function svgEl(parent, name, attrs, text) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e); return e;
   }
+  let mctx;
+  const textW = (t, size) => { mctx = mctx || document.createElement("canvas").getContext("2d"); mctx.font = `700 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`; return mctx.measureText(String(t)).width; };
 
-  /**
-   * One chart: every reading at its own day and hour, one line per value, a soft gradient below it,
-   * a dot on each reading, and a legend that shows the values under the cursor (the last reading otherwise).
-   */
-  // The time axis must be honest: a day without readings takes as much room as any other day.
-  // The chart library spaces its points evenly, so the period is cut into 30-minute slots (empty slots are
-  // "whitespace"), from midnight of the first day to midnight after the last; each reading sits in its slot.
-  const SLOT = 1800;
-  function lineChart(el, legend, items, keys, range) {
-    el.innerHTML = "";
+  function lineChart(el, legend, items, keys) {
     const pts = items.filter((r) => keys.some((k) => r[k] != null));
-    // the pressure chart shows SYS and DIA only; the pulse has its own chart
+    const idle = () => { legend.innerHTML = keys.map((k) => `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()}</span>`).join(""); };
     if (!pts.length) { el.innerHTML = `<div class="empty">${T.noneMoment}</div>`; legend.innerHTML = ""; return; }
-    const chart = LC.createChart(el, {
-      autoSize: true, ...theme(DARK),
-      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.06 } },
-      // the whole period always fits the width: no sideways scrolling or zooming, at most 30 days
-      timeScale: { borderVisible: false, timeVisible: false, secondsVisible: false, rightOffset: 0, minBarSpacing: 0.01,
-        fixLeftEdge: true, fixRightEdge: true, lockVisibleTimeRangeOnResize: true },
-      localization: { locale: LOCALE, priceFormatter: (v) => String(Math.round(v)), timeFormatter: (t) => fTip.format(t * 1000) },
-      handleScale: false, handleScroll: false,
-    });
-    // the slots: every 30 minutes of the period; a reading goes in its slot, or the next free one
-    const start = Math.floor(chartTime(range.from) / 86400) * 86400;
-    const end = Math.floor(chartTime(range.to) / 86400) * 86400 + 86400;
-    const grid = [];
-    for (let t = start; t < end; t += SLOT) grid.push({ time: t, r: null });
-    for (const r of pts) {
-      let i = Math.min(grid.length - 1, Math.max(0, Math.floor((chartTime(r.t) - start) / SLOT)));
-      while (i < grid.length - 1 && grid[i].r) i++;
-      grid[i].r = r;
-    }
-    const bySlot = new Map(grid.filter((g) => g.r).map((g) => [g.time, g.r]));
-    const series = {};
-    // SYS on top: drawn last
-    for (const k of [...keys].reverse()) {
-      const c = COL[k];
-      const s = chart.addSeries(LC.AreaSeries, {
-        lineColor: c, lineWidth: 2, topColor: rgba(c, k === "pul" && keys.length > 1 ? 0.0 : 0.26), bottomColor: rgba(c, 0),
-        lineType: LC.LineType.Simple, pointMarkersVisible: true, pointMarkersRadius: 2.5,
-        crosshairMarkerRadius: 5, crosshairMarkerBorderColor: "#0A1224", crosshairMarkerBackgroundColor: c,
-        priceLineVisible: false, lastValueVisible: false,
-        priceFormat: { type: "price", precision: 0, minMove: 1 },
-      });
-      s.setData(grid.map((g) => (g.r && g.r[k] != null ? { time: g.time, value: g.r[k] } : { time: g.time })));
-      series[k] = s;
-    }
-    chart.timeScale().fitContent();
-    charts.push({ chart, series });
-
-    const show = (vals, when) => {
-      legend.innerHTML = `<span class="when">${when}</span>` + keys.map((k) =>
-        `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()} <b class="${k}">${vals[k] ?? "–"}</b></span>`).join("");
+    idle();
+    const draw = () => {
+      el.innerHTML = "";
+      const W = el.clientWidth, H = el.clientHeight, n = pts.length;
+      const L = 6, R = W - 36, TOP = 22, B = H - 30;
+      const vals = pts.flatMap((r) => keys.map((k) => r[k]).filter((v) => v != null));
+      const lo = Math.floor((Math.min(...vals) - 6) / 10) * 10, hi = Math.ceil((Math.max(...vals) + 6) / 10) * 10;
+      const Y = (v) => B - (v - lo) / (hi - lo) * (B - TOP);
+      const step = (R - L) / n, X = (i) => L + step * (i + 0.5);
+      const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot" });
+      // grid every 10, numbers on the right
+      for (let v = lo; v <= hi; v += 10) {
+        svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: "#1F2E50", "stroke-width": 1 });
+        svgEl(svg, "text", { x: R + 8, y: Y(v) + 4, class: "ax" }, v);
+      }
+      // days: a thin line where each day starts, the day's name under its readings
+      // the name of the day ("lun 21"), or just the number ("21") when two days are too close to write it in full
+      let first = 0, lastEnd = -Infinity;
+      for (let i = 1; i <= n; i++) {
+        if (i === n || day(pts[i].t) !== day(pts[first].t)) {
+          if (first > 0) svgEl(svg, "line", { x1: L + step * first, x2: L + step * first, y1: TOP - 8, y2: B + 4, stroke: "#2B3D66", "stroke-width": 1, "stroke-dasharray": "3 3" });
+          const cx = (X(first) + X(i - 1)) / 2;
+          for (const label of [fAxis.format(pts[first].t), fDayNum.format(pts[first].t)]) {
+            const w = textW(label, 11) + 6;
+            if (cx - w / 2 < lastEnd || cx + w / 2 > W) continue;
+            svgEl(svg, "text", { x: cx, y: B + 20, class: "day", "text-anchor": "middle" }, label);
+            lastEnd = cx + w / 2; break;
+          }
+          first = i;
+        }
+      }
+      // lines and dots, SYS last so it stays on top
+      const dots = [];
+      for (const k of [...keys].reverse()) {
+        const p = pts.map((r, i) => (r[k] != null ? { x: X(i), y: Y(r[k]), v: r[k], k } : null)).filter(Boolean);
+        if (p.length > 1) svgEl(svg, "path", { d: "M" + p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" L"), fill: "none", stroke: COL[k], "stroke-width": 2.2, "stroke-linejoin": "round", "stroke-linecap": "round" });
+        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 4, fill: COL[k], stroke: "#101C35", "stroke-width": 2 });
+        dots.push(...p);
+      }
+      // the numbers: highest and lowest of each line first, then the others where they fit
+      const fs = n > 18 ? 10 : 11.5;
+      const taken = dots.map((q) => [q.x - 5, q.y - 5, q.x + 5, q.y + 5]);
+      const hit = (a) => taken.some((t) => a[0] < t[2] && a[2] > t[0] && a[1] < t[3] && a[3] > t[1]);
+      const order = keys.flatMap((k) => {
+        const p = dots.filter((q) => q.k === k); const mx = Math.max(...p.map((q) => q.v)), mn = Math.min(...p.map((q) => q.v));
+        return p.map((q) => [q, q.v === mx || q.v === mn ? 0 : 1]);
+      }).sort((a, b) => a[1] - b[1]).map((a) => a[0]);
+      for (const q of order) {
+        const half = textW(q.v, fs) / 2 + 1, up = q.k !== "dia";
+        for (const u of [up, !up]) {
+          const by = u ? q.y - 9 : q.y + fs + 7;
+          const box = [q.x - half, by - fs + 1, q.x + half, by + 2];
+          if (box[1] < 2 || box[3] > B + 2 || box[0] < 0 || box[2] > R + 4 || hit(box)) continue;
+          taken.push(box); svgEl(svg, "text", { x: q.x, y: by, "text-anchor": "middle", class: "val", fill: TXT[q.k], "font-size": fs }, q.v); break;
+        }
+      }
+      // pointing or touching: a vertical line on the nearest reading, its values in the legend
+      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 8, y2: B, stroke: "#8C9BBA", "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
+      const ring = keys.map((k) => svgEl(svg, "circle", { r: 7, fill: "none", stroke: COL[k], "stroke-width": 2, visibility: "hidden" }));
+      const pick = (ev) => {
+        const rect = svg.getBoundingClientRect();
+        const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+        const i = Math.max(0, Math.min(n - 1, Math.floor((cx - L) / step)));
+        const r = pts[i];
+        cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("visibility", "visible");
+        keys.forEach((k, j) => { if (r[k] == null) return ring[j].setAttribute("visibility", "hidden"); ring[j].setAttribute("cx", X(i)); ring[j].setAttribute("cy", Y(r[k])); ring[j].setAttribute("visibility", "visible"); });
+        legend.innerHTML = `<span class="when">${when(r.t)}</span>` + keys.map((k) => `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()} <b class="${k}">${r[k] ?? "–"}</b></span>`).join("");
+      };
+      const leave = () => { cross.setAttribute("visibility", "hidden"); ring.forEach((c) => c.setAttribute("visibility", "hidden")); idle(); };
+      svg.addEventListener("pointermove", pick); svg.addEventListener("pointerdown", pick);
+      svg.addEventListener("touchmove", pick, { passive: true }); svg.addEventListener("pointerleave", leave);
     };
-    const last = pts[pts.length - 1];
-    const lastVals = Object.fromEntries(keys.map((k) => [k, last[k]]));
-    show(lastVals, when(last.t));
-    chart.subscribeCrosshairMove((p) => {
-      // the reading nearest to the finger or the mouse (empty slots in between do not count)
-      let r = null;
-      if (p.time != null) { let best = Infinity; for (const [t, x] of bySlot) { const d = Math.abs(t - p.time); if (d < best) { best = d; r = x; } } }
-      if (!r) return show(lastVals, when(last.t));
-      show(Object.fromEntries(keys.map((k) => [k, r[k]])), when(r.t));
-    });
+    draw();
+    redraws.push(draw);
   }
-
-
 
   /* ---------- modules ---------- */
   const MODULES = {
@@ -209,10 +226,10 @@
           ` : `<div class="card"><div class="empty" style="height:200px">${T.none}</div></div>`}`;
         ctx.bindPills && ctx.bindPills();
         if (!n) return;
-        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"], data);
-        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"], data);
-        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"], data);
-        lineChart($("ch-p"), $("lg-p"), items, ["pul"], data);
+        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"]);
+        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"]);
+        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"]);
+        lineChart($("ch-p"), $("lg-p"), items, ["pul"]);
       },
       csv(items) {
         const rows = [T.cols.map((c, i) => (i === 3 || i === 4 ? c + " (mmHg)" : c))];
@@ -251,18 +268,17 @@
 
   /* ---------- page ---------- */
   const main = $("main");
-  let current = { module: "bp", days: 14, data: null };
-  try { current.days = Number(localStorage.getItem("hint.days")) || 14; } catch {}
-  if (![7, 14].includes(current.days)) current.days = 14;
+  let current = { module: "bp", days: 7, data: null };
+    current.days = 7;   // one week only: every reading readable
 
   function words() {
     $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv; $("btn-out").textContent = T.out;
-    $("foot-note").textContent = T.footNote; $("rights").textContent = T.rights; $("terms-link").textContent = T.terms; $("tv-note").innerHTML = `${T.tv} · <a href="https://www.tradingview.com/" target="_blank" rel="noopener">tradingview.com</a>`;
+    $("foot-note").textContent = T.footNote; $("rights").textContent = T.rights; $("terms-link").textContent = T.terms; 
     const y = new Date().getFullYear(); $("years").textContent = y > 2026 ? `2026–${y}` : "2026";
     document.documentElement.lang = IT ? "it" : "en";
   }
   function message(title, text) { main.innerHTML = `<div class="center"><h1>${title}</h1><p class="muted">${text}</p></div>`; }
-  function charts0() { while (charts.length) charts.pop().chart.remove(); }
+  function charts0() { redraws.length = 0; }
 
   function pills() {
     return `<div class="pills" id="pills">${Object.entries(T.range).map(([d, l]) => `<button type="button" data-d="${d}" class="${+d === current.days ? "on" : ""}">${l}</button>`).join("")}</div>`;
@@ -275,7 +291,7 @@
     try {
       const data = await api(`/my/api/data?module=${current.module}&days=${current.days}`);
       current.data = data; charts0();
-      MODULES[current.module].render(main, data, { pills: pills(), bindPills });
+      MODULES[current.module].render(main, data, {});   // one period only (7 days): no period buttons
     } catch (e) { if (e.status === 401) signedOut(); else message(T.err, ""); }
   }
   function signedOut() { $("actions").hidden = true; $("modules").innerHTML = ""; message(T.signinT, T.signinP); }
@@ -351,7 +367,6 @@
   }
 
   words();
-  if (!LC) { message(T.err, ""); return; }
   const s = location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)/);
   if (s) startShared(s[1]); else startSignedIn();
 })();

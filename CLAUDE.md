@@ -6,5 +6,5 @@
 - **Materiale demo** in `docs/demo/`: se cambia l'aspetto della dashboard o del PDF, rifare gli screenshot (solo dati di prova,
   mai misure reali).
 - **Mai diagnosi**, mai giudizi sui valori; etichette sempre SYS, DIA, PUL; pressione e battiti mai nello stesso grafico;
-  grafici al massimo 14 giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
+  grafici di 7 giorni con il valore su ogni punto, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
 - **Mai segreti nel repository**: chiavi e token solo nei secrets di GitHub o sul server.
