@@ -503,11 +503,12 @@ fun App() {
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
-                        Tab.REPORT.key -> ReportScreen(readings, onShowAll = { screen = "all" })
+                        Tab.REPORT.key -> ReportScreen(readings)
                         Tab.CREDIT.key -> CreditScreen(
                             me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             onLinkGoogle = { linkAsk = true },
+                            onManageReadings = { screen = "all" },
                             onDeleteAccount = {
                                 val pid = personId ?: return@CreditScreen
                                 scope.launch {
@@ -525,13 +526,6 @@ fun App() {
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             onMeasure = { openCamera() },
                             onVoice = { openVoice() },
-                            onDelete = { r ->
-                                val pid = personId ?: return@HomeScreen
-                                scope.launch {
-                                    try { Repo.delete(pid, r.id); toast(ctx, t(R.string.deleted)); reload() }
-                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                                }
-                            }
                         )
                     }
                 }
@@ -857,9 +851,8 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit, onDelete: (Reading) -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit
 ) {
-    var toDelete by remember { mutableStateOf<Reading?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         BrandHeader()
 
@@ -889,18 +882,8 @@ fun HomeScreen(
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
-        // only today's readings here; the full list is at the bottom of the Report tab
-        val todays = readings.filter { Z.date(it.takenAt) == Z.today() }
-        Text(t(R.string.today_readings), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 4.dp))
-        if (todays.isEmpty()) {
-            Panel { Text(t(R.string.no_readings_today), color = C.Muted, fontSize = 14.sp) }
-        } else {
-            todays.reversed().forEach { r -> ReadingRow(r) { toDelete = r } }
-        }
         Spacer(Modifier.height(24.dp))
     }
-
-    toDelete?.let { r -> DeleteDialog(r, onDelete = { onDelete(r); toDelete = null }, onDismiss = { toDelete = null }) }
 }
 
 @Composable
@@ -1297,7 +1280,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 /* ---------------- Report ---------------- */
 
 @Composable
-fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
+fun ReportScreen(readings: List<Reading>) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
     val infos = listOf(7, 15, 30).associateWith { periodInfo(readings, it) }
@@ -1324,9 +1307,6 @@ fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
 
         if (per.list.isEmpty()) {
             Panel { Text(t(R.string.report_empty), color = C.Muted) }
-            if (readings.isNotEmpty()) TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
-            }
             return@Column
         }
 
@@ -1364,10 +1344,6 @@ fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
         BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
             try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
-        // the archive: every reading, to check or delete one, and "Delete all readings"
-        TextButton(onClick = onShowAll, modifier = Modifier.fillMaxWidth()) {
-            Text(t(R.string.all_readings_fmt, readings.size), color = C.Muted, fontSize = 13.sp)
-        }
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -1379,7 +1355,7 @@ fun ReportScreen(readings: List<Reading>, onShowAll: () -> Unit) {
 fun CreditScreen(
     me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit,
-    onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit
+    onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
 ) {
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -1439,6 +1415,8 @@ fun CreditScreen(
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
         }
+        // every reading: to delete a wrong one, or all of them
+        BigButton(t(R.string.manage_readings), color = C.Surface2, textColor = C.Ink, onClick = onManageReadings)
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
         BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }

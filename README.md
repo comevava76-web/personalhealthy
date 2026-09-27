@@ -69,9 +69,9 @@ Later versions install over the previous one without losing anything.
 The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): the HINT title with the moving ECG trace, the button to measure, the last reading,
   a table of the last 7 days (today included: one value per day, the average of that day's readings, and the pulse),
-  a 7-day summary (highest and average systolic, diastolic and pulse) and today's readings ("No readings today" when there are none).
-  "See all readings", at the bottom of the Report tab, lists every reading; at its bottom, "Delete all readings" (asked twice) deletes every
-  reading and photo reading of this phone, leaving the credit as it is.
+  and a 7-day summary (highest and average SYS, DIA and PUL). Values are always named SYS, DIA and PUL.
+  "Manage readings", in the Account section of the Credit tab, lists every reading to delete one; at its bottom,
+  "Delete all readings" (asked twice) deletes every reading and photo reading of this phone, leaving the credit as it is.
   The Report tab, the PDF and the Excel file keep morning and evening apart.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
 - **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
