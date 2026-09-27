@@ -50,7 +50,7 @@
     <string name="last_fmt">Ultima: %s</string>
     <string name="measure">Scansiona misura</string>
     <string name="record_short">Registra</string>
-    <string name="scan_short">Scansiona</string>
+    <string name="scan_short">Scan</string>
     <string name="scan_cost_note">La scansione della foto usa crediti AI a pagamento e facoltativi (circa mezzo centesimo a foto). Tutto il resto, voce compresa, è gratis.</string>
     <string name="scan_needs_key_title">La scansione è facoltativa</string>
     <string name="scan_needs_key_text">Leggere i numeri dalla foto usa l\'intelligenza artificiale, a pagamento con il tuo credito Anthropic (circa mezzo centesimo a foto). Puoi aggiungerlo ora, oppure dettare i valori a voce, gratis.</string>

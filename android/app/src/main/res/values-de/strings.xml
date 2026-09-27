@@ -50,7 +50,7 @@
     <string name="last_fmt">Letzte: %s</string>
     <string name="measure">Messung scannen</string>
     <string name="record_short">Sprechen</string>
-    <string name="scan_short">Scannen</string>
+    <string name="scan_short">Scan</string>
     <string name="scan_cost_note">Das Scannen eines Fotos nutzt kostenpflichtiges, optionales KI-Guthaben (etwa einen halben Cent pro Foto). Alles andere, Stimme inklusive, ist kostenlos.</string>
     <string name="scan_needs_key_title">Scannen ist optional</string>
     <string name="scan_needs_key_text">Das Lesen der Zahlen vom Foto nutzt künstliche Intelligenz, bezahlt mit deinem Anthropic-Guthaben (etwa einen halben Cent pro Foto). Du kannst es jetzt hinzufügen oder die Werte kostenlos ansagen.</string>
