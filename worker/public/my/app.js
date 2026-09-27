@@ -26,6 +26,8 @@
     per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" }, src: { photo: "Foto", voice: "Voce" },
     none: "Nessuna misura in questo periodo", noneMoment: "Nessuna misura in questo momento della giornata",
     signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT 365 vai su Report e tocca «Web Dashboard». Il browser si apre già collegato al tuo account.",
+    ckT: "Cookie", ckP: "La Web Dashboard usa un solo cookie tecnico, <b>hint_s</b>, che ti tiene collegato per 7 giorni dopo averla aperta dall'app. Contiene solo un codice casuale, è di prima parte e non è leggibile dagli script (HttpOnly, Secure, SameSite=Strict). Nessun cookie di profilazione, di statistica, di pubblicità o di terze parti. La tua scelta resta salvata in questo browser. Dettagli nell'<a href=\"/privacy#cookie\">informativa privacy</a>.",
+    ckYes: "Accetto", ckNo: "Rifiuto", ckNoT: "Senza cookie non posso tenerti collegato", ckNoP: "Il cookie tecnico serve solo a tenerti collegato alla Web Dashboard. Senza di esso puoi continuare a usare l'app. Se cambi idea, riapri Web Dashboard dall'app e tocca «Accetto».", ckAgain: "Rivedi la scelta",
     subT: "Il tuo abbonamento è scaduto", subP: "Grazie per aver usato HINT 365. Rinnova l'abbonamento annuale dall'app (Google Play) per ripristinare tutte le funzioni: le tue misure sono al sicuro e tornano subito disponibili.",
     goneT: "Link scaduto", goneP: "Questo link non è più valido: è scaduto oppure è stato ritirato da chi l'ha inviato.",
     sharedB: (a, b, e) => `Report condiviso dal paziente: misure dal ${a} al ${b}. Link valido fino al ${e}.`,
@@ -53,6 +55,8 @@
     per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" }, src: { photo: "Photo", voice: "Voice" },
     none: "No readings in this period", noneMoment: "No readings at this time of day",
     signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT 365 app go to Report and tap “Web Dashboard”. The browser opens already signed in to your account.",
+    ckT: "Cookies", ckP: "The Web Dashboard uses a single technical cookie, <b>hint_s</b>, which keeps you signed in for 7 days after you open it from the app. It holds only a random code, is first-party and cannot be read by scripts (HttpOnly, Secure, SameSite=Strict). No profiling, statistics, advertising or third-party cookies. Your choice is saved in this browser. Details in the <a href=\"/privacy#cookie\">privacy policy</a>.",
+    ckYes: "Accept", ckNo: "Decline", ckNoT: "Without the cookie I cannot keep you signed in", ckNoP: "The technical cookie only keeps you signed in to the Web Dashboard. Without it you can keep using the app. If you change your mind, open Web Dashboard again from the app and tap “Accept”.", ckAgain: "Review the choice",
     subT: "Your subscription has run out", subP: "Thank you for using HINT 365. Renew the yearly subscription in the app (Google Play) to bring back every feature: your readings are safe and come back at once.",
     goneT: "Link expired", goneP: "This link no longer works: it has expired or was withdrawn by the person who sent it.",
     sharedB: (a, b, e) => `Report shared by the patient: readings from ${a} to ${b}. Link valid until ${e}.`,
@@ -301,7 +305,7 @@
   }
   function bindPills() {
     const p = $("pills"); if (!p) return;
-    p.onclick = (e) => { const d = +e.target.dataset.d; if (!d) return; current.days = d; try { localStorage.setItem("hint.days", d); } catch {} load(); };
+    p.onclick = (e) => { const d = +e.target.dataset.d; if (!d) return; current.days = d; load(); };
   }
   async function load() {
     try {
@@ -343,9 +347,50 @@
     $("sh-revoke").onclick = async () => { try { await api("/my/api/shares", { method: "DELETE" }); alert(T.shRevoked); } catch { alert(T.err); } };
   }
 
+  /* ---------- cookie consent ----------
+     The only cookie is the technical session cookie hint_s. It is set only after the person accepts it here;
+     the choice (accepted, and which version of this notice) is kept in this browser's local storage. */
+  const CK_KEY = "hint.cookies", CK_VER = "1";
+  const ckGet = () => { try { return localStorage.getItem(CK_KEY); } catch { return null; } };
+  const ckSet = (v) => { try { v == null ? localStorage.removeItem(CK_KEY) : localStorage.setItem(CK_KEY, v); } catch {} };
+  function cookieBanner() {
+    return new Promise((done) => {
+      const box = document.createElement("div");
+      box.className = "cookie"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+      box.innerHTML = `<div class="cookie-in"><h3>${T.ckT}</h3><p>${T.ckP}</p><div class="cookie-b">
+        <button class="btn" type="button" data-v="no">${T.ckNo}</button><button class="btn primary" type="button" data-v="yes">${T.ckYes}</button></div></div>`;
+      box.onclick = (e) => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; box.remove(); done(v === "yes"); };
+      document.body.appendChild(box);
+    });
+  }
+  async function cookiesOk() {
+    if (ckGet() === "yes:" + CK_VER) return true;
+    const yes = await cookieBanner();
+    ckSet(yes ? "yes:" + CK_VER : "no:" + CK_VER);
+    return yes;
+  }
+  function cookiesRefused() {
+    $("actions").hidden = true; $("modules").innerHTML = "";
+    message(T.ckNoT, T.ckNoP);
+  }
+  // footer link: see the notice again; declining now signs this browser out and removes the cookie
+  function bindCookieLink() {
+    const a = $("cookie-link"); if (!a) return;
+    a.textContent = T.ckT;
+    a.onclick = async (e) => {
+      e.preventDefault();
+      const yes = await cookieBanner();
+      ckSet(yes ? "yes:" + CK_VER : "no:" + CK_VER);
+      if (!yes) { try { await api("/my/session", { method: "DELETE" }); } catch {} cookiesRefused(); }
+    };
+  }
+
   async function startSignedIn() {
-    // step 3 of the sign-in from the app: the one-time code in the #part becomes a cookie, then disappears from the address
+    bindCookieLink();
+    // step 3 of the sign-in from the app: the one-time code in the #part becomes a cookie, then disappears from the address.
+    // The cookie is set only after it has been accepted.
     const m = location.hash.match(/c=([A-Za-z0-9_-]+)/);
+    if (!(await cookiesOk())) { if (m) history.replaceState(null, "", "/my/"); return cookiesRefused(); }
     if (m) {
       history.replaceState(null, "", "/my/");
       try { await api("/my/session", { method: "POST", body: JSON.stringify({ code: m[1] }) }); } catch (e) { /* expired: fall through to the cookie, if any */ }
