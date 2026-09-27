@@ -47,8 +47,14 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** Opens the phone's share sheet with the app's download link, to send to a friend. */
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-        .putExtra(android.content.Intent.EXTRA_TEXT, t(R.string.share_app_text, DOWNLOAD_URL))
+        .putExtra(android.content.Intent.EXTRA_TEXT, englishText(ctx, R.string.share_app_text, DOWNLOAD_URL))
     ctx.startActivity(android.content.Intent.createChooser(send, t(R.string.share_app)))
+}
+
+/** The invitation always goes out in English, whatever the language of the phone. */
+fun englishText(ctx: Context, id: Int, vararg args: Any): String {
+    val conf = android.content.res.Configuration(ctx.resources.configuration).apply { setLocale(java.util.Locale.ENGLISH) }
+    return ctx.createConfigurationContext(conf).resources.getString(id, *args)
 }
 
 /** Translated text (English, Italian, German or French, following the phone). */
