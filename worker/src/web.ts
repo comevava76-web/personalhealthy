@@ -129,9 +129,8 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
     return json({ ok: true }, 200, { "set-cookie": `${COOKIE}=; Path=/my; Max-Age=0; HttpOnly; Secure; SameSite=Strict` });
   }
   if (p === "/my/api/me" && req.method === "GET") {
-    const [person] = await q("SELECT email FROM persons WHERE id = ?1", [pid]);
     const shares = await q("SELECT COUNT(*) AS n FROM web_shares WHERE person_id = ?1 AND expires_at > ?2", [pid, Date.now()]);
-    return json({ email: person?.email || null, modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0) });
+    return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0) });
   }
   if (p === "/my/api/data" && req.method === "GET") {
     const mod = MODULES[url.searchParams.get("module") || "bp"];

@@ -151,6 +151,29 @@ function b64urlToBytes(s: string): Uint8Array {
   while (s.length % 4) s += "=";
   return b64ToBytes(s);
 }
+/**
+ * The only trace of the Google account kept in the database: "h1:" + HMAC-SHA256 of Google's stable id,
+ * with a key derived from the server secret. It finds the same person again on any phone, but nobody can
+ * turn it back into a Google account or an email. No email is ever stored.
+ */
+async function googleId(env: Env, sub: string): Promise<string> {
+  const raw = env.KEY_ENCRYPTION_KEY ? b64ToBytes(env.KEY_ENCRYPTION_KEY) : new Uint8Array(0);
+  if (raw.length !== 32) throw new Error("KEY_ENCRYPTION_KEY missing or not 32 bytes");
+  const k = await crypto.subtle.importKey("raw", raw, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode("google-sub:" + sub)));
+  return "h1:" + [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Older rows kept Google's raw id and the email: replaced by the fingerprint, email erased (every night, and at sign-in). */
+async function anonymizeGoogle(env: Env) {
+  const rows = (await env.DB.prepare("SELECT id, google_sub FROM persons WHERE google_sub IS NOT NULL AND google_sub NOT LIKE 'h1:%'").all()).results || [];
+  for (const r of rows as any[]) await env.DB.prepare("UPDATE persons SET google_sub = ?1 WHERE id = ?2").bind(await googleId(env, String(r.google_sub)), r.id).run();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE persons SET email = NULL WHERE email IS NOT NULL"),
+    env.DB.prepare("UPDATE acceptances SET email = NULL WHERE email IS NOT NULL"),
+  ]);
+}
+
 // Returns the Google account (its stable id "sub" and its email) only if the token is genuine,
 // was made for this app, has not expired and the email is verified by Google.
 async function verifyGoogle(token: string, clientId: string): Promise<{ sub: string; email: string } | null> {
@@ -177,7 +200,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "6";
+const DISCLAIMER_VERSION = "7";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -345,6 +368,7 @@ async function readDisplay(env: Env, apiKey: string, image: string, lang: string
  * web codes, sessions and share links. The record of accepted terms (acceptances) is kept, as proof.
  */
 export async function purgeOld(env: Env) {
+  await anonymizeGoogle(env);
   const now = Date.now(), yearAgo = now - 365 * 864e5;
   await env.DB.batch([
     env.DB.prepare("DELETE FROM measurements WHERE taken_at < ?1").bind(yearAgo),
@@ -454,7 +478,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const g = await verifyGoogle(String(data.idToken || ""), env.GOOGLE_CLIENT_ID);
     if (!g) return fail("Google sign-in not valid", 401, "google_invalid");
     const now = Date.now();
-    const [owner] = await q("SELECT id, COALESCE(pays, 'owner') AS pays FROM persons WHERE google_sub = ?1", [g.sub]);
+    const gid = await googleId(env, g.sub);
+    const [owner] = await q("SELECT id, COALESCE(pays, 'owner') AS pays FROM persons WHERE google_sub = ?1 OR google_sub = ?2", [gid, g.sub]);
     const [onPhone] = await q("SELECT id, google_sub FROM persons WHERE public_key = ?1", [data.publicKey]);
     if (owner) {
       if (onPhone && onPhone.id !== owner.id) {
@@ -463,13 +488,13 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
         if (onPhone.google_sub || used) return fail("This phone is used by another account", 409, "phone_in_use");
         await q("DELETE FROM persons WHERE id = ?1", [onPhone.id]);
       }
-      await q("UPDATE persons SET public_key = ?1, email = ?2 WHERE id = ?3", [data.publicKey, g.email, owner.id]);
+      await q("UPDATE persons SET public_key = ?1, google_sub = ?2, email = NULL WHERE id = ?3", [data.publicKey, gid, owner.id]);
       return json({ personId: owner.id, pays: owner.pays, recovered: true });
     }
     if (data.consent !== true) return fail("Consent needed", 400, "consent_required");
     if (onPhone) {
       if (onPhone.google_sub) return fail("This phone is linked to another Google account", 409, "google_other");
-      await q("UPDATE persons SET google_sub = ?1, email = ?2, consent_at = ?3 WHERE id = ?4", [g.sub, g.email, now, onPhone.id]);
+      await q("UPDATE persons SET google_sub = ?1, email = NULL, consent_at = ?2 WHERE id = ?3", [gid, now, onPhone.id]);
       const [p] = await q("SELECT COALESCE(pays, 'owner') AS pays FROM persons WHERE id = ?1", [onPhone.id]);
       return json({ personId: onPhone.id, pays: p?.pays || "owner", linked: true });
     }
@@ -478,7 +503,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     await q(
       "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
       "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'self', ?3, ?4, ?5, ?5, ?6)",
-      [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
+      [id, data.publicKey, gid, null, now, localStamp(now)]
     );
     return json({ personId: id, pays: "self" });
   }
@@ -499,6 +524,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // 0) Who am I, and the credit of my own pool (a friend never sees the owner's pool, nor the other way round)
   if (req.method === "GET" && url.pathname === "/v1/me") {
+    // an account from before: its Google id becomes a fingerprint and its email is erased, right now
+    if (person.email || (person.google_sub && !String(person.google_sub).startsWith("h1:"))) await anonymizeGoogle(env);
     await fillLocalDates(q);
     return json({
       personId: pid,
@@ -506,7 +533,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       pays: person.pays,
       hasKey: selfPays ? await hasKey() : false,
       hasGoogle: !!person.google_sub,
-      email: person.email || null,
+      email: null,   // never stored: the phone keeps it for itself
       googleOn: !!env.GOOGLE_CLIENT_ID,
       billingMode: await getSetting(q, "billing_mode", "private"),
       credit: await creditInfo(q, pool),
@@ -524,7 +551,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     await q(
       "INSERT INTO acceptances (id, person_id, email, device, phone, doc, version, lang, text_sha256, app_version, accepted_at, accepted_at_local) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, 'disclaimer', ?6, ?7, ?8, ?9, ?10, ?11)",
-      [newId("acc_"), pid, person.email || null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
+      [newId("acc_"), pid, null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
        str(data.textSha256, 64), str(data.appVersion, 20), now, localStamp(now)]
     );
     return json({ ok: true });
