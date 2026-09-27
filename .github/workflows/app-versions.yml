@@ -1,0 +1,74 @@
+name: App versions (switch installed apps off)
+
+# Run by hand: Actions → App versions → Run workflow.
+# Switches off installed apps remotely. A switched-off app does nothing and shows only the page
+# to download the latest version; its data on the server are not touched.
+on:
+  workflow_dispatch:
+    inputs:
+      min_version:
+        description: 'Lowest version allowed: a number (e.g. 75), "latest" = only the latest release, "0" = none, empty = unchanged'
+        required: false
+        default: ""
+      blocked:
+        description: 'Single versions switched off, e.g. "71,72"; "none" = clear the list; empty = unchanged'
+        required: false
+        default: ""
+      all_off:
+        description: 'Emergency stop of every version'
+        type: choice
+        options: [unchanged, "on (every app off)", "off (apps work again)"]
+        default: unchanged
+
+permissions:
+  contents: read
+
+jobs:
+  set:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Change the settings on the server
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+          GH_TOKEN: ${{ github.token }}
+          MIN: ${{ inputs.min_version }}
+          BLOCKED: ${{ inputs.blocked }}
+          ALL_OFF: ${{ inputs.all_off }}
+        run: |
+          set -euo pipefail
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ID=$(curl -s -H "$AUTH" "$API?name=personalhealthy" | jq -r '.result[]? | select(.name=="personalhealthy") | .uuid' | head -1)
+          [ -n "$ID" ] || { echo "Database not found"; exit 1; }
+          put() {   # put KEY VALUE
+            BODY=$(jq -n --arg k "$1" --arg v "$2" \
+              '{sql: "INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT (key) DO UPDATE SET value = excluded.value", params: [$k, $v]}')
+            curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API/$ID/query" --data "$BODY" | jq -e '.success' >/dev/null \
+              || { echo "Could not save $1"; exit 1; }
+            echo "$1 = $2"
+          }
+          MIN=$(echo "$MIN" | tr -d ' ')
+          if [ "$MIN" = "latest" ]; then
+            TAG=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name // empty')
+            MIN="${TAG##*.}"   # v0.1.N → N, the version number the app sends
+            [ -n "$MIN" ] || { echo "No release found"; exit 1; }
+          fi
+          if [ -n "$MIN" ]; then
+            [[ "$MIN" =~ ^[0-9]+$ ]] || { echo "min_version must be a number, latest or empty"; exit 1; }
+            put app_min_version "$MIN"
+          fi
+          BLOCKED=$(echo "$BLOCKED" | tr -d ' ')
+          if [ "$BLOCKED" = "none" ]; then put app_blocked ""
+          elif [ -n "$BLOCKED" ]; then
+            [[ "$BLOCKED" =~ ^[0-9]+(,[0-9]+)*$ ]] || { echo "blocked must look like 71,72"; exit 1; }
+            put app_blocked "$BLOCKED"
+          fi
+          case "$ALL_OFF" in
+            on*) put app_off "1" ;;
+            off*) put app_off "0" ;;
+          esac
+          echo "Now on the server:"
+          curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API/$ID/query" \
+            --data "$(jq -n '{sql: "SELECT key, value FROM settings WHERE key IN (?1, ?2, ?3)", params: ["app_min_version", "app_blocked", "app_off"]}')" \
+            | jq -r '.result[0].results[] | "  \(.key) = \(.value)"'

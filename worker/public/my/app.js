@@ -1,4 +1,4 @@
-// Web Dashboard: the personal web dashboard of HINT.
+// Web Dashboard: the personal web dashboard of HINT 365.
 // Opened from the app already signed in (see worker/src/web.ts), or as a read-only link shared with the doctor (/s/...).
 // Each part of the dashboard is a module in MODULES: blood pressure now, lab results later. A module gets its data
 // from /my/api/data?module=<id> and draws itself in the page; sign-in, periods, sharing and export are shared by all.
@@ -25,16 +25,16 @@
     list: "Tutte le misure", cols: ["Data", "Ora", "Momento", "SYS", "DIA", "PUL", "Fonte"],
     per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" }, src: { photo: "Foto", voice: "Voce" },
     none: "Nessuna misura in questo periodo", noneMoment: "Nessuna misura in questo momento della giornata",
-    signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT vai su Report e tocca «Web Dashboard». Il browser si apre già collegato al tuo account.",
+    signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT 365 vai su Report e tocca «Web Dashboard». Il browser si apre già collegato al tuo account.",
     goneT: "Link scaduto", goneP: "Questo link non è più valido: è scaduto oppure è stato ritirato da chi l'ha inviato.",
     sharedB: (a, b, e) => `Report condiviso dal paziente: misure dal ${a} al ${b}. Link valido fino al ${e}.`,
     shTitle: "Invia il report al medico", shIntro: "Crea un link di sola lettura con le misure del periodo scelto. Chi lo riceve vede solo i grafici e le misure: niente email, niente account.",
     shValid: "Valido per", valid: { 1: "1 giorno", 7: "7 giorni", 30: "30 giorni" }, shMake: "Crea il link", shClose: "Chiudi",
     shCopy: "Copia", shCopied: "Copiato", shNative: "Altre app", shRevoke: "Ritira tutti i link inviati", shRevoked: "Tutti i link sono stati ritirati",
     shExp: (d) => `Il link smette di funzionare il ${d}.`,
-    shText: (a, b, url, e) => `Report della pressione (HINT), misure dal ${a} al ${b}: ${url} — link valido fino al ${e}.`,
+    shText: (a, b, url, e) => `Report della pressione (HINT 365), misure dal ${a} al ${b}: ${url} — link valido fino al ${e}.`,
     shSubject: "Report della pressione",
-    footNote: "HINT non fa diagnosi e non valuta i valori: ogni valutazione spetta al medico.",
+    footNote: "HINT 365 non fa diagnosi e non valuta i valori: ogni valutazione spetta al medico.",
     rights: "Tutti i diritti riservati", terms: "Condizioni d'uso",
     err: "Qualcosa non ha funzionato. Riprova.",
   } : {
@@ -51,16 +51,16 @@
     list: "All readings", cols: ["Date", "Time", "Moment", "SYS", "DIA", "PUL", "Source"],
     per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" }, src: { photo: "Photo", voice: "Voice" },
     none: "No readings in this period", noneMoment: "No readings at this time of day",
-    signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT app go to Report and tap “Web Dashboard”. The browser opens already signed in to your account.",
+    signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT 365 app go to Report and tap “Web Dashboard”. The browser opens already signed in to your account.",
     goneT: "Link expired", goneP: "This link no longer works: it has expired or was withdrawn by the person who sent it.",
     sharedB: (a, b, e) => `Report shared by the patient: readings from ${a} to ${b}. Link valid until ${e}.`,
     shTitle: "Send the report to your doctor", shIntro: "Creates a read-only link with the readings of the chosen period. Whoever gets it sees only the charts and readings: no email, no account.",
     shValid: "Valid for", valid: { 1: "1 day", 7: "7 days", 30: "30 days" }, shMake: "Create link", shClose: "Close",
     shCopy: "Copy", shCopied: "Copied", shNative: "Other apps", shRevoke: "Withdraw all links sent", shRevoked: "All links have been withdrawn",
     shExp: (d) => `The link stops working on ${d}.`,
-    shText: (a, b, url, e) => `Blood pressure report (HINT), readings from ${a} to ${b}: ${url} — link valid until ${e}.`,
+    shText: (a, b, url, e) => `Blood pressure report (HINT 365), readings from ${a} to ${b}: ${url} — link valid until ${e}.`,
     shSubject: "Blood pressure report",
-    footNote: "HINT makes no diagnosis and does not assess the values: every assessment is up to the doctor.",
+    footNote: "HINT 365 makes no diagnosis and does not assess the values: every assessment is up to the doctor.",
     rights: "All rights reserved", terms: "Terms of use",
     err: "Something went wrong. Please try again.",
   };

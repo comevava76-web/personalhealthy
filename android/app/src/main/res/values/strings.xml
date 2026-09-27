@@ -16,7 +16,7 @@
     <string name="activating">Activating…</string>
     <string name="setup_privacy">No name and no email: this phone gets an anonymous code, protected inside the phone itself.</string>
     <string name="share_app">Share the app</string>
-    <string name="share_app_text">I use HINT, a blood-pressure diary: you photograph the monitor or say the values, and it prepares the report for the doctor. Download it for Android: %1$s — open the file, allow the installation, then tap \"Sign in with Google\".</string>
+    <string name="share_app_text">I use HINT 365, a blood-pressure diary: you photograph the monitor or say the values, and it prepares the report for the doctor. Download it for Android: %1$s — open the file, allow the installation, then tap \"Sign in with Google\".</string>
     <string name="google_intro">Sign in with your Google account. It is used only to create your diary and to find it again if you change phone. Every day the app opens with your fingerprint or face.</string>
     <string name="privacy_title">Your data</string>
     <string name="privacy_note">What is saved: an encrypted fingerprint of your Google account, without the email (only to find your diary again), your readings with their date and time, and whether each came from a photo or your voice. Photos of the monitor are sent to Anthropic to read the numbers and are not kept by this app. Data is stored on Cloudflare servers in the European Union; other users cannot see it; the person who runs the service can reach the database only for maintenance. You can delete your account and all your data at any time from the Admin tab.</string>
@@ -42,7 +42,7 @@
     <string name="err_phone_in_use">This phone holds another diary with readings: delete that account first.</string>
     <string name="err_consent_required">Accept the note about your data first.</string>
     <string name="err_admin_delete">The app manager cannot delete their account.</string>
-    <string name="lock_prompt_title">Unlock HINT</string>
+    <string name="lock_prompt_title">Unlock HINT 365</string>
     <string name="lock_prompt_sub">Fingerprint, face or your phone\'s screen lock</string>
     <string name="lock_text">Your readings are protected with the phone\'s fingerprint, face or screen lock.</string>
     <string name="lock_unlock">Unlock</string>
@@ -105,7 +105,7 @@
     <string name="period_avg">Period average</string>
     <string name="avg_day">Day average</string>
     <string name="avg_evening_label">Evening average</string>
-    <string name="camera_permission">To photograph the monitor, allow HINT to use the camera.</string>
+    <string name="camera_permission">To photograph the monitor, allow HINT 365 to use the camera.</string>
     <string name="n_in_days">%1$d readings on %2$d days</string>
     <string name="avg_pulse">Average PUL</string>
     <string name="per_minute">per minute</string>
@@ -125,7 +125,7 @@
     <string name="balance_updated">Balance updated</string>
     <string name="notif_user_hint">Let the app manager know.</string>
     <string name="reminder_channel">Measurement reminders</string>
-    <string name="reminder_title" translatable="false">HINT</string>
+    <string name="reminder_title" translatable="false">HINT 365</string>
     <string name="reminder_morning">Good morning! Remember to measure your blood pressure.</string>
     <string name="reminder_evening">Good evening! Remember to measure your blood pressure.</string>
     <string name="pdf_title">Blood pressure</string>
@@ -183,7 +183,7 @@
     <string name="voice_retry">Say again</string>
     <string name="voice_not_understood">I did not understand the numbers. Try again: SYS, DIA and PUL.</string>
     <string name="listening">Listening…</string>
-    <string name="voice_permission">To say the values aloud, allow HINT to use the microphone.</string>
+    <string name="voice_permission">To say the values aloud, allow HINT 365 to use the microphone.</string>
     <string name="voice_network">Speech recognition needs the internet. Check the connection and try again.</string>
     <string name="voice_missing">I heard only %1$s: a number is missing. Say all three: SYS, DIA and PUL.</string>
     <string name="voice_sub">Acquired by voice: check the numbers</string>
@@ -230,9 +230,9 @@
     <string name="key_step0_title">Create an Anthropic account</string>
     <string name="key_step0_text">Anthropic is the artificial-intelligence company that reads the photos. Sign up with your email: it is free.</string>
     <string name="key_step0_button">Open Anthropic and sign up</string>
-    <string name="welcome_title">Welcome to HINT</string>
+    <string name="welcome_title">Welcome to HINT 365</string>
     <string name="welcome_sub">Your blood-pressure diary</string>
-    <string name="welcome_what">HINT records your blood-pressure readings (SYS, DIA and PUL) with date and time, shows them in tables and charts and prepares the report for the doctor. You can record them in two ways:</string>
+    <string name="welcome_what">HINT 365 records your blood-pressure readings (SYS, DIA and PUL) with date and time, shows them in tables and charts and prepares the report for the doctor. You can record them in two ways:</string>
     <string name="welcome_voice_title">🎤 Record by voice: free</string>
     <string name="welcome_voice_text">Tap Record and say the three values. It works right away, with nothing else.</string>
     <string name="welcome_scan_title">📷 Scan the photo: optional</string>
@@ -291,11 +291,11 @@
     <string name="pdf_avg_of">average of %1$d readings</string>
     <string name="pdf_none_moment">No readings at this time of day</string>
     <string name="disc_title">Terms of use and notice</string>
-    <string name="disc_body">What HINT is\nHINT only helps you note, keep and show in charts and tables the values you measure yourself with your own device. Nothing more.\n\nIt is not a medical device\nHINT measures nothing, does not interpret the data, makes no diagnosis, gives no advice, suggests no treatment and never says whether a value is normal or not.\n\nOnly your doctor decides\nEvery assessment, and every decision to start, change or stop a medicine, belongs only to your doctor. HINT\'s data are only meant to be shown to your doctor. Never change a treatment because of the app.\n\nEmergencies\nIf you feel unwell, have symptoms or values that worry you, do not rely on the app: call your doctor or the emergency number (144 in Switzerland, 112 in Europe).\n\nYou are responsible for the accuracy of the data\nYou enter the values, by voice, from a photo or by hand, and you are responsible for them. The automatic reading of photos and voice can be wrong: check every value before saving it and before sharing it.\n\nPersonal use and phone security\nHINT is for personal, non-commercial use: enter only your own values, or those of a person who has given you their consent. Anyone who can open your phone can see your data: protect it with a screen lock and fingerprint. Do not use the app unlawfully or in a way that disrupts it.\n\nCost of reading photos\nReading photos is optional and uses your own Anthropic key: the cost is charged by Anthropic to your account, under its terms. HINT collects no money. The balance, photos left and cost per photo shown in the app are estimates: only your Anthropic account is authoritative.\n\nWhere your data is\nYour readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. HINT does not save your email: of your Google account it keeps only an encrypted fingerprint, which cannot be turned back into the account or the email, and which finds your data again when you sign in. The email stays only on your phone. As long as the service is running you can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel: we suggest you do so now and then. The data are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and HINT does not keep it. Readings are kept for at most 365 days: every day, those older than one year are deleted automatically, and they disappear from the database backups within 30 days. To keep them longer, export them to PDF or Excel. You can delete your readings or your whole account whenever you like, from the app. The details are in the privacy policy.\n\nProviders and their terms\nHINT relies on services of other companies, each with its own terms, which we invite you to read. Cloudflare: server and database in Europe; photos and files only pass through it to be processed, without being saved (cloudflare.com/privacypolicy). Anthropic: reading of the photos with your own key (anthropic.com/legal/commercial-terms and anthropic.com/legal/privacy). Google: Sign in with Google and the phone\'s speech recognition (policies.google.com/privacy). For what these services do, their terms apply, not HINT\'s.\n\nNo warranty, no liability\nThe app is provided as is, without warranty of any kind, including continuous operation, delivery of reminders or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, from costs charged by providers and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.\n\nChanges and end of the service\nThe author may change, suspend or close the app and the service, also without notice. When these terms change, the app shows the new version and asks you to accept it again: without acceptance the app does not open. You can stop using HINT and delete your account at any time.\n\nGoverning law\nThese terms are governed by Swiss law, without prejudice to the mandatory consumer protection rules of the country where you live. If a clause turns out to be invalid, the others remain valid.\n\nYour acceptance is recorded\nBy tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood these terms of use and notice and that you accept them. Your acceptance (anonymous account code, fingerprint of the phone, version and fingerprint of the accepted text, date and time) is saved in HINT\'s database on Cloudflare, in the European Union, in a separate register that can only be added to and never changed. It is the only thing kept beyond 365 days and also after your account is deleted, as proof.</string>
+    <string name="disc_body">What HINT 365 is\nHINT 365 only helps you note, keep and show in charts and tables the values you measure yourself with your own device. Nothing more.\n\nIt is not a medical device\nHINT 365 measures nothing, does not interpret the data, makes no diagnosis, gives no advice, suggests no treatment and never says whether a value is normal or not.\n\nOnly your doctor decides\nEvery assessment, and every decision to start, change or stop a medicine, belongs only to your doctor. HINT 365\'s data are only meant to be shown to your doctor. Never change a treatment because of the app.\n\nEmergencies\nIf you feel unwell, have symptoms or values that worry you, do not rely on the app: call your doctor or the emergency number (144 in Switzerland, 112 in Europe).\n\nYou are responsible for the accuracy of the data\nYou enter the values, by voice, from a photo or by hand, and you are responsible for them. The automatic reading of photos and voice can be wrong: check every value before saving it and before sharing it.\n\nPersonal use and phone security\nHINT 365 is for personal, non-commercial use: enter only your own values, or those of a person who has given you their consent. Anyone who can open your phone can see your data: protect it with a screen lock and fingerprint. Do not use the app unlawfully or in a way that disrupts it.\n\nCost of reading photos\nReading photos is optional and uses your own Anthropic key: the cost is charged by Anthropic to your account, under its terms. HINT 365 collects no money. The balance, photos left and cost per photo shown in the app are estimates: only your Anthropic account is authoritative.\n\nWhere your data is\nYour readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT 365 does not ask for or keep your name, address or phone number. HINT 365 does not save your email: of your Google account it keeps only an encrypted fingerprint, which cannot be turned back into the account or the email, and which finds your data again when you sign in. The email stays only on your phone. As long as the service is running you can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel: we suggest you do so now and then. The data are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and HINT 365 does not keep it. Readings are kept for at most 365 days: every day, those older than one year are deleted automatically, and they disappear from the database backups within 30 days. To keep them longer, export them to PDF or Excel. You can delete your readings or your whole account whenever you like, from the app. The details are in the privacy policy.\n\nProviders and their terms\nHINT 365 relies on services of other companies, each with its own terms, which we invite you to read. Cloudflare: server and database in Europe; photos and files only pass through it to be processed, without being saved (cloudflare.com/privacypolicy). Anthropic: reading of the photos with your own key (anthropic.com/legal/commercial-terms and anthropic.com/legal/privacy). Google: Sign in with Google and the phone\'s speech recognition (policies.google.com/privacy). For what these services do, their terms apply, not HINT 365\'s.\n\nNo warranty, no liability\nThe app is provided as is, without warranty of any kind, including continuous operation, delivery of reminders or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, from costs charged by providers and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.\n\nChanges and end of the service\nThe author may change, suspend or close the app and the service, also without notice. These terms are shown at the first installation, at every update of the app and whenever they change, and must be accepted each time: without acceptance the app does not open. The author may also switch off a version of the app remotely, for example because of a security problem: the app then does not open until you install the updated version. You can stop using HINT 365 and delete your account at any time.\n\nGoverning law\nThese terms are governed by Swiss law, without prejudice to the mandatory consumer protection rules of the country where you live. If a clause turns out to be invalid, the others remain valid.\n\nYour acceptance is recorded\nBy tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood these terms of use and notice and that you accept them. Your acceptance (anonymous account code, fingerprint of the phone, version and fingerprint of the accepted text, date and time) is saved in HINT 365\'s database on Cloudflare, in the European Union, in a separate register that can only be added to and never changed. It is the only thing kept beyond 365 days and also after your account is deleted, as proof.</string>
     <string name="disc_accept">I understand and accept</string>
     <string name="disc_decline">I do not accept</string>
     <string name="disc_check">I have read and understood the terms of use and notice</string>
-    <string name="disc_declined">Without your acceptance HINT cannot be used. You can read the notice again and accept it whenever you like.</string>
+    <string name="disc_declined">Without your acceptance HINT 365 cannot be used. You can read the notice again and accept it whenever you like.</string>
     <string name="disc_legal">Terms of use</string>
     <string name="disc_accepted_on">Accepted on %1$s</string>
     <string name="disc_lang" translatable="false">en</string>
@@ -319,8 +319,20 @@
     <string name="credit_state_ok">Available</string>
     <string name="credit_state_empty">Used up</string>
     <string name="credit_state_key">Key?</string>
-    <string name="credit_spent">Spent with HINT</string>
-    <string name="credit_how">Anthropic lets no app read the balance. HINT asks Anthropic whether there is credit (Scan switches on only when it says yes) and adds up exactly what you spent on photos. The exact balance is on your Anthropic page: “Top up” opens it.</string>
+    <string name="credit_spent">Spent with HINT 365</string>
+    <string name="credit_how">Anthropic lets no app read the balance. HINT 365 asks Anthropic whether there is credit (Scan switches on only when it says yes) and adds up exactly what you spent on photos. The exact balance is on your Anthropic page: “Top up” opens it.</string>
     <string name="version_standard">Standard version</string>
     <string name="version_premium">Premium version ✦</string>
+    <string name="app_off_title">This version of HINT 365 has been switched off</string>
+    <string name="app_off_text">Version %1$s can no longer be used. Install the latest one: it goes over this one and your readings stay safe on the server. When it opens, you will be asked to accept the terms again.</string>
+    <string name="app_off_download">Download the latest version</string>
+    <string name="section_versions">App versions</string>
+    <string name="versions_state">This app: %1$d · lowest allowed: %2$s</string>
+    <string name="versions_how">Apps installed with an older version stop working at once and show only the page to download the latest one. Their data are not touched.</string>
+    <string name="versions_off_older">Switch off older versions</string>
+    <string name="versions_all_on">Let every version work again</string>
+    <string name="versions_off_q">Every app below version %1$d stops working now, on every phone, until the latest one is installed.</string>
+    <string name="versions_on_q">Every installed version works again.</string>
+    <string name="versions_saved">Done</string>
+    <string name="versions_confirm">Confirm</string>
 </resources>

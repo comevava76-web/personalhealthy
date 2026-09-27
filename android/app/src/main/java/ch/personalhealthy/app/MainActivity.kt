@@ -297,15 +297,28 @@ fun App() {
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
 
-    // the notice: accepted on this phone (remembered here) or already on the server (another phone, earlier)
+    // the notice is binding and accepted once per installed version: at the first installation, after every update
+    // of the app and whenever its text changes. Remembered as "text version @ app version".
+    val noticeKey = DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
     var checkingAi by remember { mutableStateOf(false) }
-    val needsNotice = noticeLocal != DISCLAIMER_VERSION && me?.disclaimerOk != true
-    LaunchedEffect(me?.disclaimerOk) {
-        if (me?.disclaimerOk == true && noticeLocal != DISCLAIMER_VERSION) {
-            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply(); noticeLocal = DISCLAIMER_VERSION
+    val needsNotice = noticeLocal != noticeKey
+
+    // switched off remotely: remembered, so that without a connection the app stays closed too
+    LaunchedEffect(Unit) {
+        if (prefs.getInt("appOff", 0) == BuildConfig.VERSION_CODE) AppGate.disabled = true
+    }
+    LaunchedEffect(AppGate.disabled) {
+        if (AppGate.disabled) prefs.edit().putInt("appOff", BuildConfig.VERSION_CODE).apply()
+    }
+    fun checkAppGate() = scope.launch {
+        when (Repo.appAllowed()) {
+            false -> AppGate.disabled = true
+            true -> if (AppGate.disabled) { AppGate.disabled = false; prefs.edit().remove("appOff").apply() }
+            null -> {}
         }
+        Unit
     }
 
     fun reload() {
@@ -365,6 +378,7 @@ fun App() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             // back in the app: fresh readings and credit (there is no refresh button)
+            if (event == Lifecycle.Event.ON_RESUME) checkAppGate()
             if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
             if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
                 rechargePending = false
@@ -451,6 +465,8 @@ fun App() {
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         when {
+            // a version switched off remotely: only the way to the latest one
+            AppGate.disabled -> AppOffScreen()
             personId == null -> SetupScreen { pid ->
                 prefs.edit().putString("personId", pid).apply()
                 personId = pid
@@ -468,8 +484,8 @@ fun App() {
                                 pid, DISCLAIMER_VERSION, t(R.string.disc_lang), t(R.string.disc_title) + "\n\n" + t(R.string.disc_body),
                                 info.versionName ?: "", Build.MANUFACTURER + " " + Build.MODEL
                             )
-                            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply()
-                            noticeLocal = DISCLAIMER_VERSION
+                            prefs.edit().putString("noticeAccepted", noticeKey).apply()
+                            noticeLocal = noticeKey
                             reload()
                         } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                         noticeBusy = false
@@ -592,6 +608,13 @@ fun App() {
                         })
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
+                            onAppMinVersion = { v ->
+                                val pid = personId ?: return@CreditScreen
+                                scope.launch {
+                                    try { Repo.setAppMinVersion(pid, v); reload(); toast(ctx, t(R.string.versions_saved)) }
+                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                }
+                            },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             // after a recharge on Anthropic: ask Anthropic again, Scan follows the answer
@@ -963,6 +986,22 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** This version was switched off remotely: nothing works until the latest one is installed. The data stay on the server. */
+@Composable
+fun AppOffScreen() {
+    val ctx = LocalContext.current
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        BrandHeader()
+        Spacer(Modifier.height(24.dp))
+        Text(t(R.string.app_off_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Panel { Text(t(R.string.app_off_text, BuildConfig.VERSION_NAME), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp) }
+        BigButton(t(R.string.app_off_download)) {
+            try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(DOWNLOAD_URL))) }
+            catch (_: Exception) { toast(ctx, t(R.string.no_browser)) }
+        }
     }
 }
 
@@ -1596,9 +1635,10 @@ fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit, onAppMinVersion: (Int) -> Unit = {}
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
+    var appOffAsk by remember { mutableStateOf<Int?>(null) }   // administrator: the minimum version waiting for confirmation
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.tab_credit))
@@ -1687,7 +1727,33 @@ fun CreditScreen(
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
             }
         }
+
+        // App versions (administrator): switch off the apps installed with older versions, or let them all work again
+        if (me.isAdmin) {
+            SectionTitle(t(R.string.section_versions))
+            val mine = BuildConfig.VERSION_CODE
+            Panel {
+                Text(t(R.string.versions_state, mine, if (me.appMinVersion > 0) me.appMinVersion.toString() else "—"), color = C.Ink, fontSize = 14.sp)
+                Text(t(R.string.versions_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            if (me.appMinVersion < mine)
+                BigButton(t(R.string.versions_off_older), color = C.Surface2, textColor = C.Ink) { appOffAsk = mine }
+            if (me.appMinVersion > 0)
+                TextButton(onClick = { appOffAsk = 0 }, modifier = Modifier.fillMaxWidth()) {
+                    Text(t(R.string.versions_all_on), color = C.Muted, fontSize = 13.sp)
+                }
+        }
         Colophon(onTerms)
+    }
+    appOffAsk?.let { v ->
+        AlertDialog(
+            onDismissRequest = { appOffAsk = null },
+            title = { Text(t(if (v > 0) R.string.versions_off_older else R.string.versions_all_on)) },
+            text = { Text(if (v > 0) t(R.string.versions_off_q, v) else t(R.string.versions_on_q)) },
+            confirmButton = { TextButton(onClick = { appOffAsk = null; onAppMinVersion(v) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
+            dismissButton = { TextButton(onClick = { appOffAsk = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
+        )
     }
     if (signOutAsk) AlertDialog(
         onDismissRequest = { signOutAsk = false },

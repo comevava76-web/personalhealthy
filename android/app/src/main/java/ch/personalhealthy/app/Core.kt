@@ -8,6 +8,9 @@ import android.graphics.Matrix
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,7 +51,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "7"
+const val DISCLAIMER_VERSION = "8"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -148,7 +151,9 @@ data class Me(
     val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false,
     val disclaimerOk: Boolean = true,
     /** The AI as Anthropic last answered: "ok", "no_credit", "invalid", or "none" (no key). Scan is on only when "ok". */
-    val aiStatus: String = "ok", val aiCheckedAt: Long? = null
+    val aiStatus: String = "ok", val aiCheckedAt: Long? = null,
+    /** Administrator only: apps below this version are switched off (0 = none). */
+    val appMinVersion: Int = 0
 ) {
     val selfPays: Boolean get() = pays == "self"
     /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
@@ -287,8 +292,14 @@ object Keys {
 
 class ApiException(val code: String) : Exception(errorText(code))
 
+/** This version of the app switched off remotely: the app shows only the page to install the latest one. */
+object AppGate {
+    var disabled by mutableStateOf(false)
+}
+
 fun errorText(code: String): String = when (code) {
     "bad_clock" -> t(R.string.err_bad_clock)
+    "app_disabled" -> t(R.string.app_off_title)
     "family_code" -> t(R.string.err_family_code)
     "invite_used" -> t(R.string.err_invite_used)
     "invite_expired" -> t(R.string.err_invite_expired)
@@ -345,6 +356,7 @@ object Api {
                 c.setRequestProperty("X-Ts", ts)
                 c.setRequestProperty("X-Sig", sig)
                 c.setRequestProperty("X-Lang", Locale.getDefault().language)
+                c.setRequestProperty("X-App-Version", BuildConfig.VERSION_CODE.toString())
                 if (personId != null) c.setRequestProperty("X-Person", personId)
                 if (body != null) {
                     c.doOutput = true
@@ -355,7 +367,11 @@ object Api {
                 val stream = if (code in 200..299) c.inputStream else c.errorStream
                 val txt = stream?.bufferedReader()?.use { it.readText() } ?: ""
                 val j = try { JSONObject(txt) } catch (e: Exception) { JSONObject() }
-                if (code !in 200..299) throw ApiException(j.optString("code", if (code >= 500) "server" else "generic"))
+                if (code !in 200..299) {
+                    val err = j.optString("code", if (code >= 500) "server" else "generic")
+                    if (err == "app_disabled") AppGate.disabled = true
+                    throw ApiException(err)
+                }
                 j
             } catch (e: ApiException) {
                 throw e
@@ -434,9 +450,26 @@ object Repo {
             j.optString("pays", "owner"), j.optBoolean("hasKey", false),
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
             j.optBoolean("disclaimerOk", true),
-            j.optString("aiStatus", "ok"), if (j.isNull("aiCheckedAt") || !j.has("aiCheckedAt")) null else j.optLong("aiCheckedAt")
+            j.optString("aiStatus", "ok"), if (j.isNull("aiCheckedAt") || !j.has("aiCheckedAt")) null else j.optLong("aiCheckedAt"),
+            j.optInt("appMinVersion", 0)
         )
     }
+
+    /** Is this version of the app still allowed? Asked when the app opens. null = no answer (offline): nothing changes. */
+    suspend fun appAllowed(): Boolean? = withContext(Dispatchers.IO) {
+        try {
+            val c = URL(BuildConfig.API_URL.trimEnd('/') + "/v1/app-status?v=" + BuildConfig.VERSION_CODE).openConnection() as HttpURLConnection
+            c.connectTimeout = 10000; c.readTimeout = 10000
+            try {
+                if (c.responseCode != 200) null
+                else JSONObject(c.inputStream.bufferedReader().use { it.readText() }).optBoolean("ok", true)
+            } finally { c.disconnect() }
+        } catch (e: Exception) { null }
+    }
+
+    /** Administrator: switch off every app below [minVersion] (0 = let them all work again). */
+    suspend fun setAppMinVersion(pid: String, minVersion: Int): Int =
+        Api.call("POST", "/v1/admin/app-min-version", JSONObject().put("minVersion", minVersion), pid).optInt("appMinVersion", minVersion)
 
     /** action = "topup" (add a top-up) or "set" (set the current balance), always on this person's own pool */
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {

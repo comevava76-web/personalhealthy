@@ -15,7 +15,7 @@
     <string name="activating">Activation…</string>
     <string name="setup_privacy">Ni nom ni e-mail : le téléphone reçoit un code anonyme, protégé dans le téléphone lui-même.</string>
     <string name="share_app">Partager l\'app</string>
-    <string name="share_app_text">J\'utilise HINT, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
+    <string name="share_app_text">J\'utilise HINT 365, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
     <string name="privacy_title">Vos données</string>
     <string name="privacy_note">Ce qui est enregistré : une empreinte chiffrée de votre compte Google, sans e-mail (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Admin.</string>
@@ -41,7 +41,7 @@
     <string name="err_phone_in_use">Ce téléphone contient un autre journal avec des mesures : supprimez d\'abord ce compte.</string>
     <string name="err_consent_required">Acceptez d\'abord la note sur vos données.</string>
     <string name="err_admin_delete">Qui gère l\'app ne peut pas supprimer son propre compte.</string>
-    <string name="lock_prompt_title">Déverrouiller HINT</string>
+    <string name="lock_prompt_title">Déverrouiller HINT 365</string>
     <string name="lock_prompt_sub">Empreinte, visage ou verrouillage de l\'écran du téléphone</string>
     <string name="lock_text">Vos mesures sont protégées par l\'empreinte, le visage ou le verrouillage de l\'écran du téléphone.</string>
     <string name="lock_unlock">Déverrouiller</string>
@@ -104,7 +104,7 @@
     <string name="period_avg">Moyenne de la période</string>
     <string name="avg_day">Moyenne du jour</string>
     <string name="avg_evening_label">Moyenne du soir</string>
-    <string name="camera_permission">Pour photographier le tensiomètre, autorisez HINT à utiliser l\'appareil photo.</string>
+    <string name="camera_permission">Pour photographier le tensiomètre, autorisez HINT 365 à utiliser l\'appareil photo.</string>
     <string name="n_in_days">%1$d mesures sur %2$d jours</string>
     <string name="avg_pulse">PUL moyen</string>
     <string name="per_minute">par minute</string>
@@ -181,7 +181,7 @@
     <string name="voice_retry">Redire</string>
     <string name="voice_not_understood">Je n\'ai pas compris les nombres. Réessayez : SYS, DIA et PUL.</string>
     <string name="listening">Je vous écoute…</string>
-    <string name="voice_permission">Pour dicter les valeurs, autorisez HINT à utiliser le micro.</string>
+    <string name="voice_permission">Pour dicter les valeurs, autorisez HINT 365 à utiliser le micro.</string>
     <string name="voice_network">La reconnaissance vocale a besoin d\'internet. Vérifiez la connexion et réessayez.</string>
     <string name="voice_missing">J\'ai entendu seulement %1$s : il manque un nombre. Dites les trois : SYS, DIA et PUL.</string>
     <string name="voice_sub">Saisie à la voix : vérifiez les nombres</string>
@@ -228,9 +228,9 @@
     <string name="key_step0_title">Créer un compte Anthropic</string>
     <string name="key_step0_text">Anthropic est l\'entreprise d\'intelligence artificielle qui lit les photos. Inscrivez-vous avec votre e-mail : c\'est gratuit.</string>
     <string name="key_step0_button">Ouvrir Anthropic et s\'inscrire</string>
-    <string name="welcome_title">Bienvenue dans HINT</string>
+    <string name="welcome_title">Bienvenue dans HINT 365</string>
     <string name="welcome_sub">Votre journal de tension</string>
-    <string name="welcome_what">HINT enregistre vos mesures de tension (SYS, DIA et PUL) avec date et heure, les montre en tableaux et graphiques et prépare le rapport pour le médecin. Vous pouvez les enregistrer de deux façons :</string>
+    <string name="welcome_what">HINT 365 enregistre vos mesures de tension (SYS, DIA et PUL) avec date et heure, les montre en tableaux et graphiques et prépare le rapport pour le médecin. Vous pouvez les enregistrer de deux façons :</string>
     <string name="welcome_voice_title">🎤 À la voix : gratuit</string>
     <string name="welcome_voice_text">Touchez Dicter et dites les trois valeurs. Cela marche tout de suite, sans rien d\'autre.</string>
     <string name="welcome_scan_title">📷 Scanner la photo : facultatif</string>
@@ -294,4 +294,16 @@
     <string name="bal_none">Il faut des mesures le matin et le soir.</string>
     <string name="bal_same">Le matin et le soir ont la même moyenne.</string>
     <string name="bal_diff">Soir - matin : SYS %1$s · DIA %2$s mmHg</string>
+    <string name="app_off_title">Cette version de HINT 365 a été désactivée</string>
+    <string name="app_off_text">La version %1$s ne peut plus être utilisée. Installez la dernière : elle s\'installe par-dessus celle-ci et vos mesures restent en sécurité sur le serveur. À l\'ouverture, il vous sera demandé d\'accepter à nouveau les conditions.</string>
+    <string name="app_off_download">Télécharger la dernière version</string>
+    <string name="section_versions">Versions de l\'app</string>
+    <string name="versions_state">Cette app : %1$d · minimum autorisé : %2$s</string>
+    <string name="versions_how">Les apps installées avec une version plus ancienne cessent aussitôt de fonctionner et n\'affichent que la page pour télécharger la dernière. Leurs données ne sont pas touchées.</string>
+    <string name="versions_off_older">Désactiver les anciennes versions</string>
+    <string name="versions_all_on">Réactiver toutes les versions</string>
+    <string name="versions_off_q">Toutes les apps sous la version %1$d cessent maintenant de fonctionner, sur chaque téléphone, jusqu\'à l\'installation de la dernière.</string>
+    <string name="versions_on_q">Toutes les versions installées fonctionnent à nouveau.</string>
+    <string name="versions_saved">C\'est fait</string>
+    <string name="versions_confirm">Confirmer</string>
 </resources>
