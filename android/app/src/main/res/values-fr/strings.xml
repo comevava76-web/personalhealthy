@@ -54,7 +54,7 @@
     <string name="scan_cost_note">Scanner une photo utilise du crédit IA payant et facultatif (environ un demi-centime par photo). Tout le reste, voix comprise, est gratuit.</string>
     <string name="scan_needs_key_title">Le scan est facultatif</string>
     <string name="scan_needs_key_text">Lire les nombres sur la photo utilise l\'intelligence artificielle, payée avec votre crédit Anthropic (environ un demi-centime par photo). Vous pouvez l\'ajouter maintenant, ou dicter les valeurs, gratuitement.</string>
-    <string name="scan_needs_key_add">Ajouter du crédit IA</string>
+    <string name="scan_needs_key_add">Upgrade</string>
     <string name="scan_needs_key_voice">Utiliser la voix</string>
     <string name="last7">7 derniers jours</string>
     <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. SYS en haut, DIA en bas.</string>
@@ -224,11 +224,8 @@
     <string name="err_friend_no_credit">Votre crédit Anthropic est épuisé. Touchez Recharger pour ajouter de l\'argent.</string>
     <string name="err_friend_key_invalid">Anthropic n\'accepte pas votre clé. Touchez Remplacer la clé et collez-en une nouvelle.</string>
     <string name="err_key_test_failed">La clé n\'a pas pu être vérifiée pour l\'instant. Réessayez dans un moment.</string>
-    <string name="key_title">Lecture des photos (facultative)</string>
     <string name="key_title_replace">Remplacer votre clé</string>
     <string name="later">Plus tard</string>
-    <string name="key_how_title">Comment ça marche</string>
-    <string name="key_how_text">C\'est facultatif : toute l\'app est gratuite, voix comprise. Seule la lecture des nombres sur la photo utilise l\'intelligence artificielle d\'Anthropic : environ un demi-centime par photo, payé par vous avec votre crédit prépayé Anthropic. Personne d\'autre ne paie vos photos et vous ne payez pas celles des autres.</string>
     <string name="step_fmt">%1$d. %2$s</string>
     <string name="key_step0_title">Créer un compte Anthropic</string>
     <string name="key_step0_text">Anthropic est l\'entreprise d\'intelligence artificielle qui lit les photos. Inscrivez-vous avec votre e-mail : c\'est gratuit.</string>
@@ -241,6 +238,13 @@
     <string name="welcome_scan_title">📷 Scanner la photo : facultatif</string>
     <string name="welcome_scan_text">Photographiez le tensiomètre et l\'intelligence artificielle lit les nombres. Cela coûte moins d\'un centime par photo, payé par vous avec votre propre clé Anthropic. Ce n\'est pas obligatoire : si vous n\'en avez pas besoin, continuez sans.</string>
     <string name="welcome_skip">Continuer sans scanner</string>
+    <string name="upgrade">Upgrade</string>
+    <string name="upgrade_sub">Avec votre propre clé Anthropic vous débloquez :</string>
+    <string name="upgrade_f1">📷 Scan des photos du tensiomètre</string>
+    <string name="upgrade_f2">📊 Tableau de bord web, à partager (bientôt)</string>
+    <string name="upgrade_f3">🧪 Analyses lues en tableaux et graphiques (bientôt)</string>
+    <string name="upgrade_cost">Environ 0,6 centime par photo lue, sur votre crédit Anthropic. Jamais de diagnostic : seulement vos données.</string>
+    <string name="welcome_later">Vous pouvez l\'activer à tout moment avec Upgrade.</string>
     <string name="welcome_steps_intro">Si vous voulez le scan, il suffit de 4 étapes :</string>
     <string name="key_step1_title">Ajouter du crédit</string>
     <string name="key_step1_text">Sur la page de facturation d\'Anthropic, chargez une petite somme. Quelques dollars suffisent pour des mois.</string>
@@ -258,8 +262,7 @@
     <string name="key_privacy">Votre clé est enregistrée chiffrée sur notre serveur et n\'est plus jamais affichée, même pas à vous. Seules vos photos l\'utilisent. Vous pouvez la remplacer ou la supprimer dans l\'onglet Admin.</string>
     <string name="key_saved">Clé vérifiée et enregistrée</string>
     <string name="key_deleted">Clé supprimée</string>
-    <string name="key_missing">Facultatif : ajoutez votre clé seulement si vous voulez lire les nombres sur les photos. Tout le reste est gratuit.</string>
-    <string name="add_my_key">Ajouter ma clé</string>
+    <string name="key_missing">Facultatif. Upgrade débloque le scan, le tableau de bord web et les analyses.</string>
     <string name="replace_key">Remplacer la clé</string>
     <string name="delete_key">Supprimer ma clé</string>
     <string name="delete_key_q">Supprimer votre clé ?</string>

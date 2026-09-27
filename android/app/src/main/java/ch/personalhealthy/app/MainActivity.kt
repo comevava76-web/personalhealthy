@@ -876,7 +876,7 @@ fun HomeScreen(
     onMeasure: () -> Unit, onVoice: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        BrandHeader()
+        BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null)
 
         // a friend who pays for their own photos has no key yet
         // not linked to Google yet: with a new phone this diary could not be found again
@@ -1176,13 +1176,21 @@ fun HintLogo(size: Dp = 30.dp) {
 
 /** Home title: logo, the HINT wordmark and the full name in small capitals-like spacing. */
 @Composable
-fun BrandHeader() {
+fun BrandHeader(onUpgrade: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         HintLogo()
         Spacer(Modifier.width(10.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text("HINT", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
             Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
+        }
+        // not upgraded yet: the way to the AI features stays in sight
+        if (onUpgrade != null) {
+            Text(
+                "✦ " + t(R.string.upgrade), color = C.Sys, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clip(RoundedCornerShape(50)).border(1.dp, C.Sys, RoundedCornerShape(50))
+                    .clickable(onClick = onUpgrade).padding(horizontal = 12.dp, vertical = 6.dp)
+            )
         }
     }
 }
@@ -1421,7 +1429,7 @@ fun CreditScreen(
         if (me.selfPays) {
             if (!me.hasKey) {
                 Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
-                BigButton(t(R.string.add_my_key), onClick = onKey)
+                BigButton("✦ " + t(R.string.upgrade), onClick = onKey)
             } else {
                 Panel { Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp) }
                 BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
