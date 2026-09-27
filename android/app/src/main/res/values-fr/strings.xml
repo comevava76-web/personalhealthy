@@ -238,7 +238,7 @@
     <string name="welcome_skip">Continuer sans scanner</string>
     <string name="upgrade">Activer l\'IA</string>
     <string name="upgrade_sub">Les fonctions IA sont facultatives. Avec votre propre crédit Anthropic, vous activez :</string>
-    <string name="upgrade_f1">📷 Scan des photos du tensiomètre</string>
+    <string name="upgrade_f1">📷 Scan du tensiomètre : déjà disponible</string>
     <string name="upgrade_f2">🧪 Scan de documents médicaux anonymisés : valeurs en tableaux et graphiques, aucun diagnostic (bientôt)</string>
     <string name="upgrade_cost">Vous payez Anthropic directement, à l\'usage et seulement quand vous utilisez l\'IA (environ 0,6 centime par photo). Rien ne va au propriétaire de HINT 365 : le crédit est à vous et vous pouvez l\'utiliser pour autre chose.</string>
     <string name="welcome_later">Vous pouvez l\'activer à tout moment avec Upgrade.</string>
@@ -345,7 +345,7 @@
     <string name="cost_app_what">HINT 365 : app, graphiques, rapports, Web Dashboard et conservation de vos mesures</string>
     <string name="cost_app_cost">5 $ par an</string>
     <string name="cost_app_to">Au propriétaire de l\'app, via Google Play. Résiliable à tout moment.</string>
-    <string name="cost_ai_what">Fonctions IA (facultatives) : Scan des photos, documents médicaux anonymisés</string>
+    <string name="cost_ai_what">Fonctions IA (facultatives) : Scan du tensiomètre, déjà disponible · documents médicaux anonymisés, bientôt</string>
     <string name="cost_ai_cost">À l\'usage, environ 0,006 $ par photo</string>
     <string name="cost_ai_to">À Anthropic, depuis votre crédit. Pas au propriétaire de l\'app.</string>
     <string name="costs_note">Sans IA, vous ne payez rien de plus. Le crédit Anthropic est à vous : vous le gérez chez Anthropic et pouvez l\'utiliser à d\'autres fins.</string>
