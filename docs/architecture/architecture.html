@@ -68,7 +68,7 @@
     <rect x="84" y="33" width="150" height="20" rx="4" class="b"/><text x="90" y="46" class="s">1 · Google (OAuth) once, then fingerprint</text>
     <rect x="84" y="57" width="150" height="20" rx="4" class="b" stroke="#6D5BD0" stroke-width="1.4"/><text x="90" y="70" class="s">2 · Terms accepted (recorded)</text>
     <rect x="84" y="81" width="72" height="24" rx="4" class="b"/><text x="90" y="92" class="s">3a · Voice</text><text x="90" y="100" class="s">included</text>
-    <rect x="162" y="81" width="72" height="24" rx="4" class="b"/><text x="168" y="92" class="s">3b · Display photo</text><text x="168" y="100" class="s">Upgrade · AI</text>
+    <rect x="162" y="81" width="72" height="24" rx="4" class="b"/><text x="168" y="92" class="s">3b · Display photo</text><text x="168" y="100" class="s">AI · own credit</text>
     <rect x="84" y="109" width="150" height="24" rx="4" class="b"/><text x="90" y="120" class="s">4 · Home, charts, 7-day Report</text><text x="90" y="128" class="s">A4 PDF · Excel · reminders 9:00 / 17:00</text>
     <!-- server -->
     <line x1="244" y1="75" x2="290" y2="75" class="l"/><line x1="290" y1="85" x2="244" y2="85" class="l"/>
@@ -111,18 +111,20 @@
         <li><b>Signs in with Google</b> once, through OAuth 2.0 / OpenID Connect (a signed ID token, never the password), and gives privacy consent.</li>
         <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (anonymous code, phone, versions, text fingerprint, date).</li>
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
-        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (Upgrade).</li>
+        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (AI features).</li>
         <li><b>Looks back</b>: last reading, the week, the Report with charts and tiles.</li>
         <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
       </ol>
     </div>
     <div>
-      <h2>Tiers</h2>
-      <div class="box">
-        <p><span class="tag free">BASE · 3 $ A YEAR</span> through Google Play, cancel any time: voice readings, charts, PDF and Excel reports, reminders, Web Dashboard, doctor links.</p>
-        <p style="margin:0"><span class="tag up">UPGRADE</span> scanning with AI: a photo of the monitor's display and, coming, medical documents (values into tables and charts). Uses the user's own Anthropic key: they pay Anthropic directly.</p>
-      </div>
+      <h2>Costs and who is paid</h2>
+      <table>
+        <tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
+        <tr><td>HINT 365: app, charts, reports, Web Dashboard, keeping the readings</td><td>5 $ a year, cancel any time</td><td>The app's owner, through Google Play</td></tr>
+        <tr><td>AI features, optional: Scan of photos, anonymous documents (coming)</td><td>Pay-per-use, ≈ 0.006 $ a photo</td><td>Anthropic, from the user's own credit</td></tr>
+      </table>
+      <p style="margin-top:1.5mm">One app; the AI features are on or off (never “Premium”). The Anthropic credit is the user's own.</p>
       <h2>Fixed rules</h2>
       <ul>
         <li>No diagnosis, no advice, no judgement of the values: no coloured zones, no “normal”.</li>
@@ -132,11 +134,11 @@
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
         <li>Scan is on only when Anthropic has just said yes (valid key, credit): a minimal request on opening if the last check is over an hour old, after every error and with “Check again”.</li>
         <li>Readings kept at most 365 days, deleted nightly; only the acceptances of the terms remain, as proof.</li>
-        <li>The owner pays only the server (free tier) and alone can switch installed apps off remotely; every user pays their own AI.</li>
+        <li>Only the owner can switch installed apps off remotely.</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.77</span><span>1 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.78</span><span>1 / 2</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
@@ -233,7 +235,7 @@
       <p>The dashboard is modular: lab reports will be a new module in <code>web.ts</code> and <code>app.js</code>, with sign-in, periods, sending and export already in place.</p>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.77</span><span>2 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.78</span><span>2 / 2</span></div>
 </section>
 </body>
 </html>

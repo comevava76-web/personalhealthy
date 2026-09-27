@@ -20,9 +20,12 @@
 - **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
   `app_min_version`, quelle in `app_blocked` o tutte con `app_off` (tabella `settings`). Si comanda dall'app (gestore) o da
   Actions → *App versions*. Non togliere questo controllo.
-- **Abbonamento**: 3 US$ all'anno via Google Play (`hint365_annual`), spento finché l'owner non lo accende; l'owner non paga.
+- **Abbonamento**: 5 US$ all'anno (costi dell'app e spazio delle misure) via Google Play (`hint365_annual`), spento finché l'owner non lo accende; l'owner non paga.
   Senza abbonamento valido solo il messaggio di cortesia per rinnovare; i dati restano. Del pagamento si salvano solo token,
   stato e scadenza. Solo l'owner (primo account, `is_admin`) può accendere l'abbonamento o disattivare versioni dell'app.
 - **Accesso e cookie dichiarati**: l'accesso è Sign in with Google (OAuth 2.0 / OpenID Connect) e va scritto così in condizioni,
   privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
   nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.
+- **Politica dei costi** (tabella in app, condizioni e home): l'app 5 $/anno al proprietario via Google Play; le funzionalità AI
+  sono facoltative, a consumo, pagate dall'utente ad Anthropic con il proprio credito (mai al proprietario). Mai chiamarle
+  «Standard/Premium»: si dice «funzionalità AI attive / non attive», «Attiva AI».
