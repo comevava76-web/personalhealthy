@@ -107,7 +107,11 @@
    * One chart: every reading at its own day and hour, one line per value, a soft gradient below it,
    * a dot on each reading, and a legend that shows the values under the cursor (the last reading otherwise).
    */
-  function lineChart(el, legend, items, keys) {
+  // The time axis must be honest: a day without readings takes as much room as any other day.
+  // The chart library spaces its points evenly, so the period is cut into 30-minute slots (empty slots are
+  // "whitespace"), from midnight of the first day to midnight after the last; each reading sits in its slot.
+  const SLOT = 1800;
+  function lineChart(el, legend, items, keys, range) {
     el.innerHTML = "";
     const pts = items.filter((r) => keys.some((k) => r[k] != null));
     // the pressure chart shows SYS and DIA only; the pulse has its own chart
@@ -116,11 +120,22 @@
       autoSize: true, ...theme(DARK),
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.06 } },
       // the whole period always fits the width: no sideways scrolling or zooming, at most 30 days
-      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 1, minBarSpacing: 0.5,
+      timeScale: { borderVisible: false, timeVisible: false, secondsVisible: false, rightOffset: 0, minBarSpacing: 0.01,
         fixLeftEdge: true, fixRightEdge: true, lockVisibleTimeRangeOnResize: true },
       localization: { locale: LOCALE, priceFormatter: (v) => String(Math.round(v)), timeFormatter: (t) => fTip.format(t * 1000) },
       handleScale: false, handleScroll: false,
     });
+    // the slots: every 30 minutes of the period; a reading goes in its slot, or the next free one
+    const start = Math.floor(chartTime(range.from) / 86400) * 86400;
+    const end = Math.floor(chartTime(range.to) / 86400) * 86400 + 86400;
+    const grid = [];
+    for (let t = start; t < end; t += SLOT) grid.push({ time: t, r: null });
+    for (const r of pts) {
+      let i = Math.min(grid.length - 1, Math.max(0, Math.floor((chartTime(r.t) - start) / SLOT)));
+      while (i < grid.length - 1 && grid[i].r) i++;
+      grid[i].r = r;
+    }
+    const bySlot = new Map(grid.filter((g) => g.r).map((g) => [g.time, g.r]));
     const series = {};
     // SYS on top: drawn last
     for (const k of [...keys].reverse()) {
@@ -132,11 +147,7 @@
         priceLineVisible: false, lastValueVisible: false,
         priceFormat: { type: "price", precision: 0, minMove: 1 },
       });
-      let prev = -1;
-      s.setData(pts.filter((r) => r[k] != null).map((r) => {
-        let t = chartTime(r.t); if (t <= prev) t = prev + 1; prev = t;     // two readings in the same second: keep both
-        return { time: t, value: r[k] };
-      }));
+      s.setData(grid.map((g) => (g.r && g.r[k] != null ? { time: g.time, value: g.r[k] } : { time: g.time })));
       series[k] = s;
     }
     chart.timeScale().fitContent();
@@ -150,9 +161,11 @@
     const lastVals = Object.fromEntries(keys.map((k) => [k, last[k]]));
     show(lastVals, when(last.t));
     chart.subscribeCrosshairMove((p) => {
-      if (!p.time || !p.seriesData.size) return show(lastVals, when(last.t));
-      const v = {}; for (const k of keys) { const d = p.seriesData.get(series[k]); v[k] = d ? d.value : null; }
-      show(v, fTip.format(p.time * 1000));
+      // the reading nearest to the finger or the mouse (empty slots in between do not count)
+      let r = null;
+      if (p.time != null) { let best = Infinity; for (const [t, x] of bySlot) { const d = Math.abs(t - p.time); if (d < best) { best = d; r = x; } } }
+      if (!r) return show(lastVals, when(last.t));
+      show(Object.fromEntries(keys.map((k) => [k, r[k]])), when(r.t));
     });
   }
 
@@ -196,10 +209,10 @@
           ` : `<div class="card"><div class="empty" style="height:200px">${T.none}</div></div>`}`;
         ctx.bindPills && ctx.bindPills();
         if (!n) return;
-        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"]);
-        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"]);
-        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"]);
-        lineChart($("ch-p"), $("lg-p"), items, ["pul"]);
+        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"], data);
+        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"], data);
+        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"], data);
+        lineChart($("ch-p"), $("lg-p"), items, ["pul"], data);
       },
       csv(items) {
         const rows = [T.cols.map((c, i) => (i === 3 || i === 4 ? c + " (mmHg)" : c))];
