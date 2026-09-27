@@ -3,6 +3,8 @@
 // All database access goes through the q() function: to move to PostgreSQL/Azure one day,
 // change q() and a few SQL expressions; the rest of the code stays the same.
 
+import { homePage, privacyPage } from "./pages";
+
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
 interface Env {
@@ -11,7 +13,8 @@ interface Env {
   FAMILY_CODE: string;          // still works as an invite for "family member (I pay)"
   KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
   MODEL?: string;
-  GOOGLE_CLIENT_ID?: string;   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
+  GOOGLE_CLIENT_ID?: string;
+  CONTACT_EMAIL?: string;      // shown on the privacy page (repository variable; empty = "the support email on Google's screen")   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
 }
@@ -329,6 +332,9 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/v1/health") return json({ ok: true });
+    // public pages, linked from Google's sign-in screen
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) return homePage();
+    if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "");
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
       return await handle(req, env, q, url);
