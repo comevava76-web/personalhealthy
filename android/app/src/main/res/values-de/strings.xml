@@ -238,7 +238,7 @@
     <string name="welcome_skip">Ohne Scannen weiter</string>
     <string name="upgrade">KI aktivieren</string>
     <string name="upgrade_sub">Die KI-Funktionen sind freiwillig. Mit deinem eigenen Anthropic-Guthaben schaltest du frei:</string>
-    <string name="upgrade_f1">📷 Fotos des Messgeräts scannen</string>
+    <string name="upgrade_f1">📷 Scan des Blutdruckmessgeräts: schon verfügbar</string>
     <string name="upgrade_f2">🧪 Scan von anonymisierten medizinischen Dokumenten: Werte in Tabellen und Grafiken, keine Diagnose (bald)</string>
     <string name="upgrade_cost">Du bezahlst Anthropic direkt, nach Verbrauch und nur, wenn du die KI nutzt (etwa 0,6 Cent pro Foto). Nichts davon geht an den Betreiber von HINT 365: Das Guthaben gehört dir und du kannst es auch für anderes nutzen.</string>
     <string name="welcome_later">Du kannst es jederzeit mit Upgrade einschalten.</string>
@@ -345,7 +345,7 @@
     <string name="cost_app_what">HINT 365: App, Grafiken, Berichte, Web Dashboard und Aufbewahrung deiner Messungen</string>
     <string name="cost_app_cost">5 $ pro Jahr</string>
     <string name="cost_app_to">Den Betreiber der App, über Google Play. Jederzeit kündbar.</string>
-    <string name="cost_ai_what">KI-Funktionen (freiwillig): Scan von Fotos, anonymisierte medizinische Dokumente</string>
+    <string name="cost_ai_what">KI-Funktionen (freiwillig): Scan des Messgeräts, schon verfügbar · anonymisierte medizinische Dokumente, bald</string>
     <string name="cost_ai_cost">Nach Verbrauch, etwa 0,006 $ pro Foto</string>
     <string name="cost_ai_to">Anthropic, aus deinem Guthaben. Nicht an den Betreiber der App.</string>
     <string name="costs_note">Ohne KI zahlst du nichts weiter. Das Anthropic-Guthaben gehört dir: Du verwaltest es bei Anthropic und kannst es auch anders nutzen.</string>
