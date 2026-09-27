@@ -259,7 +259,7 @@
     <string name="key_privacy">Dein Schlüssel wird verschlüsselt auf unserem Server gespeichert und nie wieder angezeigt, auch dir nicht. Nur deine Fotos nutzen ihn. Du kannst ihn im Tab Admin ersetzen oder löschen.</string>
     <string name="key_saved">Schlüssel geprüft und gespeichert</string>
     <string name="key_deleted">Schlüssel gelöscht</string>
-    <string name="key_missing">Optional. Upgrade schaltet Scannen, Web-Dashboard und Laborberichte frei.</string>
+    <string name="key_missing">Optional. Upgrade fügt das Scannen mit KI hinzu: das Display des Messgeräts und bald medizinische Dokumente.</string>
     <string name="replace_key">Schlüssel ersetzen</string>
     <string name="delete_key">Meinen Schlüssel löschen</string>
     <string name="delete_key_q">Schlüssel löschen?</string>

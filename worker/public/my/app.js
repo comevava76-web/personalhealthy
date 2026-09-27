@@ -91,7 +91,6 @@
   const rgba = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
   const charts = [];
   const DARK = { text: "#8C9BBA", grid: "rgba(40,58,98,0.55)", cross: "#5B6E96" };
-  const LIGHT = { text: "#5B6B88", grid: "#E3E9F1", cross: "#9FB0C8" };
 
   function theme(t) {
     return {
@@ -157,18 +156,7 @@
     });
   }
 
-  function recolor(t, dark) {
-    for (const c of charts) {
-      c.chart.applyOptions(theme(t));
-      for (const [k, s] of Object.entries(c.series)) {
-        const col = dark ? COL[k] : { sys: "#D63B45", dia: "#2B86C0", pul: "#C98A0A" }[k];
-        s.applyOptions({ lineColor: col, topColor: rgba(col, dark ? 0.26 : 0.14), bottomColor: rgba(col, 0),
-          crosshairMarkerBackgroundColor: col, crosshairMarkerBorderColor: dark ? "#0A1224" : "#fff" });
-      }
-    }
-  }
-  window.addEventListener("beforeprint", () => recolor(LIGHT, false));
-  window.addEventListener("afterprint", () => recolor(DARK, true));
+
 
   /* ---------- modules ---------- */
   const MODULES = {
@@ -322,15 +310,25 @@
     $("actions").hidden = false;
     $("modules").innerHTML = me.modules.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("");
     $("modules").onclick = (e) => { const id = e.target.dataset.m; if (!id || !MODULES[id]) return; current.module = id; [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id)); load(); };
-    $("btn-pdf").onclick = () => window.print();
+    $("btn-pdf").onclick = printReport;
     $("btn-csv").onclick = () => current.data && download(`hint-${current.module}-${current.days}d.csv`, MODULES[current.module].csv(current.data.items), "text/csv");
     $("btn-out").onclick = async () => { try { await api("/my/session", { method: "DELETE" }); } catch {} signedOut(); };
     setupShare();
     load();
   }
 
+  // PDF: the same A4 report as the app, built from the readings on screen, then the browser's "Save as PDF"
+  function printReport() {
+    if (!current.data || !window.HintReport) return;
+    window.HintReport.render($("print"), current.data);
+    setTimeout(() => window.print(), 50);
+  }
+
   async function startShared(token) {
-    $("actions").hidden = true;
+    // the doctor's view: only the PDF button
+    $("actions").hidden = false;
+    for (const id of ["btn-share", "btn-csv", "btn-out"]) $(id).hidden = true;
+    $("btn-pdf").onclick = printReport;
     try {
       const data = await api(`/s/${token}/data?module=bp`);
       const banner = `<div class="banner">${T.sharedB(date(data.from), date(data.to), date(data.expiresAt))}</div>`;
