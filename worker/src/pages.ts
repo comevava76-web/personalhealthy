@@ -74,7 +74,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Foto e voce</h3>
 <p>La foto del display viene inviata ad <strong>Anthropic</strong> (Claude) solo per leggere i numeri e non viene conservata da HINT. La voce viene trascritta dal riconoscimento vocale del telefono (di solito Google); a HINT arrivano solo i tre numeri.</p>
 <h3>Dove stanno i dati e chi li vede</h3>
-<p>Su server <strong>Cloudflare</strong>, con il database vincolato all'<strong>Unione Europea</strong>. Gli altri utenti non vedono i tuoi dati. Chi gestisce il servizio può accedere al database solo per manutenzione. Non vendiamo né cediamo i dati e non facciamo pubblicità.</p>
+<p>Su server <strong>Cloudflare</strong>, con il database vincolato all'<strong>Unione Europea</strong>. Gli altri utenti non vedono i tuoi dati. Chi gestisce il servizio può accedere al database solo per manutenzione. Non vendiamo né cediamo i dati e non facciamo pubblicità. Condizioni dei fornitori: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (condizioni)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
 <h3>Per quanto tempo</h3>
 <p>Finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Admin, "Elimina il mio account"). La cancellazione è immediata e definitiva. Resta solo la registrazione della tua accettazione delle <a href="/terms">avvertenze</a> (email, account, telefono, data e ora), conservata come prova.</p>
 <h3>Perché</h3>
@@ -99,7 +99,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Photos and voice</h3>
 <p>The photo of the display is sent to <strong>Anthropic</strong> (Claude) only to read the numbers, and is not kept by HINT. Speech is transcribed by the phone's speech recognition (usually Google); only the three numbers reach HINT.</p>
 <h3>Where the data is and who sees it</h3>
-<p>On <strong>Cloudflare</strong> servers, with the database bound to the <strong>European Union</strong>. Other users cannot see your data. The person who runs the service can reach the database only for maintenance. Data is not sold or shared, and there is no advertising.</p>
+<p>On <strong>Cloudflare</strong> servers, with the database bound to the <strong>European Union</strong>. Other users cannot see your data. The person who runs the service can reach the database only for maintenance. Data is not sold or shared, and there is no advertising. Providers' terms: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (terms)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
 <h3>How long</h3>
 <p>As long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Admin tab, "Delete my account"). Deletion is immediate and final. Only the record of your acceptance of the <a href="/terms">notice</a> (email, account, phone, date and time) is kept, as proof.</p>
 <h3>Why</h3>
@@ -109,7 +109,7 @@ export function privacyPage(contactEmail: string): Response {
 </div>`);
 }
 
-/** The notice every user accepts in the app before using it (version 3). Same text as in the app. */
+/** The notice every user accepts in the app before using it (version 4). Same text as in the app. */
 export function termsPage(): Response {
   return page("HINT · Avvertenze / Notice", `
 <h2>Avvertenze importanti</h2>
@@ -127,6 +127,8 @@ export function termsPage(): Response {
 <p>L&#x27;app è fornita così com&#x27;è, senza garanzie di alcun tipo, nemmeno di funzionamento continuo o di conservazione dei dati. Nei limiti massimi consentiti dalla legge, l&#x27;autore declina ogni responsabilità per danni diretti o indiretti derivanti dall&#x27;uso o dal mancato uso dell&#x27;app, da dati inesatti, incompleti o persi, e da qualsiasi decisione presa sulla base dei dati. Chi usa l&#x27;app se ne assume interamente la responsabilità.</p>
 <h3>Dove sono i tuoi dati</h3>
 <p>Le misure sono salvate su un cloud in Europa (Cloudflare, Unione Europea), legate a un codice anonimo dell&#x27;account e non al tuo nome: HINT non chiede e non conserva nome, cognome, indirizzo o telefono. L&#x27;email di Google serve solo per accedere e per ritrovare i dati. Puoi recuperarli in qualsiasi momento, su qualsiasi telefono, accedendo con Google, ed esportarli in PDF o Excel. Consiglio: se non vuoi che i dati siano riconducibili a te, registrati con un indirizzo Google che non contiene il tuo nome e cognome veri (per esempio non nome.cognome@gmail.com). Non vengono mai venduti né usati per pubblicità. Solo la foto del display viene inviata ad Anthropic per leggere i numeri, e non viene conservata.</p>
+<h3>Fornitori e loro condizioni</h3>
+<p>HINT si appoggia a servizi di altre aziende, ognuna con le proprie condizioni, che ti invitiamo a leggere. Cloudflare: server e database in Europa; le foto e i file ci passano solo per essere elaborati, senza essere salvati (<a href="https://www.cloudflare.com/privacypolicy">cloudflare.com/privacypolicy</a>). Anthropic: lettura delle foto con la tua chiave (<a href="https://www.anthropic.com/legal/commercial-terms">anthropic.com/legal/commercial-terms</a> e <a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a>). Google: accesso con Google e riconoscimento vocale del telefono (<a href="https://policies.google.com/privacy">policies.google.com/privacy</a>). Per quello che fanno questi servizi valgono le loro condizioni, non quelle di HINT.</p>
 <h3>La tua accettazione viene registrata</h3>
 <p>Toccando «Prendo atto e accetto» confermi di avere almeno 18 anni, di aver letto e compreso queste avvertenze e di accettarle. Conserviamo la tua accettazione (email, account, telefono, versione del testo, data e ora) come prova, anche dopo un&#x27;eventuale cancellazione dell&#x27;account.</p>
 <hr>
@@ -145,8 +147,10 @@ export function termsPage(): Response {
 <p>The app is provided as is, without warranty of any kind, including continuous operation or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.</p>
 <h3>Where your data is</h3>
 <p>Your readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. Your Google email is only used to sign in and to find your data again. You can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel. Tip: if you do not want the data to be traceable to you, sign up with a Google address that does not contain your real name (for example not name.surname@gmail.com). They are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and it is not kept.</p>
+<h3>Providers and their terms</h3>
+<p>HINT relies on services of other companies, each with its own terms, which we invite you to read. Cloudflare: server and database in Europe; photos and files only pass through it to be processed, without being saved (<a href="https://www.cloudflare.com/privacypolicy">cloudflare.com/privacypolicy</a>). Anthropic: reading of the photos with your own key (<a href="https://www.anthropic.com/legal/commercial-terms">anthropic.com/legal/commercial-terms</a> and <a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a>). Google: Sign in with Google and the phone&#x27;s speech recognition (<a href="https://policies.google.com/privacy">policies.google.com/privacy</a>). For what these services do, their terms apply, not HINT&#x27;s.</p>
 <h3>Your acceptance is recorded</h3>
 <p>By tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood this notice and that you accept it. We keep your acceptance (email, account, phone, version of the text, date and time) as proof, also after your account is deleted.</p>
-<p class="muted">Versione 3 · Version 3</p>
+<p class="muted">Versione 4 · Version 4</p>
 <p><a href="/">HINT</a> · <a href="/privacy">Privacy</a></p>`);
 }
