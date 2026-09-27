@@ -168,7 +168,7 @@
     <string name="tab_report">Rapport</string>
     <string name="tab_credit">Admin</string>
     <string name="section_credits">Crédits</string>
-    <string name="section_token">Jeton</string>
+    <string name="section_token">Fonctions IA</string>
     <string name="section_db">Base des mesures</string>
     <string name="section_identity">Identité</string>
     <string name="db_count">%1$d mesures enregistrées</string>
@@ -298,11 +298,11 @@
     <string name="app_off_text">La version %1$s ne peut plus être utilisée. Installez la dernière : elle s\'installe par-dessus celle-ci et vos mesures restent en sécurité sur le serveur. À l\'ouverture, il vous sera demandé d\'accepter à nouveau les conditions.</string>
     <string name="app_off_download">Télécharger la dernière version</string>
     <string name="section_versions">Versions de l\'app</string>
-    <string name="versions_state">Cette app : %1$d · minimum autorisé : %2$s</string>
-    <string name="versions_how">Les apps installées avec une version plus ancienne cessent aussitôt de fonctionner et n\'affichent que la page pour télécharger la dernière. Leurs données ne sont pas touchées.</string>
+    <string name="versions_state">Cette app : version %1$s</string>
+    <string name="versions_how">« Désactiver les anciennes versions » arrête aussitôt, sur chaque téléphone, les apps plus anciennes que celle-ci : elles n\'affichent que le lien vers la dernière. Les données restent.</string>
     <string name="versions_off_older">Désactiver les anciennes versions</string>
     <string name="versions_all_on">Réactiver toutes les versions</string>
-    <string name="versions_off_q">Toutes les apps sous la version %1$d cessent maintenant de fonctionner, sur chaque téléphone, jusqu\'à l\'installation de la dernière.</string>
+    <string name="versions_off_q">Toutes les apps antérieures à la version %1$s cessent maintenant de fonctionner, sur chaque téléphone, jusqu\'à l\'installation de la dernière.</string>
     <string name="versions_on_q">Toutes les versions installées fonctionnent à nouveau.</string>
     <string name="versions_saved">C\'est fait</string>
     <string name="versions_confirm">Confirmer</string>
@@ -350,4 +350,9 @@
     <string name="cost_ai_to">À Anthropic, depuis votre crédit. Pas au propriétaire de l\'app.</string>
     <string name="costs_note">Sans IA, vous ne payez rien de plus. Le crédit Anthropic est à vous : vous le gérez chez Anthropic et pouvez l\'utiliser à d\'autres fins.</string>
     <string name="section_costs">Coûts</string>
+    <string name="ai_auto_check">Le contrôle auprès d\'Anthropic est automatique : à l\'ouverture, après une erreur et quand vous tirez l\'écran vers le bas.</string>
+    <string name="section_owner">Réservé à vous, le propriétaire</string>
+    <string name="owner_note">Personne d\'autre ne voit ces réglages, et le serveur ne les accepte que de vous.</string>
+    <string name="versions_blocked_none">Aucune version bloquée : toutes les apps installées fonctionnent.</string>
+    <string name="versions_blocked_below">Bloquées : toutes les versions antérieures à %1$s.</string>
 </resources>

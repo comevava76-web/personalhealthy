@@ -170,7 +170,7 @@
     <string name="tab_report">Report</string>
     <string name="tab_credit">Admin</string>
     <string name="section_credits">Credits</string>
-    <string name="section_token">Token</string>
+    <string name="section_token">AI features</string>
     <string name="section_db">Readings database</string>
     <string name="section_identity">Identity</string>
     <string name="db_count">%1$d readings saved</string>
@@ -327,11 +327,11 @@
     <string name="app_off_text">Version %1$s can no longer be used. Install the latest one: it goes over this one and your readings stay safe on the server. When it opens, you will be asked to accept the terms again.</string>
     <string name="app_off_download">Download the latest version</string>
     <string name="section_versions">App versions</string>
-    <string name="versions_state">This app: %1$d · lowest allowed: %2$s</string>
-    <string name="versions_how">Apps installed with an older version stop working at once and show only the page to download the latest one. Their data are not touched.</string>
+    <string name="versions_state">This app: version %1$s</string>
+    <string name="versions_how">“Switch off older versions” stops at once, on every phone, the apps older than this one: they show only the link to download the latest. Their data stay.</string>
     <string name="versions_off_older">Switch off older versions</string>
     <string name="versions_all_on">Let every version work again</string>
-    <string name="versions_off_q">Every app below version %1$d stops working now, on every phone, until the latest one is installed.</string>
+    <string name="versions_off_q">Every app older than version %1$s stops working now, on every phone, until the latest one is installed.</string>
     <string name="versions_on_q">Every installed version works again.</string>
     <string name="versions_saved">Done</string>
     <string name="versions_confirm">Confirm</string>
@@ -375,4 +375,9 @@
     <string name="cost_ai_to">Anthropic, from your own credit. Not the owner of the app.</string>
     <string name="costs_note">Without the AI you pay nothing more. The Anthropic credit is yours: you manage it on Anthropic and can use it for other things too.</string>
     <string name="section_costs">Costs</string>
+    <string name="ai_auto_check">Checked with Anthropic by itself: when the app opens, after an error and when you pull the screen down.</string>
+    <string name="section_owner">Only for you, the owner</string>
+    <string name="owner_note">Nobody else sees these settings, and the server accepts them only from you.</string>
+    <string name="versions_blocked_none">No version blocked: every installed app works.</string>
+    <string name="versions_blocked_below">Blocked: every version older than %1$s.</string>
 </resources>
