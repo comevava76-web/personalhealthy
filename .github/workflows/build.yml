@@ -60,6 +60,9 @@ jobs:
           add_col persons google_sub TEXT
           add_col persons email TEXT
           add_col persons consent_at INTEGER
+          # The AI state of each person's own Anthropic key, as Anthropic last answered: ok / no_credit / invalid
+          add_col person_keys status TEXT
+          add_col person_keys checked_at INTEGER
           npx wrangler d1 execute personalhealthy --remote \
             --command "CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub)"
           # Everyone pays their own photo readings with their own Anthropic key. The shared credit ("owner") becomes the

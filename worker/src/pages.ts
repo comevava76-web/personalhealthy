@@ -34,8 +34,8 @@ function copyrightYears(): string {
 function page(title: string, body: string): Response {
   const html = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${style}</style></head>
-<body><main><header>${logo}<div><h1>HINT</h1><p>HealthyInstantTracker</p></div></header>${body}
-<footer class="muted"><hr>HINT · HealthyInstantTracker · © ${copyrightYears()} · Tutti i diritti riservati · All rights reserved<br>
+<body><main><header>${logo}<div><h1>HINT 365</h1><p>HealthyInstantTracker</p></div></header>${body}
+<footer class="muted"><hr>HINT 365 · HealthyInstantTracker · © ${copyrightYears()} · Tutti i diritti riservati · All rights reserved<br>
 <a href="/">Home</a> · <a href="/terms">Condizioni d'uso · Terms of use</a> · <a href="/privacy">Privacy</a></footer></main></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600" } });
 }
@@ -50,7 +50,7 @@ function contactLine(email: string, it: boolean): string {
 }
 
 export function homePage(): Response {
-  return page("HINT · HealthyInstantTracker", `
+  return page("HINT 365 · HealthyInstantTracker", `
 <p><strong>HINT</strong> è un diario della pressione per Android. Fotografi il display del misuratore, oppure detti i valori a voce, e l'app registra SYS, DIA e PUL con data e ora. Prepara un report in PDF ed Excel da mandare al medico.</p>
 <p>L'app non valuta i valori, non fa diagnosi e non dà consigli medici: la valutazione spetta al medico. Leggi le <a href="/terms">condizioni d'uso</a>.</p>
 <p><a class="btn" href="/download">Scarica l'app per Android</a></p>
@@ -65,7 +65,7 @@ export function homePage(): Response {
 }
 
 export function privacyPage(contactEmail: string): Response {
-  return page("HINT · Privacy", `
+  return page("HINT 365 · Privacy", `
 <h2>Informativa sulla privacy</h2>
 <p class="muted">Ultimo aggiornamento: 27 settembre 2026</p>
 <div class="box">
@@ -119,7 +119,7 @@ export function privacyPage(contactEmail: string): Response {
 
 /** The terms of use and notice every user accepts in the app before using it. Same text as in the app. */
 export function termsPage(): Response {
-  return page("HINT · Condizioni d'uso / Terms of use", `
+  return page("HINT 365 · Condizioni d'uso / Terms of use", `
 <h2>Condizioni d&#x27;uso e avvertenze</h2>
 <h3>Cos&#x27;è HINT</h3>
 <p>HINT serve solo ad annotare, conservare e rappresentare in grafici e tabelle i valori che misuri tu con il tuo apparecchio. Nient&#x27;altro.</p>
