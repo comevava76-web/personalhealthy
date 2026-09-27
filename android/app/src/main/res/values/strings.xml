@@ -304,4 +304,9 @@
     <string name="my_dash">My Dash: your web dashboard</string>
     <string name="my_dash_sub">Opens in the browser already signed in to your account: big charts, and a link to send to your doctor by WhatsApp or email.</string>
     <string name="pdf_note">In the charts each dot is the average of all the readings of that day (an aggregate). The single readings are in the list.</string>
+    <string name="bal_title">Morning and evening compared</string>
+    <string name="bal_sub">average of all the readings of the period · just arithmetic, no assessment</string>
+    <string name="bal_none">Readings are needed both in the morning and in the evening.</string>
+    <string name="bal_same">Morning and evening have the same average.</string>
+    <string name="bal_diff">Evening - morning: SYS %1$s · DIA %2$s mmHg</string>
 </resources>

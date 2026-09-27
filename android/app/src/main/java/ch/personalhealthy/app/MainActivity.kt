@@ -120,10 +120,10 @@ object C {
     val Ink = Color(0xFFEAF0FA)
     val Muted = Color(0xFF9AAACA)
     val Line = Color(0x1AEAF0FA)
-    val Sys = Color(0xFFF2545B)   // systolic, coral
-    val Dia = Color(0xFF3FA7D6)   // diastolic, teal-blue
-    val Pul = Color(0xFFFFC145)   // pulse, amber
-    val Alert = Color(0xFFFF6178)
+    val Sys = Color(0xFF8C7BF2)   // systolic, violet (no red anywhere: red would read as "a problem")
+    val Dia = Color(0xFF1FA396)   // diastolic, teal
+    val Pul = Color(0xFFC08A1E)   // pulse, amber
+    val Alert = Color(0xFFF0A35E)   // errors and deleting: warm orange, not red
 }
 
 class MainActivity : FragmentActivity() {
@@ -1267,7 +1267,7 @@ fun SummaryPanel(week: List<Reading>) {
 }
 
 /**
- * The app's logo, the same as the launcher icon: coral ECG trace on the app's navy,
+ * The app's logo, the same as the launcher icon: violet ECG trace on the app's navy,
  * here scrolling from right to left like on a heart monitor.
  */
 @Composable

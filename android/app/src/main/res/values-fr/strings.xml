@@ -289,4 +289,9 @@
     <string name="pdf_avg_of">moyenne de %1$d mesures</string>
     <string name="pdf_none_moment">Aucune mesure à ce moment de la journée</string>
     <string name="pdf_note">Dans les graphiques, chaque point est la moyenne de toutes les mesures du jour. Les mesures une par une sont dans la liste.</string>
+    <string name="bal_title">Matin et soir comparés</string>
+    <string name="bal_sub">moyenne de toutes les mesures de la période · un simple calcul, aucune évaluation</string>
+    <string name="bal_none">Il faut des mesures le matin et le soir.</string>
+    <string name="bal_same">Le matin et le soir ont la même moyenne.</string>
+    <string name="bal_diff">Soir - matin : SYS %1$s · DIA %2$s mmHg</string>
 </resources>

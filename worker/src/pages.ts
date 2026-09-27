@@ -2,7 +2,7 @@
 // Plain HTML served by this same server; Italian and English on the same page.
 
 const style = `
-  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --coral:#F2545B; }
+  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
   main { max-width:760px; margin:0 auto; padding:32px 20px 56px; }
@@ -13,17 +13,17 @@ const style = `
   h2 { font-size:20px; margin:32px 0 8px; }
   h3 { font-size:16px; margin:20px 0 4px; }
   p, li { color:#D6DEEC; }
-  a { color:var(--coral); }
+  a { color:var(--accent); }
   .box { background:var(--panel); border-radius:14px; padding:4px 20px 16px; margin-top:18px; }
   .muted { color:var(--muted); font-size:14px; }
-  .btn { display:inline-block; background:var(--coral); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
   hr { border:0; border-top:1px solid #2A3F66; margin:36px 0; }
 `;
 const logo = `<svg viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
   <stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs>
   <rect width="108" height="108" rx="24" fill="url(#g)"/>
   <path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95"
-   fill="none" stroke="#F2545B" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+   fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 /** 2026, or 2026–<this year> from next year on: updates itself every year. */
 function copyrightYears(): string {

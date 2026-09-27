@@ -121,7 +121,7 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
         Text(t(R.string.listening), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.Light)
         Text(t(R.string.voice_prompt), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
         Spacer(Modifier.height(36.dp))
-        // bars that follow the voice, in the app's coral
+        // bars that follow the voice, in the app's violet
         Canvas(Modifier.fillMaxWidth().height(90.dp)) {
             val gap = size.width / (BARS * 2f)
             val w = gap

@@ -302,4 +302,9 @@
     <string name="my_dash">My Dash: la tua dashboard web</string>
     <string name="my_dash_sub">Si apre nel browser già collegata al tuo account: grafici grandi, e un link da inviare al medico via WhatsApp o email.</string>
     <string name="pdf_note">Nei grafici ogni punto è la media di tutte le misure di quel giorno (un aggregato). Le singole misure sono nell\'elenco.</string>
+    <string name="bal_title">Mattina e sera a confronto</string>
+    <string name="bal_sub">media di tutte le misure del periodo · solo un calcolo, nessuna valutazione</string>
+    <string name="bal_none">Servono misure sia al mattino sia alla sera.</string>
+    <string name="bal_same">Mattina e sera hanno la stessa media.</string>
+    <string name="bal_diff">Sera - mattina: SYS %1$s · DIA %2$s mmHg</string>
 </resources>

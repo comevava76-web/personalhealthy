@@ -92,8 +92,8 @@
   // The week has 7 places, one per day; each day is one dot, the average of that day's readings, with its value
   // written next to it. Under the chart only the day of the month; above it the period. Touching a day shows its
   // date, its averages and how many readings they come from.
-  const COL = { sys: "#F2545B", dia: "#3FA7D6", pul: "#FFC145" };
-  const TXT = { sys: "#FF8A8F", dia: "#7CC6EA", pul: "#FFD37A" };
+  const COL = { sys: "#8C7BF2", dia: "#1FA396", pul: "#C08A1E" };   // no red: it would read as "a problem"
+  const TXT = { sys: "#B3A7FF", dia: "#5FD3C6", pul: "#F2C25A" };
   const NS = "http://www.w3.org/2000/svg";
   const fRange = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short" });
   const redraws = [];
@@ -186,6 +186,18 @@
     redraws.push(draw);
   }
 
+  // the morning / evening balance, the same drawing as in the PDF (report.js), in the dark colours
+  const DARK_BAL = { ink: "#EAF0FA", muted: "#8C9BBA", beam: "#6F7FA3", panel: "#1C2B4F", sys: "#B3A7FF", dia: "#5FD3C6" };
+  function drawBalance(el, items) {
+    const draw = () => {
+      el.innerHTML = "";
+      const W = el.clientWidth, H = 200;
+      const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
+      window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, DARK_BAL);
+    };
+    draw(); redraws.push(draw);
+  }
+
   /* ---------- modules ---------- */
   const MODULES = {
     bp: {
@@ -219,6 +231,7 @@
             <section class="card"><div class="card-h"><h2>${T.morning}</h2><span class="sub">${T.morningSub} · ${per}</span><div class="legend" id="lg-m"></div></div><div class="chart small" id="ch-m"></div></section>
             <section class="card"><div class="card-h"><h2>${T.evening}</h2><span class="sub">${T.eveningSub} · ${per}</span><div class="legend" id="lg-e"></div></div><div class="chart small" id="ch-e"></div></section>
           </div>
+          <section class="card"><div class="bal" id="bal"></div></section>
           <section class="card"><div class="card-h"><h2>${T.pulse}</h2><span class="sub">${per}</span><div class="legend" id="lg-p"></div></div><div class="chart small" id="ch-p"></div></section>
           <div class="card-h" style="margin-top:6px"><h2>${T.values}</h2></div>
           <section class="tiles">${tiles(items)}</section>
@@ -230,6 +243,7 @@
         lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"], data);
         lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"], data);
         lineChart($("ch-p"), $("lg-p"), items, ["pul"], data);
+        drawBalance($("bal"), items);
       },
       csv(items) {
         const rows = [T.cols.map((c, i) => (i === 3 || i === 4 ? c + " (mmHg)" : c))];
@@ -347,10 +361,31 @@
   }
 
   // PDF: the same A4 report as the app, built from the readings on screen, then the browser's "Save as PDF"
-  function printReport() {
+  function loadScript(src) {
+    return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+  }
+  async function printReport() {
     if (!current.data || !window.HintReport) return;
-    window.HintReport.render($("print"), current.data);
-    setTimeout(() => window.print(), 50);
+    const btn = $("btn-pdf"); btn.disabled = true;
+    try {
+      // the PDF libraries (jsPDF, svg2pdf, MIT licence, served from this site) are loaded only when needed
+      if (!window.jspdf) await loadScript("/my/vendor/jspdf-4.2.1.umd.min.js");
+      if (!window.svg2pdf) await loadScript("/my/vendor/svg2pdf-2.8.1.umd.min.js");
+      const box = $("print");
+      window.HintReport.render(box, current.data);
+      box.classList.add("building");
+      const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4", compress: true });
+      const pages = [...box.querySelectorAll(".a4 svg")];
+      for (let i = 0; i < pages.length; i++) {
+        if (i) doc.addPage("a4");
+        await doc.svg(pages[i], { x: 0, y: 0, width: 595.28, height: 841.89 });
+      }
+      box.classList.remove("building");
+      doc.save(`HINT-${T.bpTitle.replace(/\s+/g, "-")}-${day(current.data.to).replace(/[./]/g, "-")}.pdf`);
+    } catch (e) {
+      // if anything goes wrong, the browser's own "Save as PDF" still gives the same pages
+      setTimeout(() => window.print(), 50);
+    } finally { btn.disabled = false; }
   }
 
   async function startShared(token) {
