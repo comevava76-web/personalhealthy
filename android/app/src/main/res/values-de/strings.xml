@@ -202,7 +202,7 @@
     <string name="credit_warn_low">Guthaben fast aufgebraucht: noch etwa 1 Foto. Hier tippen.</string>
     <string name="credit_balance">Guthaben</string>
     <string name="credit_photos">Fotos</string>
-    <string name="credit_per_photo">Pro Foto</string>
+    <string name="credit_per_photo">Kosten pro Foto</string>
     <string name="credit_estimate">Schätzung. Das genaue Guthaben steht bei Anthropic.</string>
     <string name="credit_needs_key">Nur zum Scannen von Fotos nötig.</string>
     <string name="recharge">Aufladen</string>
@@ -306,4 +306,7 @@
     <string name="versions_on_q">Alle installierten Versionen funktionieren wieder.</string>
     <string name="versions_saved">Erledigt</string>
     <string name="versions_confirm">Bestätigen</string>
+    <string name="credit_state">Anthropic-Guthaben</string>
+    <string name="credit_photos_per_usd">Fotos mit 1 $</string>
+    <string name="credit_how">Das genaue Guthaben sieht nur Anthropic: „Aufladen“ öffnet deine Seite. Hier siehst du, ob Guthaben da ist (Anthropic wird gefragt, Scan folgt der Antwort) und was deine Fotos kosten.</string>
 </resources>

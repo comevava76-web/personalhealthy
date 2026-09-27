@@ -202,7 +202,7 @@
     <string name="credit_warn_low">Credito quasi finito: resta circa 1 foto. Tocca qui.</string>
     <string name="credit_balance">Saldo</string>
     <string name="credit_photos">Foto</string>
-    <string name="credit_per_photo">Per foto</string>
+    <string name="credit_per_photo">Costo di una foto</string>
     <string name="credit_estimate">Stima. Il saldo esatto è su Anthropic.</string>
     <string name="credit_needs_key">Serve solo per la scansione delle foto.</string>
     <string name="recharge">Ricarica</string>
@@ -313,12 +313,12 @@
     <string name="ai_state_no_credit">Anthropic: credito finito</string>
     <string name="ai_state_invalid">Anthropic: chiave non accettata</string>
     <string name="ai_check_now">Ricontrolla con Anthropic</string>
-    <string name="credit_state">Credito</string>
+    <string name="credit_state">Credito Anthropic</string>
     <string name="credit_state_ok">Disponibile</string>
     <string name="credit_state_empty">Finito</string>
     <string name="credit_state_key">Chiave?</string>
     <string name="credit_spent">Speso con HINT 365</string>
-    <string name="credit_how">Anthropic non permette alle app di leggere il saldo. HINT 365 chiede ad Anthropic se il credito c’è (Scan si accende solo se risponde di sì) e somma con precisione quanto hai speso con le foto. Il saldo esatto è sulla tua pagina Anthropic: «Ricarica» la apre.</string>
+    <string name="credit_how">Il saldo esatto lo vede solo Anthropic: «Ricarica» apre la tua pagina. Qui vedi se il credito c’è (lo chiediamo ad Anthropic, e Scan segue la risposta) e quanto costano le tue foto.</string>
     <string name="version_standard">Versione Standard</string>
     <string name="version_premium">Versione Premium ✦</string>
     <string name="app_off_title">Questa versione di HINT 365 è stata disattivata</string>
@@ -333,4 +333,5 @@
     <string name="versions_on_q">Tutte le versioni installate tornano a funzionare.</string>
     <string name="versions_saved">Fatto</string>
     <string name="versions_confirm">Conferma</string>
+    <string name="credit_photos_per_usd">Foto con 1 $</string>
 </resources>

@@ -204,7 +204,7 @@
     <string name="credit_warn_low">Credit almost used up: about 1 photo left. Tap here.</string>
     <string name="credit_balance">Balance</string>
     <string name="credit_photos">Photos</string>
-    <string name="credit_per_photo">Per photo</string>
+    <string name="credit_per_photo">Cost of one photo</string>
     <string name="credit_estimate">Estimate. The exact balance is on Anthropic.</string>
     <string name="credit_needs_key">Only needed to scan photos.</string>
     <string name="recharge">Recharge</string>
@@ -315,12 +315,12 @@
     <string name="ai_state_no_credit">Anthropic: credit used up</string>
     <string name="ai_state_invalid">Anthropic: key not accepted</string>
     <string name="ai_check_now">Check again with Anthropic</string>
-    <string name="credit_state">Credit</string>
+    <string name="credit_state">Anthropic credit</string>
     <string name="credit_state_ok">Available</string>
     <string name="credit_state_empty">Used up</string>
     <string name="credit_state_key">Key?</string>
     <string name="credit_spent">Spent with HINT 365</string>
-    <string name="credit_how">Anthropic lets no app read the balance. HINT 365 asks Anthropic whether there is credit (Scan switches on only when it says yes) and adds up exactly what you spent on photos. The exact balance is on your Anthropic page: “Top up” opens it.</string>
+    <string name="credit_how">Only Anthropic sees the exact balance: “Top up” opens your page. Here you see whether there is credit (Anthropic is asked, and Scan follows the answer) and what your photos cost.</string>
     <string name="version_standard">Standard version</string>
     <string name="version_premium">Premium version ✦</string>
     <string name="app_off_title">This version of HINT 365 has been switched off</string>
@@ -335,4 +335,5 @@
     <string name="versions_on_q">Every installed version works again.</string>
     <string name="versions_saved">Done</string>
     <string name="versions_confirm">Confirm</string>
+    <string name="credit_photos_per_usd">Photos with 1 $</string>
 </resources>

@@ -871,12 +871,13 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
-/** One figure of the credit panel: small label on top, the value large below. */
+/** One figure of the credit panel: a hairline above, the label on the left, the value on the right. */
 @Composable
-fun CreditFigure(label: String, value: String, color: Color, modifier: Modifier) {
-    Column(modifier.padding(end = 8.dp)) {
-        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1)
-        Text(value, color = color, fontSize = 24.sp, fontWeight = FontWeight.Light, maxLines = 1)
+fun CreditRow(label: String, value: String) {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
+    Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = C.Muted, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(value, color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -1654,18 +1655,23 @@ fun CreditScreen(
         // Anthropic lets no app read the balance: shown instead is what Anthropic answered (credit there or not),
         // what was spent with HINT (exact, from each reading) and the cost of one photo
         Panel {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                val (stateText, stateCol) = when {
-                    noKey -> "—" to C.Muted
-                    me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
-                    me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
-                    else -> t(R.string.credit_state_key) to C.Alert
-                }
-                CreditFigure(t(R.string.credit_state), stateText, stateCol, Modifier.weight(1.2f))
-                CreditFigure(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0), C.Ink, Modifier.weight(1f))
-                CreditFigure(t(R.string.credit_per_photo), usdFine(c?.avgCost ?: 0.006), C.Ink, Modifier.weight(1.2f))
+            // first the answer from Anthropic, on its own line; then the figures, one per row, label left and value right
+            val (stateText, stateCol) = when {
+                noKey -> "—" to C.Muted
+                me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
+                me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
+                else -> t(R.string.credit_state_key) to C.Alert
             }
-            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+            Text(t(R.string.credit_state), color = C.Muted, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)) {
+                Box(Modifier.size(9.dp).background(if (stateCol == C.Ink) C.Sys else stateCol, CircleShape))
+                Text(stateText, color = stateCol, fontSize = 22.sp, fontWeight = FontWeight.Light, modifier = Modifier.padding(start = 10.dp))
+            }
+            val cost = c?.avgCost ?: 0.006
+            CreditRow(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0))
+            CreditRow(t(R.string.credit_per_photo), "≈ " + usdFine(cost))
+            CreditRow(t(R.string.credit_photos_per_usd), if (cost > 0) "≈ " + (1.0 / cost).toInt() else "—")
+            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 10.dp))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
 

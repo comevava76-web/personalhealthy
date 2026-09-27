@@ -202,7 +202,7 @@
     <string name="credit_warn_low">Crédit presque épuisé : il reste environ 1 photo. Touchez ici.</string>
     <string name="credit_balance">Solde</string>
     <string name="credit_photos">Photos</string>
-    <string name="credit_per_photo">Par photo</string>
+    <string name="credit_per_photo">Coût d\'une photo</string>
     <string name="credit_estimate">Estimation. Le solde exact est sur Anthropic.</string>
     <string name="credit_needs_key">Utile seulement pour scanner les photos.</string>
     <string name="recharge">Recharger</string>
@@ -306,4 +306,7 @@
     <string name="versions_on_q">Toutes les versions installées fonctionnent à nouveau.</string>
     <string name="versions_saved">C\'est fait</string>
     <string name="versions_confirm">Confirmer</string>
+    <string name="credit_state">Crédit Anthropic</string>
+    <string name="credit_photos_per_usd">Photos avec 1 $</string>
+    <string name="credit_how">Seul Anthropic voit le solde exact : « Recharger » ouvre votre page. Ici vous voyez s\'il y a du crédit (Anthropic est interrogé, Scan suit sa réponse) et ce que coûtent vos photos.</string>
 </resources>
