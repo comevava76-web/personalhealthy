@@ -299,7 +299,7 @@
     <string name="disc_lang" translatable="false">it</string>
     <string name="colophon_rights">© %1$s · Tutti i diritti riservati</string>
     <string name="disc_web">Apri la versione web, con i link ai fornitori</string>
-    <string name="my_dash">My Dash: la tua dashboard web</string>
+    <string name="my_dash">Web Dashboard</string>
     <string name="my_dash_sub">Si apre nel browser già collegata al tuo account: grafici grandi, e un link da inviare al medico via WhatsApp o email.</string>
     <string name="pdf_note">Nei grafici ogni punto è la media di tutte le misure di quel giorno (un aggregato). Le singole misure sono nell\'elenco.</string>
     <string name="bal_title">Mattina e sera a confronto</string>
