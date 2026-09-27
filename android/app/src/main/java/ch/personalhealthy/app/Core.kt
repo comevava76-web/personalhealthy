@@ -388,6 +388,10 @@ object Repo {
             .put("textSha256", sha).put("appVersion", appVersion).put("phone", phone), pid)
     }
 
+    /** My Dash: the address of the web dashboard with a one-time code (60 seconds), to open it already signed in. */
+    suspend fun webDashUrl(pid: String): String =
+        Api.call("POST", "/v1/web/code", JSONObject(), pid).getString("url")
+
     suspend fun signOut(pid: String) {
         Api.call("POST", "/v1/signout", JSONObject(), pid)
     }

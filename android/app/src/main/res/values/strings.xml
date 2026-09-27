@@ -301,4 +301,6 @@
     <string name="disc_lang" translatable="false">en</string>
     <string name="colophon_rights">© %1$s · All rights reserved</string>
     <string name="disc_web">Open the web version, with the providers\' links</string>
+    <string name="my_dash">My Dash: your web dashboard</string>
+    <string name="my_dash_sub">Opens in the browser already signed in to your account: big charts, and a link to send to your doctor by WhatsApp or email.</string>
 </resources>
