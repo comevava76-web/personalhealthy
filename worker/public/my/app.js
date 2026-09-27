@@ -16,8 +16,9 @@
     bp: "Pressione", labs: "Analisi",
     range: { 7: "7 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
-    last: "Ultima misura", avg: "Media del periodo", count: "Misure", days: (d, n) => `in ${d} giorni su ${n}`,
-    whole: "Andamento del periodo", wholeSub: "ogni misura, giorno e ora",
+    last: "Ultima misura", avgBp: "Media SYS / DIA", avgPul: "Media PUL", count: "Misure", days: (d, n) => `in ${d} giorni su ${n}`,
+    chartsNote: "Come leggere i grafici: ogni punto è la media di tutte le misure di quel giorno (un aggregato), quindi 7 punti per 7 giorni. Le singole misure sono nell'elenco in fondo e nei valori del periodo.",
+    whole: "Andamento del periodo", dailyAvg: "media di ogni giorno", nOf: (n) => (n === 1 ? "1 misura" : `${n} misure`),
     morning: "Mattina", morningSub: "prima delle 12", evening: "Sera", eveningSub: "dalle 17",
     pulse: "Battiti (PUL)", pulseSub: "battiti al minuto",
     values: "Valori del periodo", hi: "più alta", lo: "più bassa", mean: "media", meanOf: (n) => `media di ${n} misure`,
@@ -41,8 +42,9 @@
     bp: "Blood pressure", labs: "Lab results",
     range: { 7: "7 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
-    last: "Last reading", avg: "Period average", count: "Readings", days: (d, n) => `on ${d} of ${n} days`,
-    whole: "The whole period", wholeSub: "every reading, day and time",
+    last: "Last reading", avgBp: "Average SYS / DIA", avgPul: "Average PUL", count: "Readings", days: (d, n) => `on ${d} of ${n} days`,
+    chartsNote: "How to read the charts: each dot is the average of all the readings of that day (an aggregate), so 7 dots for 7 days. The single readings are in the list at the bottom and in the values of the period.",
+    whole: "The whole period", dailyAvg: "average of each day", nOf: (n) => (n === 1 ? "1 reading" : `${n} readings`),
     morning: "Morning", morningSub: "before 12:00", evening: "Evening", eveningSub: "from 17:00",
     pulse: "Pulse (PUL)", pulseSub: "beats per minute",
     values: "Values of the period", hi: "highest", lo: "lowest", mean: "average", meanOf: (n) => `average of ${n} readings`,
@@ -87,14 +89,13 @@
 
   /* ---------- charts ---------- */
   // Drawn here as SVG at the exact size of the screen: sharp on any phone, nothing from third parties.
-  // Every reading is a dot with its value next to it (SYS and PUL above, DIA below), placed where it hits no other
-  // number or dot, like in the PDF. Readings are evenly spaced one after the other; a thin line marks where each day
-  // starts and the day is written below. Touching or pointing at the chart shows day, time and values above it.
+  // The week has 7 places, one per day; each day is one dot, the average of that day's readings, with its value
+  // written next to it. Under the chart only the day of the month; above it the period. Touching a day shows its
+  // date, its averages and how many readings they come from.
   const COL = { sys: "#F2545B", dia: "#3FA7D6", pul: "#FFC145" };
   const TXT = { sys: "#FF8A8F", dia: "#7CC6EA", pul: "#FFD37A" };
   const NS = "http://www.w3.org/2000/svg";
-  const fAxis = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, weekday: "short", day: "numeric" });
-  const fDayNum = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric" });
+  const fRange = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short" });
   const redraws = [];
   let resizeTimer;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => redraws.forEach((f) => f()), 150); });
@@ -108,77 +109,74 @@
   let mctx;
   const textW = (t, size) => { mctx = mctx || document.createElement("canvas").getContext("2d"); mctx.font = `700 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`; return mctx.measureText(String(t)).width; };
 
-  function lineChart(el, legend, items, keys) {
-    const pts = items.filter((r) => keys.some((k) => r[k] != null));
+  // the Swiss calendar day of a moment, as a UTC midnight, so days can be counted
+  const fYmd = new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "numeric", day: "numeric" });
+  function midnight(ms) { const p = {}; for (const x of fYmd.formatToParts(ms)) p[x.type] = x.value; return Date.UTC(+p.year, +p.month - 1, +p.day); }
+  const fLegendDay = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+
+  function lineChart(el, legend, items, keys, range) {
+    // one dot per day: the average of that day's readings; the week always has its 7 places, empty days stay empty
+    const start = midnight(range.from), days = Math.round((midnight(range.to) - start) / 864e5) + 1;
+    const slots = Array.from({ length: days }, (_, i) => ({ day: start + i * 864e5, n: 0, v: {} }));
+    for (const k of keys) for (const sl of slots) sl.v[k] = [];
+    for (const r of items) {
+      const i = Math.round((midnight(r.t) - start) / 864e5);
+      if (i < 0 || i >= days) continue;
+      let any = false;
+      for (const k of keys) if (r[k] != null) { slots[i].v[k].push(r[k]); any = true; }
+      if (any) slots[i].n++;
+    }
+    for (const sl of slots) for (const k of keys) { const a = sl.v[k]; sl.v[k] = a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null; }
     const idle = () => { legend.innerHTML = keys.map((k) => `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()}</span>`).join(""); };
-    if (!pts.length) { el.innerHTML = `<div class="empty">${T.noneMoment}</div>`; legend.innerHTML = ""; return; }
+    if (!slots.some((sl) => sl.n)) { el.innerHTML = `<div class="empty">${T.noneMoment}</div>`; legend.innerHTML = ""; return; }
     idle();
     const draw = () => {
       el.innerHTML = "";
-      const W = el.clientWidth, H = el.clientHeight, n = pts.length;
-      const L = 6, R = W - 36, TOP = 22, B = H - 30;
-      const vals = pts.flatMap((r) => keys.map((k) => r[k]).filter((v) => v != null));
+      const W = el.clientWidth, H = el.clientHeight;
+      const L = 8, R = W - 36, TOP = 24, B = H - 28;
+      const vals = slots.flatMap((sl) => keys.map((k) => sl.v[k]).filter((v) => v != null));
       const lo = Math.floor((Math.min(...vals) - 6) / 10) * 10, hi = Math.ceil((Math.max(...vals) + 6) / 10) * 10;
       const Y = (v) => B - (v - lo) / (hi - lo) * (B - TOP);
-      const step = (R - L) / n, X = (i) => L + step * (i + 0.5);
+      const step = (R - L) / days, X = (i) => L + step * (i + 0.5);
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot" });
-      // grid every 10, numbers on the right
       for (let v = lo; v <= hi; v += 10) {
         svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: "#1F2E50", "stroke-width": 1 });
         svgEl(svg, "text", { x: R + 8, y: Y(v) + 4, class: "ax" }, v);
       }
-      // days: a thin line where each day starts, the day's name under its readings
-      // the name of the day ("lun 21"), or just the number ("21") when two days are too close to write it in full
-      let first = 0, lastEnd = -Infinity;
-      for (let i = 1; i <= n; i++) {
-        if (i === n || day(pts[i].t) !== day(pts[first].t)) {
-          if (first > 0) svgEl(svg, "line", { x1: L + step * first, x2: L + step * first, y1: TOP - 8, y2: B + 4, stroke: "#2B3D66", "stroke-width": 1, "stroke-dasharray": "3 3" });
-          const cx = (X(first) + X(i - 1)) / 2;
-          for (const label of [fAxis.format(pts[first].t), fDayNum.format(pts[first].t)]) {
-            const w = textW(label, 11) + 6;
-            if (cx - w / 2 < lastEnd || cx + w / 2 > W) continue;
-            svgEl(svg, "text", { x: cx, y: B + 20, class: "day", "text-anchor": "middle" }, label);
-            lastEnd = cx + w / 2; break;
-          }
-          first = i;
-        }
-      }
-      // lines and dots, SYS last so it stays on top
+      // under each place, only the day of the month
+      slots.forEach((sl, i) => svgEl(svg, "text", { x: X(i), y: B + 20, class: "day", "text-anchor": "middle" }, new Date(sl.day).getUTCDate()));
       const dots = [];
       for (const k of [...keys].reverse()) {
-        const p = pts.map((r, i) => (r[k] != null ? { x: X(i), y: Y(r[k]), v: r[k], k } : null)).filter(Boolean);
-        if (p.length > 1) svgEl(svg, "path", { d: "M" + p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" L"), fill: "none", stroke: COL[k], "stroke-width": 2.2, "stroke-linejoin": "round", "stroke-linecap": "round" });
-        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 4, fill: COL[k], stroke: "#101C35", "stroke-width": 2 });
+        const p = slots.map((sl, i) => (sl.v[k] != null ? { x: X(i), y: Y(sl.v[k]), v: sl.v[k], k } : null)).filter(Boolean);
+        if (p.length > 1) svgEl(svg, "path", { d: "M" + p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" L"), fill: "none", stroke: COL[k], "stroke-width": 2.4, "stroke-linejoin": "round", "stroke-linecap": "round" });
+        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 5, fill: COL[k], stroke: "#101C35", "stroke-width": 2 });
         dots.push(...p);
       }
-      // the numbers: highest and lowest of each line first, then the others where they fit
-      const fs = n > 18 ? 10 : 11.5;
-      const taken = dots.map((q) => [q.x - 5, q.y - 5, q.x + 5, q.y + 5]);
+      // the value of each day next to its dot: SYS and PUL above, DIA below (the other side if taken)
+      const fs = 12.5;
+      const taken = dots.map((q) => [q.x - 6, q.y - 6, q.x + 6, q.y + 6]);
       const hit = (a) => taken.some((t) => a[0] < t[2] && a[2] > t[0] && a[1] < t[3] && a[3] > t[1]);
-      const order = keys.flatMap((k) => {
-        const p = dots.filter((q) => q.k === k); const mx = Math.max(...p.map((q) => q.v)), mn = Math.min(...p.map((q) => q.v));
-        return p.map((q) => [q, q.v === mx || q.v === mn ? 0 : 1]);
-      }).sort((a, b) => a[1] - b[1]).map((a) => a[0]);
-      for (const q of order) {
+      for (const q of dots) {
         const half = textW(q.v, fs) / 2 + 1, up = q.k !== "dia";
         for (const u of [up, !up]) {
-          const by = u ? q.y - 9 : q.y + fs + 7;
+          const by = u ? q.y - 11 : q.y + fs + 9;
           const box = [q.x - half, by - fs + 1, q.x + half, by + 2];
-          if (box[1] < 2 || box[3] > B + 2 || box[0] < 0 || box[2] > R + 4 || hit(box)) continue;
+          if (box[1] < 2 || box[3] > B + 2 || hit(box)) continue;
           taken.push(box); svgEl(svg, "text", { x: q.x, y: by, "text-anchor": "middle", class: "val", fill: TXT[q.k], "font-size": fs }, q.v); break;
         }
       }
-      // pointing or touching: a vertical line on the nearest reading, its values in the legend
-      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 8, y2: B, stroke: "#8C9BBA", "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
-      const ring = keys.map((k) => svgEl(svg, "circle", { r: 7, fill: "none", stroke: COL[k], "stroke-width": 2, visibility: "hidden" }));
+      // touching a day: its date, its averages and how many readings they come from
+      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 10, y2: B, stroke: "#8C9BBA", "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
+      const ring = keys.map((k) => svgEl(svg, "circle", { r: 8, fill: "none", stroke: COL[k], "stroke-width": 2, visibility: "hidden" }));
       const pick = (ev) => {
         const rect = svg.getBoundingClientRect();
         const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
-        const i = Math.max(0, Math.min(n - 1, Math.floor((cx - L) / step)));
-        const r = pts[i];
+        const i = Math.max(0, Math.min(days - 1, Math.floor((cx - L) / step)));
+        const sl = slots[i];
+        if (!sl.n) return leave();
         cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("visibility", "visible");
-        keys.forEach((k, j) => { if (r[k] == null) return ring[j].setAttribute("visibility", "hidden"); ring[j].setAttribute("cx", X(i)); ring[j].setAttribute("cy", Y(r[k])); ring[j].setAttribute("visibility", "visible"); });
-        legend.innerHTML = `<span class="when">${when(r.t)}</span>` + keys.map((k) => `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()} <b class="${k}">${r[k] ?? "–"}</b></span>`).join("");
+        keys.forEach((k, j) => { if (sl.v[k] == null) return ring[j].setAttribute("visibility", "hidden"); ring[j].setAttribute("cx", X(i)); ring[j].setAttribute("cy", Y(sl.v[k])); ring[j].setAttribute("visibility", "visible"); });
+        legend.innerHTML = `<span class="when">${fLegendDay.format(sl.day)} · ${T.nOf(sl.n)}</span>` + keys.map((k) => `<span><i style="background:${COL[k]}"></i>${k.toUpperCase()} <b class="${k}">${sl.v[k] ?? "–"}</b></span>`).join("");
       };
       const leave = () => { cross.setAttribute("visibility", "hidden"); ring.forEach((c) => c.setAttribute("visibility", "hidden")); idle(); };
       svg.addEventListener("pointermove", pick); svg.addEventListener("pointerdown", pick);
@@ -199,6 +197,7 @@
         const spanDays = Math.max(1, Math.round((data.to - data.from) / 864e5));
         const avg = (k) => { const v = items.map((r) => r[k]).filter((x) => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
         const last = items[n - 1];
+        const per = `${fRange.formatRange(data.from, data.to)} · ${T.dailyAvg}`;   // e.g. "21–27 set · media di ogni giorno"
         main.innerHTML = `
           ${ctx.banner || ""}
           <div class="bar">
@@ -208,28 +207,29 @@
           ${n ? `
           <section class="kpis">
             <div class="kpi"><div class="l">${T.last}</div>
-              <div class="v"><b class="sys">${last.sys}</b><span class="u"> / </span><b class="dia">${last.dia}</b>${last.pul != null ? ` <span class="u">·</span> <b class="pul">${last.pul}</b>` : ""}</div>
-              <div class="u">${day(last.t)} ${time(last.t)} · mmHg${last.pul != null ? " · bpm" : ""}</div></div>
-            <div class="kpi"><div class="l">${T.avg} · SYS / DIA</div><div class="v"><span class="sys">${avg("sys")}</span><span class="u"> / </span><span class="dia">${avg("dia")}</span></div><div class="u">mmHg</div></div>
-            <div class="kpi"><div class="l">${T.avg} · PUL</div><div class="v pul">${avg("pul") ?? "–"}</div><div class="u">bpm</div></div>
+              <div class="v"><span class="sys">${last.sys}</span><span class="u">/</span><span class="dia">${last.dia}</span>${last.pul != null ? `<span class="u"> · </span><span class="pul">${last.pul}</span>` : ""}</div>
+              <div class="u">${day(last.t)} · ${time(last.t)}</div></div>
+            <div class="kpi"><div class="l">${T.avgBp}</div><div class="v"><span class="sys">${avg("sys")}</span><span class="u">/</span><span class="dia">${avg("dia")}</span></div><div class="u">mmHg</div></div>
+            <div class="kpi"><div class="l">${T.avgPul}</div><div class="v"><span class="pul">${avg("pul") ?? "–"}</span></div><div class="u">bpm</div></div>
             <div class="kpi"><div class="l">${T.count}</div><div class="v">${n}</div><div class="u">${T.days(dayCount, spanDays)}</div></div>
           </section>
-          <section class="card"><div class="card-h"><h2>${T.whole}</h2><span class="sub">${T.wholeSub}</span><div class="legend" id="lg-all"></div></div><div class="chart" id="ch-all"></div></section>
+          <p class="note">ⓘ ${T.chartsNote}</p>
+          <section class="card"><div class="card-h"><h2>${T.whole}</h2><span class="sub">${per}</span><div class="legend" id="lg-all"></div></div><div class="chart" id="ch-all"></div></section>
           <div class="two">
-            <section class="card"><div class="card-h"><h2>${T.morning}</h2><span class="sub">${T.morningSub}</span><div class="legend" id="lg-m"></div></div><div class="chart small" id="ch-m"></div></section>
-            <section class="card"><div class="card-h"><h2>${T.evening}</h2><span class="sub">${T.eveningSub}</span><div class="legend" id="lg-e"></div></div><div class="chart small" id="ch-e"></div></section>
+            <section class="card"><div class="card-h"><h2>${T.morning}</h2><span class="sub">${T.morningSub} · ${per}</span><div class="legend" id="lg-m"></div></div><div class="chart small" id="ch-m"></div></section>
+            <section class="card"><div class="card-h"><h2>${T.evening}</h2><span class="sub">${T.eveningSub} · ${per}</span><div class="legend" id="lg-e"></div></div><div class="chart small" id="ch-e"></div></section>
           </div>
-          <section class="card"><div class="card-h"><h2>${T.pulse}</h2><span class="sub">${T.pulseSub}</span><div class="legend" id="lg-p"></div></div><div class="chart small" id="ch-p"></div></section>
+          <section class="card"><div class="card-h"><h2>${T.pulse}</h2><span class="sub">${per}</span><div class="legend" id="lg-p"></div></div><div class="chart small" id="ch-p"></div></section>
           <div class="card-h" style="margin-top:6px"><h2>${T.values}</h2></div>
           <section class="tiles">${tiles(items)}</section>
           <section class="card"><details${ctx.shared ? " open" : ""}><summary>${T.list} (${n})</summary>${table(items)}</details></section>
           ` : `<div class="card"><div class="empty" style="height:200px">${T.none}</div></div>`}`;
         ctx.bindPills && ctx.bindPills();
         if (!n) return;
-        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"]);
-        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"]);
-        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"]);
-        lineChart($("ch-p"), $("lg-p"), items, ["pul"]);
+        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"], data);
+        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"], data);
+        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"], data);
+        lineChart($("ch-p"), $("lg-p"), items, ["pul"], data);
       },
       csv(items) {
         const rows = [T.cols.map((c, i) => (i === 3 || i === 4 ? c + " (mmHg)" : c))];

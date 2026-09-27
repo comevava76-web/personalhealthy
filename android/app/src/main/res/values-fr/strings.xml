@@ -272,15 +272,15 @@
     <string name="pdf_range">du %1$s au %2$s · %3$d jours</string>
     <string name="pdf_count">%1$d mesures sur %2$d jours · heure suisse</string>
     <string name="pdf_chart_all">Toute la période</string>
-    <string name="pdf_chart_all_sub">chaque mesure, dans l\'ordre où elle a été prise</string>
+    <string name="pdf_chart_all_sub">moyenne de chaque jour</string>
     <string name="pdf_units">SYS et DIA en mmHg</string>
     <string name="pdf_units_pul">battements par minute</string>
     <string name="pdf_morning_t">Matin</string>
-    <string name="pdf_morning_sub">avant 12 h</string>
+    <string name="pdf_morning_sub">avant 12 h · moyenne du jour</string>
     <string name="pdf_evening_t">Soir</string>
-    <string name="pdf_evening_sub">dès 17 h</string>
+    <string name="pdf_evening_sub">dès 17 h · moyenne du jour</string>
     <string name="pdf_pulse_t">Pouls (PUL)</string>
-    <string name="pdf_pulse_sub">chaque mesure</string>
+    <string name="pdf_pulse_sub">moyenne de chaque jour</string>
     <string name="pdf_values">Valeurs de la période</string>
     <string name="pdf_values_sub">la plus haute, la plus basse et la moyenne, avec jour et heure</string>
     <string name="pdf_hi">%1$s la plus haute</string>
@@ -288,4 +288,5 @@
     <string name="pdf_avg">%1$s moyenne</string>
     <string name="pdf_avg_of">moyenne de %1$d mesures</string>
     <string name="pdf_none_moment">Aucune mesure à ce moment de la journée</string>
+    <string name="pdf_note">Dans les graphiques, chaque point est la moyenne de toutes les mesures du jour. Les mesures une par une sont dans la liste.</string>
 </resources>

@@ -272,15 +272,15 @@
     <string name="pdf_range">%1$s bis %2$s · %3$d Tage</string>
     <string name="pdf_count">%1$d Messungen an %2$d Tagen · Schweizer Zeit</string>
     <string name="pdf_chart_all">Der ganze Zeitraum</string>
-    <string name="pdf_chart_all_sub">jede Messung, in der Reihenfolge der Aufnahme</string>
+    <string name="pdf_chart_all_sub">Durchschnitt jedes Tages</string>
     <string name="pdf_units">SYS und DIA in mmHg</string>
     <string name="pdf_units_pul">Schläge pro Minute</string>
     <string name="pdf_morning_t">Morgen</string>
-    <string name="pdf_morning_sub">vor 12 Uhr</string>
+    <string name="pdf_morning_sub">vor 12 Uhr · Tagesdurchschnitt</string>
     <string name="pdf_evening_t">Abend</string>
-    <string name="pdf_evening_sub">ab 17 Uhr</string>
+    <string name="pdf_evening_sub">ab 17 Uhr · Tagesdurchschnitt</string>
     <string name="pdf_pulse_t">Puls (PUL)</string>
-    <string name="pdf_pulse_sub">jede Messung</string>
+    <string name="pdf_pulse_sub">Durchschnitt jedes Tages</string>
     <string name="pdf_values">Werte des Zeitraums</string>
     <string name="pdf_values_sub">der höchste, der niedrigste und der Durchschnitt, mit Tag und Uhrzeit</string>
     <string name="pdf_hi">%1$s höchster</string>
@@ -288,4 +288,5 @@
     <string name="pdf_avg">%1$s Durchschnitt</string>
     <string name="pdf_avg_of">Durchschnitt aus %1$d Messungen</string>
     <string name="pdf_none_moment">Keine Messungen zu dieser Tageszeit</string>
+    <string name="pdf_note">In den Grafiken ist jeder Punkt der Durchschnitt aller Messungen dieses Tages. Die einzelnen Messungen stehen in der Liste.</string>
 </resources>

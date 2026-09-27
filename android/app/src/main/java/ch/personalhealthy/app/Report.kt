@@ -257,16 +257,13 @@ private fun pdfChart(
     val slot = (right - left) / days
     val every = maxOf(1, ceil(12f / slot).toInt())
     val dayP = pdfPaint(6.8f, P_MUTED, align = Paint.Align.CENTER)
-    val monP = pdfPaint(6.5f, bold = true, align = Paint.Align.CENTER)
     val dayLine = Paint().apply { color = 0xFFEEF2F6.toInt(); strokeWidth = 0.5f }
-    val month = java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale.getDefault())
     for (d in 0..days) {
         val xx = left + d * slot
         c.drawLine(xx, pt, xx, pb, dayLine)
         if (d < days) {
             val day = start.plusDays(d.toLong())
             if (d % every == 0) c.drawText("${day.dayOfMonth}", xx + slot / 2f, pb + 9f, dayP)
-            if (d == 0 || day.dayOfMonth == 1) c.drawText(month.format(day).trimEnd('.'), xx + slot / 2f, pb + 17.5f, monP)
         }
     }
 
@@ -305,6 +302,17 @@ private fun pdfChart(
         }
     }
 }
+
+/** One point per day: the average of that day's readings, placed at midday so it sits in the middle of its day. */
+private fun dailyMeans(list: List<Reading>): List<Reading> =
+    list.groupBy { Z.date(it.takenAt) }.toSortedMap().map { (d, l) ->
+        val pul = l.mapNotNull { it.pul }
+        Reading(
+            "", d.atStartOfDay(Z.zone).plusHours(12).toInstant().toEpochMilli(), l[0].period,
+            l.map { it.sis }.average().roundToInt(), l.map { it.dia }.average().roundToInt(),
+            if (pul.isEmpty()) null else pul.average().roundToInt(), "avg"
+        )
+    }
 
 /** A reading's dot: filled with the line colour, with a white ring so it stands out on the lines. */
 private fun dot(c: Canvas, x: Float, y: Float, color: Int) {
@@ -378,7 +386,9 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     c.drawText(range, left, 82f, pdfPaint(10.5f, 0xFFDCE5F3.toInt()))
     c.drawText(t(R.string.pdf_count, list.size, list.map { Z.date(it.takenAt) }.toSet().size), left, 98f, pdfPaint(8f, 0xFFAFC0DC.toInt()))
 
-    pdfChart(c, left, 146f, cw, 300f, list, bpOnly, t(R.string.pdf_chart_all), t(R.string.pdf_chart_all_sub), t(R.string.pdf_units), per.start, n)
+    // the charts show one dot per day, the day's average: said once here, above the first chart
+    c.drawText(t(R.string.pdf_note), left, 130f, pdfPaint(7.5f, P_MUTED))
+    pdfChart(c, left, 146f, cw, 300f, dailyMeans(list), bpOnly, t(R.string.pdf_chart_all), t(R.string.pdf_chart_all_sub), t(R.string.pdf_units), per.start, n)
 
     // nine boxes: for SYS, DIA and PUL the highest and the lowest (with day and time) and the average
     var y = 486f
@@ -426,15 +436,15 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     // ---------- page 2: morning and evening ----------
     c = newPage()
     smallHeader(c)
-    pdfChart(c, left, 74f, cw, 330f, list.filter { it.period == "morning" }, bpOnly, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
-    pdfChart(c, left, 440f, cw, 330f, list.filter { it.period == "evening" }, bpOnly, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 74f, cw, 330f, dailyMeans(list.filter { it.period == "morning" }), bpOnly, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 440f, cw, 330f, dailyMeans(list.filter { it.period == "evening" }), bpOnly, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
     footer(c)
     doc.finishPage(pages.last())
 
     // ---------- page 3: pulse alone ----------
     c = newPage()
     smallHeader(c)
-    pdfChart(c, left, 74f, cw, 330f, list, listOf(pulL), t(R.string.pdf_pulse_t), t(R.string.pdf_pulse_sub), t(R.string.pdf_units_pul), per.start, n)
+    pdfChart(c, left, 74f, cw, 330f, dailyMeans(list), listOf(pulL), t(R.string.pdf_pulse_t), t(R.string.pdf_pulse_sub), t(R.string.pdf_units_pul), per.start, n)
     footer(c)
     doc.finishPage(pages.last())
 

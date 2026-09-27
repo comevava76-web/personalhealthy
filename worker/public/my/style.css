@@ -46,10 +46,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 8px; }
 
 .kpis { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
-.kpi .l { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+.kpi .l { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi .v { font-size: 30px; font-weight: 300; line-height: 1.2; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.kpi .v b { font-weight: 300; }
-.kpi .u { color: var(--muted); font-size: 12px; }
+.kpi .u { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi .v .u { font-size: 20px; margin: 0 2px; }
 .sys { color: var(--sys); } .dia { color: var(--dia); } .pul { color: var(--pul); }
 
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px 10px; margin-bottom: 12px; }
@@ -66,6 +66,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 8px; }
 .plot .val { font-weight: 700; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #101C35; stroke-width: 3px; }
 .chart.small { height: 260px; }
 .empty { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 14px; }
+.note { color: var(--muted); font-size: 13px; margin: 4px 2px 12px; line-height: 1.45; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 12px; }
