@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12+: navy launch screen with the coral ECG trace drawing itself -->
+    <!-- Android 12+: navy launch screen with the violet ECG trace drawing itself -->
     <style name="Theme.HealthyInstantTracker" parent="Base.Theme.HealthyInstantTracker">
         <item name="android:windowSplashScreenBackground">#FF0F1D38</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_ecg</item>

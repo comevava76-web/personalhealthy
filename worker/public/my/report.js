@@ -22,6 +22,10 @@
       note: "Misure a domicilio. Fonte di ogni valore: foto del display del misuratore, letta dall'app, oppure detto a voce (colonna Fonte).",
       disclaimer: "Documento preparato dal paziente, senza valutazioni sui valori. La valutazione clinica spetta al medico.",
       page: (a, b) => `Pagina ${a} di ${b}`,
+      balT: "Mattina e sera a confronto", balSub: "media di tutte le misure del periodo · solo un calcolo, nessuna valutazione",
+      balM: "Mattina", balE: "Sera", balN: (n) => (n === 1 ? "1 misura" : `${n} misure`),
+      balSame: "Mattina e sera hanno la stessa media.", balDiff: (s, d) => `Sera - mattina: SYS ${s} · DIA ${d} mmHg`,
+      balNone: "Servono misure sia al mattino sia alla sera.",
     },
     en: {
       title: "Blood pressure", range: (a, b, n) => `${a} to ${b} · ${n} days`, count: (n, d) => `${n} readings on ${d} days · Swiss time`,
@@ -37,12 +41,16 @@
       note: "Home readings. Source of each value: photo of the monitor display, read by the app, or said aloud (see the Source column).",
       disclaimer: "Document prepared by the patient, with no assessment of the values. Clinical evaluation is up to the doctor.",
       page: (a, b) => `Page ${a} of ${b}`,
+      balT: "Morning and evening compared", balSub: "average of all the readings of the period · just arithmetic, no assessment",
+      balM: "Morning", balE: "Evening", balN: (n) => (n === 1 ? "1 reading" : `${n} readings`),
+      balSame: "Morning and evening have the same average.", balDiff: (s, d) => `Evening - morning: SYS ${s} · DIA ${d} mmHg`,
+      balNone: "Readings are needed both in the morning and in the evening.",
     },
   }[IT ? "it" : "en"];
 
   // print colours, as in the app's PDF
-  const SYS = "#D63B45", DIA = "#2B86C0", PUL = "#D9900F";
-  const SYS_T = "#B02733", DIA_T = "#1F6A9A", PUL_T = "#A86A00";
+  const SYS = "#6D5BD0", DIA = "#0F9C8E", PUL = "#B7860B";
+  const SYS_T = "#5543B8", DIA_T = "#0B7A6F", PUL_T = "#8F6806";
   const INK = "#13223F", MUTED = "#5B6B88", RULE = "#D9E0EA", PANEL = "#F7F9FC";
   const FONT = "Roboto, 'Helvetica Neue', Arial, sans-serif";
 
@@ -223,8 +231,9 @@
 
     // ---------- page 2: morning and evening ----------
     g = page(); smallHeader(g);
-    chart(g, left, 74, cw, 330, dailyMeans(list.filter((r) => r.period === "morning")), [sysL, diaL], W.morning, W.morningSub, W.units, startDay, days);
-    chart(g, left, 440, cw, 330, dailyMeans(list.filter((r) => r.period === "evening")), [sysL, diaL], W.evening, W.eveningSub, W.units, startDay, days);
+    chart(g, left, 74, cw, 280, dailyMeans(list.filter((r) => r.period === "morning")), [sysL, diaL], W.morning, W.morningSub, W.units, startDay, days);
+    chart(g, left, 384, cw, 280, dailyMeans(list.filter((r) => r.period === "evening")), [sysL, diaL], W.evening, W.eveningSub, W.units, startDay, days);
+    balance(g, left, 680, cw, 118, list, PRINT_THEME);
     footer(g);
 
     // ---------- page 3: pulse ----------
@@ -257,5 +266,50 @@
     } while (i < list.length);
   }
 
-  window.HintReport = { render };
+  /**
+   * The balance: morning on the left, evening on the right, each pan carrying its average SYS/DIA.
+   * The side with the higher average goes down (average of the SYS and DIA differences, at most 10°);
+   * within 1 mmHg the beam stays level. Only arithmetic, drawn in neutral colours: nothing is good or bad.
+   * theme: { ink, muted, beam, panel, sys, dia }
+   */
+  function balance(g, x, y, w, h, list, th) {
+    const avg = (a) => (a.length ? Math.round(a.reduce((p, q) => p + q, 0) / a.length) : null);
+    const side = (per) => { const l = list.filter((r) => r.period === per); return { n: l.length, sys: avg(l.map((r) => r.sys)), dia: avg(l.map((r) => r.dia)) }; };
+    const m = side("morning"), e = side("evening");
+    txt(g, x, y + 12, W.balT, 11.5, th.ink, { bold: true });
+    // the explanation beside the title, or below it when the space is narrow (phone)
+    if (w >= 440) txt(g, x + w, y + 12, W.balSub, 7.5, th.muted, { anchor: "end" });
+    else txt(g, x, y + 26, W.balSub, 7.5, th.muted);
+    if (!m.n || !e.n) { txt(g, x + w / 2, y + h / 2 + 8, W.balNone, 9, th.muted, { anchor: "middle" }); return; }
+    const ds = e.sys - m.sys, dd = e.dia - m.dia;
+    const level = Math.abs(ds) < 1 && Math.abs(dd) < 1;
+    const deg = level ? 0 : Math.max(-10, Math.min(10, ((ds + dd) / 2) * 1.2));
+    const a = (deg * Math.PI) / 180;
+    const cx = x + w / 2, py = y + h * 0.56, half = Math.min(w * 0.3, 170);
+    const Lx = cx - half * Math.cos(a), Ly = py - half * Math.sin(a), Rx = cx + half * Math.cos(a), Ry = py + half * Math.sin(a);
+    // stand and pivot
+    el(g, "path", { d: `M${cx - 16} ${y + h - 16} L${cx + 16} ${y + h - 16} L${cx} ${py + 4} Z`, fill: th.beam, opacity: 0.55 });
+    el(g, "rect", { x: cx - 34, y: y + h - 16, width: 68, height: 3, rx: 1.5, fill: th.beam, opacity: 0.55 });
+    // beam
+    el(g, "line", { x1: Lx, y1: Ly, x2: Rx, y2: Ry, stroke: th.beam, "stroke-width": 3, "stroke-linecap": "round" });
+    el(g, "circle", { cx, cy: py, r: 4, fill: th.ink });
+    // pans, and above each one its label and averages
+    for (const [px, pyy, lab, v] of [[Lx, Ly, W.balM, m], [Rx, Ry, W.balE, e]]) {
+      el(g, "line", { x1: px, y1: pyy, x2: px - 22, y2: pyy + 16, stroke: th.beam, "stroke-width": 1 });
+      el(g, "line", { x1: px, y1: pyy, x2: px + 22, y2: pyy + 16, stroke: th.beam, "stroke-width": 1 });
+      el(g, "path", { d: `M${px - 30} ${pyy + 16} Q${px} ${pyy + 30} ${px + 30} ${pyy + 16} Z`, fill: th.panel, stroke: th.beam, "stroke-width": 1 });
+      txt(g, px, pyy - 30, `${lab} · ${W.balN(v.n)}`, 7.5, th.muted, { anchor: "middle" });
+      const sw = tw(v.sys, 15, true), dw = tw(v.dia, 15, true), slash = tw("/", 15, false);
+      const x0 = px - (sw + slash + dw) / 2;
+      txt(g, x0, pyy - 11, v.sys, 15, th.sys, { bold: true });
+      txt(g, x0 + sw, pyy - 11, "/", 15, th.muted);
+      txt(g, x0 + sw + slash, pyy - 11, v.dia, 15, th.dia, { bold: true });
+    }
+    const sgn = (v) => (v > 0 ? "+" + v : String(v));
+    txt(g, x + w / 2, y + h - 2, level ? W.balSame : W.balDiff(sgn(ds), sgn(dd)), 8, th.ink, { anchor: "middle" });
+  }
+
+  const PRINT_THEME = { ink: INK, muted: MUTED, beam: "#8A97B0", panel: "#EEF2F7", sys: SYS_T, dia: DIA_T };
+
+  window.HintReport = { render, balance };
 })();

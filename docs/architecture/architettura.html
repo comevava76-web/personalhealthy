@@ -10,7 +10,7 @@
 -->
 <style>
   @page { size: A4; margin: 0; }
-  :root { --ink:#13223F; --muted:#5B6B88; --rule:#D9E0EA; --panel:#F4F7FB; --navy:#0F1C36; --red:#D63B45; --blue:#2B86C0; --amber:#D9900F; --green:#1E9A5B; }
+  :root { --ink:#13223F; --muted:#5B6B88; --rule:#D9E0EA; --panel:#F4F7FB; --navy:#0F1C36; --red:#6D5BD0; --blue:#0F9C8E; --amber:#B7860B; --green:#1E9A5B; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #fff; color: var(--ink); font: 8.6pt/1.38 Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -59,14 +59,14 @@
       .l { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#a); } .lb { font-size:6.4px; fill:#5B6B88; }
     </style>
     <!-- utente -->
-    <circle cx="28" cy="46" r="9" fill="#D63B45"/><rect x="18" y="57" width="20" height="18" rx="6" fill="#D63B45"/>
+    <circle cx="28" cy="46" r="9" fill="#6D5BD0"/><rect x="18" y="57" width="20" height="18" rx="6" fill="#6D5BD0"/>
     <text x="28" y="88" text-anchor="middle" class="s">Utente</text>
     <line x1="42" y1="62" x2="72" y2="62" class="l"/>
     <!-- app -->
     <rect x="74" y="10" width="170" height="130" rx="8" fill="#F4F7FB" stroke="#13223F" stroke-width="1.2"/>
     <text x="84" y="26" class="t">App HINT (Android)</text>
     <rect x="84" y="33" width="150" height="20" rx="4" class="b"/><text x="90" y="46" class="s">1 · Google una volta, poi impronta ogni giorno</text>
-    <rect x="84" y="57" width="150" height="20" rx="4" class="b" stroke="#D63B45" stroke-width="1.4"/><text x="90" y="70" class="s">2 · Condizioni d'uso accettate (registrate)</text>
+    <rect x="84" y="57" width="150" height="20" rx="4" class="b" stroke="#6D5BD0" stroke-width="1.4"/><text x="90" y="70" class="s">2 · Condizioni d'uso accettate (registrate)</text>
     <rect x="84" y="81" width="72" height="24" rx="4" class="b"/><text x="90" y="92" class="s">3a · Voce</text><text x="90" y="100" class="s">gratis</text>
     <rect x="162" y="81" width="72" height="24" rx="4" class="b"/><text x="168" y="92" class="s">3b · Foto display</text><text x="168" y="100" class="s">Upgrade · AI</text>
     <rect x="84" y="109" width="150" height="24" rx="4" class="b"/><text x="90" y="120" class="s">4 · Home, grafici, Report 7 giorni</text><text x="90" y="128" class="s">PDF A4 · Excel · promemoria 9:00 / 17:00</text>
@@ -128,7 +128,9 @@
         <li>Nessuna diagnosi, nessun consiglio, nessun giudizio sui valori: niente zone colorate né «nella norma».</li>
         <li>Etichette sempre <b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>. Pressione e battiti mai nello stesso grafico.</li>
         <li>Grafici: 7 giorni, un punto per giorno = media di tutte le misure del giorno (spiegato prima dei grafici), valore scritto accanto, asse solo con i numeri dei giorni.</li>
-        <li>Stesso PDF A4 dall'app e dal web.</li>
+        <li>Stesso PDF A4 dall'app e dal web; dal web si scarica subito come file.</li>
+        <li>Niente rosso da nessuna parte: SYS viola, DIA verde acqua, PUL ambra. Nessun colore indica «bene» o «male».</li>
+        <li>Bilancia mattina/sera: solo il confronto delle medie, senza giudizio.</li>
         <li>Dati legati a un codice anonimo; foto e file elaborati e non salvati.</li>
         <li>Il gestore paga solo il server (gratuito); ogni utente paga la propria AI.</li>
       </ul>
@@ -166,7 +168,7 @@
     <text x="14" y="134" class="h">Browser · My Dash</text>
     <text x="14" y="146" class="x">HTML, CSS, JavaScript senza framework</text>
     <text x="14" y="155" class="x">grafici SVG disegnati dalla pagina</text>
-    <text x="14" y="164" class="x">PDF A4 in SVG (stesso modello dell'app)</text>
+    <text x="14" y="164" class="x">PDF A4 scaricato: SVG → jsPDF + svg2pdf</text>
     <text x="14" y="173" class="x">cookie HttpOnly, Secure, SameSite=Strict</text>
     <!-- worker -->
     <line x1="146" y1="60" x2="190" y2="70" class="ar"/><text x="148" y="50" class="lb2">HTTPS</text><text x="148" y="57" class="lb2">firmato</text>
@@ -198,7 +200,7 @@
         <tr><td>App Android</td><td>Kotlin, Compose, minSdk 26, target 34</td><td><code>android/</code></td></tr>
         <tr><td>Server</td><td>Cloudflare Workers, TypeScript</td><td><code>worker/src/</code></td></tr>
         <tr><td>Database</td><td>Cloudflare D1 (SQLite), giurisdizione UE</td><td><code>worker/schema.sql</code></td></tr>
-        <tr><td>Dashboard web</td><td>HTML/JS, grafici SVG propri</td><td><code>worker/public/my/</code></td></tr>
+        <tr><td>Dashboard web</td><td>HTML/JS, grafici SVG propri, jsPDF + svg2pdf</td><td><code>worker/public/my/</code></td></tr>
         <tr><td>Lettura foto</td><td>Anthropic Messages API</td><td><code>index.ts</code></td></tr>
         <tr><td>Accesso</td><td>Sign in with Google + chiave del telefono</td><td><code>Google.kt</code></td></tr>
         <tr><td>Build e rilascio</td><td>GitHub Actions, Gradle, Wrangler</td><td><code>.github/workflows/</code></td></tr>

@@ -289,4 +289,9 @@
     <string name="pdf_avg_of">Durchschnitt aus %1$d Messungen</string>
     <string name="pdf_none_moment">Keine Messungen zu dieser Tageszeit</string>
     <string name="pdf_note">In den Grafiken ist jeder Punkt der Durchschnitt aller Messungen dieses Tages. Die einzelnen Messungen stehen in der Liste.</string>
+    <string name="bal_title">Morgen und Abend im Vergleich</string>
+    <string name="bal_sub">Durchschnitt aller Messungen des Zeitraums · nur eine Rechnung, keine Bewertung</string>
+    <string name="bal_none">Es braucht Messungen am Morgen und am Abend.</string>
+    <string name="bal_same">Morgen und Abend haben denselben Durchschnitt.</string>
+    <string name="bal_diff">Abend - Morgen: SYS %1$s · DIA %2$s mmHg</string>
 </resources>

@@ -22,9 +22,9 @@ import kotlin.math.sign
 class ChartPal(val bg: Int, val grid: Int, val text: Int, val outline: Int)
 
 // Line colours, the same in the app and in the PDF
-val SYS_COLOR = 0xFFF2545B.toInt()    // systolic, coral
-val DIA_COLOR = 0xFF3FA7D6.toInt()    // diastolic, teal-blue
-val PUL_COLOR = 0xFFFFC145.toInt()    // pulse, amber
+val SYS_COLOR = 0xFF8C7BF2.toInt()    // systolic, violet
+val DIA_COLOR = 0xFF1FA396.toInt()    // diastolic, teal
+val PUL_COLOR = 0xFFC08A1E.toInt()    // pulse, amber
 
 val SCREEN_PAL = ChartPal(bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(), outline = 0)
 
@@ -180,12 +180,12 @@ fun monotonePath(pts: List<Pair<Float, Float>>): Path {
 /* ---------------- PDF ---------------- */
 
 // print colours: a little deeper than on screen, so thin lines and small numbers read well on white paper
-private const val P_SYS = 0xFFD63B45.toInt()
-private const val P_DIA = 0xFF2B86C0.toInt()
-private const val P_PUL = 0xFFD9900F.toInt()
-private const val P_SYS_T = 0xFFB02733.toInt()
-private const val P_DIA_T = 0xFF1F6A9A.toInt()
-private const val P_PUL_T = 0xFFA86A00.toInt()
+private const val P_SYS = 0xFF6D5BD0.toInt()
+private const val P_DIA = 0xFF0F9C8E.toInt()
+private const val P_PUL = 0xFFB7860B.toInt()
+private const val P_SYS_T = 0xFF5543B8.toInt()
+private const val P_DIA_T = 0xFF0B7A6F.toInt()
+private const val P_PUL_T = 0xFF8F6806.toInt()
 private const val P_INK = 0xFF13223F.toInt()
 private const val P_MUTED = 0xFF5B6B88.toInt()
 private const val P_RULE = 0xFFD9E0EA.toInt()
@@ -302,6 +302,56 @@ private fun pdfChart(
         }
     }
 }
+
+/**
+ * The balance, as in the web report (report.js): morning on the left, evening on the right, each pan with its average
+ * SYS/DIA over the period. The side with the higher average goes down (average of the SYS and DIA differences, at most
+ * 10 degrees); within 1 mmHg the beam stays level. Only arithmetic, in neutral colours: nothing is good or bad.
+ */
+private fun pdfBalance(c: Canvas, x: Float, y: Float, w: Float, h: Float, list: List<Reading>) {
+    class Side(val n: Int, val sys: Int, val dia: Int)
+    fun side(per: String): Side? {
+        val l = list.filter { it.period == per }
+        return if (l.isEmpty()) null else Side(l.size, l.map { it.sis }.average().roundToInt(), l.map { it.dia }.average().roundToInt())
+    }
+    val beamCol = 0xFF8A97B0.toInt()
+    c.drawText(t(R.string.bal_title), x, y + 12f, pdfPaint(11.5f, bold = true))
+    c.drawText(t(R.string.bal_sub), x + w, y + 12f, pdfPaint(7.5f, P_MUTED, align = Paint.Align.RIGHT))
+    val m = side("morning"); val e = side("evening")
+    if (m == null || e == null) {
+        c.drawText(t(R.string.bal_none), x + w / 2f, y + h / 2f + 8f, pdfPaint(9f, P_MUTED, align = Paint.Align.CENTER)); return
+    }
+    val ds = e.sys - m.sys; val dd = e.dia - m.dia
+    val level = kotlin.math.abs(ds) < 1 && kotlin.math.abs(dd) < 1
+    val deg = if (level) 0f else ((ds + dd) / 2f * 1.2f).coerceIn(-10f, 10f)
+    val a = Math.toRadians(deg.toDouble())
+    val cx = x + w / 2f; val py = y + h * 0.56f; val half = minOf(w * 0.3f, 170f)
+    val lx = cx - half * kotlin.math.cos(a).toFloat(); val ly = py - half * kotlin.math.sin(a).toFloat()
+    val rx = cx + half * kotlin.math.cos(a).toFloat(); val ry = py + half * kotlin.math.sin(a).toFloat()
+    val soft = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; alpha = 140 }
+    c.drawPath(Path().apply { moveTo(cx - 16f, y + h - 16f); lineTo(cx + 16f, y + h - 16f); lineTo(cx, py + 4f); close() }, soft)
+    c.drawRoundRect(RectF(cx - 34f, y + h - 16f, cx + 34f, y + h - 13f), 1.5f, 1.5f, soft)
+    c.drawLine(lx, ly, rx, ry, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 3f; strokeCap = Paint.Cap.ROUND })
+    c.drawCircle(cx, py, 4f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = P_INK })
+    val thin = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 1f; style = Paint.Style.STROKE }
+    val pan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEEF2F7.toInt() }
+    for ((px, pyy, label, v) in listOf(Quad(lx, ly, t(R.string.pdf_morning_t), m), Quad(rx, ry, t(R.string.pdf_evening_t), e))) {
+        c.drawLine(px, pyy, px - 22f, pyy + 16f, thin); c.drawLine(px, pyy, px + 22f, pyy + 16f, thin)
+        val bowl = Path().apply { moveTo(px - 30f, pyy + 16f); quadTo(px, pyy + 30f, px + 30f, pyy + 16f); close() }
+        c.drawPath(bowl, pan); c.drawPath(bowl, thin)
+        c.drawText("$label · ${t(R.string.n_readings, v.n)}", px, pyy - 30f, pdfPaint(7.5f, P_MUTED, align = Paint.Align.CENTER))
+        val big = pdfPaint(15f, bold = true)
+        val sw = big.measureText("${v.sys}"); val slash = pdfPaint(15f).measureText("/"); val dw = big.measureText("${v.dia}")
+        val x0 = px - (sw + slash + dw) / 2f
+        c.drawText("${v.sys}", x0, pyy - 11f, pdfPaint(15f, P_SYS_T, true))
+        c.drawText("/", x0 + sw, pyy - 11f, pdfPaint(15f, P_MUTED))
+        c.drawText("${v.dia}", x0 + sw + slash, pyy - 11f, pdfPaint(15f, P_DIA_T, true))
+    }
+    fun sgn(v: Int) = if (v > 0) "+$v" else "$v"
+    c.drawText(if (level) t(R.string.bal_same) else t(R.string.bal_diff, sgn(ds), sgn(dd)), x + w / 2f, y + h - 2f, pdfPaint(8f, align = Paint.Align.CENTER))
+}
+
+private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
 
 /** One point per day: the average of that day's readings, placed at midday so it sits in the middle of its day. */
 private fun dailyMeans(list: List<Reading>): List<Reading> =
@@ -436,8 +486,9 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     // ---------- page 2: morning and evening ----------
     c = newPage()
     smallHeader(c)
-    pdfChart(c, left, 74f, cw, 330f, dailyMeans(list.filter { it.period == "morning" }), bpOnly, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
-    pdfChart(c, left, 440f, cw, 330f, dailyMeans(list.filter { it.period == "evening" }), bpOnly, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 74f, cw, 280f, dailyMeans(list.filter { it.period == "morning" }), bpOnly, t(R.string.pdf_morning_t), t(R.string.pdf_morning_sub), t(R.string.pdf_units), per.start, n)
+    pdfChart(c, left, 384f, cw, 280f, dailyMeans(list.filter { it.period == "evening" }), bpOnly, t(R.string.pdf_evening_t), t(R.string.pdf_evening_sub), t(R.string.pdf_units), per.start, n)
+    pdfBalance(c, left, 680f, cw, 118f, list)
     footer(c)
     doc.finishPage(pages.last())
 
