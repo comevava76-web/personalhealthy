@@ -109,6 +109,10 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .actions .btn { padding: 7px 10px; font-size: 13px; }
 }
 @media (max-width: 480px) {
+  .top { position: static; gap: 10px; }
+  .modules { flex: 0 1 auto; }
+  .actions { width: 100%; flex-wrap: nowrap; }
+  .actions .btn { flex: 1 1 auto; padding: 7px 8px; }
   table { font-size: 13px; } th, td { padding: 7px 6px; }
   .tiles { grid-template-columns: 1fr; }
   .kpi .v { font-size: 24px; }

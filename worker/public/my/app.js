@@ -13,9 +13,9 @@
 
   /* ---------- words ---------- */
   const T = IT ? {
-    share: "Invia al medico", pdf: "Salva PDF", csv: "Excel (CSV)", out: "Esci",
+    share: "Invia al medico", pdf: "PDF", csv: "Excel", out: "Esci",
     bp: "Pressione", labs: "Analisi",
-    range: { 7: "7G", 14: "14G", 30: "30G", 90: "90G", 365: "1A", 3660: "Tutto" },
+    range: { 7: "7 giorni", 14: "14 giorni", 30: "30 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
     last: "Ultima misura", avg: "Media del periodo", count: "Misure", days: (d, n) => `in ${d} giorni su ${n}`,
     whole: "Andamento del periodo", wholeSub: "ogni misura, giorno e ora",
@@ -38,9 +38,9 @@
     rights: "Tutti i diritti riservati", terms: "Condizioni d'uso", tv: "Grafici: TradingView Lightweight Charts™",
     err: "Qualcosa non ha funzionato. Riprova.",
   } : {
-    share: "Send to doctor", pdf: "Save PDF", csv: "Excel (CSV)", out: "Sign out",
+    share: "Send to doctor", pdf: "PDF", csv: "Excel", out: "Sign out",
     bp: "Blood pressure", labs: "Lab results",
-    range: { 7: "7D", 14: "14D", 30: "30D", 90: "90D", 365: "1Y", 3660: "All" },
+    range: { 7: "7 days", 14: "14 days", 30: "30 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
     last: "Last reading", avg: "Period average", count: "Readings", days: (d, n) => `on ${d} of ${n} days`,
     whole: "The whole period", wholeSub: "every reading, day and time",
@@ -114,9 +114,11 @@
     const chart = LC.createChart(el, {
       autoSize: true, ...theme(DARK),
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.06 } },
-      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 3, minBarSpacing: 2 },
+      // the whole period always fits the width: no sideways scrolling or zooming, at most 30 days
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 1, minBarSpacing: 0.5,
+        fixLeftEdge: true, fixRightEdge: true, lockVisibleTimeRangeOnResize: true },
       localization: { locale: LOCALE, priceFormatter: (v) => String(Math.round(v)), timeFormatter: (t) => fTip.format(t * 1000) },
-      handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+      handleScale: false, handleScroll: false,
     });
     const series = {};
     // SYS on top: drawn last
@@ -248,6 +250,7 @@
   const main = $("main");
   let current = { module: "bp", days: 30, data: null };
   try { current.days = Number(localStorage.getItem("hint.days")) || 30; } catch {}
+  if (![7, 14, 30].includes(current.days)) current.days = 30;
 
   function words() {
     $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv; $("btn-out").textContent = T.out;
