@@ -553,7 +553,15 @@ fun App() {
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
-                        Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" })
+                        Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" }, onDash = {
+                            val pid = personId ?: return@ReportScreen
+                            scope.launch {
+                                try {
+                                    val url = Repo.webDashUrl(pid)
+                                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                                } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                            }
+                        })
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
@@ -1425,7 +1433,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 /* ---------------- Report ---------------- */
 
 @Composable
-fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit) {
+fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Unit) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
     val infos = listOf(7, 15, 30).associateWith { periodInfo(readings, it) }
@@ -1434,6 +1442,9 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.report_title), t(R.string.report_sub))
+        // the web dashboard, opened in the browser already signed in: bigger charts, and a link to send to the doctor
+        BigButton("↗  " + t(R.string.my_dash), color = C.Surface2, textColor = C.Ink, onClick = onDash)
+        Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(4.dp)) {
             listOf(7, 15, 30).forEach { d ->

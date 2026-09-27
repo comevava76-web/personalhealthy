@@ -4,11 +4,13 @@
 // change q() and a few SQL expressions; the rest of the code stays the same.
 
 import { homePage, privacyPage, termsPage } from "./pages";
+import { handleWeb, newWebCode, endWebAccess } from "./web";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
 interface Env {
   DB: any; // Cloudflare D1
+  ASSETS: any; // the static files in public/ (the app, the guides, the My Dash page)
   ANTHROPIC_API_KEY: string;    // the owner's key: pays for every person with pays = 'owner'
   FAMILY_CODE: string;          // still works as an invite for "family member (I pay)"
   KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
@@ -347,6 +349,9 @@ export default {
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
+      // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
+      const web = await handleWeb(req, env, q, url);
+      if (web) return web;
       return await handle(req, env, q, url);
     } catch (e: any) {
       console.error(e?.stack || e);
@@ -496,9 +501,13 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
+  // My Dash: a one-time code to open the web dashboard already signed in (see web.ts)
+  if (req.method === "POST" && url.pathname === "/v1/web/code") return newWebCode(q, pid, url.origin);
+
   // Sign out of this phone: the phone is forgotten, the data stays and comes back with Google on any phone
   if (req.method === "POST" && url.pathname === "/v1/signout") {
     if (!person.google_sub) return fail("Link Google first, or you could not sign in again", 409, "google_needed");
+    await endWebAccess(q, pid, false);   // browsers signed in to My Dash from this phone are signed out too
     await q("UPDATE persons SET public_key = ?1 WHERE id = ?2", ["signed-out:" + pid, pid]);
     return json({ ok: true });
   }
@@ -507,6 +516,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // the family's credit and invites depend on them. The record of the accepted notice is kept, as proof.
   if (req.method === "DELETE" && url.pathname === "/v1/me") {
     if (person.is_admin) return fail("The app manager cannot delete their account", 403, "admin_delete");
+    await endWebAccess(q, pid, true);
     await env.DB.batch([
       env.DB.prepare("DELETE FROM measurements WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM scans WHERE person_id = ?1").bind(pid),

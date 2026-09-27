@@ -113,3 +113,29 @@ CREATE TABLE IF NOT EXISTS acceptances (
   accepted_at_local TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_acceptances_person ON acceptances (person_id, doc, version);
+
+-- My Dash (web dashboard). Only SHA-256 fingerprints are stored: a stolen database holds no usable code, cookie or link.
+-- One-time codes the app creates to open the dashboard already signed in (60 seconds, one use).
+CREATE TABLE IF NOT EXISTS web_codes (
+  code_hash   TEXT PRIMARY KEY,
+  person_id   TEXT NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+-- Browsers signed in to My Dash (7 days, or until "Sign out").
+CREATE TABLE IF NOT EXISTS web_sessions (
+  id_hash     TEXT PRIMARY KEY,
+  person_id   TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+-- Read-only links for the doctor: the readings between date_from and date_to, until expires_at.
+CREATE TABLE IF NOT EXISTS web_shares (
+  token_hash  TEXT PRIMARY KEY,
+  person_id   TEXT NOT NULL,
+  date_from   INTEGER NOT NULL,
+  date_to     INTEGER NOT NULL,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_web_sessions_person ON web_sessions (person_id);
+CREATE INDEX IF NOT EXISTS idx_web_shares_person ON web_shares (person_id);

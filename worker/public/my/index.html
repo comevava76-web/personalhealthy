@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>HINT · My Dash</title>
+<link rel="stylesheet" href="/my/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/my/">
+    <svg viewBox="0 0 108 108" aria-hidden="true"><rect width="108" height="108" rx="24" fill="#16284A"/>
+      <path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95"
+        fill="none" stroke="#F2545B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span><b>HINT</b><small>My Dash</small></span>
+  </a>
+  <nav id="modules" class="modules"></nav>
+  <div class="actions" id="actions" hidden>
+    <button class="btn primary" id="btn-share" type="button"></button>
+    <button class="btn" id="btn-pdf" type="button"></button>
+    <button class="btn" id="btn-csv" type="button"></button>
+    <button class="btn ghost" id="btn-out" type="button"></button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="loading" id="loading"><span class="pulse"></span></div>
+</main>
+
+<footer class="foot">
+  <p id="foot-note"></p>
+  <p>HINT · HealthyInstantTracker · © <span id="years">2026</span> · <span id="rights"></span> ·
+    <a href="/terms" id="terms-link"></a> · <a href="/privacy">Privacy</a></p>
+  <p class="tv" id="tv-note"></p>
+</footer>
+
+<dialog id="share">
+  <form method="dialog" class="dlg">
+    <h3 id="sh-title"></h3>
+    <p class="muted" id="sh-intro"></p>
+    <label class="row"><span id="sh-valid-l"></span>
+      <select id="sh-valid"><option value="1"></option><option value="7" selected></option><option value="30"></option></select>
+    </label>
+    <div id="sh-result" hidden>
+      <input id="sh-url" readonly>
+      <div class="send">
+        <a class="btn wa" id="sh-wa" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn" id="sh-mail">Email</a>
+        <button class="btn" id="sh-copy" type="button"></button>
+        <button class="btn" id="sh-native" type="button" hidden></button>
+      </div>
+      <p class="muted small" id="sh-exp"></p>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn ghost small" id="sh-revoke" type="button"></button>
+      <span class="grow"></span>
+      <button class="btn" value="close" id="sh-close"></button>
+      <button class="btn primary" id="sh-make" type="button"></button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/my/vendor/lightweight-charts-5.2.1.js"></script>
+<script src="/my/app.js"></script>
+</body>
+</html>
