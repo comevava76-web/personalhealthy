@@ -664,14 +664,22 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 @Composable
 fun BigButton(
     text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true,
-    modifier: Modifier = Modifier, onClick: () -> Unit
+    modifier: Modifier = Modifier, icon: Int? = null, onClick: () -> Unit
 ) {
     Box(
         modifier.fillMaxWidth().padding(vertical = 6.dp).height(58.dp).clip(RoundedCornerShape(18.dp))
             .background(if (enabled) color else color.copy(alpha = 0.35f))
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
-    ) { Text(text, color = textColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) }
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                Icon(painterResource(icon), contentDescription = null, tint = textColor, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(text, color = textColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
 }
 
 @Composable
@@ -867,18 +875,14 @@ fun HomeScreen(
         if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
-        // photo of the display, or the microphone next to it to say the values aloud
+        // two ways to record a reading, side by side and of the same width: say it (free) or photograph it (AI credit)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BigButton(t(R.string.measure), modifier = Modifier.weight(1f), onClick = onMeasure)
+            BigButton(t(R.string.record_short), color = C.Surface2, textColor = C.Ink, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
-            Box(
-                Modifier.size(58.dp).clip(RoundedCornerShape(18.dp)).background(C.Surface2).clickable(onClick = onVoice),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(painterResource(R.drawable.ic_mic), contentDescription = t(R.string.voice_button), tint = C.Ink, modifier = Modifier.size(26.dp))
-            }
+            BigButton(t(R.string.scan_short) + "*", modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onMeasure)
         }
-        Text(t(R.string.photo_tip) + " " + t(R.string.voice_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
+        Text(t(R.string.photo_tip) + " " + t(R.string.voice_tip), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp))
+        Text("* " + t(R.string.scan_cost_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 6.dp))
 
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)

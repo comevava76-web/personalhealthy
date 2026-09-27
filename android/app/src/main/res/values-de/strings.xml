@@ -51,6 +51,9 @@
     <string name="no_readings_text">Miss deinen Blutdruck und fotografiere die Anzeige: Die App liest die Werte.</string>
     <string name="last_fmt">Letzte: %s</string>
     <string name="measure">Messung scannen</string>
+    <string name="record_short">Sprechen</string>
+    <string name="scan_short">Scannen</string>
+    <string name="scan_cost_note">Das Scannen eines Fotos verbraucht KI-Guthaben (etwa einen halben Cent pro Foto). Das Ansagen per Stimme ist kostenlos.</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>
     <string name="summary_title">Übersicht 7 Tage</string>

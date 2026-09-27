@@ -52,6 +52,9 @@
     <string name="no_readings_text">Measure your blood pressure and photograph the display: the app reads the numbers.</string>
     <string name="last_fmt">Last: %s</string>
     <string name="measure">Scan reading</string>
+    <string name="record_short">Record</string>
+    <string name="scan_short">Scan</string>
+    <string name="scan_cost_note">Scanning a photo uses AI credit (about half a cent per photo). Recording by voice is free.</string>
     <string name="last7">Last 7 days</string>
     <string name="week_hint">One value per day: the average of all that day\'s readings. SYS on top, DIA below.</string>
     <string name="summary_title">7-day summary</string>
