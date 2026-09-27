@@ -273,7 +273,7 @@
     <string name="pdf_count">%1$d Messungen an %2$d Tagen · Schweizer Zeit</string>
     <string name="pdf_chart_all">Der ganze Zeitraum</string>
     <string name="pdf_chart_all_sub">jede Messung, in der Reihenfolge der Aufnahme</string>
-    <string name="pdf_units">SYS und DIA in mmHg · PUL in Schlägen pro Minute</string>
+    <string name="pdf_units">SYS und DIA in mmHg</string>
     <string name="pdf_units_pul">Schläge pro Minute</string>
     <string name="pdf_morning_t">Morgen</string>
     <string name="pdf_morning_sub">vor 12 Uhr</string>

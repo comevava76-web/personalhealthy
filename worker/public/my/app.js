@@ -15,7 +15,7 @@
   const T = IT ? {
     share: "Invia al medico", pdf: "PDF", csv: "Excel", out: "Esci",
     bp: "Pressione", labs: "Analisi",
-    range: { 7: "7 giorni", 14: "14 giorni", 30: "30 giorni" },
+    range: { 7: "7 giorni", 14: "14 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
     last: "Ultima misura", avg: "Media del periodo", count: "Misure", days: (d, n) => `in ${d} giorni su ${n}`,
     whole: "Andamento del periodo", wholeSub: "ogni misura, giorno e ora",
@@ -40,7 +40,7 @@
   } : {
     share: "Send to doctor", pdf: "PDF", csv: "Excel", out: "Sign out",
     bp: "Blood pressure", labs: "Lab results",
-    range: { 7: "7 days", 14: "14 days", 30: "30 days" },
+    range: { 7: "7 days", 14: "14 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
     last: "Last reading", avg: "Period average", count: "Readings", days: (d, n) => `on ${d} of ${n} days`,
     whole: "The whole period", wholeSub: "every reading, day and time",
@@ -76,6 +76,7 @@
     return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) / 1000;
   }
   const fTip = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const when = (ms) => fTip.format(chartTime(ms) * 1000);   // the same words as under the finger, e.g. "dom 27 set, 11:58"
 
   /* ---------- server ---------- */
   async function api(path, opts = {}) {
@@ -98,8 +99,8 @@
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", attributionLogo: false },
       grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
       crosshair: { mode: LC.CrosshairMode.Normal,
-        vertLine: { color: t.cross, width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: "#22345C" },
-        horzLine: { color: t.cross, width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: "#22345C" } },
+        vertLine: { color: t.cross, width: 1, style: LC.LineStyle.Dashed, labelVisible: false },
+        horzLine: { visible: false, labelVisible: false } },
     };
   }
 
@@ -110,6 +111,7 @@
   function lineChart(el, legend, items, keys) {
     el.innerHTML = "";
     const pts = items.filter((r) => keys.some((k) => r[k] != null));
+    // the pressure chart shows SYS and DIA only; the pulse has its own chart
     if (!pts.length) { el.innerHTML = `<div class="empty">${T.noneMoment}</div>`; legend.innerHTML = ""; return; }
     const chart = LC.createChart(el, {
       autoSize: true, ...theme(DARK),
@@ -128,7 +130,7 @@
         lineColor: c, lineWidth: 2, topColor: rgba(c, k === "pul" && keys.length > 1 ? 0.0 : 0.26), bottomColor: rgba(c, 0),
         lineType: LC.LineType.Simple, pointMarkersVisible: true, pointMarkersRadius: 2.5,
         crosshairMarkerRadius: 5, crosshairMarkerBorderColor: "#0A1224", crosshairMarkerBackgroundColor: c,
-        priceLineVisible: false, lastValueVisible: true, title: k.toUpperCase(),
+        priceLineVisible: false, lastValueVisible: false,
         priceFormat: { type: "price", precision: 0, minMove: 1 },
       });
       let prev = -1;
@@ -147,9 +149,9 @@
     };
     const last = pts[pts.length - 1];
     const lastVals = Object.fromEntries(keys.map((k) => [k, last[k]]));
-    show(lastVals, `${day(last.t)} ${time(last.t)}`);
+    show(lastVals, when(last.t));
     chart.subscribeCrosshairMove((p) => {
-      if (!p.time || !p.seriesData.size) return show(lastVals, `${day(last.t)} ${time(last.t)}`);
+      if (!p.time || !p.seriesData.size) return show(lastVals, when(last.t));
       const v = {}; for (const k of keys) { const d = p.seriesData.get(series[k]); v[k] = d ? d.value : null; }
       show(v, fTip.format(p.time * 1000));
     });
@@ -206,9 +208,9 @@
           ` : `<div class="card"><div class="empty" style="height:200px">${T.none}</div></div>`}`;
         ctx.bindPills && ctx.bindPills();
         if (!n) return;
-        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia", "pul"]);
-        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia", "pul"]);
-        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia", "pul"]);
+        lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"]);
+        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"]);
+        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"]);
         lineChart($("ch-p"), $("lg-p"), items, ["pul"]);
       },
       csv(items) {
@@ -248,9 +250,9 @@
 
   /* ---------- page ---------- */
   const main = $("main");
-  let current = { module: "bp", days: 30, data: null };
-  try { current.days = Number(localStorage.getItem("hint.days")) || 30; } catch {}
-  if (![7, 14, 30].includes(current.days)) current.days = 30;
+  let current = { module: "bp", days: 14, data: null };
+  try { current.days = Number(localStorage.getItem("hint.days")) || 14; } catch {}
+  if (![7, 14].includes(current.days)) current.days = 14;
 
   function words() {
     $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv; $("btn-out").textContent = T.out;
