@@ -3,7 +3,7 @@
 // All database access goes through the q() function: to move to PostgreSQL/Azure one day,
 // change q() and a few SQL expressions; the rest of the code stays the same.
 
-import { homePage, privacyPage } from "./pages";
+import { homePage, privacyPage, termsPage } from "./pages";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
@@ -171,6 +171,13 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
   }
 }
 
+/** Version of the notice every user must accept before using the app. A new version asks everyone again. */
+const DISCLAIMER_VERSION = "1";
+async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
+  const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
+  return !!row;
+}
+
 function newId(prefix: string): string {
   const b = crypto.getRandomValues(new Uint8Array(12));
   return prefix + [...b].map(x => x.toString(16).padStart(2, "0")).join("");
@@ -335,6 +342,7 @@ export default {
     // public pages, linked from Google's sign-in screen
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) return homePage();
     if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "");
+    if (req.method === "GET" && url.pathname === "/terms") return termsPage();
     // the easy address to share: always the latest app
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
@@ -469,10 +477,25 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       googleOn: !!env.GOOGLE_CLIENT_ID,
       billingMode: await getSetting(q, "billing_mode", "private"),
       credit: await creditInfo(q, pool),
+      disclaimerOk: await acceptedNotice(q, pid),
     });
   }
-  // Delete my account and all my data (right to erasure). The app asks twice. The app manager cannot:
-  // the family's credit and invites depend on them.
+  // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
+  if (req.method === "POST" && url.pathname === "/v1/accept") {
+    if (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION) return fail("Unknown notice version", 400, "bad_version");
+    const now = Date.now();
+    const device = [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(person.public_key)))]
+      .map((b) => b.toString(16).padStart(2, "0")).join("");
+    const str = (v: unknown, n: number) => (typeof v === "string" ? v.slice(0, n) : null);
+    await q(
+      "INSERT INTO acceptances (id, person_id, email, device, phone, doc, version, lang, text_sha256, app_version, accepted_at, accepted_at_local) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, 'disclaimer', ?6, ?7, ?8, ?9, ?10, ?11)",
+      [newId("acc_"), pid, person.email || null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
+       str(data.textSha256, 64), str(data.appVersion, 20), now, localStamp(now)]
+    );
+    return json({ ok: true });
+  }
+
   // Sign out of this phone: the phone is forgotten, the data stays and comes back with Google on any phone
   if (req.method === "POST" && url.pathname === "/v1/signout") {
     if (!person.google_sub) return fail("Link Google first, or you could not sign in again", 409, "google_needed");
@@ -480,6 +503,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
+  // Delete my account and all my data (right to erasure). The app asks twice. The app manager cannot:
+  // the family's credit and invites depend on them. The record of the accepted notice is kept, as proof.
   if (req.method === "DELETE" && url.pathname === "/v1/me") {
     if (person.is_admin) return fail("The app manager cannot delete their account", 403, "admin_delete");
     await env.DB.batch([
