@@ -231,6 +231,8 @@
     <string name="create_my_key">Créer ma clé</string>
     <string name="key_step3_title">Collez votre clé</string>
     <string name="key_field">Votre clé Anthropic</string>
+    <string name="key_paste">Coller la clé</string>
+    <string name="key_clipboard_empty">Le presse-papiers ne contient pas de clé Anthropic : copiez-la sur la page d\'Anthropic (elle commence par sk-ant-).</string>
     <string name="key_amount_optional">Montant affiché maintenant chez Anthropic (laissez vide pour ne rien changer)</string>
     <string name="key_checking">Vérification de la clé…</string>
     <string name="key_save">Vérifier et enregistrer</string>

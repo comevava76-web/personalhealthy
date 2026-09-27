@@ -231,6 +231,8 @@
     <string name="create_my_key">Crea la mia chiave</string>
     <string name="key_step3_title">Incolla la tua chiave</string>
     <string name="key_field">La tua chiave Anthropic</string>
+    <string name="key_paste">Incolla la chiave</string>
+    <string name="key_clipboard_empty">Negli appunti non c\'è una chiave Anthropic: copiala dalla pagina di Anthropic (inizia con sk-ant-).</string>
     <string name="key_amount_optional">Importo che vedi ora su Anthropic (lascia vuoto per non cambiarlo)</string>
     <string name="key_checking">Controllo la chiave…</string>
     <string name="key_save">Controlla e salva</string>

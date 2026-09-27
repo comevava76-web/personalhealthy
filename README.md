@@ -92,8 +92,9 @@ them only within 15 minutes).
 
 Sign in with Google (Web client ID in the build workflow, or the repository variable `GOOGLE_WEB_CLIENT_ID`): Google is used only to create the
 account and to find it again on a new phone; every day the app opens with fingerprint or face. Anyone can set up the
-app alone: without an invite they pay their photos with their own Anthropic key; an invite (or the family code) is only
-for photos paid by the app manager. Signing in on a new phone moves the account there and disconnects the old phone.
+app alone, and everyone, the app manager included, pays their own photo readings with their own Anthropic key, set up
+inside the app (Admin tab, Token; the key can be pasted from the clipboard with one tap). The app manager only runs the
+storage (Cloudflare, free). Voice entry needs no key. Signing in on a new phone moves the account there and disconnects the old phone.
 Accounts made before Google can be linked from the Admin tab. Each person can delete their account and all their data
 from the Admin tab (the app manager cannot). Stored: the Google email and a stable Google id, plus when the privacy note
 was accepted. Without the variable, the app keeps working with invite codes as before.

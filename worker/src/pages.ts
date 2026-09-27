@@ -69,7 +69,7 @@ export function privacyPage(contactEmail: string): Response {
 <li><strong>Misure:</strong> SYS, DIA e PUL (massima, minima, battiti), data e ora di ogni misura, il momento della giornata, e se il valore viene da una foto o dalla voce.</li>
 <li><strong>Chiave del telefono:</strong> una chiave anonima creata e custodita nel telefono, che firma le richieste. L'app si apre con impronta, volto o blocco schermo del telefono; questi restano nel telefono e non ci arrivano mai.</li>
 <li><strong>Credito:</strong> il costo stimato di ogni lettura di foto.</li>
-<li>Se paghi tu le letture: la tua chiave Anthropic, conservata cifrata e mai rimandata al telefono.</li>
+<li><strong>Chiave Anthropic:</strong> la tua chiave, con cui paghi le letture delle tue foto, conservata cifrata e mai rimandata al telefono.</li>
 </ul>
 <h3>Foto e voce</h3>
 <p>La foto del display viene inviata ad <strong>Anthropic</strong> (Claude) solo per leggere i numeri e non viene conservata da HINT. La voce viene trascritta dal riconoscimento vocale del telefono (di solito Google); a HINT arrivano solo i tre numeri.</p>
@@ -94,7 +94,7 @@ export function privacyPage(contactEmail: string): Response {
 <li><strong>Readings:</strong> SYS, DIA and PUL (systolic, diastolic, pulse), date and time of each reading, the time of day, and whether it came from a photo or your voice.</li>
 <li><strong>Phone key:</strong> an anonymous key created and kept inside the phone, which signs the requests. The app opens with the phone's fingerprint, face or screen lock; these stay on the phone and never reach us.</li>
 <li><strong>Credit:</strong> the estimated cost of each photo reading.</li>
-<li>If you pay for your readings: your Anthropic key, stored encrypted and never sent back to the phone.</li>
+<li><strong>Anthropic key:</strong> your key, which pays for your photo readings, stored encrypted and never sent back to the phone.</li>
 </ul>
 <h3>Photos and voice</h3>
 <p>The photo of the display is sent to <strong>Anthropic</strong> (Claude) only to read the numbers, and is not kept by HINT. Speech is transcribed by the phone's speech recognition (usually Google); only the three numbers reach HINT.</p>

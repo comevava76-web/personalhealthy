@@ -59,9 +59,9 @@ fun openUrl(ctx: Context, url: String): Boolean = try {
 /* ---------------- A friend's own Anthropic key ---------------- */
 
 /**
- * Guided steps for a friend who pays for their own photos: what it costs, where to load credit,
- * how to create a key, then paste it. The server tests the key and stores it encrypted;
- * it never comes back to the phone.
+ * Guided steps, all inside the app, for each person to pay their own photo readings: what it costs, where to
+ * load credit, how to create a key, then paste it (one tap takes it from the clipboard). The server tests the key
+ * and stores it encrypted; it never comes back to the phone.
  */
 @Composable
 fun KeyScreen(
@@ -103,7 +103,14 @@ fun KeyScreen(
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(10.dp))
+            // copied on Anthropic's page: one tap puts it here (read only when tapped)
+            TextButton(onClick = {
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                val clip = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(ctx)?.toString()?.trim().orEmpty()
+                if (clip.startsWith("sk-ant-")) key = clip
+                else android.widget.Toast.makeText(ctx, t(R.string.key_clipboard_empty), android.widget.Toast.LENGTH_LONG).show()
+            }) { Text(t(R.string.key_paste), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+            Spacer(Modifier.height(4.dp))
             Text(t(if (hasKey) R.string.key_amount_optional else R.string.correct_q), color = C.Muted, fontSize = 14.sp)
             AmountField(amount) { amount = it }
             Spacer(Modifier.height(6.dp))

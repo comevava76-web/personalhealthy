@@ -804,22 +804,17 @@ private fun CodeField(code: String, onChange: (String) -> Unit) {
 }
 
 /**
- * First start with Sign in with Google: on their own, a new person creates their account (paying their photos with their
- * own Anthropic key), and someone with a new phone finds their account again. An invite, optional, is only for photos
- * paid by the app manager. After this, the app opens with fingerprint or face.
+ * First start with Sign in with Google: on their own, a new person creates their account, and someone with a new phone
+ * finds their account again. Everyone pays their own photo readings with their own Anthropic key, set up right after
+ * inside the app. After this, the app opens with fingerprint or face.
  */
 @Composable
 fun GoogleSetupScreen(onDone: (String) -> Unit) {
     val ctx = LocalContext.current
     var consent by rememberSaveable { mutableStateOf(false) }
-    var showCode by rememberSaveable { mutableStateOf(false) }
-    var code by rememberSaveable { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val qrScan = rememberLauncherForActivityResult(ScanContract()) { res ->
-        res.contents?.let { code = it.trim(); err = null }
-    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.Center) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             HintLogo(40.dp)
@@ -845,21 +840,11 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
             scope.launch {
                 try {
                     val token = GoogleSignIn.idToken(ctx)
-                    if (token != null) onDone(Repo.google(token, code.takeIf { showCode }, consent = true))
+                    if (token != null) onDone(Repo.google(token, null, consent = true))
                 } catch (e: Exception) { err = e.message } finally { busy = false }
             }
         }
         err?.let { Text(it, color = C.Alert, modifier = Modifier.padding(top = 8.dp)) }
-        Spacer(Modifier.height(10.dp))
-        if (!showCode) {
-            TextButton(onClick = { showCode = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.have_invite), color = C.Muted, fontSize = 13.sp)
-            }
-        } else {
-            Text(t(R.string.invite_optional), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
-            CodeField(code) { code = it }
-            BigButton(t(R.string.scan_qr), color = C.Surface2, textColor = C.Ink, enabled = !busy) { scanQr(qrScan) }
-        }
     }
 }
 
@@ -1448,10 +1433,6 @@ fun CreditScreen(
         } else if (me.googleOn) {
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
-        }
-        if (me.isAdmin) {
-            BigButton(t(R.string.invite_someone), color = C.Surface2, textColor = C.Ink, onClick = onInvite)
-            Text(t(R.string.invite_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
         }
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current

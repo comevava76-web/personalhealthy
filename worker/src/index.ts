@@ -410,8 +410,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   //  - this Google account already has an account: this phone takes its place (new phone, reinstall);
   //    the old phone is disconnected;
   //  - this phone already has an account without Google (earlier versions): Google is linked to it;
-  //  - otherwise a new account: with an invite or the family code the app manager pays the photos,
-  //    without a code the person pays with their own Anthropic key.
+  //  - otherwise a new account, which pays its own photo readings with its own Anthropic key.
   // After this, day to day the phone only uses its own key, unlocked with fingerprint or face.
   if (req.method === "POST" && url.pathname === "/v1/auth/google") {
     if (!env.GOOGLE_CLIENT_ID) return fail("Google sign-in is not set up", 503, "google_off");
@@ -439,43 +438,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       const [p] = await q("SELECT COALESCE(pays, 'owner') AS pays FROM persons WHERE id = ?1", [onPhone.id]);
       return json({ personId: onPhone.id, pays: p?.pays || "owner", linked: true });
     }
-    const typed = String(data.code ?? "").trim();
+    // everyone pays their own photo readings with their own Anthropic key, set up in the app right after
     const id = newId("per_");
-    if (!typed) {
-      await q(
-        "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
-        "VALUES (?1, ?2, 0, 'self', ?3, ?4, ?5, ?5, ?6)",
-        [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
-      );
-      return json({ personId: id, pays: "self" });
-    }
-    if (env.FAMILY_CODE && typed === env.FAMILY_CODE) {
-      await q(
-        "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
-        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'owner', ?3, ?4, ?5, ?5, ?6)",
-        [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
-      );
-      return json({ personId: id, pays: "owner" });
-    }
-    const invite = normInvite(typed);
-    if (!invite) return fail("Invalid code", 403, "family_code");
-    const results = await env.DB.batch([
-      env.DB.prepare(
-        "UPDATE invites SET used_by = ?1, used_at = ?2, used_at_local = ?3 WHERE code = ?4 AND used_by IS NULL AND expires_at > ?2"
-      ).bind(id, now, localStamp(now), invite),
-      env.DB.prepare(
-        `INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local)
-         SELECT ?1, ?2, 0, CASE type WHEN 'self_pays' THEN 'self' ELSE 'owner' END, ?5, ?6, ?3, ?3, ?4 FROM invites WHERE code = ?7 AND used_by = ?1`
-      ).bind(id, data.publicKey, now, localStamp(now), g.sub, g.email, invite),
-    ]);
-    if (!results[1]?.meta?.changes) {
-      const [inv] = await q("SELECT used_by FROM invites WHERE code = ?1", [invite]);
-      if (!inv) return fail("Invalid code", 403, "family_code");
-      if (inv.used_by) return fail("Invite already used", 403, "invite_used");
-      return fail("Invite expired", 403, "invite_expired");
-    }
-    const [p] = await q("SELECT pays FROM persons WHERE id = ?1", [id]);
-    return json({ personId: id, pays: p?.pays || "owner" });
+    await q(
+      "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
+      "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'self', ?3, ?4, ?5, ?5, ?6)",
+      [id, data.publicKey, g.sub, g.email, now, localStamp(now)]
+    );
+    return json({ personId: id, pays: "self" });
   }
 
   // Everything else requires the registered phone's signature

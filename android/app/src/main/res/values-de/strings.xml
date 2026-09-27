@@ -231,6 +231,8 @@
     <string name="create_my_key">Meinen Schlüssel erstellen</string>
     <string name="key_step3_title">Schlüssel einfügen</string>
     <string name="key_field">Dein Anthropic-Schlüssel</string>
+    <string name="key_paste">Schlüssel einfügen</string>
+    <string name="key_clipboard_empty">In der Zwischenablage ist kein Anthropic-Schlüssel: kopiere ihn auf der Anthropic-Seite (er beginnt mit sk-ant-).</string>
     <string name="key_amount_optional">Betrag, den Anthropic jetzt anzeigt (leer lassen, um ihn nicht zu ändern)</string>
     <string name="key_checking">Schlüssel wird geprüft…</string>
     <string name="key_save">Prüfen und speichern</string>
