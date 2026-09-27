@@ -51,8 +51,6 @@
     <string name="no_readings_title">Noch keine Messungen</string>
     <string name="no_readings_text">Miss deinen Blutdruck und fotografiere die Anzeige: Die App liest die Werte.</string>
     <string name="last_fmt">Letzte: %s</string>
-    <string name="mmhg_hint">mmHg · SYS oben, DIA unten</string>
-    <string name="pulse_lower">PUL</string>
     <string name="measure">Messung scannen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>

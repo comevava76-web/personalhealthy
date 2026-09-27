@@ -51,8 +51,6 @@
     <string name="no_readings_title">Nessuna misura ancora</string>
     <string name="no_readings_text">Misura la pressione e fotografa il display: i numeri li legge l\'app.</string>
     <string name="last_fmt">Ultima: %s</string>
-    <string name="mmhg_hint">mmHg · SYS sopra, DIA sotto</string>
-    <string name="pulse_lower">PUL</string>
     <string name="measure">Scansiona misura</string>
     <string name="last7">Ultimi 7 giorni</string>
     <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. SYS sopra, DIA sotto.</string>

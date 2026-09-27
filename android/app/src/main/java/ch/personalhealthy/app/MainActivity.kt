@@ -1011,17 +1011,25 @@ fun LastPanel(last: Reading?) {
             Text(t(R.string.last_fmt, Z.whenText(last.takenAt)), color = C.Muted, fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("${last.sis}", color = C.Sys, fontSize = 64.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 66.sp)
+                    Exponent("${last.sis}", "SYS", C.Sys, 64)
                     EcgLine()
-                    Text("${last.dia}", color = C.Dia, fontSize = 64.sp, fontWeight = FontWeight.ExtraLight, lineHeight = 66.sp)
-                    Text(t(R.string.mmhg_hint), color = C.Muted, fontSize = 12.sp)
+                    Exponent("${last.dia}", "DIA", C.Dia, 64)
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(last.pul?.toString() ?: "—", color = C.Pul, fontSize = 32.sp, fontWeight = FontWeight.Light)
-                    Text(t(R.string.pulse_lower), color = C.Muted, fontSize = 12.sp)
-                }
+                Exponent(last.pul?.toString() ?: "—", "PUL", C.Pul, 32)
             }
         }
+    }
+}
+
+/** A big number with its name small at its top right, like an exponent: 127 ˢʸˢ. */
+@Composable
+fun Exponent(value: String, name: String, color: Color, size: Int) {
+    Row(verticalAlignment = Alignment.Top) {
+        Text(value, color = color, fontSize = size.sp, fontWeight = FontWeight.ExtraLight, lineHeight = (size + 2).sp)
+        Text(
+            name, color = color.copy(alpha = 0.8f), fontSize = maxOf(11f, size * 0.2f + 2).sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 3.dp, top = (size * 0.18f).dp)
+        )
     }
 }
 
