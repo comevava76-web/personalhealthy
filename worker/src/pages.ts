@@ -147,6 +147,7 @@ export function termsPage(): Response {
 <p>Queste condizioni sono regolate dal diritto svizzero, fatte salve le norme imperative a tutela dei consumatori del paese in cui vivi. Se una clausola risultasse non valida, le altre restano valide.</p>
 <h3>La tua accettazione viene registrata</h3>
 <p>Toccando «Prendo atto e accetto» confermi di avere almeno 18 anni, di aver letto e compreso queste condizioni d&#x27;uso e avvertenze e di accettarle. Conserviamo la tua accettazione (email, account, telefono, versione del testo, data e ora) come prova, anche dopo un&#x27;eventuale cancellazione dell&#x27;account.</p>
+<p class="muted">Versione 5</p>
 <hr>
 <h2>Terms of use and notice</h2>
 <h3>What HINT is</h3>
@@ -175,5 +176,5 @@ export function termsPage(): Response {
 <p>These terms are governed by Swiss law, without prejudice to the mandatory consumer protection rules of the country where you live. If a clause turns out to be invalid, the others remain valid.</p>
 <h3>Your acceptance is recorded</h3>
 <p>By tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood these terms of use and notice and that you accept them. We keep your acceptance (email, account, phone, version of the text, date and time) as proof, also after your account is deleted.</p>
-<p class="muted">Versione 5 · Version 5</p>`);
+<p class="muted">Version 5</p>`);
 }
