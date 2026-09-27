@@ -6,7 +6,7 @@ documents are in English; user-facing documents are in Italian and English.
 
 | Document | Files | Made from | Update when |
 |---|---|---|---|
-| Functional, architecture, runtime flow and CI/CD (3 pages) | `architecture/architecture.html` → `HINT-Architecture.pdf`, `page-1..3.png` | hand-written HTML, `node docs/architecture/render.cjs` | a flow, technology, rule, table, cost or process changes |
+| Functional overview, architecture, hosting and runtime flow, roles and delivery, application flows and permissions (5 pages) | `architecture/architecture.html` → `HINT-Architecture.pdf`, `page-1..5.png` | hand-written HTML, `node docs/architecture/render.cjs` | a flow, technology, rule, table, cost or process changes |
 | User guide IT / EN | `guide-it.html`, `guide-en.html` → `HINT-Guida-IT.pdf`, `HINT-Guide-EN.pdf` | hand-written HTML, `node docs/render-guides.cjs` | anything the user sees or does changes (buttons, screens, costs, data) |
 | Terms of use, privacy policy, home page | `legal/terms.html`, `legal/privacy.html`, `legal/home.html` | generated from `worker/src/pages.ts`: `cd worker && node scripts/export-docs.mjs` | the site pages change (the terms also change the version the app asks to accept) |
 | Demo material | `demo/` (screenshots, sample PDF) | test data only, never real readings | the look of the dashboard or of the PDF changes |

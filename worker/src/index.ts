@@ -5,6 +5,7 @@
 
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
+import { logError } from "./errors";
 import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
@@ -74,7 +75,7 @@ async function subOk(q: Q, env: Env, pid: string): Promise<boolean> {
   return !s.required || s.active;
 }
 // what still works without a subscription: seeing the invitation, renewing, the terms, leaving, deleting the account
-const SUB_FREE = new Set(["GET /v1/me", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me"]);
+const SUB_FREE = new Set(["GET /v1/me", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me", "POST /v1/log"]);
 
 async function appAllowed(q: Q, version: number): Promise<boolean> {
   const g = await appGate(q);
@@ -251,7 +252,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "13";
+const DISCLAIMER_VERSION = "14";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -427,6 +428,7 @@ export async function purgeOld(env: Env) {
     env.DB.prepare("DELETE FROM web_codes WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM web_sessions WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM web_shares WHERE expires_at < ?1").bind(now),
+    env.DB.prepare("DELETE FROM error_log WHERE last_at < ?1").bind(now - 90 * 864e5),
   ]);
 }
 
@@ -435,7 +437,7 @@ export default {
     await purgeOld(env);
   },
 
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/v1/health") return json({ ok: true });
     // public pages, linked from Google's sign-in screen
@@ -450,11 +452,27 @@ export default {
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
-      const web = await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid));
-      if (web) return web;
-      return await handle(req, env, q, url);
+      const res = (await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid))) ?? (await handle(req, env, q, url));
+      // errors met by users go to the error log, grouped (see errors.ts). Not logged: pages not found,
+      // a subscription that ran out and an app version switched off, which are expected answers.
+      const api = url.pathname.startsWith("/v1/") || url.pathname.startsWith("/my/api/");
+      if (api && res.status >= 400 && ![402, 404, 426].includes(res.status) && !url.pathname.endsWith("/log")) {
+        const task = (async () => {
+          let code = "http_" + res.status, message = "";
+          try { const j: any = await res.clone().json(); code = j.code || code; message = j.error || ""; } catch {}
+          await logError(q, {
+            source: "server", code, place: req.method + " " + url.pathname, message,
+            appVersion: req.headers.get("X-App-Version"),
+            personId: url.pathname.startsWith("/v1/") ? req.headers.get("X-Person") : null,
+          });
+        })();
+        if (ctx) ctx.waitUntil(task); else await task;
+      }
+      return res;
     } catch (e: any) {
       console.error(e?.stack || e);
+      const task = logError(q, { source: "server", code: "exception", place: req.method + " " + url.pathname, message: String(e?.message || e), appVersion: req.headers.get("X-App-Version") });
+      if (ctx) ctx.waitUntil(task); else await task;
       return fail("Internal server error", 500, "server");
     }
   },
@@ -569,6 +587,15 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const pid = req.headers.get("X-Person") || "";
   const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays, google_sub, email FROM persons WHERE id = ?1", [pid]);
   if (!person || !(await verify(person.public_key, sig, message))) return fail("Unauthorized", 401, "unauthorized");
+  // An error met in the app (a crash, a screen that failed): into the grouped error log, never a reading value
+  if (req.method === "POST" && url.pathname === "/v1/log") {
+    await logError(q, {
+      source: "app", code: String(data.code || "app_error"), place: String(data.place || ""),
+      message: String(data.message || ""), appVersion: req.headers.get("X-App-Version"), personId: pid,
+    });
+    return json({ ok: true });
+  }
+
   // no valid subscription: only the invitation to renew
   if (!SUB_FREE.has(req.method + " " + url.pathname) && !(await subOk(q, env, pid)))
     return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
@@ -588,7 +615,9 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (person.email || (person.google_sub && !String(person.google_sub).startsWith("h1:"))) await anonymizeGoogle(env);
     await fillLocalDates(q);
     // when the app was last opened: shown to the owner as a usage figure, nothing more
-    await q("UPDATE persons SET last_seen_at = ?1 WHERE id = ?2", [Date.now(), pid]);
+    // and with which app version: the owner sees, for every account, the version it really runs
+    const code = Number(req.headers.get("X-App-Version")) || 0;
+    await q("UPDATE persons SET last_seen_at = ?1, app_version = COALESCE(?2, app_version) WHERE id = ?3", [Date.now(), code ? "0.1." + code : null, pid]);
     return json({
       personId: pid,
       isAdmin: !!person.is_admin,

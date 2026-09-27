@@ -39,3 +39,6 @@
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
   stesso commit i documenti che tocca: architettura (3 pagine), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`). Il workflow *Docs check* lo verifica.
+- **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
+  giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni
+  rilascio; ogni nuovo errore diventa una correzione. Ogni nuova funzione che può fallire deve finire nel registro.

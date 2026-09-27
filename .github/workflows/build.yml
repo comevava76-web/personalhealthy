@@ -70,6 +70,8 @@ jobs:
           add_col persons sub_checked_at INTEGER
           # When the app was last opened (a usage figure for the owner's area)
           add_col persons last_seen_at INTEGER
+          # The app version each account last opened with (shown to the owner)
+          add_col persons app_version TEXT
           npx wrangler d1 execute personalhealthy --remote \
             --command "CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub)"
           # Everyone pays their own photo readings with their own Anthropic key. The shared credit ("owner") becomes the

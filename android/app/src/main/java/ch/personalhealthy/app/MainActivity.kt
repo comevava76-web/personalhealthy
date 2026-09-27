@@ -203,6 +203,12 @@ class MainActivity : FragmentActivity() {
             hiddenAt = savedInstanceState.getLong("hiddenAt", 0L)
         }
         Txt.init(this)   // texts in the phone's language
+        // a crash is written down here and sent to the error log the next time the app opens
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, e ->
+            try { getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putString("pendingCrash", ErrorReport.crashRecord(e)).commit() } catch (_: Exception) { }
+            previous?.uncaughtException(thread, e)
+        }
         prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 asking = false; dismissed = false; locked = false
@@ -375,6 +381,17 @@ fun App() {
             toast(ctx, t(R.string.no_browser))
         }
     }
+    // the error log: which account reports, and a crash from the last time the app ran
+    LaunchedEffect(personId) {
+        ErrorReport.personId = personId
+        val crash = prefs.getString("pendingCrash", null)
+        if (personId != null && crash != null) {
+            val parts = crash.split("\u0001")
+            ErrorReport.send("crash:" + parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }, parts.getOrElse(2) { "" })
+            prefs.edit().remove("pendingCrash").apply()
+        }
+    }
+
     // the yearly subscription: Google Play's answers come back here
     LaunchedEffect(Unit) {
         Billing.onChanged = { reload() }
@@ -1680,10 +1697,10 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
         Spacer(Modifier.height(8.dp))
         if (!per.ok) Text(t(R.string.report_not_yet, n, per.missing), color = C.Muted, fontSize = 14.sp)
         BigButton(t(R.string.send_pdf), enabled = per.ok) {
-            try { shareFile(ctx, buildPdf(ctx, readings, n), "application/pdf") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
+            try { shareFile(ctx, buildPdf(ctx, readings, n), "application/pdf") } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
         BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
-            try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
+            try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { ErrorReport.report("Report/Excel", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
         Colophon(onTerms)
     }

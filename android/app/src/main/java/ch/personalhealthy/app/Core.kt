@@ -12,7 +12,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.exifinterface.media.ExifInterface
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -51,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "13"
+const val DISCLAIMER_VERSION = "14"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -298,6 +301,39 @@ object Keys {
 /* ---------------- Server connection ---------------- */
 
 class ApiException(val code: String) : Exception(errorText(code))
+
+/**
+ * Errors met in the app go to the server's grouped error log (worker/src/errors.ts), so bugs users run into are seen
+ * and fixed. Short on purpose: at most 20 reports per session, no reading value (the server also removes digits),
+ * only the anonymous account code. Errors answered by the server are already logged there and are not sent again.
+ */
+object ErrorReport {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile var personId: String? = null
+    private var sent = 0
+
+    fun report(place: String, e: Throwable) {
+        if (e is ApiException) return
+        send(e.javaClass.simpleName, place, e.message ?: "")
+    }
+
+    fun send(code: String, place: String, message: String) {
+        val pid = personId ?: return
+        if (sent >= 20) return
+        sent++
+        scope.launch {
+            try { Api.call("POST", "/v1/log", JSONObject().put("code", code).put("place", place.take(80)).put("message", message.take(300)), pid) }
+            catch (_: Exception) { }
+        }
+    }
+
+    /** A crash, kept until the app opens again: its type, and the first line of the app's own code it went through. */
+    fun crashRecord(e: Throwable): String {
+        val frame = e.stackTrace.firstOrNull { it.className.startsWith("ch.personalhealthy") }
+        val where = frame?.let { "${it.fileName}:${it.lineNumber}" } ?: "unknown"
+        return listOf(e.javaClass.simpleName, where, (e.message ?: "").take(200)).joinToString("\u0001")
+    }
+}
 
 /** This version of the app switched off remotely: the app shows only the page to install the latest one. */
 object AppGate {
