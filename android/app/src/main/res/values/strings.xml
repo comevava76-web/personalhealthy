@@ -117,8 +117,8 @@
     <string name="file_failed">File could not be created: %s</string>
     <string name="share_title">Send report</string>
     <string name="report_subject">Blood pressure diary</string>
-    <string name="credit_not_set_admin">Not set yet. Tap Recharge, then enter how much you added.</string>
-    <string name="credit_not_set_user">Not set yet by the app manager.</string>
+    <string name="credit_not_set_admin">Tap Recharge, then type the balance.</string>
+    <string name="credit_not_set_user">Balance not set yet.</string>
     <string name="amount_usd">Amount in dollars</string>
     <string name="enter_amount">Enter an amount, for example 5</string>
     <string name="topup_added">Top-up added</string>
@@ -204,13 +204,14 @@
     <string name="col_source">Source</string>
     <string name="err_voice_invalid">Values not valid: SYS must be higher than DIA.</string>
     <string name="credit_warn_low">Credit almost used up: about 1 photo left. Tap here.</string>
-    <string name="credit_avg_fmt">Average cost per photo: %1$s</string>
-    <string name="credit_money_left">Money left on Anthropic (estimate)</string>
-    <string name="credit_needs_key">No AI credit: it is only for scanning photos. If you want it, add your key (Token, below).</string>
-    <string name="credit_photos_can">Photos you can still take (about)</string>
+    <string name="credit_balance">Balance</string>
+    <string name="credit_photos">Photos</string>
+    <string name="credit_per_photo">Per photo</string>
+    <string name="credit_estimate">Estimate. The exact balance is on Anthropic.</string>
+    <string name="credit_needs_key">Only needed to scan photos.</string>
     <string name="recharge">Recharge</string>
     <string name="recharge_q">How much did you add on Anthropic?</string>
-    <string name="correct_link">The balance is wrong? Enter the amount shown on Anthropic</string>
+    <string name="correct_link">Correct the balance</string>
     <string name="correct_q">Amount shown on Anthropic</string>
     <string name="confirm">Save</string>
     <string name="no_browser">No browser found on this phone</string>
@@ -265,6 +266,5 @@
     <string name="delete_key">Delete my key</string>
     <string name="delete_key_q">Delete your key?</string>
     <string name="delete_key_text">It is removed from our server. Photos cannot be read until you add a key again.</string>
-    <string name="credit_own_note">This is your own credit: only you see it.</string>
     <string name="done">Done</string>
 </resources>

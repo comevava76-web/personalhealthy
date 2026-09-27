@@ -116,8 +116,8 @@
     <string name="file_failed">Datei konnte nicht erstellt werden: %s</string>
     <string name="share_title">Bericht senden</string>
     <string name="report_subject">Blutdrucktagebuch</string>
-    <string name="credit_not_set_admin">Noch nicht eingerichtet. Tippe auf Aufladen und gib dann ein, wie viel du aufgeladen hast.</string>
-    <string name="credit_not_set_user">Noch nicht vom App-Verwalter festgelegt.</string>
+    <string name="credit_not_set_admin">Tippe auf Aufladen und gib das Guthaben ein.</string>
+    <string name="credit_not_set_user">Guthaben noch nicht gesetzt.</string>
     <string name="amount_usd">Betrag in Dollar</string>
     <string name="enter_amount">Gib einen Betrag ein, zum Beispiel 5</string>
     <string name="topup_added">Aufladung hinzugefügt</string>
@@ -202,13 +202,14 @@
     <string name="col_source">Quelle</string>
     <string name="err_voice_invalid">Ungültige Werte: SYS muss höher sein als DIA.</string>
     <string name="credit_warn_low">Guthaben fast aufgebraucht: noch etwa 1 Foto. Hier tippen.</string>
-    <string name="credit_avg_fmt">Durchschnittliche Kosten pro Foto: %1$s</string>
-    <string name="credit_money_left">Restguthaben bei Anthropic (Schätzung)</string>
-    <string name="credit_needs_key">Kein KI-Guthaben: es dient nur zum Scannen von Fotos. Wenn du es willst, füge deinen Schlüssel hinzu (Token, unten).</string>
-    <string name="credit_photos_can">Fotos, die du noch machen kannst (etwa)</string>
+    <string name="credit_balance">Guthaben</string>
+    <string name="credit_photos">Fotos</string>
+    <string name="credit_per_photo">Pro Foto</string>
+    <string name="credit_estimate">Schätzung. Das genaue Guthaben steht bei Anthropic.</string>
+    <string name="credit_needs_key">Nur zum Scannen von Fotos nötig.</string>
     <string name="recharge">Aufladen</string>
     <string name="recharge_q">Wie viel hast du bei Anthropic aufgeladen?</string>
-    <string name="correct_link">Stimmt das Guthaben nicht? Gib den Betrag ein, der bei Anthropic steht</string>
+    <string name="correct_link">Guthaben korrigieren</string>
     <string name="correct_q">Betrag, der bei Anthropic steht</string>
     <string name="confirm">Speichern</string>
     <string name="no_browser">Kein Browser auf diesem Telefon gefunden</string>
@@ -263,6 +264,5 @@
     <string name="delete_key">Meinen Schlüssel löschen</string>
     <string name="delete_key_q">Schlüssel löschen?</string>
     <string name="delete_key_text">Er wird von unserem Server entfernt. Fotos können erst wieder gelesen werden, wenn du einen Schlüssel hinzufügst.</string>
-    <string name="credit_own_note">Das ist dein eigenes Guthaben: nur du siehst es.</string>
     <string name="done">Fertig</string>
 </resources>
