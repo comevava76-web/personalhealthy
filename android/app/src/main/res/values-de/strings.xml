@@ -51,7 +51,11 @@
     <string name="measure">Messung scannen</string>
     <string name="record_short">Sprechen</string>
     <string name="scan_short">Scannen</string>
-    <string name="scan_cost_note">Das Scannen eines Fotos verbraucht KI-Guthaben (etwa einen halben Cent pro Foto). Das Ansagen per Stimme ist kostenlos.</string>
+    <string name="scan_cost_note">Das Scannen eines Fotos nutzt kostenpflichtiges, optionales KI-Guthaben (etwa einen halben Cent pro Foto). Alles andere, Stimme inklusive, ist kostenlos.</string>
+    <string name="scan_needs_key_title">Scannen ist optional</string>
+    <string name="scan_needs_key_text">Das Lesen der Zahlen vom Foto nutzt künstliche Intelligenz, bezahlt mit deinem Anthropic-Guthaben (etwa einen halben Cent pro Foto). Du kannst es jetzt hinzufügen oder die Werte kostenlos ansagen.</string>
+    <string name="scan_needs_key_add">KI-Guthaben hinzufügen</string>
+    <string name="scan_needs_key_voice">Stimme nutzen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>
     <string name="summary_title">Übersicht 7 Tage</string>
@@ -200,7 +204,7 @@
     <string name="credit_warn_low">Guthaben fast aufgebraucht: noch etwa 1 Foto. Hier tippen.</string>
     <string name="credit_avg_fmt">Durchschnittliche Kosten pro Foto: %1$s</string>
     <string name="credit_money_left">Restguthaben bei Anthropic (Schätzung)</string>
-    <string name="credit_needs_key">Füge deinen Anthropic-Schlüssel hinzu (Token, unten): ab dann wird das Guthaben angezeigt.</string>
+    <string name="credit_needs_key">Kein KI-Guthaben: es dient nur zum Scannen von Fotos. Wenn du es willst, füge deinen Schlüssel hinzu (Token, unten).</string>
     <string name="credit_photos_can">Fotos, die du noch machen kannst (etwa)</string>
     <string name="recharge">Aufladen</string>
     <string name="recharge_q">Wie viel hast du bei Anthropic aufgeladen?</string>
@@ -219,11 +223,11 @@
     <string name="err_friend_no_credit">Dein Anthropic-Guthaben ist aufgebraucht. Tippe auf Aufladen, um Geld hinzuzufügen.</string>
     <string name="err_friend_key_invalid">Anthropic akzeptiert deinen Schlüssel nicht. Tippe auf Schlüssel ersetzen und füge einen neuen ein.</string>
     <string name="err_key_test_failed">Der Schlüssel konnte gerade nicht geprüft werden. Versuche es gleich noch einmal.</string>
-    <string name="key_title">Dein eigenes Guthaben</string>
+    <string name="key_title">Fotolesen (optional)</string>
     <string name="key_title_replace">Schlüssel ersetzen</string>
     <string name="later">Später</string>
     <string name="key_how_title">So funktioniert es</string>
-    <string name="key_how_text">Jedes Foto wird von Anthropic gelesen, einer KI-Firma. Das kostet etwa einen halben Cent pro Foto. Du bezahlst es selbst, mit deinem eigenen Prepaid-Guthaben bei Anthropic: Niemand sonst zahlt für deine Fotos, und du zahlst nicht für andere.</string>
+    <string name="key_how_text">Es ist optional: die ganze App ist kostenlos, Stimme inklusive. Nur das Lesen der Zahlen vom Foto nutzt die künstliche Intelligenz von Anthropic: etwa einen halben Cent pro Foto, bezahlt von dir mit deinem Prepaid-Guthaben bei Anthropic. Niemand sonst bezahlt deine Fotos und du bezahlst nicht die der anderen.</string>
     <string name="step_fmt">%1$d. %2$s</string>
     <string name="key_step1_title">Guthaben bei Anthropic aufladen</string>
     <string name="key_step1_text">Erstelle ein Konto bei Anthropic oder melde dich an und lade einen kleinen Betrag auf. Ein paar Dollar reichen für viele Monate.</string>
@@ -241,8 +245,7 @@
     <string name="key_privacy">Dein Schlüssel wird verschlüsselt auf unserem Server gespeichert und nie wieder angezeigt, auch dir nicht. Nur deine Fotos nutzen ihn. Du kannst ihn im Tab Admin ersetzen oder löschen.</string>
     <string name="key_saved">Schlüssel geprüft und gespeichert</string>
     <string name="key_deleted">Schlüssel gelöscht</string>
-    <string name="key_missing_banner">Füge deinen Anthropic-Schlüssel hinzu, um Fotos zu lesen. Hier tippen.</string>
-    <string name="key_missing">Du hast deinen Anthropic-Schlüssel noch nicht hinzugefügt. Ohne ihn können keine Fotos gelesen werden.</string>
+    <string name="key_missing">Optional: füge deinen Schlüssel nur hinzu, wenn die Zahlen von Fotos gelesen werden sollen. Alles andere ist kostenlos.</string>
     <string name="add_my_key">Meinen Schlüssel hinzufügen</string>
     <string name="replace_key">Schlüssel ersetzen</string>
     <string name="delete_key">Meinen Schlüssel löschen</string>
