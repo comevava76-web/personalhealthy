@@ -233,6 +233,8 @@
     <string name="create_my_key">Create my key</string>
     <string name="key_step3_title">Paste your key</string>
     <string name="key_field">Your Anthropic key</string>
+    <string name="key_paste">Paste the key</string>
+    <string name="key_clipboard_empty">There is no Anthropic key in the clipboard: copy it on Anthropic\'s page (it starts with sk-ant-).</string>
     <string name="key_amount_optional">Amount shown on Anthropic now (leave empty to keep it as it is)</string>
     <string name="key_checking">Checking the key…</string>
     <string name="key_save">Check and save</string>

@@ -62,6 +62,10 @@ jobs:
           add_col persons consent_at INTEGER
           npx wrangler d1 execute personalhealthy --remote \
             --command "CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub)"
+          # Everyone pays their own photo readings with their own Anthropic key. The shared credit ("owner") becomes the
+          # app manager's own, and every account pays for itself. Safe to run again: afterwards it changes nothing.
+          npx wrangler d1 execute personalhealthy --remote --command \
+            "UPDATE ledger SET payer = (SELECT id FROM persons WHERE is_admin = 1 LIMIT 1) WHERE COALESCE(payer, 'owner') = 'owner' AND EXISTS (SELECT 1 FROM persons WHERE is_admin = 1); UPDATE persons SET pays = 'self' WHERE COALESCE(pays, 'owner') <> 'self'"
 
       - name: workers.dev subdomain
         env:
