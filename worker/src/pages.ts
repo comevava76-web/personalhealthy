@@ -43,13 +43,13 @@ function contactLine(email: string, it: boolean): string {
 
 export function homePage(): Response {
   return page("HINT · HealthyInstantTracker", `
-<p><strong>HINT</strong> è un diario della pressione per Android. Fotografi il display del misuratore, oppure detti i valori a voce, e l'app registra massima, minima e battiti con data e ora. Prepara un report in PDF ed Excel da mandare al medico.</p>
+<p><strong>HINT</strong> è un diario della pressione per Android. Fotografi il display del misuratore, oppure detti i valori a voce, e l'app registra SYS, DIA e PUL con data e ora. Prepara un report in PDF ed Excel da mandare al medico.</p>
 <p>L'app non valuta i valori e non dà consigli medici: la valutazione spetta al medico.</p>
 <p><a class="btn" href="/download">Scarica l'app per Android</a></p>
 <p class="muted">Dopo il download apri il file e consenti l'installazione. All'avvio tocchi "Accedi con Google": se cambi telefono, ritrovi tutto allo stesso modo.</p>
 <p><a href="/privacy">Informativa sulla privacy</a></p>
 <hr>
-<p><strong>HINT</strong> is a blood-pressure diary for Android. Photograph the monitor's display, or say the values aloud, and the app records systolic, diastolic and pulse with date and time. It prepares a PDF and Excel report for the doctor.</p>
+<p><strong>HINT</strong> is a blood-pressure diary for Android. Photograph the monitor's display, or say the values aloud, and the app records SYS, DIA and PUL with date and time. It prepares a PDF and Excel report for the doctor.</p>
 <p>The app does not assess the values and gives no medical advice: that is up to the doctor.</p>
 <p><a class="btn" href="/download">Download the Android app</a></p>
 <p class="muted">After the download, open the file and allow the installation. At first start tap "Sign in with Google": on a new phone you find everything again the same way.</p>
@@ -66,7 +66,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Quali dati</h3>
 <ul>
 <li><strong>Account Google:</strong> l'email e un codice identificativo che Google assegna al tuo account. Servono solo a ritrovare il tuo diario, anche su un nuovo telefono. Non leggiamo nient'altro del tuo account Google.</li>
-<li><strong>Misure:</strong> massima, minima, battiti, data e ora di ogni misura, il momento della giornata, e se il valore viene da una foto o dalla voce.</li>
+<li><strong>Misure:</strong> SYS, DIA e PUL (massima, minima, battiti), data e ora di ogni misura, il momento della giornata, e se il valore viene da una foto o dalla voce.</li>
 <li><strong>Chiave del telefono:</strong> una chiave anonima creata e custodita nel telefono, che firma le richieste. L'app si apre con impronta, volto o blocco schermo del telefono; questi restano nel telefono e non ci arrivano mai.</li>
 <li><strong>Credito:</strong> il costo stimato di ogni lettura di foto.</li>
 <li>Se paghi tu le letture: la tua chiave Anthropic, conservata cifrata e mai rimandata al telefono.</li>
@@ -91,7 +91,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>What data</h3>
 <ul>
 <li><strong>Google account:</strong> the email and an identifier Google gives your account, only to find your diary again, also on a new phone. Nothing else of your Google account is read.</li>
-<li><strong>Readings:</strong> systolic, diastolic, pulse, date and time of each reading, the time of day, and whether it came from a photo or your voice.</li>
+<li><strong>Readings:</strong> SYS, DIA and PUL (systolic, diastolic, pulse), date and time of each reading, the time of day, and whether it came from a photo or your voice.</li>
 <li><strong>Phone key:</strong> an anonymous key created and kept inside the phone, which signs the requests. The app opens with the phone's fingerprint, face or screen lock; these stay on the phone and never reach us.</li>
 <li><strong>Credit:</strong> the estimated cost of each photo reading.</li>
 <li>If you pay for your readings: your Anthropic key, stored encrypted and never sent back to the phone.</li>
