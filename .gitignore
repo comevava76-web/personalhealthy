@@ -6,3 +6,4 @@ worker/node_modules/
 worker/.wrangler/
 worker/secrets.json
 worker/.dev.vars
+worker/public/*.apk

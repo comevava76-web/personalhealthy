@@ -1439,6 +1439,9 @@ fun CreditScreen(
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
         }
+        // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
+        val shareCtx = LocalContext.current
+        BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }
         if (!me.isAdmin) {
             TextButton(onClick = { deleteStep = 1 }, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)

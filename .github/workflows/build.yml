@@ -14,12 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      db: ${{ steps.db.outputs.db }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: PersonalHealthy database (D1, data bound to the European Union)
+      - id: db
+        name: PersonalHealthy database (D1, data bound to the European Union)
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -37,6 +39,7 @@ jobs:
           if [ -z "$ID" ]; then echo "Database not created: check that the token has the D1 Edit permission"; exit 1; fi
           echo "Database: $ID"
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
+          echo "db=$ID" >> "$GITHUB_OUTPUT"
           npx wrangler d1 execute personalhealthy --remote --file=schema.sql
           # Columns added after the first version: add them to existing tables if missing
           add_col() {
@@ -86,8 +89,15 @@ jobs:
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
           # contact email shown on the public privacy page (repository variable; optional)
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
+          # keep the app downloadable while this version is built: publish the latest released one again
+          if gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir public --clobber; then
+            mv public/HealthyInstantTracker-*.apk public/HINT.apk
+          else
+            echo "No earlier app to publish"
+          fi
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" 2>&1 | tee deploy.log
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
@@ -143,3 +153,31 @@ jobs:
           gh release create "v0.1.${{ github.run_number }}" "HealthyInstantTracker-0.1.${{ github.run_number }}.apk" \
             --title "HealthyInstantTracker 0.1.${{ github.run_number }}" \
             --notes "Download the .apk file on your phone and install it." --repo "${{ github.repository }}"
+
+  # The new app, downloadable by anyone at <server>/download: the server is deployed again with it.
+  # (The repository is private, so the Releases page is not reachable by friends.)
+  publish:
+    name: Publish the app for download
+    needs: [server, apk]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: HealthyInstantTracker-apk
+          path: apk
+      - name: Deploy the server with the new app
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+        run: |
+          npm install --no-audit --no-fund --silent
+          sed -i "s/D1_DATABASE_ID/${{ needs.server.outputs.db }}/" wrangler.toml
+          cp ../apk/HealthyInstantTracker-*.apk public/HINT.apk
+          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL"
