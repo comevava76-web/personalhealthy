@@ -259,7 +259,7 @@
     <string name="key_privacy">Votre clé est enregistrée chiffrée sur notre serveur et n\'est plus jamais affichée, même pas à vous. Seules vos photos l\'utilisent. Vous pouvez la remplacer ou la supprimer dans l\'onglet Admin.</string>
     <string name="key_saved">Clé vérifiée et enregistrée</string>
     <string name="key_deleted">Clé supprimée</string>
-    <string name="key_missing">Facultatif. Upgrade débloque le scan, le tableau de bord web et les analyses.</string>
+    <string name="key_missing">Facultatif. L\'upgrade ajoute la lecture par IA : l\'écran du tensiomètre et, bientôt, les documents médicaux.</string>
     <string name="replace_key">Remplacer la clé</string>
     <string name="delete_key">Supprimer ma clé</string>
     <string name="delete_key_q">Supprimer votre clé ?</string>

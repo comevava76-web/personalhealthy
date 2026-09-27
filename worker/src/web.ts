@@ -18,7 +18,7 @@ type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 const CODE_TTL = 60e3;                 // the one-time code from the app
 const SESSION_TTL = 7 * 864e5;         // the browser stays signed in for 7 days
 const SHARE_MAX_DAYS = 30;             // a share link lasts at most 30 days
-const MAX_PERIOD_DAYS = 15;            // charts show at most two weeks: every reading readable on one phone screen
+const MAX_PERIOD_DAYS = 14;            // charts show at most two weeks: every reading readable on one phone screen
 const COOKIE = "hint_s";
 
 const enc = new TextEncoder();
@@ -36,6 +36,15 @@ function randomToken(): string {
 async function fingerprint(token: string): Promise<string> {
   const h = await crypto.subtle.digest("SHA-256", enc.encode(token));
   return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Swiss midnight at the start of the day that is `days` days long ending today: a period of 7 days = today and the 6 before. */
+const zurichClock = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" });
+function periodStart(now: number, days: number): number {
+  const t = now - (days - 1) * 864e5;
+  const p: Record<string, string> = {};
+  for (const x of zurichClock.formatToParts(new Date(t))) p[x.type] = x.value;
+  return t - ((+p.hour * 60 + +p.minute) * 60 + +p.second) * 1000 - (t % 1000);
 }
 
 /* ---------- modules ---------- */
@@ -129,7 +138,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
     if (!mod) return fail("Unknown module", 404);
     const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 14, 1), MAX_PERIOD_DAYS);
     const to = Date.now();
-    const from = to - days * 864e5;
+    const from = periodStart(to, days);
     return json({ shared: false, from, to, items: await mod.load(q, pid, from, to) });
   }
   // a read-only link for the doctor: the chosen period, as it is now, valid for a few days
@@ -141,9 +150,10 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
     const now = Date.now();
     const t = randomToken();
     await q("DELETE FROM web_shares WHERE expires_at < ?1", [now]);
+    const from = periodStart(now, days);
     await q("INSERT INTO web_shares (token_hash, person_id, date_from, date_to, created_at, expires_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-      [await fingerprint(t), pid, now - days * 864e5, now, now, now + valid * 864e5]);
-    return json({ url: `${url.origin}/s/${t}`, from: now - days * 864e5, to: now, expiresAt: now + valid * 864e5 });
+      [await fingerprint(t), pid, from, now, now, now + valid * 864e5]);
+    return json({ url: `${url.origin}/s/${t}`, from, to: now, expiresAt: now + valid * 864e5 });
   }
   if (p === "/my/api/shares" && req.method === "DELETE") {
     await q("DELETE FROM web_shares WHERE person_id = ?1", [pid]);

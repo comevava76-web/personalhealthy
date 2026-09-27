@@ -118,14 +118,15 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .kpi .v { font-size: 24px; }
 }
 
-/* Save as PDF: white paper, no buttons */
+/* PDF: the browser prints only the A4 pages of the report (report.js), the same template as the app's PDF */
+#print { display: none; }
+@page { size: A4; margin: 0; }
 @media print {
-  :root { --bg: #fff; --panel: #fff; --panel2: #F3F6FA; --line: #D9E0EA; --ink: #13223F; --muted: #5B6B88; --sys: #D63B45; --dia: #2B86C0; --pul: #B97700; }
-  .top { position: static; background: #13223F; }
-  .top .brand, .top .brand b { color: #fff; }
-  .actions, .pills, .modules, details summary { display: none !important; }
-  details:not([open]) > *:not(summary) { display: block; }
-  .card, .kpi, .tile { break-inside: avoid; }
-  main { max-width: none; }
+  html, body { background: #fff !important; margin: 0; padding: 0; }
+  body > *:not(#print) { display: none !important; }
+  #print { display: block; }
+  .a4 { width: 210mm; height: 297mm; overflow: hidden; break-after: page; page-break-after: always; }
+  .a4:last-child { break-after: auto; page-break-after: auto; }
+  .a4 svg { width: 210mm; height: 297mm; display: block; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
