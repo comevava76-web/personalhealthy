@@ -297,15 +297,28 @@ fun App() {
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
 
-    // the notice: accepted on this phone (remembered here) or already on the server (another phone, earlier)
+    // the notice is binding and accepted once per installed version: at the first installation, after every update
+    // of the app and whenever its text changes. Remembered as "text version @ app version".
+    val noticeKey = DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
     var checkingAi by remember { mutableStateOf(false) }
-    val needsNotice = noticeLocal != DISCLAIMER_VERSION && me?.disclaimerOk != true
-    LaunchedEffect(me?.disclaimerOk) {
-        if (me?.disclaimerOk == true && noticeLocal != DISCLAIMER_VERSION) {
-            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply(); noticeLocal = DISCLAIMER_VERSION
+    val needsNotice = noticeLocal != noticeKey
+
+    // switched off remotely: remembered, so that without a connection the app stays closed too
+    LaunchedEffect(Unit) {
+        if (prefs.getInt("appOff", 0) == BuildConfig.VERSION_CODE) AppGate.disabled = true
+    }
+    LaunchedEffect(AppGate.disabled) {
+        if (AppGate.disabled) prefs.edit().putInt("appOff", BuildConfig.VERSION_CODE).apply()
+    }
+    fun checkAppGate() = scope.launch {
+        when (Repo.appAllowed()) {
+            false -> AppGate.disabled = true
+            true -> if (AppGate.disabled) { AppGate.disabled = false; prefs.edit().remove("appOff").apply() }
+            null -> {}
         }
+        Unit
     }
 
     fun reload() {
@@ -365,6 +378,7 @@ fun App() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             // back in the app: fresh readings and credit (there is no refresh button)
+            if (event == Lifecycle.Event.ON_RESUME) checkAppGate()
             if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
             if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
                 rechargePending = false
@@ -451,6 +465,8 @@ fun App() {
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         when {
+            // a version switched off remotely: only the way to the latest one
+            AppGate.disabled -> AppOffScreen()
             personId == null -> SetupScreen { pid ->
                 prefs.edit().putString("personId", pid).apply()
                 personId = pid
@@ -468,8 +484,8 @@ fun App() {
                                 pid, DISCLAIMER_VERSION, t(R.string.disc_lang), t(R.string.disc_title) + "\n\n" + t(R.string.disc_body),
                                 info.versionName ?: "", Build.MANUFACTURER + " " + Build.MODEL
                             )
-                            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply()
-                            noticeLocal = DISCLAIMER_VERSION
+                            prefs.edit().putString("noticeAccepted", noticeKey).apply()
+                            noticeLocal = noticeKey
                             reload()
                         } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                         noticeBusy = false
@@ -592,6 +608,13 @@ fun App() {
                         })
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
+                            onAppMinVersion = { v ->
+                                val pid = personId ?: return@CreditScreen
+                                scope.launch {
+                                    try { Repo.setAppMinVersion(pid, v); reload(); toast(ctx, t(R.string.versions_saved)) }
+                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                }
+                            },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             // after a recharge on Anthropic: ask Anthropic again, Scan follows the answer
@@ -848,12 +871,13 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
-/** One figure of the credit panel: small label on top, the value large below. */
+/** One figure of the credit panel: a hairline above, the label on the left, the value on the right. */
 @Composable
-fun CreditFigure(label: String, value: String, color: Color, modifier: Modifier) {
-    Column(modifier.padding(end = 8.dp)) {
-        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1)
-        Text(value, color = color, fontSize = 24.sp, fontWeight = FontWeight.Light, maxLines = 1)
+fun CreditRow(label: String, value: String) {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
+    Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = C.Muted, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(value, color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -963,6 +987,22 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** This version was switched off remotely: nothing works until the latest one is installed. The data stay on the server. */
+@Composable
+fun AppOffScreen() {
+    val ctx = LocalContext.current
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        BrandHeader()
+        Spacer(Modifier.height(24.dp))
+        Text(t(R.string.app_off_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Panel { Text(t(R.string.app_off_text, BuildConfig.VERSION_NAME), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp) }
+        BigButton(t(R.string.app_off_download)) {
+            try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(DOWNLOAD_URL))) }
+            catch (_: Exception) { toast(ctx, t(R.string.no_browser)) }
+        }
     }
 }
 
@@ -1596,9 +1636,10 @@ fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit, onAppMinVersion: (Int) -> Unit = {}
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
+    var appOffAsk by remember { mutableStateOf<Int?>(null) }   // administrator: the minimum version waiting for confirmation
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.tab_credit))
@@ -1614,18 +1655,23 @@ fun CreditScreen(
         // Anthropic lets no app read the balance: shown instead is what Anthropic answered (credit there or not),
         // what was spent with HINT (exact, from each reading) and the cost of one photo
         Panel {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                val (stateText, stateCol) = when {
-                    noKey -> "—" to C.Muted
-                    me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
-                    me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
-                    else -> t(R.string.credit_state_key) to C.Alert
-                }
-                CreditFigure(t(R.string.credit_state), stateText, stateCol, Modifier.weight(1.2f))
-                CreditFigure(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0), C.Ink, Modifier.weight(1f))
-                CreditFigure(t(R.string.credit_per_photo), usdFine(c?.avgCost ?: 0.006), C.Ink, Modifier.weight(1.2f))
+            // first the answer from Anthropic, on its own line; then the figures, one per row, label left and value right
+            val (stateText, stateCol) = when {
+                noKey -> "—" to C.Muted
+                me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
+                me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
+                else -> t(R.string.credit_state_key) to C.Alert
             }
-            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+            Text(t(R.string.credit_state), color = C.Muted, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)) {
+                Box(Modifier.size(9.dp).background(if (stateCol == C.Ink) C.Sys else stateCol, CircleShape))
+                Text(stateText, color = stateCol, fontSize = 22.sp, fontWeight = FontWeight.Light, modifier = Modifier.padding(start = 10.dp))
+            }
+            val cost = c?.avgCost ?: 0.006
+            CreditRow(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0))
+            CreditRow(t(R.string.credit_per_photo), "≈ " + usdFine(cost))
+            CreditRow(t(R.string.credit_photos_per_usd), if (cost > 0) "≈ " + (1.0 / cost).toInt() else "—")
+            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 10.dp))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
 
@@ -1687,7 +1733,33 @@ fun CreditScreen(
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
             }
         }
+
+        // App versions (administrator): switch off the apps installed with older versions, or let them all work again
+        if (me.isAdmin) {
+            SectionTitle(t(R.string.section_versions))
+            val mine = BuildConfig.VERSION_CODE
+            Panel {
+                Text(t(R.string.versions_state, mine, if (me.appMinVersion > 0) me.appMinVersion.toString() else "—"), color = C.Ink, fontSize = 14.sp)
+                Text(t(R.string.versions_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            if (me.appMinVersion < mine)
+                BigButton(t(R.string.versions_off_older), color = C.Surface2, textColor = C.Ink) { appOffAsk = mine }
+            if (me.appMinVersion > 0)
+                TextButton(onClick = { appOffAsk = 0 }, modifier = Modifier.fillMaxWidth()) {
+                    Text(t(R.string.versions_all_on), color = C.Muted, fontSize = 13.sp)
+                }
+        }
         Colophon(onTerms)
+    }
+    appOffAsk?.let { v ->
+        AlertDialog(
+            onDismissRequest = { appOffAsk = null },
+            title = { Text(t(if (v > 0) R.string.versions_off_older else R.string.versions_all_on)) },
+            text = { Text(if (v > 0) t(R.string.versions_off_q, v) else t(R.string.versions_on_q)) },
+            confirmButton = { TextButton(onClick = { appOffAsk = null; onAppMinVersion(v) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
+            dismissButton = { TextButton(onClick = { appOffAsk = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
+        )
     }
     if (signOutAsk) AlertDialog(
         onDismissRequest = { signOutAsk = false },

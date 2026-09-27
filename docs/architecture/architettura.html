@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>HINT 365 · Documento funzionale e architetturale</title>
 <!--
-  Documento funzionale (pagina 1) e architetturale (pagina 2) di HINT · HealthyInstantTracker.
+  Documento funzionale (pagina 1) e architetturale (pagina 2) di HINT 365 · HealthyInstantTracker.
   Va aggiornato a ogni modifica che cambia un flusso, una tecnologia o una regola; poi si rigenera il PDF:
   node docs/architecture/render.cjs   →   docs/architecture/HINT-Architettura.pdf
 -->
@@ -50,7 +50,7 @@
   </div>
 
   <h2>Il flusso <small>dal telefono al medico</small></h2>
-  <svg viewBox="0 0 520 250" width="100%" role="img" aria-label="Flusso funzionale di HINT">
+  <svg viewBox="0 0 520 250" width="100%" role="img" aria-label="Flusso funzionale di HINT 365">
     <defs>
       <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker>
     </defs>
@@ -74,7 +74,7 @@
     <line x1="244" y1="75" x2="290" y2="75" class="l"/><line x1="290" y1="85" x2="244" y2="85" class="l"/>
     <text x="267" y="70" text-anchor="middle" class="lb">misure</text>
     <rect x="292" y="40" width="112" height="80" rx="8" fill="#0F1C36"/>
-    <text x="302" y="58" class="t" fill="#fff" style="fill:#fff">Server HINT</text>
+    <text x="302" y="58" class="t" fill="#fff" style="fill:#fff">Server HINT 365</text>
     <text x="302" y="70" class="s" style="fill:#AFC0DC">controlla, salva, calcola</text>
     <rect x="302" y="80" width="92" height="30" rx="4" fill="#1F3D72"/>
     <text x="308" y="93" class="s" style="fill:#fff">Database in Europa</text>
@@ -109,7 +109,7 @@
       <ol>
         <li><b>Installa</b> l'app dal link pubblico <code>/download</code> (in futuro Play Store).</li>
         <li><b>Accede con Google</b> una sola volta e dà il consenso privacy. Google serve solo a creare e ritrovare l'account.</li>
-        <li><b>Accetta le condizioni d'uso</b>: senza accettazione l'app non si apre. Ogni accettazione è registrata (account, email, telefono, versione, impronta del testo, data).</li>
+        <li><b>Accetta le condizioni d'uso</b>, vincolanti, alla prima installazione e a ogni aggiornamento: senza accettazione l'app non si apre. Ogni accettazione è registrata (codice anonimo, telefono, versioni, impronta del testo, data).</li>
         <li><b>Ogni giorno</b> sblocca con impronta o PIN del telefono. Resta collegato finché non sceglie «Esci».</li>
         <li><b>Registra</b> una misura: a voce (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, controllati e confermati a schermo) oppure fotografando il display (Upgrade).</li>
         <li><b>Consulta</b>: ultima misura, settimana, Report con grafico e riquadri.</li>
@@ -132,13 +132,12 @@
         <li>Niente rosso da nessuna parte: SYS viola, DIA verde acqua, PUL ambra. Nessun colore indica «bene» o «male».</li>
         <li>Bilancia mattina/sera: solo il confronto delle medie, senza giudizio.</li>
         <li>Scan è attivo solo se Anthropic ha appena risposto «sì»: chiave valida e credito. Verifica con una richiesta minima (millesimi di centesimo) all'apertura se l'ultima ha più di un'ora, dopo ogni errore e con «Ricontrolla».</li>
-        <li>Dati legati a un codice anonimo; foto e file elaborati e non salvati.</li>
-        <li>Misure conservate al massimo 365 giorni: cancellazione automatica ogni notte (cron del Worker). Restano solo le accettazioni delle condizioni, come prova.</li>
-        <li>Il gestore paga solo il server (gratuito); ogni utente paga la propria AI.</li>
+                <li>Misure conservate al massimo 365 giorni: cancellazione automatica ogni notte (cron del Worker). Restano solo le accettazioni delle condizioni, come prova.</li>
+        <li>Il gestore paga solo il server (gratuito) e può disattivare a distanza le app installate; ogni utente paga la propria AI.</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Documento funzionale e architetturale · aggiornato al 27.09.2026 · versione app 0.1.70</span><span>1 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Documento funzionale e architetturale · aggiornato al 27.09.2026 · versione app 0.1.75</span><span>1 / 2</span></div>
 </section>
 
 <!-- ======================= PAGINA 2: TECNOLOGIE ======================= -->
@@ -149,7 +148,7 @@
     <p>I componenti, come si parlano, dove stanno i dati e come si pubblica una nuova versione.</p>
   </div>
 
-  <svg viewBox="0 0 520 190" width="100%" role="img" aria-label="Architettura tecnica di HINT">
+  <svg viewBox="0 0 520 190" width="100%" role="img" aria-label="Architettura tecnica di HINT 365">
     <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
     <style>
       .n { fill:#fff; stroke:#C7D2E1; } .h { font-size:8px; font-weight:700; fill:#13223F; } .x { font-size:6.4px; fill:#5B6B88; }
@@ -217,6 +216,7 @@
         <li><b>Telefono</b>: una chiave privata che non esce mai dal telefono firma ogni richiesta; il server rifiuta firme non valide o orari sbagliati di oltre 5 minuti.</li>
         <li><b>Web</b>: codice monouso di 60 s nella parte <code>#</code> dell'indirizzo, scambiato con un cookie di 7 giorni. «Esci» sul telefono chiude anche il web.</li>
         <li><b>Link al medico</b>: sola lettura, periodo fisso, scadenza 1–30 giorni, ritirabili; niente email né account.</li>
+        <li><b>Disattivazione a distanza</b>: l'app invia il suo numero di versione a ogni richiesta e chiede <code>/v1/app-status</code> a ogni apertura; in <code>settings</code> <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Si cambiano dall'app (gestore → «Disattiva le versioni precedenti») o da GitHub Actions → <i>App versions</i>. Le app senza numero (fino a 0.1.74) valgono 0.</li>
         <li><b>Database</b>: solo impronte SHA-256 di codici, cookie e link; chiavi Anthropic cifrate AES-GCM legate all'account.</li>
         <li><b>Conservazione</b>: misure e letture foto oltre 365 giorni cancellate ogni notte; accettazioni in un registro a sola aggiunta (tabella <code>acceptances</code>, D1 in UE).</li>
         <li><b>Dati personali</b>: nessun nome e nessuna email (dell'account Google solo un'impronta HMAC-SHA256 con chiave del server; l'email resta sul telefono); foto e file elaborati e scartati; dati in UE; cancellazione account immediata (resta solo la prova dell'accettazione).</li>
@@ -231,7 +231,7 @@
       <p>La dashboard è a moduli: le analisi saranno un nuovo modulo in <code>web.ts</code> e <code>app.js</code>, con accesso, periodi, invio ed export già pronti.</p>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Documento funzionale e architetturale · aggiornato al 27.09.2026 · versione app 0.1.70</span><span>2 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Documento funzionale e architetturale · aggiornato al 27.09.2026 · versione app 0.1.75</span><span>2 / 2</span></div>
 </section>
 </body>
 </html>

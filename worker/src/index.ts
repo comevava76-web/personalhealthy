@@ -30,6 +30,28 @@ async function getSetting(q: Q, key: string, def: string): Promise<string> {
   return r ? String(r.value) : def;
 }
 
+/* ---------- switching installed apps off remotely ----------
+   Three settings, changed from the app (administrator) or from GitHub (Actions → App versions):
+   app_min_version  versions below this number stop working (0 = none)
+   app_blocked      single versions switched off, e.g. "71,72"
+   app_off          "1" = every version off, an emergency stop
+   A switched-off app gets "app_disabled" on every request and shows only the page to update it.
+   Apps from before 0.1.75 send no version: they count as version 0. */
+async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boolean }> {
+  const rows = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off')");
+  const v: Record<string, string> = {};
+  for (const r of rows as any[]) v[r.key] = String(r.value);
+  return {
+    min: Number(v.app_min_version) || 0,
+    blocked: (v.app_blocked || "").split(/[\s,]+/).map(Number).filter((n) => n > 0),
+    off: v.app_off === "1",
+  };
+}
+async function appAllowed(q: Q, version: number): Promise<boolean> {
+  const g = await appGate(q);
+  return !g.off && version >= g.min && !g.blocked.includes(version);
+}
+
 // Money pools. Everyone with pays = 'owner' shares the owner's pool ("owner"); each friend with
 // pays = 'self' has a pool of their own, named after their person id. Rows written before pools
 // existed have no payer and belong to the owner.
@@ -200,7 +222,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "7";
+const DISCLAIMER_VERSION = "8";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -395,6 +417,9 @@ export default {
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
+      // asked by the app when it opens, before anything else: is this version still allowed?
+      if (req.method === "GET" && url.pathname === "/v1/app-status")
+        return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
       const web = await handleWeb(req, env, q, url);
       if (web) return web;
@@ -413,6 +438,9 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const tsn = Number(ts);
   if (!tsn || Math.abs(Date.now() - tsn) > 5 * 60e3)
     return fail("Phone clock is wrong: turn on automatic date and time.", 401, "bad_clock");
+  // a version switched off remotely can do nothing at all
+  if (!(await appAllowed(q, Number(req.headers.get("X-App-Version")) || 0)))
+    return fail("This version of HINT 365 has been switched off: install the latest one.", 426, "app_disabled");
   const message = `${req.method}\n${url.pathname + url.search}\n${ts}\n${await sha256Hex(body)}`;
   let data: any = {};
   if (body.length) {
@@ -539,6 +567,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       credit: await creditInfo(q, pool),
       disclaimerOk: await acceptedNotice(q, pid),
       ...(await aiState()),
+      ...(person.is_admin ? { appMinVersion: (await appGate(q)).min } : {}),
     });
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
@@ -609,6 +638,17 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (mode !== "private") return fail("Invalid mode", 400, "generic");
     await q("INSERT INTO settings (key, value) VALUES ('billing_mode', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [mode]);
     return json({ billingMode: mode });
+  }
+
+  // Switch off older apps (administrator only): every version below minVersion stops working; 0 lets them all work again
+  if (req.method === "POST" && url.pathname === "/v1/admin/app-min-version") {
+    if (!person.is_admin) return fail("Only the app manager can switch versions off", 403, "admin_only");
+    const min = Math.max(0, Math.floor(Number(data.minVersion) || 0));
+    // never below the administrator's own app, or nobody could switch it back on from the phone
+    const own = Number(req.headers.get("X-App-Version")) || 0;
+    if (min > own) return fail("Invalid version", 400, "generic");
+    await q("INSERT INTO settings (key, value) VALUES ('app_min_version', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [String(min)]);
+    return json({ appMinVersion: min });
   }
 
   // Invite someone (administrator only): single-use code, valid 7 days

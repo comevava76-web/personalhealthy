@@ -15,7 +15,7 @@
     <string name="activating">Wird aktiviert…</string>
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
     <string name="share_app">App teilen</string>
-    <string name="share_app_text">Ich nutze HINT, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
+    <string name="share_app_text">Ich nutze HINT 365, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
     <string name="privacy_title">Deine Daten</string>
     <string name="privacy_note">Gespeichert werden: ein verschlüsselter Fingerabdruck deines Google-Kontos, ohne E-Mail (nur um dein Tagebuch wiederzufinden), deine Messungen mit Datum und Uhrzeit, und ob sie von einem Foto oder deiner Stimme stammen. Fotos des Messgeräts werden zum Lesen der Zahlen an Anthropic gesendet und von dieser App nicht aufbewahrt. Die Daten liegen auf Cloudflare-Servern in der Europäischen Union; andere Nutzer sehen sie nicht; wer den Dienst betreibt, greift nur zur Wartung auf die Datenbank zu. Du kannst dein Konto und alle Daten jederzeit im Tab Admin löschen.</string>
@@ -41,7 +41,7 @@
     <string name="err_phone_in_use">Auf diesem Telefon gibt es ein anderes Tagebuch mit Messungen: lösche zuerst dieses Konto.</string>
     <string name="err_consent_required">Akzeptiere zuerst den Hinweis zu deinen Daten.</string>
     <string name="err_admin_delete">Wer die App verwaltet, kann das eigene Konto nicht löschen.</string>
-    <string name="lock_prompt_title">HINT entsperren</string>
+    <string name="lock_prompt_title">HINT 365 entsperren</string>
     <string name="lock_prompt_sub">Fingerabdruck, Gesicht oder Bildschirmsperre des Telefons</string>
     <string name="lock_text">Deine Messungen sind mit Fingerabdruck, Gesicht oder der Bildschirmsperre des Telefons geschützt.</string>
     <string name="lock_unlock">Entsperren</string>
@@ -104,7 +104,7 @@
     <string name="period_avg">Durchschnitt des Zeitraums</string>
     <string name="avg_day">Tagesdurchschnitt</string>
     <string name="avg_evening_label">Abenddurchschnitt</string>
-    <string name="camera_permission">Um das Messgerät zu fotografieren, erlaube HINT die Kamera.</string>
+    <string name="camera_permission">Um das Messgerät zu fotografieren, erlaube HINT 365 die Kamera.</string>
     <string name="n_in_days">%1$d Messungen an %2$d Tagen</string>
     <string name="avg_pulse">PUL im Durchschnitt</string>
     <string name="per_minute">pro Minute</string>
@@ -181,7 +181,7 @@
     <string name="voice_retry">Nochmal sagen</string>
     <string name="voice_not_understood">Ich habe die Zahlen nicht verstanden. Nochmal: SYS, DIA und PUL.</string>
     <string name="listening">Ich höre zu…</string>
-    <string name="voice_permission">Um die Werte anzusagen, erlaube HINT das Mikrofon.</string>
+    <string name="voice_permission">Um die Werte anzusagen, erlaube HINT 365 das Mikrofon.</string>
     <string name="voice_network">Die Spracherkennung braucht Internet. Prüfe die Verbindung und versuche es nochmal.</string>
     <string name="voice_missing">Ich habe nur %1$s gehört: eine Zahl fehlt. Sage alle drei: SYS, DIA und PUL.</string>
     <string name="voice_sub">Per Stimme erfasst: prüfe die Zahlen</string>
@@ -202,7 +202,7 @@
     <string name="credit_warn_low">Guthaben fast aufgebraucht: noch etwa 1 Foto. Hier tippen.</string>
     <string name="credit_balance">Guthaben</string>
     <string name="credit_photos">Fotos</string>
-    <string name="credit_per_photo">Pro Foto</string>
+    <string name="credit_per_photo">Kosten pro Foto</string>
     <string name="credit_estimate">Schätzung. Das genaue Guthaben steht bei Anthropic.</string>
     <string name="credit_needs_key">Nur zum Scannen von Fotos nötig.</string>
     <string name="recharge">Aufladen</string>
@@ -228,9 +228,9 @@
     <string name="key_step0_title">Anthropic-Konto erstellen</string>
     <string name="key_step0_text">Anthropic ist das KI-Unternehmen, das die Fotos liest. Registriere dich mit deiner E-Mail: kostenlos.</string>
     <string name="key_step0_button">Anthropic öffnen und registrieren</string>
-    <string name="welcome_title">Willkommen bei HINT</string>
+    <string name="welcome_title">Willkommen bei HINT 365</string>
     <string name="welcome_sub">Dein Blutdrucktagebuch</string>
-    <string name="welcome_what">HINT speichert deine Blutdruckmessungen (SYS, DIA und PUL) mit Datum und Uhrzeit, zeigt sie in Tabellen und Grafiken und erstellt den Bericht für den Arzt. Du kannst sie auf zwei Arten erfassen:</string>
+    <string name="welcome_what">HINT 365 speichert deine Blutdruckmessungen (SYS, DIA und PUL) mit Datum und Uhrzeit, zeigt sie in Tabellen und Grafiken und erstellt den Bericht für den Arzt. Du kannst sie auf zwei Arten erfassen:</string>
     <string name="welcome_voice_title">🎤 Per Stimme erfassen: kostenlos</string>
     <string name="welcome_voice_text">Tippe auf Sprechen und sage die drei Werte. Es funktioniert sofort, ohne weiteres.</string>
     <string name="welcome_scan_title">📷 Foto scannen: optional</string>
@@ -294,4 +294,19 @@
     <string name="bal_none">Es braucht Messungen am Morgen und am Abend.</string>
     <string name="bal_same">Morgen und Abend haben denselben Durchschnitt.</string>
     <string name="bal_diff">Abend - Morgen: SYS %1$s · DIA %2$s mmHg</string>
+    <string name="app_off_title">Diese Version von HINT 365 wurde abgeschaltet</string>
+    <string name="app_off_text">Version %1$s kann nicht mehr verwendet werden. Installiere die neueste: Sie wird über diese installiert und deine Messungen bleiben sicher auf dem Server. Beim Öffnen wirst du gebeten, die Bedingungen erneut zu akzeptieren.</string>
+    <string name="app_off_download">Neueste Version herunterladen</string>
+    <string name="section_versions">App-Versionen</string>
+    <string name="versions_state">Diese App: %1$d · niedrigste erlaubte: %2$s</string>
+    <string name="versions_how">Mit einer älteren Version installierte Apps funktionieren sofort nicht mehr und zeigen nur die Seite zum Herunterladen der neuesten. Ihre Daten bleiben unberührt.</string>
+    <string name="versions_off_older">Ältere Versionen abschalten</string>
+    <string name="versions_all_on">Alle Versionen wieder zulassen</string>
+    <string name="versions_off_q">Alle Apps unter Version %1$d funktionieren ab sofort auf keinem Telefon mehr, bis die neueste installiert ist.</string>
+    <string name="versions_on_q">Alle installierten Versionen funktionieren wieder.</string>
+    <string name="versions_saved">Erledigt</string>
+    <string name="versions_confirm">Bestätigen</string>
+    <string name="credit_state">Anthropic-Guthaben</string>
+    <string name="credit_photos_per_usd">Fotos mit 1 $</string>
+    <string name="credit_how">Das genaue Guthaben sieht nur Anthropic: „Aufladen“ öffnet deine Seite. Hier siehst du, ob Guthaben da ist (Anthropic wird gefragt, Scan folgt der Antwort) und was deine Fotos kosten.</string>
 </resources>

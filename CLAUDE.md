@@ -14,3 +14,9 @@
 - **Nessuna email nel database**: dell'account Google si salva solo un'impronta HMAC (`googleId` in `worker/src/index.ts`);
   l'email resta sul telefono. Nessuna funzione deve reintrodurla.
 - **Mai segreti nel repository**: chiavi e token solo nei secrets di GitHub o sul server.
+- **Nome**: sempre «HINT 365» nei testi per l'utente (app, web, PDF, guide, condizioni).
+- **Condizioni d'uso vincolanti**: mostrate alla prima installazione, a ogni aggiornamento dell'app e quando cambia il testo
+  (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms`.
+- **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
+  `app_min_version`, quelle in `app_blocked` o tutte con `app_off` (tabella `settings`). Si comanda dall'app (gestore) o da
+  Actions → *App versions*. Non togliere questo controllo.
