@@ -241,8 +241,7 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">Mit deinem eigenen Anthropic-Schlüssel schaltest du frei:</string>
     <string name="upgrade_f1">📷 Fotos des Messgeräts scannen</string>
-    <string name="upgrade_f2">📊 Web-Dashboard zum Teilen (bald)</string>
-    <string name="upgrade_f3">🧪 Laborberichte als Tabellen und Grafiken (bald)</string>
+    <string name="upgrade_f2">🧪 Laborberichte als Tabellen und Grafiken (bald)</string>
     <string name="upgrade_cost">Etwa 0,6 Cent pro gelesenem Foto, aus deinem Anthropic-Guthaben. Nie eine Diagnose: nur deine Daten.</string>
     <string name="welcome_later">Du kannst es jederzeit mit Upgrade einschalten.</string>
     <string name="welcome_steps_intro">Wenn du das Scannen willst, sind es 4 Schritte:</string>

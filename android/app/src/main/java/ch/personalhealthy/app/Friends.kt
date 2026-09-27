@@ -95,7 +95,7 @@ fun KeyScreen(
             Panel {
                 Text(t(R.string.upgrade_sub), color = C.Muted, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
-                listOf(R.string.upgrade_f1, R.string.upgrade_f2, R.string.upgrade_f3).forEach {
+                listOf(R.string.upgrade_f1, R.string.upgrade_f2).forEach {
                     Text(t(it), color = C.Ink, fontSize = 15.sp, modifier = Modifier.padding(vertical = 2.dp))
                 }
                 Spacer(Modifier.height(8.dp))
