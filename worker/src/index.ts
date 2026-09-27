@@ -177,7 +177,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "5";
+const DISCLAIMER_VERSION = "6";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -340,7 +340,26 @@ async function readDisplay(env: Env, apiKey: string, image: string, lang: string
   return { reading: { readable, sis, dia, pul, note: typeof j.note === "string" ? j.note.slice(0, 200) : "" }, costMicro };
 }
 
+/**
+ * Every day (cron in wrangler.toml): readings and photo readings older than 365 days are deleted, and so are expired
+ * web codes, sessions and share links. The record of accepted terms (acceptances) is kept, as proof.
+ */
+export async function purgeOld(env: Env) {
+  const now = Date.now(), yearAgo = now - 365 * 864e5;
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM measurements WHERE taken_at < ?1").bind(yearAgo),
+    env.DB.prepare("DELETE FROM scans WHERE created_at < ?1").bind(yearAgo),
+    env.DB.prepare("DELETE FROM web_codes WHERE expires_at < ?1").bind(now),
+    env.DB.prepare("DELETE FROM web_sessions WHERE expires_at < ?1").bind(now),
+    env.DB.prepare("DELETE FROM web_shares WHERE expires_at < ?1").bind(now),
+  ]);
+}
+
 export default {
+  async scheduled(_event: unknown, env: Env): Promise<void> {
+    await purgeOld(env);
+  },
+
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/v1/health") return json({ ok: true });

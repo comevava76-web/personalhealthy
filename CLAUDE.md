@@ -9,4 +9,6 @@
   grafici di 7 giorni con un punto per giorno (la media del giorno, spiegata prima dei grafici) e il valore accanto, sotto solo i numeri dei giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
 - **Niente rosso**, in nessun grafico, pulsante o logo: SYS viola, DIA verde acqua, PUL ambra; nessun colore deve sembrare
   un giudizio (né problema né «bene»).
+- **Conservazione**: misure al massimo 365 giorni (cancellazione automatica ogni notte); le accettazioni delle condizioni restano
+  come prova. Se cambia, aggiornare condizioni d'uso (nuova versione), privacy e documento.
 - **Mai segreti nel repository**: chiavi e token solo nei secrets di GitHub o sul server.

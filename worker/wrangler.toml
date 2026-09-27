@@ -9,6 +9,10 @@ workers_dev = true
 directory = "./public"
 binding = "ASSETS"
 
+# Every day at 03:17 UTC: readings older than 365 days are deleted (see purgeOld in src/index.ts)
+[triggers]
+crons = ["17 3 * * *"]
+
 # D1 database "personalhealthy", with data bound to the European Union.
 # GitHub creates it on the first build and puts its id here in place of D1_DATABASE_ID.
 [[d1_databases]]
