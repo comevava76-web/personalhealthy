@@ -241,7 +241,7 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">With your own Anthropic key you unlock:</string>
     <string name="upgrade_f1">📷 Scanning photos of the monitor</string>
-    <string name="upgrade_f2">🧪 Lab reports: data loaded into tables and charts. No diagnosis (coming)</string>
+    <string name="upgrade_f2">🧪 Scanning medical documents: values in tables and charts, no diagnosis (coming)</string>
     <string name="upgrade_cost">About 0.6 cents per photo read, from your Anthropic credit.</string>
     <string name="welcome_later">You can turn it on any time with Upgrade.</string>
     <string name="welcome_steps_intro">If you want scanning, it takes 4 steps:</string>
@@ -261,7 +261,7 @@
     <string name="key_privacy">Your key is stored encrypted on our server and is never shown again, not even to you. Only your photos use it. You can replace or delete it in the Admin tab.</string>
     <string name="key_saved">Key checked and saved</string>
     <string name="key_deleted">Key deleted</string>
-    <string name="key_missing">Optional. Upgrade unlocks scanning, the web dashboard and lab reports.</string>
+    <string name="key_missing">Optional. Upgrade adds AI scanning: the monitor\'s display and, soon, medical documents.</string>
     <string name="replace_key">Replace key</string>
     <string name="delete_key">Delete my key</string>
     <string name="delete_key_q">Delete your key?</string>

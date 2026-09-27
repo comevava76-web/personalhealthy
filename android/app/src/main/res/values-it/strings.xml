@@ -239,7 +239,7 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">Con la tua chiave Anthropic sblocchi:</string>
     <string name="upgrade_f1">📷 Scansione delle foto del misuratore</string>
-    <string name="upgrade_f2">🧪 Analisi: caricamento dati in tabelle e grafici. Nessuna diagnosi (in arrivo)</string>
+    <string name="upgrade_f2">🧪 Scansione dei documenti medici: valori in tabelle e grafici, nessuna diagnosi (in arrivo)</string>
     <string name="upgrade_cost">Circa 0,6 centesimi per foto letta, dal tuo credito Anthropic.</string>
     <string name="welcome_later">Puoi attivarla quando vuoi con Upgrade.</string>
     <string name="welcome_steps_intro">Se vuoi la scansione, bastano 4 passaggi:</string>
@@ -259,7 +259,7 @@
     <string name="key_privacy">La tua chiave viene salvata cifrata sul nostro server e non viene più mostrata, nemmeno a te. La usano solo le tue foto. Puoi sostituirla o cancellarla nella scheda Admin.</string>
     <string name="key_saved">Chiave controllata e salvata</string>
     <string name="key_deleted">Chiave cancellata</string>
-    <string name="key_missing">Facoltativo. Upgrade sblocca scansione, dashboard web e analisi.</string>
+    <string name="key_missing">Facoltativo. Upgrade aggiunge la scansione con l\'AI: il display del misuratore e, presto, i documenti medici.</string>
     <string name="replace_key">Sostituisci chiave</string>
     <string name="delete_key">Cancella la mia chiave</string>
     <string name="delete_key_q">Cancellare la tua chiave?</string>
