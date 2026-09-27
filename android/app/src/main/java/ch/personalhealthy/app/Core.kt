@@ -139,9 +139,6 @@ data class Me(
     val canRecharge: Boolean get() = isAdmin || selfPays
 }
 
-/** Single-use invite code; [type] = "owner_pays" (family member, I pay) or "self_pays" (friend, pays own photos). */
-data class Invite(val code: String, val type: String, val expiresAt: Long)
-
 fun parseCredit(o: JSONObject?): Credit? = o?.let {
     Credit(
         configured = it.optBoolean("configured", false),
@@ -362,7 +359,7 @@ object Repo {
 
     /**
      * Sign in with Google: finds this person's account (and moves it to this phone), links Google to this phone's
-     * account, or creates a new one. [code] (optional): an invite or the family code, for photos paid by the app manager.
+     * account, or creates a new one (which pays its own readings). [code] is kept for the server and is not used.
      * [consent]: the privacy note was accepted. Returns the person id.
      */
     suspend fun google(idToken: String, code: String?, consent: Boolean): String {
@@ -411,12 +408,6 @@ object Repo {
     suspend fun credit(pid: String, action: String, amount: Double): Credit? {
         val j = Api.call("POST", "/v1/credit", JSONObject().put("action", action).put("amount", amount), pid)
         return parseCredit(j.optJSONObject("credit"))
-    }
-
-    /** New single-use invite, valid 7 days (app manager only). */
-    suspend fun invite(pid: String, type: String): Invite {
-        val j = Api.call("POST", "/v1/admin/invites", JSONObject().put("type", type), pid)
-        return Invite(j.getString("code"), j.getString("type"), j.getLong("expiresAt"))
     }
 
     /**

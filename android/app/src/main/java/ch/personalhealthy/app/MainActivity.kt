@@ -271,7 +271,7 @@ fun App() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
-    // "tabs", or a full screen without the bottom bar: "scan", "key" (a friend's own key), "invite"
+    // "tabs", or a full screen without the bottom bar: "scan", "voice", "listen", "key" (own Anthropic key), "all"
     var screen by rememberSaveable { mutableStateOf("tabs") }
     var tab by rememberSaveable { mutableStateOf(Tab.BP.key) }
     val readings = remember { mutableStateListOf<Reading>() }
@@ -283,8 +283,6 @@ fun App() {
     var me by remember { mutableStateOf<Me?>(null) }
     var rechargePending by rememberSaveable { mutableStateOf(false) } // true while the Anthropic page is open
     var amountDialog by remember { mutableStateOf<String?>(null) }     // "topup" or "set" while the amount dialog is open
-    var inviteDialog by remember { mutableStateOf(false) }             // choosing who to invite
-    var invite by remember { mutableStateOf<Invite?>(null) }           // the invite just created
     var keyPromptShown by rememberSaveable { mutableStateOf(false) }  // friend's key steps shown once after opening the app
     var keyBusy by remember { mutableStateOf(false) }
     var keyError by remember { mutableStateOf<ApiException?>(null) }
@@ -510,14 +508,13 @@ fun App() {
                 },
                 onClose = { screen = "tabs" }
             )
-            screen == "invite" && invite != null -> InviteScreen(invite!!) { screen = "tabs"; invite = null }
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
                         Tab.REPORT.key -> ReportScreen(readings)
                         Tab.CREDIT.key -> CreditScreen(
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
-                            onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
+                            onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
                             onDeleteAccount = {
@@ -597,15 +594,6 @@ fun App() {
                 }
             }
         )
-    }
-
-    if (inviteDialog) InviteTypeDialog(onDismiss = { inviteDialog = false }) { type ->
-        val pid = personId ?: return@InviteTypeDialog
-        inviteDialog = false
-        scope.launch {
-            try { invite = Repo.invite(pid, type); screen = "invite" }
-            catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-        }
     }
 
     if (deleteKeyAsk) AlertDialog(
@@ -1368,7 +1356,7 @@ fun ReportScreen(readings: List<Reading>) {
 @Composable
 fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
-    onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit,
+    onKey: () -> Unit, onDeleteKey: () -> Unit,
     onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
 ) {
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
