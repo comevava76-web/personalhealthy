@@ -133,6 +133,7 @@
         <li>Bilancia mattina/sera: solo il confronto delle medie, senza giudizio.</li>
         <li>Scan è attivo solo se Anthropic ha appena risposto «sì»: chiave valida e credito. Verifica con una richiesta minima (millesimi di centesimo) all'apertura se l'ultima ha più di un'ora, dopo ogni errore e con «Ricontrolla».</li>
         <li>Dati legati a un codice anonimo; foto e file elaborati e non salvati.</li>
+        <li>Misure conservate al massimo 365 giorni: cancellazione automatica ogni notte (cron del Worker). Restano solo le accettazioni delle condizioni, come prova.</li>
         <li>Il gestore paga solo il server (gratuito); ogni utente paga la propria AI.</li>
       </ul>
     </div>
@@ -217,6 +218,7 @@
         <li><b>Web</b>: codice monouso di 60 s nella parte <code>#</code> dell'indirizzo, scambiato con un cookie di 7 giorni. «Esci» sul telefono chiude anche il web.</li>
         <li><b>Link al medico</b>: sola lettura, periodo fisso, scadenza 1–30 giorni, ritirabili; niente email né account.</li>
         <li><b>Database</b>: solo impronte SHA-256 di codici, cookie e link; chiavi Anthropic cifrate AES-GCM legate all'account.</li>
+        <li><b>Conservazione</b>: misure e letture foto oltre 365 giorni cancellate ogni notte; accettazioni in un registro a sola aggiunta (tabella <code>acceptances</code>, D1 in UE).</li>
         <li><b>Dati personali</b>: nessun nome; foto e file elaborati e scartati; dati in UE; cancellazione account immediata (resta solo la prova dell'accettazione).</li>
       </ul>
       <h2>Pubblicare una versione</h2>
