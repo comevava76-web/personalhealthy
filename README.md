@@ -65,6 +65,11 @@ link.
 
 Later versions install over the previous one without losing anything.
 
+## User guide
+`docs/guide-it.html` and `docs/guide-en.html` are the sources of the user guide; `docs/HINT-Guida-IT.pdf` and
+`docs/HINT-Guide-EN.pdf` are made from them (print to PDF, A4). The build serves the PDFs next to the app:
+`<server>/HINT-Guida-IT.pdf` and `<server>/HINT-Guide-EN.pdf`, linked from the home page.
+
 ## The app
 The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): the HINT title with the moving ECG trace, the button to measure, the last reading,

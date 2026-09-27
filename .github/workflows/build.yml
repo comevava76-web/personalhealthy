@@ -96,6 +96,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
+          # the user guides (PDF, Italian and English) are served next to the app
+          cp ../docs/HINT-*.pdf public/
           # keep the app downloadable while this version is built: publish the latest released one again
           if gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir public --clobber; then
             mv public/HealthyInstantTracker-*.apk public/HINT.apk
@@ -184,4 +186,5 @@ jobs:
           npm install --no-audit --no-fund --silent
           sed -i "s/D1_DATABASE_ID/${{ needs.server.outputs.db }}/" wrangler.toml
           cp ../apk/HealthyInstantTracker-*.apk public/HINT.apk
+          cp ../docs/HINT-*.pdf public/
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL"

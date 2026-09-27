@@ -47,13 +47,13 @@ export function homePage(): Response {
 <p>L'app non valuta i valori e non dà consigli medici: la valutazione spetta al medico.</p>
 <p><a class="btn" href="/download">Scarica l'app per Android</a></p>
 <p class="muted">Dopo il download apri il file e consenti l'installazione. All'avvio tocchi "Accedi con Google": se cambi telefono, ritrovi tutto allo stesso modo.</p>
-<p><a href="/privacy">Informativa sulla privacy</a></p>
+<p><a href="/HINT-Guida-IT.pdf">Guida all'uso (PDF)</a> · <a href="/privacy">Informativa sulla privacy</a></p>
 <hr>
 <p><strong>HINT</strong> is a blood-pressure diary for Android. Photograph the monitor's display, or say the values aloud, and the app records SYS, DIA and PUL with date and time. It prepares a PDF and Excel report for the doctor.</p>
 <p>The app does not assess the values and gives no medical advice: that is up to the doctor.</p>
 <p><a class="btn" href="/download">Download the Android app</a></p>
 <p class="muted">After the download, open the file and allow the installation. At first start tap "Sign in with Google": on a new phone you find everything again the same way.</p>
-<p><a href="/privacy">Privacy policy</a></p>`);
+<p><a href="/HINT-Guide-EN.pdf">User guide (PDF)</a> · <a href="/privacy">Privacy policy</a></p>`);
 }
 
 export function privacyPage(contactEmail: string): Response {
