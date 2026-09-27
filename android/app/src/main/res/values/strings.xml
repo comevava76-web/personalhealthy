@@ -169,7 +169,7 @@
     <string name="tab_credit">Credit</string>
     <string name="photo_tip">Tip: photograph the display up close, straight on and without glare.</string>
     <string name="voice_button">Say the values</string>
-    <string name="voice_tip">Or tap the microphone and say SYS, DIA and PUL.</string>
+    <string name="voice_tip">Or tap the microphone and say the values of the reading: Max Min, Pulse</string>
     <string name="voice_prompt">Say SYS, DIA and PUL, for example: 127, 80, 70</string>
     <string name="voice_confirm_title">Values said aloud</string>
     <string name="voice_retry">Say again</string>
