@@ -302,6 +302,11 @@ fun App() {
                 readings.clear(); readings.addAll(l); message = null
                 val m = Repo.me(pid)
                 me = m
+                // first start without an AI key: once, the welcome that explains voice (free) and scanning (optional)
+                if (m.selfPays && !m.hasKey && !prefs.getBoolean("welcomeShown", false) && screen == "tabs") {
+                    prefs.edit().putBoolean("welcomeShown", true).apply()
+                    screen = "welcome"
+                }
                 // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
             } catch (e: Exception) {
                 message = e.message ?: t(R.string.err_generic)
@@ -471,7 +476,8 @@ fun App() {
                 onRetry = { voice = null; screen = "tabs"; openVoice() },
                 onCancel = { voice = null; screen = "tabs" }
             )
-            screen == "key" -> KeyScreen(
+            screen == "key" || screen == "welcome" -> KeyScreen(
+                welcome = screen == "welcome",
                 hasKey = me?.hasKey == true, busy = keyBusy, error = keyError?.message, errorCode = keyError?.code,
                 onSave = { key, amount ->
                     val pid = personId ?: return@KeyScreen
