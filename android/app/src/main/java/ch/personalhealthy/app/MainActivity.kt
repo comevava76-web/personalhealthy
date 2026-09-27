@@ -717,6 +717,15 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
+/** One figure of the credit panel: small label on top, the value large below. */
+@Composable
+fun CreditFigure(label: String, value: String, color: Color, modifier: Modifier) {
+    Column(modifier.padding(end = 8.dp)) {
+        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1)
+        Text(value, color = color, fontSize = 24.sp, fontWeight = FontWeight.Light, maxLines = 1)
+    }
+}
+
 /** Title of a group of the Admin tab. */
 @Composable
 fun SectionTitle(text: String) {
@@ -1388,25 +1397,22 @@ fun CreditScreen(
         val noKey = me.selfPays && !me.hasKey
         val set = !noKey && c != null && c.configured
         val col = if (set && c!!.low) Color(WARN_COLOR) else if (noKey) C.Muted else C.Ink
+        // three figures side by side: balance, photos left, cost of one photo (always shown, to decide whether to recharge)
         Panel {
-            Text(t(R.string.credit_money_left), color = C.Muted, fontSize = 14.sp)
-            Text(if (noKey) "_,__ $" else if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(10.dp))
-            Text(t(R.string.credit_photos_can), color = C.Muted, fontSize = 14.sp)
-            Text(if (noKey) "___" else if (set) "${c!!.photosLeft ?: 0}" else "—", color = col, fontSize = 40.sp, fontWeight = FontWeight.Light)
-            Spacer(Modifier.height(10.dp))
-            Text(t(R.string.credit_avg_fmt, if (noKey) "_,____ $" else usdFine(c?.avgCost ?: 0.006)), color = C.Muted, fontSize = 13.sp)
-            if (noKey) Text(t(R.string.credit_needs_key), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
-            else if (!set) Text(
-                if (me.canRecharge) t(R.string.credit_not_set_admin) else t(R.string.credit_not_set_user),
-                color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                CreditFigure(t(R.string.credit_balance), if (noKey) "_,__ $" else if (set) usd(maxOf(0.0, c!!.remaining ?: 0.0)) else "—", col, Modifier.weight(1.2f))
+                CreditFigure(t(R.string.credit_photos), if (noKey) "___" else if (set) "${c!!.photosLeft ?: 0}" else "—", col, Modifier.weight(1f))
+                CreditFigure(t(R.string.credit_per_photo), usdFine(c?.avgCost ?: 0.006), C.Ink, Modifier.weight(1.2f))
+            }
+            Text(
+                t(when { noKey -> R.string.credit_needs_key; !set && me.canRecharge -> R.string.credit_not_set_admin; !set -> R.string.credit_not_set_user; else -> R.string.credit_estimate }),
+                color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp)
             )
-            if (me.selfPays) Text(t(R.string.credit_own_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
         if (me.canRecharge && !noKey) {
             TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
+                Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp)
             }
         }
 

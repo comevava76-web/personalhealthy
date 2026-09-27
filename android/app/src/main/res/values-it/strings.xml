@@ -116,8 +116,8 @@
     <string name="file_failed">File non creato: %s</string>
     <string name="share_title">Invia il report</string>
     <string name="report_subject">Diario della pressione</string>
-    <string name="credit_not_set_admin">Non ancora impostato. Tocca Ricarica e poi scrivi quanto hai aggiunto.</string>
-    <string name="credit_not_set_user">Non ancora impostato da chi gestisce l\'app.</string>
+    <string name="credit_not_set_admin">Tocca Ricarica, poi scrivi il saldo.</string>
+    <string name="credit_not_set_user">Saldo non ancora impostato.</string>
     <string name="amount_usd">Importo in dollari</string>
     <string name="enter_amount">Scrivi un importo, per esempio 5</string>
     <string name="topup_added">Ricarica aggiunta</string>
@@ -202,13 +202,14 @@
     <string name="col_source">Fonte</string>
     <string name="err_voice_invalid">Valori non validi: SYS deve essere più alta di DIA.</string>
     <string name="credit_warn_low">Credito quasi finito: resta circa 1 foto. Tocca qui.</string>
-    <string name="credit_avg_fmt">Costo medio per foto: %1$s</string>
-    <string name="credit_money_left">Soldi rimasti su Anthropic (stima)</string>
-    <string name="credit_needs_key">Nessun credito AI: serve solo per la scansione delle foto. Se vuoi usarla, aggiungi la tua chiave (Token, qui sotto).</string>
-    <string name="credit_photos_can">Foto che puoi ancora fare (circa)</string>
+    <string name="credit_balance">Saldo</string>
+    <string name="credit_photos">Foto</string>
+    <string name="credit_per_photo">Per foto</string>
+    <string name="credit_estimate">Stima. Il saldo esatto è su Anthropic.</string>
+    <string name="credit_needs_key">Serve solo per la scansione delle foto.</string>
     <string name="recharge">Ricarica</string>
     <string name="recharge_q">Quanto hai aggiunto su Anthropic?</string>
-    <string name="correct_link">Il saldo è sbagliato? Scrivi la cifra che vedi su Anthropic</string>
+    <string name="correct_link">Correggi il saldo</string>
     <string name="correct_q">Cifra che vedi su Anthropic</string>
     <string name="confirm">Salva</string>
     <string name="no_browser">Nessun browser trovato su questo telefono</string>
@@ -263,6 +264,5 @@
     <string name="delete_key">Cancella la mia chiave</string>
     <string name="delete_key_q">Cancellare la tua chiave?</string>
     <string name="delete_key_text">Viene tolta dal nostro server. Le foto non potranno essere lette finché non aggiungi di nuovo una chiave.</string>
-    <string name="credit_own_note">Questo è il tuo credito: lo vedi solo tu.</string>
     <string name="done">Fatto</string>
 </resources>
