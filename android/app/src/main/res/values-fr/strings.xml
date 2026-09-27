@@ -51,8 +51,6 @@
     <string name="no_readings_title">Aucune mesure pour l\'instant</string>
     <string name="no_readings_text">Mesurez votre tension et photographiez l\'écran : l\'app lit les valeurs.</string>
     <string name="last_fmt">Dernière : %s</string>
-    <string name="mmhg_hint">mmHg · SYS en haut, DIA en bas</string>
-    <string name="pulse_lower">PUL</string>
     <string name="measure">Scanner la mesure</string>
     <string name="last7">7 derniers jours</string>
     <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. SYS en haut, DIA en bas.</string>
