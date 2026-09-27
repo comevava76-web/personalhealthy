@@ -126,7 +126,7 @@
     <string name="reminder_channel">Erinnerungen zum Messen</string>
     <string name="reminder_morning">Guten Morgen! Denk daran, deinen Blutdruck zu messen.</string>
     <string name="reminder_evening">Guten Abend! Denk daran, deinen Blutdruck zu messen.</string>
-    <string name="pdf_title">Blutdruckbericht</string>
+    <string name="pdf_title">Blutdruck</string>
     <string name="pdf_period">Letzte %1$d Tage: %2$s bis %3$s · Schweizer Zeit</string>
     <string name="pdf_all">Alle Messungen</string>
     <string name="pdf_generated">Erstellt am %1$s</string>
@@ -269,4 +269,23 @@
     <string name="sign_out_q">Abmelden?</string>
     <string name="sign_out_t">Messwerte und Guthaben bleiben sicher, verknüpft mit %1$s. Um zurückzukehren, auf diesem oder einem neuen Handy, melde dich mit Google an und alles ist wieder da.</string>
     <string name="signed_out">Abgemeldet. Mit Google anmelden, um zurückzukehren.</string>
+    <string name="pdf_range">%1$s bis %2$s · %3$d Tage</string>
+    <string name="pdf_count">%1$d Messungen an %2$d Tagen · Schweizer Zeit</string>
+    <string name="pdf_chart_all">Der ganze Zeitraum</string>
+    <string name="pdf_chart_all_sub">jede Messung, in der Reihenfolge der Aufnahme</string>
+    <string name="pdf_units">SYS und DIA in mmHg · PUL in Schlägen pro Minute</string>
+    <string name="pdf_units_pul">Schläge pro Minute</string>
+    <string name="pdf_morning_t">Morgen</string>
+    <string name="pdf_morning_sub">vor 12 Uhr</string>
+    <string name="pdf_evening_t">Abend</string>
+    <string name="pdf_evening_sub">ab 17 Uhr</string>
+    <string name="pdf_pulse_t">Puls (PUL)</string>
+    <string name="pdf_pulse_sub">jede Messung</string>
+    <string name="pdf_values">Werte des Zeitraums</string>
+    <string name="pdf_values_sub">der höchste, der niedrigste und der Durchschnitt, mit Tag und Uhrzeit</string>
+    <string name="pdf_hi">%1$s höchster</string>
+    <string name="pdf_lo">%1$s niedrigster</string>
+    <string name="pdf_avg">%1$s Durchschnitt</string>
+    <string name="pdf_avg_of">Durchschnitt aus %1$d Messungen</string>
+    <string name="pdf_none_moment">Keine Messungen zu dieser Tageszeit</string>
 </resources>

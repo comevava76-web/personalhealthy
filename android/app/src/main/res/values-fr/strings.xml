@@ -126,7 +126,7 @@
     <string name="reminder_channel">Rappels de mesure</string>
     <string name="reminder_morning">Bonjour ! Pensez à mesurer votre tension.</string>
     <string name="reminder_evening">Bonsoir ! Pensez à mesurer votre tension.</string>
-    <string name="pdf_title">Rapport de tension artérielle</string>
+    <string name="pdf_title">Tension artérielle</string>
     <string name="pdf_period">%1$d derniers jours : du %2$s au %3$s · heure suisse</string>
     <string name="pdf_all">Toutes les mesures</string>
     <string name="pdf_generated">Généré le %1$s</string>
@@ -269,4 +269,23 @@
     <string name="sign_out_q">Se déconnecter ?</string>
     <string name="sign_out_t">Vos mesures et votre crédit restent en sécurité, liés à %1$s. Pour revenir, sur ce téléphone ou un nouveau, connectez-vous avec Google et tout est là.</string>
     <string name="signed_out">Déconnecté. Connectez-vous avec Google pour revenir.</string>
+    <string name="pdf_range">du %1$s au %2$s · %3$d jours</string>
+    <string name="pdf_count">%1$d mesures sur %2$d jours · heure suisse</string>
+    <string name="pdf_chart_all">Toute la période</string>
+    <string name="pdf_chart_all_sub">chaque mesure, dans l\'ordre où elle a été prise</string>
+    <string name="pdf_units">SYS et DIA en mmHg · PUL en battements par minute</string>
+    <string name="pdf_units_pul">battements par minute</string>
+    <string name="pdf_morning_t">Matin</string>
+    <string name="pdf_morning_sub">avant 12 h</string>
+    <string name="pdf_evening_t">Soir</string>
+    <string name="pdf_evening_sub">dès 17 h</string>
+    <string name="pdf_pulse_t">Pouls (PUL)</string>
+    <string name="pdf_pulse_sub">chaque mesure</string>
+    <string name="pdf_values">Valeurs de la période</string>
+    <string name="pdf_values_sub">la plus haute, la plus basse et la moyenne, avec jour et heure</string>
+    <string name="pdf_hi">%1$s la plus haute</string>
+    <string name="pdf_lo">%1$s la plus basse</string>
+    <string name="pdf_avg">%1$s moyenne</string>
+    <string name="pdf_avg_of">moyenne de %1$d mesures</string>
+    <string name="pdf_none_moment">Aucune mesure à ce moment de la journée</string>
 </resources>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@page { size: 595pt 842pt; margin: 0 }
+html,body { margin:0; padding:0; font-family: Roboto, "Helvetica Neue", Arial, sans-serif; color:#13223F }
+.page { width:595pt; height:842pt; position:relative; overflow:hidden; page-break-after:always; background:#fff }
+svg { display:block }
+</style></head>
+<body>
+<script>
+// ---- same geometry the app will use (points = 1/72 inch) ----
+const SYS='#D63B45', DIA='#2B86C0', PUL='#D9900F';
+const SYS_T='#B02733', DIA_T='#1F6A9A', PUL_T='#A86A00';
+const INK='#13223F', MUTED='#5B6B88', RULE='#D9E0EA';
+const MONTHS=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+
+// synthetic readings: 30 days, morning + evening, some gaps
+let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const start=new Date(2026,7,29); const days=30; const R=[];
+for(let d=0;d<days;d++){ if(rnd()<0.12) continue;
+  for(const [h,m] of [[8,10],[18,40]]){ if(rnd()<0.15) continue;
+    const t=new Date(start); t.setDate(t.getDate()+d); t.setHours(h, m+Math.floor(rnd()*40));
+    const ev=h>12; R.push({t, sys:Math.round(118+rnd()*22+(ev?4:0)), dia:Math.round(72+rnd()*14+(ev?2:0)), pul:Math.round(62+rnd()*20), per: ev?'evening':'morning'});
+  }}
+if (R.length) { R[5].sys=148; R[5].dia=94; R[9].pul=91; R[20].sys=109; R[20].dia=66; }
+
+const el=(n,a,txt)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e};
+const tw=(s,fs)=>s.length*fs*0.55;
+
+function chart(svg, x0,y0,w,h, list, series, title, sub){
+  // title row
+  svg.append(el('text',{x:x0,y:y0,'font-size':11.5,'font-weight':700,fill:INK},title));
+  svg.append(el('text',{x:x0+w,y:y0,'font-size':8,fill:MUTED,'text-anchor':'end'},sub));
+  // legend
+  let lx=x0; const ly=y0+14;
+  for(const s of series){ svg.append(el('rect',{x:lx,y:ly-6,width:10,height:2.2,fill:s.c,rx:1}));
+    svg.append(el('circle',{cx:lx+5,cy:ly-4.9,r:2.3,fill:s.c,stroke:'#fff','stroke-width':0.8}));
+    svg.append(el('text',{x:lx+14,y:ly-2,'font-size':8,fill:INK,'font-weight':600},s.name)); lx+=14+tw(s.name,8)+14; }
+  const top=y0+24, padL=26, padR=8, padB=22;
+  const L=x0+padL, Rr=x0+w-padR, T=top+4, B=y0+h-padB;
+  svg.append(el('rect',{x:x0,y:top,width:w,height:h-(top-y0),fill:'#F7F9FC',rx:4}));
+  const vals=list.flatMap(r=>series.map(s=>r[s.k]).filter(v=>v!=null));
+  if(!vals.length){ svg.append(el('text',{x:x0+w/2,y:(top+B)/2,'font-size':9,fill:MUTED,'text-anchor':'middle'},'Nessuna misura in questo momento della giornata')); return; }
+  let lo=Math.floor((Math.min(...vals)-6)/10)*10, hi=Math.ceil((Math.max(...vals)+6)/10)*10;
+  const Y=v=>B-(v-lo)/(hi-lo)*(B-T);
+  const t0=start.getTime(), t1=t0+days*864e5;
+  const X=t=>L+(t.getTime()-t0)/(t1-t0)*(Rr-L);
+  // grid: fine line every 5, stronger + number every 10
+  for(let v=lo; v<=hi; v+=5){ const major=v%10===0;
+    svg.append(el('line',{x1:L,x2:Rr,y1:Y(v),y2:Y(v),stroke:major?'#DCE3EC':'#ECF0F5','stroke-width':major?0.7:0.5}));
+    if(major) svg.append(el('text',{x:L-4,y:Y(v)+2.6,'font-size':7,fill:MUTED,'text-anchor':'end'},v)); }
+  svg.append(el('text',{x:x0+w,y:ly-2,'font-size':7,fill:MUTED,'text-anchor':'end'},series.length>1?'SYS e DIA in mmHg · PUL in battiti al minuto':'battiti al minuto'));
+  // days: a tick per day, number where it fits, month at the first day and at month change
+  const slot=(Rr-L)/days;
+  const every=Math.max(1,Math.ceil(12/slot));
+  for(let d=0; d<=days; d++){ const x=L+d*slot;
+    svg.append(el('line',{x1:x,x2:x,y1:T,y2:B,stroke:'#EEF2F6','stroke-width':0.5}));
+    if(d<days){ const dt=new Date(t0+d*864e5);
+      if(d%every===0) svg.append(el('text',{x:x+slot/2,y:B+9,'font-size':6.8,fill:MUTED,'text-anchor':'middle'},dt.getDate()));
+      if(d===0||dt.getDate()===1) svg.append(el('text',{x:x+slot/2,y:B+17.5,'font-size':6.5,fill:INK,'font-weight':700,'text-anchor':'middle'},MONTHS[dt.getMonth()]));
+    }}
+  // series: straight segments between the real readings, a dot on each one
+  const all=[];
+  for(const s of [...series].reverse()){
+    const pts=list.filter(r=>r[s.k]!=null).map(r=>[X(r.t),Y(r[s.k]),r[s.k],s]);
+    if(pts.length>1) svg.append(el('polyline',{points:pts.map(p=>p[0]+','+p[1]).join(' '),fill:'none',stroke:s.c,'stroke-width':1.1,'stroke-linejoin':'round','stroke-opacity':0.85}));
+    for(const p of pts) svg.append(el('circle',{cx:p[0],cy:p[1],r:2.3,fill:s.c,stroke:'#fff','stroke-width':0.8}));
+    all.push(pts);
+  }
+  // values next to the dots: above or below, only where the label hits no other label and no dot;
+  // the highest and lowest of each line first, so they are always there
+  const fs=6.2, taken=[];
+  all.flat().forEach(p=>taken.push([p[0]-2.6,p[1]-2.6,p[0]+2.6,p[1]+2.6]));
+  const hit=r=>taken.some(t=>r[0]<t[2]&&r[2]>t[0]&&r[1]<t[3]&&r[3]>t[1]);
+  const order=[];
+  for(const pts of all){ const mx=Math.max(...pts.map(p=>p[2])), mn=Math.min(...pts.map(p=>p[2]));
+    pts.forEach(p=>order.push([p, p[2]===mx||p[2]===mn ? 0 : 1])); }
+  order.sort((a,b)=>a[1]-b[1]);
+  for(const [p] of order){ const s=p[3], w=tw(String(p[2]),fs);
+    const prefUp = s.k!=='dia';
+    for(const up of [prefUp,!prefUp]){
+      const by = up ? p[1]-3.8 : p[1]+8.6;
+      const r=[p[0]-w/2-0.8, by-fs*0.78, p[0]+w/2+0.8, by+0.8];
+      if(r[1]<T-2||r[3]>B+1||hit(r)) continue;
+      taken.push(r);
+      svg.append(el('text',{x:p[0],y:by,'font-size':fs,'font-weight':600,fill:s.t,'text-anchor':'middle'},p[2])); break; }
+  }
+}
+
+function header(svg, pageNo, pages){
+  const g=el('defs',{}); g.innerHTML='<linearGradient id="hg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#0F1C36"/><stop offset="1" stop-color="#1F3D72"/></linearGradient>'; svg.append(g);
+  svg.append(el('rect',{x:0,y:0,width:595,height:112,fill:'url(#hg)'}));
+  // faint ECG trace across the band
+  svg.append(el('path',{d:'M300 70 H400 l6 -8 6 8 h8 l5 -26 6 44 5 -18 h14 l6 -6 6 6 H595',fill:'none',stroke:'#FFFFFF','stroke-opacity':0.10,'stroke-width':1.6}));
+  svg.append(el('rect',{x:0,y:112,width:595,height:3,fill:SYS}));
+  svg.append(el('text',{x:40,y:30,'font-size':8,fill:'#AFC0DC','font-weight':700,'letter-spacing':1.6},'HINT · HEALTHYINSTANTTRACKER'));
+  svg.append(el('text',{x:40,y:62,'font-size':24,fill:'#fff','font-weight':700},'Pressione arteriosa'));
+  const end=new Date(start.getTime()+(days-1)*864e5);
+  svg.append(el('text',{x:40,y:82,'font-size':10.5,fill:'#DCE5F3'},`dal ${start.getDate()} ${MONTHS[start.getMonth()]} al ${end.getDate()} ${MONTHS[end.getMonth()]} ${end.getFullYear()}  ·  ${days} giorni`));
+  svg.append(el('text',{x:40,y:98,'font-size':8,fill:'#AFC0DC'},`${R.length} misure in ${new Set(R.map(r=>r.t.toDateString())).size} giorni  ·  ora svizzera`));
+  svg.append(el('text',{x:555,y:30,'font-size':8,fill:'#AFC0DC','text-anchor':'end'},'Generato il 27.09.2026'));
+}
+function footer(svg,pageNo,pages){
+  svg.append(el('line',{x1:40,x2:555,y1:806,y2:806,stroke:RULE,'stroke-width':0.8}));
+  svg.append(el('text',{x:40,y:818,'font-size':7,fill:MUTED},'Misure a domicilio: foto del display letta dall\'app, oppure dette a voce. Nessuna valutazione sui valori: la valutazione clinica spetta al medico.'));
+  svg.append(el('text',{x:555,y:830,'font-size':7,fill:MUTED,'text-anchor':'end'},`Pagina ${pageNo} di ${pages}`));
+  svg.append(el('text',{x:40,y:830,'font-size':7,fill:MUTED},'HINT · HealthyInstantTracker'));
+}
+function smallHeader(svg){
+  svg.append(el('rect',{x:0,y:0,width:595,height:40,fill:'#0F1C36'}));
+  svg.append(el('rect',{x:0,y:40,width:595,height:2,fill:SYS}));
+  svg.append(el('text',{x:40,y:25,'font-size':10,fill:'#fff','font-weight':700},'Pressione arteriosa'));
+  svg.append(el('text',{x:555,y:25,'font-size':8,fill:'#AFC0DC','text-anchor':'end'},'dal 29 ago al 27 set 2026'));
+}
+function fmtWhen(r){ const p=n=>String(n).padStart(2,'0'); return `${p(r.t.getDate())}.${p(r.t.getMonth()+1)} · ${p(r.t.getHours())}:${p(r.t.getMinutes())}`; }
+function tiles(svg, y){
+  svg.append(el('text',{x:40,y:y,'font-size':11.5,'font-weight':700,fill:INK},'Valori del periodo'));
+  svg.append(el('text',{x:555,y:y,'font-size':8,fill:MUTED,'text-anchor':'end'},'il più alto, il più basso e la media, con giorno e ora'));
+  const cols=[{k:'sys',n:'SYS',c:SYS,u:'mmHg'},{k:'dia',n:'DIA',c:DIA,u:'mmHg'},{k:'pul',n:'PUL',c:PUL,u:'bpm'}];
+  const gap=10, w=(515-2*gap)/3, h=58; let yy=y+10;
+  for(const [row,label] of [['max','più alta'],['min','più bassa'],['avg','media']]){
+    cols.forEach((c,i)=>{ const x=40+i*(w+gap);
+      const l=R.filter(r=>r[c.k]!=null); let v, sub;
+      if(row==='avg'){ v=Math.round(l.reduce((a,r)=>a+r[c.k],0)/l.length); sub=`media di ${l.length} misure`; }
+      else { const r=l.reduce((a,b)=> row==='max' ? (b[c.k]>a[c.k]?b:a) : (b[c.k]<a[c.k]?b:a)); v=r[c.k]; sub=fmtWhen(r)+(c.k==='pul'?'':`  ·  ${r.sys}/${r.dia}`); }
+      svg.append(el('rect',{x,y:yy,width:w,height:h,fill:'#F7F9FC',rx:4}));
+      svg.append(el('rect',{x,y:yy,width:3,height:h,fill:c.c}));
+      svg.append(el('text',{x:x+12,y:yy+15,'font-size':7.5,fill:MUTED,'font-weight':600,'letter-spacing':0.4},`${c.n} ${label}`.toUpperCase()));
+      svg.append(el('text',{x:x+12,y:yy+38,'font-size':20,fill:INK,'font-weight':700},v));
+      svg.append(el('text',{x:x+12+tw(String(v),20)+4,y:yy+38,'font-size':7.5,fill:MUTED},c.u));
+      svg.append(el('text',{x:x+12,y:yy+50,'font-size':7.2,fill:MUTED},sub));
+    }); yy+=h+gap; }
+  return yy;
+}
+
+const S=[{k:'sys',name:'SYS',c:SYS,t:SYS_T},{k:'dia',name:'DIA',c:DIA,t:DIA_T},{k:'pul',name:'PUL',c:PUL,t:PUL_T}];
+const pages=[];
+function page(){ const d=document.createElement('div'); d.className='page'; const s=el('svg',{width:'595pt',height:'842pt',viewBox:'0 0 595 842'}); d.append(s); document.body.append(d); pages.push(s); return s; }
+let s=page(); header(s); chart(s,40,146,515,300,R,S,'Andamento del periodo','ogni misura, nell\'ordine in cui è stata presa'); tiles(s,486); footer(s,1,3);
+s=page(); smallHeader(s);
+chart(s,40,74,515,330,R.filter(r=>r.per==='morning'),S,'Mattina','prima delle 12');
+chart(s,40,440,515,330,R.filter(r=>r.per==='evening'),S,'Sera','dalle 17');
+footer(s,2,3);
+s=page(); smallHeader(s);
+chart(s,40,74,515,300,R,[S[2]],'Battiti (PUL)','ogni misura');
+footer(s,3,3);
+</script>
+</body></html>
