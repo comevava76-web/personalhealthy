@@ -360,8 +360,19 @@ fun App() {
             screen = "tabs"
         }
     }
+    fun launchCamera() {
+        try { camera.launch(photoUri) }
+        catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.no_camera)) }
+        catch (e: SecurityException) { toast(ctx, t(R.string.camera_permission)) }
+    }
+    // The QR scanner library adds the camera permission to the app; once it is declared, Android lets the app open
+    // the phone's camera only after the person has allowed it (otherwise the app would close). So: ask first.
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) launchCamera() else toast(ctx, t(R.string.camera_permission))
+    }
     fun openCamera() {
-        try { camera.launch(photoUri) } catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.no_camera)) }
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera()
+        else cameraPermission.launch(Manifest.permission.CAMERA)
     }
 
     // Values said aloud: the phone's speech recognition, then a confirmation before saving
@@ -1324,8 +1335,8 @@ fun ReportScreen(readings: List<Reading>) {
             StatBox(t(R.string.avg_pulse), st.pul?.toString() ?: "—", t(R.string.per_minute), modifier = Modifier.weight(1f).fillMaxHeight())
         }
         StatRow {
-            StatBox(t(R.string.avg_short), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "morning")
-            StatBox(t(R.string.avg_short), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "evening")
+            StatBox(t(R.string.avg_day), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "morning")
+            StatBox(t(R.string.avg_evening_label), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "evening")
         }
         StatRow {
             StatBox(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxS?.let { shortWhen(it) }, C.Sys, Modifier.weight(1f).fillMaxHeight())

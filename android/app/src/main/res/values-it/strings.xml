@@ -73,7 +73,6 @@
     <string name="all_readings">Tutte le misure</string>
     <string name="manage_readings">Gestisci le misure (cancella una o tutte)</string>
     <string name="close">Chiudi</string>
-    <string name="avg_short">Media</string>
     <string name="delete_q">Eliminare questa misura?</string>
     <string name="legend_sys">SYS</string>
     <string name="legend_dia">DIA</string>
@@ -101,6 +100,9 @@
     <string name="report_empty">Il report si riempie man mano che registri le misure.</string>
     <string name="range_fmt">Dal %1$s al %2$s</string>
     <string name="period_avg">Media del periodo</string>
+    <string name="avg_day">Media giorno</string>
+    <string name="avg_evening_label">Media serale</string>
+    <string name="camera_permission">Per fotografare il misuratore, consenti a HINT di usare la fotocamera.</string>
     <string name="n_in_days">%1$d misure in %2$d giorni</string>
     <string name="avg_pulse">PUL medio</string>
     <string name="per_minute">al minuto</string>

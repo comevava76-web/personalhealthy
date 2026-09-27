@@ -73,7 +73,6 @@
     <string name="all_readings">Toutes les mesures</string>
     <string name="manage_readings">Gérer les mesures (en effacer une ou toutes)</string>
     <string name="close">Fermer</string>
-    <string name="avg_short">Moyenne</string>
     <string name="delete_q">Supprimer cette mesure ?</string>
     <string name="legend_sys">SYS</string>
     <string name="legend_dia">DIA</string>
@@ -101,6 +100,9 @@
     <string name="report_empty">Le rapport se remplit au fil de vos mesures.</string>
     <string name="range_fmt">Du %1$s au %2$s</string>
     <string name="period_avg">Moyenne de la période</string>
+    <string name="avg_day">Moyenne du jour</string>
+    <string name="avg_evening_label">Moyenne du soir</string>
+    <string name="camera_permission">Pour photographier le tensiomètre, autorisez HINT à utiliser l\'appareil photo.</string>
     <string name="n_in_days">%1$d mesures sur %2$d jours</string>
     <string name="avg_pulse">PUL moyen</string>
     <string name="per_minute">par minute</string>

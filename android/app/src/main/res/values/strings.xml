@@ -74,7 +74,6 @@
     <string name="all_readings">All readings</string>
     <string name="manage_readings">Manage readings (delete one or all)</string>
     <string name="close">Close</string>
-    <string name="avg_short">Average</string>
     <string name="delete_q">Delete this reading?</string>
     <string name="legend_sys">SYS</string>
     <string name="legend_dia">DIA</string>
@@ -102,6 +101,9 @@
     <string name="report_empty">The report fills up as you record readings.</string>
     <string name="range_fmt">From %1$s to %2$s</string>
     <string name="period_avg">Period average</string>
+    <string name="avg_day">Day average</string>
+    <string name="avg_evening_label">Evening average</string>
+    <string name="camera_permission">To photograph the monitor, allow HINT to use the camera.</string>
     <string name="n_in_days">%1$d readings on %2$d days</string>
     <string name="avg_pulse">Average PUL</string>
     <string name="per_minute">per minute</string>
