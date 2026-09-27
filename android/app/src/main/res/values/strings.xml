@@ -173,7 +173,6 @@
     <string name="voice_retry">Say again</string>
     <string name="voice_not_understood">I did not understand the numbers. Try again: SYS, DIA and PUL.</string>
     <string name="listening">Listening…</string>
-    <string name="voice_done">Done</string>
     <string name="voice_permission">To say the values aloud, allow HINT to use the microphone.</string>
     <string name="voice_network">Speech recognition needs the internet. Check the connection and try again.</string>
     <string name="voice_missing">I heard only %1$s: a number is missing. Say all three: SYS, DIA and PUL.</string>

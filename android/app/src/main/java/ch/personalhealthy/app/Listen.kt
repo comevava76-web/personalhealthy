@@ -40,7 +40,7 @@ import java.util.Locale
  * Listening inside the app, instead of the phone's standard speech window: bars that move with the voice,
  * the words appearing while they are said. It gives time: a pause, or silence before starting, does not end it;
  * listening starts again by itself and the pieces are joined ("127 … 80 … 70"). It ends by itself as soon as
- * three numbers are heard, when the person taps Done, or after [MAX_LISTEN_MS].
+ * three numbers are heard, or after [MAX_LISTEN_MS]: no extra tap, the only confirmation is Save afterwards.
  * [onResult] gets the transcriptions (best first); [onFail] a message to show.
  */
 @Composable
@@ -48,7 +48,6 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
     val ctx = LocalContext.current
     var heard by remember { mutableStateOf("") }
     val levels = remember { mutableStateListOf<Float>().apply { repeat(BARS) { add(0f) } } }
-    val stop = remember { mutableStateOf<(() -> Unit)?>(null) }   // "Done": finish with what was heard
 
     DisposableEffect(Unit) {
         val rec = SpeechRecognizer.createSpeechRecognizer(ctx)
@@ -56,7 +55,6 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
         val started = SystemClock.elapsedRealtime()
         var committed = ""     // what was said in the earlier pieces
         var done = false
-        var finishing = false  // Done was tapped: the next result ends it
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
@@ -74,7 +72,6 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
         }
         fun listenAgain() = main.postDelayed({ if (!done) rec.startListening(intent) }, 150)
         fun timeLeft() = SystemClock.elapsedRealtime() - started < MAX_LISTEN_MS
-        stop.value = { finishing = true; rec.stopListening(); main.postDelayed({ finish(emptyList()) }, 1500) }
 
         rec.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -98,8 +95,8 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
                 committed = (committed + " " + (list.firstOrNull() ?: "")).trim()
                 heard = committed
                 val alternatives = list.map { (before + " " + it).trim() }
-                // three numbers heard, Done tapped, or time is up: finished; otherwise keep listening
-                if (finishing || numbersIn(committed) >= 3 || !timeLeft()) finish(alternatives) else listenAgain()
+                // three numbers heard, or time is up: finished; otherwise keep listening
+                if (numbersIn(committed) >= 3 || !timeLeft()) finish(alternatives) else listenAgain()
             }
             override fun onError(error: Int) {
                 if (done) return
@@ -108,7 +105,7 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
                     SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER ->
                         { done = true; onFail(t(R.string.voice_network)) }
                     // silence or nothing recognised: not a reason to stop, the person may still be about to speak
-                    else -> if (!finishing && timeLeft()) listenAgain() else finish(emptyList())
+                    else -> if (timeLeft()) listenAgain() else finish(emptyList())
                 }
             }
             override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -144,7 +141,6 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().height(90.dp)
         )
         Spacer(Modifier.height(24.dp))
-        BigButton(t(R.string.voice_done)) { stop.value?.invoke() }
         BigButton(t(R.string.cancel), color = C.Surface2, textColor = C.Ink, onClick = onCancel)
     }
 }
