@@ -19,13 +19,12 @@
     <string name="download_line">Scarica l\'app: %1$s</string>
     <string name="google_intro">Accedi con il tuo account Google. Serve solo per creare il tuo diario e per ritrovarlo se cambi telefono. Ogni giorno l\'app si apre con impronta o volto.</string>
     <string name="privacy_title">I tuoi dati</string>
-    <string name="privacy_note">Cosa viene salvato: la tua email Google (solo per ritrovare il tuo diario), le tue misure con data e ora, e se ognuna viene da una foto o dalla voce. Le foto del misuratore vengono inviate ad Anthropic per leggere i numeri e non vengono conservate da questa app. I dati stanno su server Cloudflare nell\'Unione Europea; gli altri utenti non li vedono; chi gestisce il servizio può accedere al database solo per manutenzione. Puoi cancellare account e dati in qualsiasi momento dalla scheda Credito.</string>
+    <string name="privacy_note">Cosa viene salvato: la tua email Google (solo per ritrovare il tuo diario), le tue misure con data e ora, e se ognuna viene da una foto o dalla voce. Le foto del misuratore vengono inviate ad Anthropic per leggere i numeri e non vengono conservate da questa app. I dati stanno su server Cloudflare nell\'Unione Europea; gli altri utenti non li vedono; chi gestisce il servizio può accedere al database solo per manutenzione. Puoi cancellare account e dati in qualsiasi momento dalla scheda Admin.</string>
     <string name="privacy_accept">Ho letto e accetto</string>
     <string name="privacy_accept_link">Accetta e collega</string>
     <string name="google_sign_in">Accedi con Google</string>
     <string name="have_invite">Hai un codice di invito?</string>
     <string name="invite_optional">Solo se qualcuno ti paga le foto: scrivi o inquadra il suo invito. Senza, usi la tua chiave Anthropic.</string>
-    <string name="account_title">Account</string>
     <string name="account_linked">Collegato a Google: su un nuovo telefono accedi con questo account e ritrovi il tuo diario.</string>
     <string name="account_not_linked">Non collegato a Google: se perdi questo telefono, il tuo diario non si può ritrovare.</string>
     <string name="google_link">Collega Google</string>
@@ -69,7 +68,7 @@
     <string name="reset_confirm">Cancella tutto</string>
     <string name="reset_done">Tutte le misure sono state cancellate</string>
     <string name="all_readings">Tutte le misure</string>
-    <string name="manage_readings">Gestisci le misure (cancella una o tutte)</string>
+    <string name="manage_readings">Gestisci misure</string>
     <string name="close">Chiudi</string>
     <string name="delete_q">Eliminare questa misura?</string>
     <string name="legend_sys">SYS</string>
@@ -162,7 +161,15 @@
     <string name="err_generic">Qualcosa non ha funzionato. Riprova.</string>
     <string name="tab_bp">Pressione</string>
     <string name="tab_report">Report</string>
-    <string name="tab_credit">Credito</string>
+    <string name="tab_credit">Admin</string>
+    <string name="section_credits">Crediti</string>
+    <string name="section_token">Token</string>
+    <string name="section_db">Database misure</string>
+    <string name="section_identity">Identity</string>
+    <string name="db_count">%1$d misure salvate</string>
+    <string name="token_own_set">La tua chiave Anthropic è salvata, cifrata. La usano solo le tue foto.</string>
+    <string name="token_owner_admin">Le letture usano la chiave Anthropic impostata sul server (il secret ANTHROPIC_API_KEY su GitHub).</string>
+    <string name="token_owner_member">Le tue foto usano la chiave Anthropic di chi gestisce l\'app.</string>
     <string name="photo_tip">Consiglio: fotografa il display da vicino, dritto e senza riflessi.</string>
     <string name="voice_button">Detta i valori</string>
     <string name="voice_tip">O tocca il microfono e pronuncia i valori della misura: Max Min, Pulsazioni</string>
@@ -190,7 +197,6 @@
     <string name="col_source">Fonte</string>
     <string name="err_voice_invalid">Valori non validi: SYS deve essere più alta di DIA.</string>
     <string name="credit_warn_low">Credito quasi finito: resta circa 1 foto. Tocca qui.</string>
-    <string name="credit_page_title">Credito per la lettura AI</string>
     <string name="credit_avg_fmt">Costo medio per foto: %1$s</string>
     <string name="credit_money_left">Soldi rimasti su Anthropic (stima)</string>
     <string name="credit_photos_can">Foto che puoi ancora fare (circa)</string>
@@ -228,7 +234,7 @@
     <string name="key_amount_optional">Importo che vedi ora su Anthropic (lascia vuoto per non cambiarlo)</string>
     <string name="key_checking">Controllo la chiave…</string>
     <string name="key_save">Controlla e salva</string>
-    <string name="key_privacy">La tua chiave viene salvata cifrata sul nostro server e non viene più mostrata, nemmeno a te. La usano solo le tue foto. Puoi sostituirla o cancellarla nella scheda Credito.</string>
+    <string name="key_privacy">La tua chiave viene salvata cifrata sul nostro server e non viene più mostrata, nemmeno a te. La usano solo le tue foto. Puoi sostituirla o cancellarla nella scheda Admin.</string>
     <string name="key_saved">Chiave controllata e salvata</string>
     <string name="key_deleted">Chiave cancellata</string>
     <string name="key_missing_banner">Aggiungi la tua chiave Anthropic per leggere le foto. Tocca qui.</string>

@@ -516,7 +516,7 @@ fun App() {
                     when (tab) {
                         Tab.REPORT.key -> ReportScreen(readings)
                         Tab.CREDIT.key -> CreditScreen(
-                            me = me, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
+                            me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onInvite = { inviteDialog = true }, onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
@@ -704,6 +704,12 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
             drawBpChart(canvas.nativeCanvas, size.width, size.height, list, start, days, SCREEN_PAL, 11.sp.toPx(), pulse)
         }
     }
+}
+
+/** Title of a group of the Admin tab. */
+@Composable
+fun SectionTitle(text: String) {
+    Text(text, color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 2.dp))
 }
 
 /** A row of boxes that all take the height of the tallest one. */
@@ -1372,17 +1378,20 @@ fun ReportScreen(readings: List<Reading>) {
 
 @Composable
 fun CreditScreen(
-    me: Me?, onRecharge: () -> Unit, onCorrect: () -> Unit,
+    me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onInvite: () -> Unit, onKey: () -> Unit, onDeleteKey: () -> Unit,
     onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
 ) {
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header(t(R.string.credit_page_title))
+        Header(t(R.string.tab_credit))
         if (me == null) {
             Panel { Text("…", color = C.Muted) }
             return@Column
         }
+
+        // Credits: the money left for the AI readings, and adding to it
+        SectionTitle(t(R.string.section_credits))
         val c = me.credit
         val set = c != null && c.configured
         val col = if (set && c!!.low) Color(WARN_COLOR) else C.Ink
@@ -1400,31 +1409,37 @@ fun CreditScreen(
             )
             if (me.selfPays) Text(t(R.string.credit_own_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
         }
-        if (me.selfPays && !me.hasKey) {
-            Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
-            BigButton(t(R.string.add_my_key), onClick = onKey)
-        }
         BigButton(t(R.string.recharge), onClick = onRecharge)
         if (me.canRecharge) {
             TextButton(onClick = onCorrect, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.correct_link), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
             }
         }
-        if (me.selfPays && me.hasKey) {
-            BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
-            TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
+
+        // Token: the Anthropic key that pays the readings
+        SectionTitle(t(R.string.section_token))
+        if (me.selfPays) {
+            if (!me.hasKey) {
+                Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
+                BigButton(t(R.string.add_my_key), onClick = onKey)
+            } else {
+                Panel { Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp) }
+                BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
+                TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
+                    Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
+                }
             }
-        }
-        if (me.isAdmin) {
-            Spacer(Modifier.height(10.dp))
-            BigButton(t(R.string.invite_someone), color = C.Surface2, textColor = C.Ink, onClick = onInvite)
-            Text(t(R.string.invite_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+        } else {
+            Panel { Text(t(if (me.isAdmin) R.string.token_owner_admin else R.string.token_owner_member), color = C.Ink, fontSize = 14.sp) }
         }
 
-        // Account: the Google account that finds this diary again on a new phone, and deleting it all
-        Spacer(Modifier.height(14.dp))
-        Text(t(R.string.account_title), color = C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+        // Readings database: every reading, to delete a wrong one or all of them
+        SectionTitle(t(R.string.section_db))
+        Panel { Text(t(R.string.db_count, readingsCount), color = C.Ink, fontSize = 14.sp) }
+        BigButton(t(R.string.manage_readings), color = C.Surface2, textColor = C.Ink, onClick = onManageReadings)
+
+        // Identity: the Google account, who can join, and deleting it all
+        SectionTitle(t(R.string.section_identity))
         if (me.hasGoogle) {
             Panel {
                 Text(me.email ?: "Google", color = C.Ink, fontSize = 15.sp)
@@ -1434,8 +1449,10 @@ fun CreditScreen(
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
         }
-        // every reading: to delete a wrong one, or all of them
-        BigButton(t(R.string.manage_readings), color = C.Surface2, textColor = C.Ink, onClick = onManageReadings)
+        if (me.isAdmin) {
+            BigButton(t(R.string.invite_someone), color = C.Surface2, textColor = C.Ink, onClick = onInvite)
+            Text(t(R.string.invite_note), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+        }
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
         BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }

@@ -20,13 +20,12 @@
     <string name="download_line">Download the app: %1$s</string>
     <string name="google_intro">Sign in with your Google account. It is used only to create your diary and to find it again if you change phone. Every day the app opens with your fingerprint or face.</string>
     <string name="privacy_title">Your data</string>
-    <string name="privacy_note">What is saved: your Google email (only to find your diary again), your readings with their date and time, and whether each came from a photo or your voice. Photos of the monitor are sent to Anthropic to read the numbers and are not kept by this app. Data is stored on Cloudflare servers in the European Union; other users cannot see it; the person who runs the service can reach the database only for maintenance. You can delete your account and all your data at any time from the Credit tab.</string>
+    <string name="privacy_note">What is saved: your Google email (only to find your diary again), your readings with their date and time, and whether each came from a photo or your voice. Photos of the monitor are sent to Anthropic to read the numbers and are not kept by this app. Data is stored on Cloudflare servers in the European Union; other users cannot see it; the person who runs the service can reach the database only for maintenance. You can delete your account and all your data at any time from the Admin tab.</string>
     <string name="privacy_accept">I have read and accept</string>
     <string name="privacy_accept_link">Accept and link</string>
     <string name="google_sign_in">Sign in with Google</string>
     <string name="have_invite">Do you have an invite code?</string>
     <string name="invite_optional">Only if someone pays your photos for you: type or scan their invite. Without it, you use your own Anthropic key.</string>
-    <string name="account_title">Account</string>
     <string name="account_linked">Linked to Google: on a new phone, sign in with this account to find your diary again.</string>
     <string name="account_not_linked">Not linked to Google: if you lose this phone, your diary cannot be found again.</string>
     <string name="google_link">Link Google</string>
@@ -70,7 +69,7 @@
     <string name="reset_confirm">Delete everything</string>
     <string name="reset_done">All readings deleted</string>
     <string name="all_readings">All readings</string>
-    <string name="manage_readings">Manage readings (delete one or all)</string>
+    <string name="manage_readings">Manage readings</string>
     <string name="close">Close</string>
     <string name="delete_q">Delete this reading?</string>
     <string name="legend_sys">SYS</string>
@@ -164,7 +163,15 @@
     <string name="err_generic">Something went wrong. Try again.</string>
     <string name="tab_bp">Blood pressure</string>
     <string name="tab_report">Report</string>
-    <string name="tab_credit">Credit</string>
+    <string name="tab_credit">Admin</string>
+    <string name="section_credits">Credits</string>
+    <string name="section_token">Token</string>
+    <string name="section_db">Readings database</string>
+    <string name="section_identity">Identity</string>
+    <string name="db_count">%1$d readings saved</string>
+    <string name="token_own_set">Your Anthropic key is saved, encrypted. Only your photos use it.</string>
+    <string name="token_owner_admin">The readings use the Anthropic key set on the server (the ANTHROPIC_API_KEY secret on GitHub).</string>
+    <string name="token_owner_member">Your photos use the Anthropic key of the person who manages the app.</string>
     <string name="photo_tip">Tip: photograph the display up close, straight on and without glare.</string>
     <string name="voice_button">Say the values</string>
     <string name="voice_tip">Or tap the microphone and say the values of the reading: Max Min, Pulse</string>
@@ -192,7 +199,6 @@
     <string name="col_source">Source</string>
     <string name="err_voice_invalid">Values not valid: SYS must be higher than DIA.</string>
     <string name="credit_warn_low">Credit almost used up: about 1 photo left. Tap here.</string>
-    <string name="credit_page_title">AI reading credit</string>
     <string name="credit_avg_fmt">Average cost per photo: %1$s</string>
     <string name="credit_money_left">Money left on Anthropic (estimate)</string>
     <string name="credit_photos_can">Photos you can still take (about)</string>
@@ -230,7 +236,7 @@
     <string name="key_amount_optional">Amount shown on Anthropic now (leave empty to keep it as it is)</string>
     <string name="key_checking">Checking the key…</string>
     <string name="key_save">Check and save</string>
-    <string name="key_privacy">Your key is stored encrypted on our server and is never shown again, not even to you. Only your photos use it. You can replace or delete it in the Credit tab.</string>
+    <string name="key_privacy">Your key is stored encrypted on our server and is never shown again, not even to you. Only your photos use it. You can replace or delete it in the Admin tab.</string>
     <string name="key_saved">Key checked and saved</string>
     <string name="key_deleted">Key deleted</string>
     <string name="key_missing_banner">Add your Anthropic key to read photos. Tap here.</string>
