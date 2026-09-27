@@ -138,7 +138,7 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.85</span><span>1 / 5</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.86</span><span>1 / 5</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
@@ -237,7 +237,7 @@
 
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.85</span><span>2 / 5</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.86</span><span>2 / 5</span></div>
 </section>
 <!-- ======================= PAGE 3: HOSTING, RUNTIME FLOW, ERROR LOG ======================= -->
 <section class="page">
@@ -311,13 +311,13 @@
       <h2>Who uses it</h2>
       <ul>
         <li><b>Owner</b>: Admin tab → “Errors of the last 30 days” and the 7-day count.</li>
-        <li><b>Developer</b>: reads the log at the start of each work session and after every release, turns each new code into a fix and a check, and says in the chat what was found.</li>
+        <li><b>Developer</b>: every morning a scheduled routine reads the report of the log and fixes (page 4); in working sessions it is also read after every release.</li>
         <li><b>Table</b>: <code>error_log</code> in D1, written by <code>worker/src/errors.ts</code>; app side <code>ErrorReport</code> in <code>Core.kt</code>; web side in <code>app.js</code>.</li>
         <li>Also on every account: the app version it last opened with and whether the AI features are on, for the owner's Admin tab.</li>
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.85</span><span>3 / 5</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.86</span><span>3 / 5</span></div>
 </section>
 
 <!-- ======================= PAGE 4: ROLES AND DELIVERY ======================= -->
@@ -337,7 +337,7 @@
     </style>
     <!-- people -->
     <rect x="4" y="14" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#6D5BD0" stroke-width="1.4"/>
-    <text x="14" y="29" class="h4">Angelo · architect, owner</text>
+    <text x="14" y="29" class="h4">Human · architect, owner</text>
     <text x="14" y="41" class="x4">decides design, rules, priorities</text><text x="14" y="50" class="x4">tries every APK, reads the documents</text>
     <text x="14" y="59" class="x4">owns the accounts and the secrets</text><text x="14" y="68" class="x4">reads the Admin tab</text>
     <rect x="4" y="98" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#0F9C8E" stroke-width="1.4"/>
@@ -371,7 +371,7 @@
 
   <h2>Responsibilities</h2>
   <table>
-    <tr><th>Activity</th><th>Angelo · architect</th><th>Claude · developer</th><th>GitHub</th><th>Cloudflare</th></tr>
+    <tr><th>Activity</th><th>Human · architect</th><th>Claude · developer</th><th>GitHub</th><th>Cloudflare</th></tr>
     <tr><td>Design, rules, priorities</td><td><b>decides</b></td><td>proposes, asks when unclear</td><td>—</td><td>—</td></tr>
     <tr><td>Code and documents (<code>docs/</code>)</td><td>reads</td><td><b>writes, same commit</b></td><td>stores</td><td>—</td></tr>
     <tr><td>Tests before merge</td><td>—</td><td><b>runs</b></td><td>Docs check</td><td>—</td></tr>
@@ -384,16 +384,37 @@
 
   <h2>Delivery, from the chat to the phone</h2>
   <ol>
-    <li><b>Decide</b> — Angelo describes the change in the chat; unclear points are asked, not guessed.</li>
-    <li><b>Build the change</b> — Claude on branch <code>claude/…</code>: code, and every document in <code>docs/</code> it touches, in the same commit.</li>
-    <li><b>Test</b> — Worker bundle (<code>wrangler deploy --dry-run</code>), pages in Chromium at phone and desktop width, string files, documents rendered and looked at.</li>
-    <li><b>Pull request and merge</b> — <i>Docs check</i> must pass; squash merge into <code>main</code>.</li>
-    <li><b>Build</b> (GitHub Actions, automatic) — ① D1 tables, Worker deployed, secrets set; ② Gradle compiles the app, release <code>v0.1.N</code> with APK and AAB; ③ Worker deployed again with the APK at <code>/download</code>.</li>
-    <li><b>Verify</b> — release present, APK checksum matches, D1 checked when data changed, error log read; APK sent in the chat.</li>
-    <li><b>Try and decide again</b> — Angelo tries the APK; feedback starts the next round. Rollback: revert the pull request.</li>
+    <li><b>Decide</b> — Human describes the change in the chat; unclear points are asked, not guessed.</li>
+    <li><b>Build and test</b> — Claude on branch <code>claude/…</code>: code and documents in one commit; Worker bundle, pages in Chromium, documents rendered.</li>
+    <li><b>Merge</b> — pull request, <i>Docs check</i> green, squash merge into <code>main</code>.</li>
+    <li><b>Release</b> — GitHub Actions: D1 tables, Worker, APK/AAB <code>v0.1.N</code>, <code>/download</code>; Claude checks it and sends the APK.</li>
+    <li><b>Try</b> — Human tries the APK; feedback starts the next round. Rollback: revert the pull request.</li>
   </ol>
-  <p class="muted">Not yet automated: unit tests and tests on a real phone.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.85</span><span>4 / 5</span></div>
+  <h2>Continuous improvement loop <small>proactive: every day, without being asked</small></h2>
+  <svg viewBox="0 0 520 112" width="100%" role="img" aria-label="Continuous improvement loop">
+    <defs><marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
+    <style>
+      .n5 { fill:#fff; stroke:#C7D2E1; } .h5 { font-size:7.4px; font-weight:700; fill:#13223F; } .x5 { font-size:6.1px; fill:#5B6B88; }
+      .a5 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#e); }
+    </style>
+    <rect x="4" y="6" width="92" height="40" rx="6" class="n5"/><text x="11" y="19" class="h5">1 · Users meet errors</text><text x="11" y="30" class="x5">app, web, server write</text><text x="11" y="39" class="x5">to error_log (D1)</text>
+    <line x1="96" y1="26" x2="110" y2="26" class="a5"/>
+    <rect x="112" y="6" width="92" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="119" y="19" class="h5">2 · Report 06:30</text><text x="119" y="30" class="x5">GitHub Actions reads 24 h,</text><text x="119" y="39" class="x5">opens issue "Error log"</text>
+    <line x1="204" y1="26" x2="218" y2="26" class="a5"/>
+    <rect x="220" y="6" width="92" height="40" rx="6" class="n5" stroke="#0F9C8E" stroke-width="1.4"/><text x="227" y="19" class="h5">3 · Check 06:48</text><text x="227" y="30" class="x5">Claude, scheduled routine:</text><text x="227" y="39" class="x5">cause of each group</text>
+    <line x1="312" y1="26" x2="326" y2="26" class="a5"/>
+    <rect x="328" y="6" width="92" height="40" rx="6" class="n5"/><text x="335" y="19" class="h5">4 · Fix + documents</text><text x="335" y="30" class="x5">branch, tests, PR</text><text x="335" y="39" class="x5">"Fixes #issue"</text>
+    <line x1="420" y1="26" x2="434" y2="26" class="a5"/>
+    <rect x="436" y="6" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="19" class="h5">5 · Gates</text><text x="443" y="30" class="x5">Docs check,</text><text x="443" y="39" class="x5">then squash merge</text>
+    <line x1="476" y1="46" x2="476" y2="64" class="a5"/>
+    <rect x="436" y="66" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="79" class="h5">6 · Build, release</text><text x="443" y="90" class="x5">Worker + APK vN,</text><text x="443" y="99" class="x5">/download</text>
+    <line x1="434" y1="86" x2="316" y2="86" class="a5"/>
+    <rect x="220" y="66" width="94" height="40" rx="6" class="n5" stroke="#6D5BD0" stroke-width="1.4"/><text x="227" y="79" class="h5">7 · Human informed</text><text x="227" y="90" class="x5">report in the issue + push;</text><text x="227" y="99" class="x5">decides what is larger</text>
+    <line x1="218" y1="86" x2="50" y2="86" class="a5"/><line x1="50" y1="86" x2="50" y2="48" class="a5"/>
+    <text x="70" y="82" class="x5">the next day, with the fixed version in use</text>
+  </svg>
+  <p class="muted">Small fixes are merged by the routine; larger ones, or the terms, wait for the human. Not automated yet: unit tests, real-phone tests.</p>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.86</span><span>4 / 5</span></div>
 </section>
 
 <!-- ======================= PAGE 5: APPLICATION FLOWS AND PERMISSIONS ======================= -->
@@ -435,7 +456,7 @@
     <tr><td>See keys and secrets</td><td>own AI key, once</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
   </table>
   <p class="muted">The server enforces every line: app calls are signed by the phone key, web calls need the session cookie, owner calls need the owner account, doctor links are read-only and expire.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.85</span><span>5 / 5</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.86</span><span>5 / 5</span></div>
 </section>
 </body>
 </html>
