@@ -85,7 +85,9 @@ CREATE TABLE IF NOT EXISTS person_keys (
   person_id   TEXT PRIMARY KEY REFERENCES persons(id) ON DELETE CASCADE,
   sealed_key  TEXT NOT NULL,                 -- "v1:<iv>:<ciphertext>", base64
   created_at  INTEGER NOT NULL,
-  created_at_local TEXT
+  created_at_local TEXT,
+  status      TEXT,                          -- what Anthropic last answered: 'ok', 'no_credit' or 'invalid'
+  checked_at  INTEGER                        -- when (the build adds these two columns to older databases)
 );
 
 -- Convert values stored in Italian by earlier versions to English (safe to run again: changes nothing once done).

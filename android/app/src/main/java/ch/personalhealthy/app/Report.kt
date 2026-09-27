@@ -430,7 +430,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         rLineTo(6f, 44f); rLineTo(5f, -18f); rLineTo(14f, 0f); rLineTo(6f, -6f); rLineTo(6f, 6f); lineTo(W, 70f)
     }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1AFFFFFF; style = Paint.Style.STROKE; strokeWidth = 1.6f })
     c.drawRect(0f, 112f, W, 115f, Paint().apply { color = P_SYS })
-    c.drawText("HINT · HEALTHYINSTANTTRACKER", left, 30f, pdfPaint(8f, 0xFFAFC0DC.toInt(), true, spacing = 0.2f))
+    c.drawText("HINT 365 · HEALTHYINSTANTTRACKER", left, 30f, pdfPaint(8f, 0xFFAFC0DC.toInt(), true, spacing = 0.2f))
     c.drawText(t(R.string.pdf_generated, Z.dmy(Z.today())), right, 30f, pdfPaint(8f, 0xFFAFC0DC.toInt(), align = Paint.Align.RIGHT))
     c.drawText(t(R.string.pdf_title), left, 62f, pdfPaint(24f, 0xFFFFFFFF.toInt(), true))
     c.drawText(range, left, 82f, pdfPaint(10.5f, 0xFFDCE5F3.toInt()))

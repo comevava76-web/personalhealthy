@@ -189,7 +189,7 @@
     el(g, "rect", { x: 0, y: 0, width: 595, height: 112, fill: "url(#hg)" });
     el(g, "path", { d: "M300 70 H400 l6 -8 6 8 h8 l5 -26 6 44 5 -18 h14 l6 -6 6 6 H595", fill: "none", stroke: "#fff", "stroke-opacity": 0.1, "stroke-width": 1.6 });
     el(g, "rect", { x: 0, y: 112, width: 595, height: 3, fill: SYS });
-    txt(g, left, 30, "HINT · HEALTHYINSTANTTRACKER", 8, "#AFC0DC", { bold: true, spacing: 1.6 });
+    txt(g, left, 30, "HINT 365 · HEALTHYINSTANTTRACKER", 8, "#AFC0DC", { bold: true, spacing: 1.6 });
     txt(g, right, 30, W.generated(dayOf(Date.now())), 8, "#AFC0DC", { anchor: "end" });
     txt(g, left, 62, W.title, 24, "#fff", { bold: true });
     txt(g, left, 82, range, 10.5, "#DCE5F3");

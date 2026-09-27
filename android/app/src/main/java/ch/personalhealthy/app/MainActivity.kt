@@ -297,6 +297,7 @@ fun App() {
     // the notice: accepted on this phone (remembered here) or already on the server (another phone, earlier)
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
+    var checkingAi by remember { mutableStateOf(false) }
     val needsNotice = noticeLocal != DISCLAIMER_VERSION && me?.disclaimerOk != true
     LaunchedEffect(me?.disclaimerOk) {
         if (me?.disclaimerOk == true && noticeLocal != DISCLAIMER_VERSION) {
@@ -311,8 +312,12 @@ fun App() {
             try {
                 val l = Repo.list(pid)
                 readings.clear(); readings.addAll(l); message = null
-                val m = Repo.me(pid)
+                var m = Repo.me(pid)
                 me = m
+                // Scan follows what Anthropic answers, not the estimate: checked again if the last check is over an hour old
+                if (m.selfPays && m.hasKey && (m.aiCheckedAt == null || System.currentTimeMillis() - m.aiCheckedAt!! > 3_600_000L)) {
+                    try { Repo.checkAi(pid); m = Repo.me(pid); me = m } catch (_: Exception) { }
+                }
                 // first start without an AI key: once, the welcome that explains voice (free) and scanning (optional)
                 if (m.selfPays && !m.hasKey && !prefs.getBoolean("welcomeShown", false) && screen == "tabs") {
                     prefs.edit().putBoolean("welcomeShown", true).apply()
@@ -336,6 +341,9 @@ fun App() {
                 if (res.credit != null) me = me?.copy(credit = res.credit)
             } catch (e: Exception) {
                 scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed), (e as? ApiException)?.code)
+                // Anthropic refused (no credit, key refused): the server stored it, the Scan button switches off
+                val code = (e as? ApiException)?.code
+                if (code == "friend_no_credit" || code == "friend_key_invalid") reload()
             }
         }
     }
@@ -567,6 +575,16 @@ fun App() {
                             onTerms = { screen = "terms" },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
+                            // after a recharge on Anthropic: ask Anthropic again, Scan follows the answer
+                            checkingAi = checkingAi,
+                            onCheckAi = {
+                                val pid = personId ?: return@CreditScreen
+                                checkingAi = true
+                                scope.launch {
+                                    try { Repo.checkAi(pid); reload() } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                    checkingAi = false
+                                }
+                            },
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
                             onSignOut = {
@@ -858,7 +876,7 @@ fun LockScreen(onUnlock: () -> Unit) {
     ) {
         HintLogo(56.dp)
         Spacer(Modifier.height(16.dp))
-        Text("HINT", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
+        Text("HINT 365", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
         Text(t(R.string.lock_text), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
         BigButton(t(R.string.lock_unlock), onClick = onUnlock)
     }
@@ -873,7 +891,7 @@ fun Colophon(onTerms: () -> Unit) {
     val y = Z.today().year
     val years = if (y > 2026) "2026–$y" else "2026"
     Column(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("HINT · HealthyInstantTracker · v$version", color = C.Muted, fontSize = 11.sp)
+        Text("HINT 365 · HealthyInstantTracker · v$version", color = C.Muted, fontSize = 11.sp)
         Text(t(R.string.colophon_rights, years), color = C.Muted, fontSize = 11.sp)
         Text(
             t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp,
@@ -936,7 +954,7 @@ fun SetupScreen(onDone: (String) -> Unit) {
         res.contents?.let { code = it.trim(); err = null }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.Center) {
-        Text(t(R.string.app_name), color = C.Ink, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight)
+        Text("HINT 365", color = C.Ink, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight)
         EcgLine(Modifier.padding(vertical = 8.dp))
         Text(t(R.string.setup_intro), color = C.Muted, fontSize = 15.sp)
         Spacer(Modifier.height(20.dp))
@@ -990,7 +1008,7 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
             HintLogo(40.dp)
             Spacer(Modifier.width(12.dp))
             Column {
-                Text("HINT", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
+                Text("HINT 365", color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
                 Text(t(R.string.app_name), color = C.Muted, fontSize = 12.sp)
             }
         }
@@ -1033,7 +1051,10 @@ fun HomeScreen(
         if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
-        if (c != null && c.configured && c.low) WarnLine(t(R.string.credit_warn_low), onOpenCredit)
+        if (c != null && c.configured && c.low && me?.aiStatus == "ok") WarnLine(t(R.string.credit_warn_low), onOpenCredit)
+        // Anthropic said no at the last check: Scan is off, and this says why
+        if (me != null && me.selfPays && me.hasKey && me.aiStatus == "no_credit") WarnLine(t(R.string.ai_no_credit), onOpenCredit)
+        if (me != null && me.selfPays && me.hasKey && me.aiStatus == "invalid") WarnLine(t(R.string.ai_key_invalid), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
         // two ways to record a reading, side by side and of the same width: say it (free) or photograph it (AI credit)
@@ -1042,7 +1063,7 @@ fun HomeScreen(
             Spacer(Modifier.width(10.dp))
             // the photo reading is the paid part: off until a key is saved, and off again when the credit is used up
             val c0 = me?.credit
-            val scanOn = me == null || !me.selfPays || (me.hasKey && !(c0 != null && c0.configured && (c0.remaining ?: 0.0) <= 0.0))
+            val scanOn = me == null || !me.selfPays || (me.hasKey && me.aiStatus == "ok")
             // the wand with sparkles says: artificial intelligence reads this photo
             BigButton(t(R.string.scan_short) + "*", enabled = scanOn, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, trailing = R.drawable.ic_ai_sparkle, onClick = onMeasure)
         }
@@ -1334,7 +1355,7 @@ fun BrandHeader(onUpgrade: (() -> Unit)? = null) {
         HintLogo(34.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text("HINT", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
+            Text("HINT 365", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
             Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
         }
         // not upgraded yet: the way to the AI features stays in sight
@@ -1544,7 +1565,7 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
 @Composable
 fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
-    onKey: () -> Unit, onDeleteKey: () -> Unit,
+    onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
     onTerms: () -> Unit
 ) {
@@ -1590,7 +1611,13 @@ fun CreditScreen(
                 Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
                 BigButton("✦ " + t(R.string.upgrade), onClick = onKey)
             } else {
-                Panel { Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp) }
+                Panel {
+                    Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp)
+                    // what Anthropic answered at the last check, and when
+                    val st = when (me.aiStatus) { "ok" -> R.string.ai_state_ok; "no_credit" -> R.string.ai_state_no_credit; "invalid" -> R.string.ai_state_invalid; else -> R.string.ai_state_ok }
+                    Text(t(st) + (me.aiCheckedAt?.let { " · " + Z.whenText(it) } ?: ""), color = if (me.aiStatus == "ok") C.Muted else C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+                }
+                BigButton(t(R.string.ai_check_now), color = C.Surface2, textColor = C.Ink, enabled = !checkingAi, onClick = onCheckAi)
                 BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
                 TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
                     Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)

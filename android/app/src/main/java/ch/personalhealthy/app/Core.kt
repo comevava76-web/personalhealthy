@@ -144,7 +144,9 @@ data class Credit(
 data class Me(
     val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false,
     val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false,
-    val disclaimerOk: Boolean = true
+    val disclaimerOk: Boolean = true,
+    /** The AI as Anthropic last answered: "ok", "no_credit", "invalid", or "none" (no key). Scan is on only when "ok". */
+    val aiStatus: String = "ok", val aiCheckedAt: Long? = null
 ) {
     val selfPays: Boolean get() = pays == "self"
     /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
@@ -428,7 +430,8 @@ object Repo {
             j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")),
             j.optString("pays", "owner"), j.optBoolean("hasKey", false),
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
-            j.optBoolean("disclaimerOk", true)
+            j.optBoolean("disclaimerOk", true),
+            j.optString("aiStatus", "ok"), if (j.isNull("aiCheckedAt") || !j.has("aiCheckedAt")) null else j.optLong("aiCheckedAt")
         )
     }
 
@@ -447,6 +450,10 @@ object Repo {
         if (amount != null) body.put("amount", amount)
         return parseCredit(Api.call("POST", "/v1/key", body, pid).optJSONObject("credit"))
     }
+
+    /** Asks the server to check with Anthropic, right now, that the key works and there is credit. Returns the new state. */
+    suspend fun checkAi(pid: String): String =
+        Api.call("POST", "/v1/key/check", JSONObject(), pid).optString("aiStatus", "ok")
 
     suspend fun deleteKey(pid: String) {
         Api.call("DELETE", "/v1/key", null, pid)

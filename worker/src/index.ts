@@ -468,6 +468,12 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const pool = poolOf(person);
   const selfPays = person.pays === "self";
   const hasKey = async () => !!(await q("SELECT 1 FROM person_keys WHERE person_id = ?1", [pid]))[0];
+  // Scan is on only when Anthropic itself said yes: key accepted and credit available, at the last real check
+  const aiState = async () => {
+    if (!selfPays) return { aiStatus: "ok", aiCheckedAt: null };
+    const [k] = await q("SELECT COALESCE(status, 'ok') AS status, checked_at FROM person_keys WHERE person_id = ?1", [pid]);
+    return k ? { aiStatus: String(k.status), aiCheckedAt: k.checked_at == null ? null : Number(k.checked_at) } : { aiStatus: "none", aiCheckedAt: null };
+  };
 
   // 0) Who am I, and the credit of my own pool (a friend never sees the owner's pool, nor the other way round)
   if (req.method === "GET" && url.pathname === "/v1/me") {
@@ -483,6 +489,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       billingMode: await getSetting(q, "billing_mode", "private"),
       credit: await creditInfo(q, pool),
       disclaimerOk: await acceptedNotice(q, pid),
+      ...(await aiState()),
     });
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
@@ -594,13 +601,33 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       const sealed = await sealKey(env, pid, apiKey);
       const now = Date.now();
       await q(
-        "INSERT INTO person_keys (person_id, sealed_key, created_at, created_at_local) VALUES (?1, ?2, ?3, ?4) " +
-        "ON CONFLICT (person_id) DO UPDATE SET sealed_key = excluded.sealed_key, created_at = excluded.created_at, created_at_local = excluded.created_at_local",
+        "INSERT INTO person_keys (person_id, sealed_key, created_at, created_at_local, status, checked_at) VALUES (?1, ?2, ?3, ?4, 'ok', ?3) " +
+        "ON CONFLICT (person_id) DO UPDATE SET sealed_key = excluded.sealed_key, created_at = excluded.created_at, created_at_local = excluded.created_at_local, status = 'ok', checked_at = excluded.checked_at",
         [pid, sealed, now, localStamp(now)]
       );
       if (amount != null) await addMoney(q, pool, pid, "set", amount);
       return json({ hasKey: true, credit: await creditInfo(q, pool) });
     }
+  }
+
+  // Is the AI usable right now? Asks Anthropic with the smallest possible request (a few thousandths of a cent)
+  // and stores the answer: "ok", "no_credit" (the Anthropic account is empty) or "invalid" (key refused).
+  // Anthropic has no way to read the balance itself; this is the only certain check: it either answers or refuses.
+  if (req.method === "POST" && url.pathname === "/v1/key/check") {
+    if (!selfPays) return json({ aiStatus: "ok", aiCheckedAt: null });
+    const [k] = await q("SELECT sealed_key FROM person_keys WHERE person_id = ?1", [pid]);
+    if (!k) return json({ aiStatus: "none", aiCheckedAt: null });
+    let status = "ok";
+    try {
+      await testKey(env, await openKey(env, pid, String(k.sealed_key)));
+    } catch (e: any) {
+      if (e instanceof NoAnthropicCredit) status = "no_credit";
+      else if (e instanceof BadAnthropicKey) status = "invalid";
+      else return fail("Could not reach Anthropic. Try again shortly.", 502, "key_test_failed");   // unknown: state unchanged
+    }
+    const now = Date.now();
+    await q("UPDATE person_keys SET status = ?1, checked_at = ?2 WHERE person_id = ?3", [status, now, pid]);
+    return json({ aiStatus: status, aiCheckedAt: now });
   }
 
   // 1) Photo reading: the numbers are decided only by the reading
@@ -629,11 +656,18 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       ({ reading: r, costMicro } = await readDisplay(env, apiKey, data.image, (req.headers.get("X-Lang") || "en").slice(0, 2).toLowerCase()));
     } catch (e: any) {
       console.error(e?.message);
-      if (e instanceof NoAnthropicCredit)
+      if (e instanceof NoAnthropicCredit) {
+        if (selfPays) await q("UPDATE person_keys SET status = 'no_credit', checked_at = ?1 WHERE person_id = ?2", [Date.now(), pid]);
         return selfPays ? fail("Your Anthropic credit is finished", 402, "friend_no_credit") : fail("Anthropic credit is finished", 402, "anthropic_no_credit");
-      if (e instanceof BadAnthropicKey && selfPays) return fail("Anthropic does not accept your key", 402, "friend_key_invalid");
+      }
+      if (e instanceof BadAnthropicKey && selfPays) {
+        await q("UPDATE person_keys SET status = 'invalid', checked_at = ?1 WHERE person_id = ?2", [Date.now(), pid]);
+        return fail("Anthropic does not accept your key", 402, "friend_key_invalid");
+      }
       return fail("Reading failed. Try again shortly.", 502, "read_failed");
     }
+    // Anthropic just answered: the key works and there is credit
+    if (selfPays) await q("UPDATE person_keys SET status = 'ok', checked_at = ?1 WHERE person_id = ?2", [Date.now(), pid]);
     const scanId = newId("scn_");
     await q(
       "INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at, taken_at_local, created_at_local) " +

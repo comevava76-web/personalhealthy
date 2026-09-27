@@ -309,4 +309,10 @@
     <string name="bal_none">Readings are needed both in the morning and in the evening.</string>
     <string name="bal_same">Morning and evening have the same average.</string>
     <string name="bal_diff">Evening - morning: SYS %1$s · DIA %2$s mmHg</string>
+    <string name="ai_no_credit">Scan is off: your Anthropic credit is used up. Top up on Anthropic, then Admin → “Check again with Anthropic”.</string>
+    <string name="ai_key_invalid">Scan is off: Anthropic no longer accepts your key. Replace it in Admin.</string>
+    <string name="ai_state_ok">Anthropic: key valid and credit available</string>
+    <string name="ai_state_no_credit">Anthropic: credit used up</string>
+    <string name="ai_state_invalid">Anthropic: key not accepted</string>
+    <string name="ai_check_now">Check again with Anthropic</string>
 </resources>

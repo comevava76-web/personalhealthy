@@ -307,4 +307,10 @@
     <string name="bal_none">Servono misure sia al mattino sia alla sera.</string>
     <string name="bal_same">Mattina e sera hanno la stessa media.</string>
     <string name="bal_diff">Sera - mattina: SYS %1$s · DIA %2$s mmHg</string>
+    <string name="ai_no_credit">Scan è spento: il tuo credito Anthropic è finito. Ricarica su Anthropic, poi Admin → «Ricontrolla con Anthropic».</string>
+    <string name="ai_key_invalid">Scan è spento: Anthropic non accetta più la tua chiave. Sostituiscila in Admin.</string>
+    <string name="ai_state_ok">Anthropic: chiave valida e credito disponibile</string>
+    <string name="ai_state_no_credit">Anthropic: credito finito</string>
+    <string name="ai_state_invalid">Anthropic: chiave non accettata</string>
+    <string name="ai_check_now">Ricontrolla con Anthropic</string>
 </resources>
