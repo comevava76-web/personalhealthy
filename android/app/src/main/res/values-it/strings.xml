@@ -51,7 +51,11 @@
     <string name="measure">Scansiona misura</string>
     <string name="record_short">Registra</string>
     <string name="scan_short">Scansiona</string>
-    <string name="scan_cost_note">La scansione della foto consuma crediti AI (circa mezzo centesimo a foto). La registrazione a voce è gratuita.</string>
+    <string name="scan_cost_note">La scansione della foto usa crediti AI a pagamento e facoltativi (circa mezzo centesimo a foto). Tutto il resto, voce compresa, è gratis.</string>
+    <string name="scan_needs_key_title">La scansione è facoltativa</string>
+    <string name="scan_needs_key_text">Leggere i numeri dalla foto usa l\'intelligenza artificiale, a pagamento con il tuo credito Anthropic (circa mezzo centesimo a foto). Puoi aggiungerlo ora, oppure dettare i valori a voce, gratis.</string>
+    <string name="scan_needs_key_add">Aggiungi credito AI</string>
+    <string name="scan_needs_key_voice">Usa la voce</string>
     <string name="last7">Ultimi 7 giorni</string>
     <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. SYS sopra, DIA sotto.</string>
     <string name="summary_title">Riepilogo 7 giorni</string>
@@ -200,7 +204,7 @@
     <string name="credit_warn_low">Credito quasi finito: resta circa 1 foto. Tocca qui.</string>
     <string name="credit_avg_fmt">Costo medio per foto: %1$s</string>
     <string name="credit_money_left">Soldi rimasti su Anthropic (stima)</string>
-    <string name="credit_needs_key">Aggiungi la tua chiave Anthropic (Token, qui sotto): da lì il credito si vede.</string>
+    <string name="credit_needs_key">Nessun credito AI: serve solo per la scansione delle foto. Se vuoi usarla, aggiungi la tua chiave (Token, qui sotto).</string>
     <string name="credit_photos_can">Foto che puoi ancora fare (circa)</string>
     <string name="recharge">Ricarica</string>
     <string name="recharge_q">Quanto hai aggiunto su Anthropic?</string>
@@ -219,11 +223,11 @@
     <string name="err_friend_no_credit">Il tuo credito Anthropic è finito. Tocca Ricarica per aggiungere soldi.</string>
     <string name="err_friend_key_invalid">Anthropic non accetta la tua chiave. Tocca Sostituisci chiave e incollane una nuova.</string>
     <string name="err_key_test_failed">Non è stato possibile controllare la chiave adesso. Riprova tra poco.</string>
-    <string name="key_title">Il tuo credito per le letture</string>
+    <string name="key_title">Lettura delle foto (facoltativa)</string>
     <string name="key_title_replace">Sostituisci la tua chiave</string>
     <string name="later">Più tardi</string>
     <string name="key_how_title">Come funziona</string>
-    <string name="key_how_text">Ogni foto viene letta da Anthropic, un\'azienda di intelligenza artificiale. Costa circa mezzo centesimo a foto. La paghi tu, con il tuo credito prepagato su Anthropic: nessun altro paga le tue foto e tu non paghi quelle degli altri.</string>
+    <string name="key_how_text">È facoltativo: tutta l\'app funziona gratis, voce compresa. Solo la lettura dei numeri dalla foto usa l\'intelligenza artificiale di Anthropic: costa circa mezzo centesimo a foto e la paghi tu, con il tuo credito prepagato su Anthropic. Nessun altro paga le tue foto e tu non paghi quelle degli altri.</string>
     <string name="step_fmt">%1$d. %2$s</string>
     <string name="key_step1_title">Carica credito su Anthropic</string>
     <string name="key_step1_text">Crea un account su Anthropic, o entra, e carica una piccola somma. Pochi dollari bastano per molti mesi.</string>
@@ -241,8 +245,7 @@
     <string name="key_privacy">La tua chiave viene salvata cifrata sul nostro server e non viene più mostrata, nemmeno a te. La usano solo le tue foto. Puoi sostituirla o cancellarla nella scheda Admin.</string>
     <string name="key_saved">Chiave controllata e salvata</string>
     <string name="key_deleted">Chiave cancellata</string>
-    <string name="key_missing_banner">Aggiungi la tua chiave Anthropic per leggere le foto. Tocca qui.</string>
-    <string name="key_missing">Non hai ancora aggiunto la tua chiave Anthropic. Senza, le foto non possono essere lette.</string>
+    <string name="key_missing">Facoltativo: aggiungi la tua chiave solo se vuoi leggere i numeri dalle foto. Tutto il resto è gratis.</string>
     <string name="add_my_key">Aggiungi la mia chiave</string>
     <string name="replace_key">Sostituisci chiave</string>
     <string name="delete_key">Cancella la mia chiave</string>

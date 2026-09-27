@@ -283,7 +283,7 @@ fun App() {
     var me by remember { mutableStateOf<Me?>(null) }
     var rechargePending by rememberSaveable { mutableStateOf(false) } // true while the Anthropic page is open
     var amountDialog by remember { mutableStateOf<String?>(null) }     // "topup" or "set" while the amount dialog is open
-    var keyPromptShown by rememberSaveable { mutableStateOf(false) }  // friend's key steps shown once after opening the app
+    var scanNeedsKey by remember { mutableStateOf(false) }   // Scan tapped without an AI key: say it is optional
     var keyBusy by remember { mutableStateOf(false) }
     var keyError by remember { mutableStateOf<ApiException?>(null) }
     var deleteKeyAsk by remember { mutableStateOf(false) }
@@ -303,7 +303,6 @@ fun App() {
                 val m = Repo.me(pid)
                 me = m
                 // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
-                if (m.selfPays && !m.hasKey && !keyPromptShown && screen == "tabs") { keyPromptShown = true; screen = "key" }
             } catch (e: Exception) {
                 message = e.message ?: t(R.string.err_generic)
             } finally { loading = false }
@@ -532,7 +531,8 @@ fun App() {
                         else -> HomeScreen(
                             readings = readings, message = message, me = me,
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
-                            onMeasure = { openCamera() },
+                            // the photo reading is the only paid part: without a key, say so and offer the free voice
+                            onMeasure = { if (me?.selfPays == true && me?.hasKey == false) scanNeedsKey = true else openCamera() },
                             onVoice = { openVoice() },
                         )
                     }
@@ -595,6 +595,15 @@ fun App() {
             }
         )
     }
+
+    if (scanNeedsKey) AlertDialog(
+        onDismissRequest = { scanNeedsKey = false },
+        title = { Text(t(R.string.scan_needs_key_title)) },
+        text = { Text(t(R.string.scan_needs_key_text)) },
+        confirmButton = { TextButton(onClick = { scanNeedsKey = false; openKeySteps() }) { Text(t(R.string.scan_needs_key_add), color = C.Sys) } },
+        dismissButton = { TextButton(onClick = { scanNeedsKey = false; openVoice() }) { Text(t(R.string.scan_needs_key_voice)) } },
+        containerColor = C.Surface
+    )
 
     if (deleteKeyAsk) AlertDialog(
         onDismissRequest = { deleteKeyAsk = false },
@@ -855,7 +864,6 @@ fun HomeScreen(
         BrandHeader()
 
         // a friend who pays for their own photos has no key yet
-        if (me != null && me.selfPays && !me.hasKey) WarnLine(t(R.string.key_missing_banner), onAddKey)
         // not linked to Google yet: with a new phone this diary could not be found again
         if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
         // one short warning line, only when the credit is low or used up
