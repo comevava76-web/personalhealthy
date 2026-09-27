@@ -132,7 +132,9 @@ data class ScanResult(
 data class Credit(
     val configured: Boolean, val remaining: Double?, val avgCost: Double,
     val photosLeft: Int?, val low: Boolean, val empty: Boolean,
-    val loaded: Double?, val spent: Double, val scans: Int, val since: Long?
+    val loaded: Double?, val spent: Double, val scans: Int, val since: Long?,
+    /** Everything spent with HINT on photo readings, exact (from the tokens of each reading). */
+    val spentAll: Double = 0.0
 )
 
 /**
@@ -163,6 +165,7 @@ fun parseCredit(o: JSONObject?): Credit? = o?.let {
         empty = it.optBoolean("empty", false),
         loaded = if (it.isNull("loaded")) null else it.getDouble("loaded"),
         spent = it.optDouble("spent", 0.0),
+        spentAll = it.optDouble("spentAll", 0.0),
         scans = it.optInt("scans", 0),
         since = if (it.isNull("since")) null else it.getLong("since")
     )
