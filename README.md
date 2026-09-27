@@ -57,7 +57,7 @@ In the repository open **Actions** → "Build PersonalHealthy" → **Run workflo
 
 ### 6. Install on the phone
 Anyone can download the latest app from the server: `https://personalhealthy-api.comevava76.workers.dev/download`
-(the build publishes it there, since the repository is private). The Credit tab has "Share the app", which sends this
+(the build publishes it there, since the repository is private). The Admin tab has "Share the app", which sends this
 link, and invites include it too.
 1. Open the link on the phone and download `HINT.apk`.
 2. Open it: Android will ask you to allow installs from this source. Allow it.
@@ -70,11 +70,13 @@ The bar at the bottom has three tabs:
 - **Blood pressure** (start screen): the HINT title with the moving ECG trace, the button to measure, the last reading,
   a table of the last 7 days (today included: one value per day, the average of that day's readings, and the pulse),
   and a 7-day summary (highest and average SYS, DIA and PUL). Values are always named SYS, DIA and PUL.
-  "Manage readings", in the Account section of the Credit tab, lists every reading to delete one; at its bottom,
+  "Manage readings", in the Account section of the Admin tab, lists every reading to delete one; at its bottom,
   "Delete all readings" (asked twice) deletes every reading and photo reading of this phone, leaving the credit as it is.
   The Report tab, the PDF and the Excel file keep morning and evening apart.
 - **Report**: 7, 15 or 30 days, with the chart, averages and the PDF and Excel files for the doctor.
-- **Credit**: an estimate of the money left on Anthropic and of the photos you can still take.
+- **Admin**, in four groups: Credits (money left on Anthropic, photos you can still take, recharge), Token (the Anthropic
+  key that pays the readings), Readings database (manage or delete readings), Identity (Google account, invites, share
+  the app, delete the account).
 
 The chart is the same in the app and in the PDF: one point per day (the day's average) for systolic, diastolic and pulse,
 on a plain background. The app never judges the values: no "normal" or "high" labels, no reference lines, no coloured zones.
@@ -92,8 +94,8 @@ Sign in with Google (Web client ID in the build workflow, or the repository vari
 account and to find it again on a new phone; every day the app opens with fingerprint or face. Anyone can set up the
 app alone: without an invite they pay their photos with their own Anthropic key; an invite (or the family code) is only
 for photos paid by the app manager. Signing in on a new phone moves the account there and disconnects the old phone.
-Accounts made before Google can be linked from the Credit tab. Each person can delete their account and all their data
-from the Credit tab (the app manager cannot). Stored: the Google email and a stable Google id, plus when the privacy note
+Accounts made before Google can be linked from the Admin tab. Each person can delete their account and all their data
+from the Admin tab (the app manager cannot). Stored: the Google email and a stable Google id, plus when the privacy note
 was accepted. Without the variable, the app keeps working with invite codes as before.
 
 App lock: the app opens with the phone's fingerprint, face or screen lock (no separate PIN),
@@ -104,7 +106,7 @@ as a way back in for the app manager after a reinstall, but the app no longer as
 Reminders: every day at 9:00 and 17:00 (the phone's time) the app sends a notification
 "Remember to measure your blood pressure", in the phone's language, with a badge on the app icon.
 At midnight both are removed, so the badge never shows more than 2. They keep working after a restart of the phone.
-The app sends no notifications about the credit: the Credit tab and a short line on the home show it.
+The app sends no notifications about the credit: the Admin tab and a short line on the home show it.
 
 The code is ready for more tabs (for example a future "Analyses" tab for blood tests): see `Tab` in `MainActivity.kt`.
 
@@ -130,13 +132,13 @@ The family code keeps working as before, as "family member (I pay)".
 A friend is guided right after activation: what it costs (about half a cent per photo, from their own credit),
 **Open Anthropic** to load credit, **Create my key**, then paste the key and type the amount shown on Anthropic.
 The server tests the key with a tiny request and stores it encrypted (AES-GCM) for that person only.
-The key is never sent back to the phone. The friend can replace or delete it in their Credit tab.
+The key is never sent back to the phone. The friend can replace or delete it in their Admin tab.
 
 Credit is kept in separate pools:
 - the app manager's pool covers everyone who is paid for (family code and "family member" invites);
 - each friend has their own pool: their starting amount, plus their top-ups, minus the cost of their own photos.
 
-Each Credit tab shows only its own pool: friends do not see the manager's balance, and the manager does not see
+Each Admin tab shows only its own pool: friends do not see the manager's balance, and the manager does not see
 friends' balances or keys. If a friend's key is refused or their credit is finished, the app tells them and offers
 **Recharge** and **Replace key**; the manager's key is never used in their place.
 

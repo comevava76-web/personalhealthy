@@ -76,7 +76,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Dove stanno i dati e chi li vede</h3>
 <p>Su server <strong>Cloudflare</strong>, con il database vincolato all'<strong>Unione Europea</strong>. Gli altri utenti non vedono i tuoi dati. Chi gestisce il servizio può accedere al database solo per manutenzione. Non vendiamo né cediamo i dati e non facciamo pubblicità.</p>
 <h3>Per quanto tempo</h3>
-<p>Finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Credito, "Elimina il mio account"). La cancellazione è immediata e definitiva.</p>
+<p>Finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Admin, "Elimina il mio account"). La cancellazione è immediata e definitiva.</p>
 <h3>Perché</h3>
 <p>Solo per offrirti il diario che hai chiesto, con il tuo consenso dato al primo accesso. Sono dati sulla salute: li usiamo per nient'altro.</p>
 <h3>I tuoi diritti</h3>
@@ -101,7 +101,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Where the data is and who sees it</h3>
 <p>On <strong>Cloudflare</strong> servers, with the database bound to the <strong>European Union</strong>. Other users cannot see your data. The person who runs the service can reach the database only for maintenance. Data is not sold or shared, and there is no advertising.</p>
 <h3>How long</h3>
-<p>As long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Credit tab, "Delete my account"). Deletion is immediate and final.</p>
+<p>As long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Admin tab, "Delete my account"). Deletion is immediate and final.</p>
 <h3>Why</h3>
 <p>Only to provide the diary you asked for, with the consent you give at your first sign-in. This is health data: it is used for nothing else.</p>
 <h3>Your rights</h3>

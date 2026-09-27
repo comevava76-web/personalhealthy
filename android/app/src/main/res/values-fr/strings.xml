@@ -19,13 +19,12 @@
     <string name="download_line">Télécharger l\'app : %1$s</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
     <string name="privacy_title">Vos données</string>
-    <string name="privacy_note">Ce qui est enregistré : votre e-mail Google (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Crédit.</string>
+    <string name="privacy_note">Ce qui est enregistré : votre e-mail Google (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Admin.</string>
     <string name="privacy_accept">J\'ai lu et j\'accepte</string>
     <string name="privacy_accept_link">Accepter et associer</string>
     <string name="google_sign_in">Se connecter avec Google</string>
     <string name="have_invite">Vous avez un code d\'invitation ?</string>
     <string name="invite_optional">Seulement si quelqu\'un paie vos photos : tapez ou scannez son invitation. Sans elle, vous utilisez votre propre clé Anthropic.</string>
-    <string name="account_title">Compte</string>
     <string name="account_linked">Associé à Google : sur un nouveau téléphone, connectez-vous avec ce compte pour retrouver votre journal.</string>
     <string name="account_not_linked">Non associé à Google : si vous perdez ce téléphone, votre journal ne pourra pas être retrouvé.</string>
     <string name="google_link">Associer Google</string>
@@ -69,7 +68,7 @@
     <string name="reset_confirm">Tout effacer</string>
     <string name="reset_done">Toutes les mesures ont été effacées</string>
     <string name="all_readings">Toutes les mesures</string>
-    <string name="manage_readings">Gérer les mesures (en effacer une ou toutes)</string>
+    <string name="manage_readings">Gérer les mesures</string>
     <string name="close">Fermer</string>
     <string name="delete_q">Supprimer cette mesure ?</string>
     <string name="legend_sys">SYS</string>
@@ -162,7 +161,15 @@
     <string name="err_generic">Un problème est survenu. Réessayez.</string>
     <string name="tab_bp">Tension</string>
     <string name="tab_report">Rapport</string>
-    <string name="tab_credit">Crédit</string>
+    <string name="tab_credit">Admin</string>
+    <string name="section_credits">Crédits</string>
+    <string name="section_token">Jeton</string>
+    <string name="section_db">Base des mesures</string>
+    <string name="section_identity">Identité</string>
+    <string name="db_count">%1$d mesures enregistrées</string>
+    <string name="token_own_set">Votre clé Anthropic est enregistrée, chiffrée. Seules vos photos l\'utilisent.</string>
+    <string name="token_owner_admin">Les lectures utilisent la clé Anthropic définie sur le serveur (le secret ANTHROPIC_API_KEY sur GitHub).</string>
+    <string name="token_owner_member">Vos photos utilisent la clé Anthropic de la personne qui gère l\'app.</string>
     <string name="photo_tip">Conseil : photographiez l\'écran de près, bien en face et sans reflet.</string>
     <string name="voice_button">Dicter les valeurs</string>
     <string name="voice_tip">Ou touchez le micro et dites les valeurs de la mesure : Max Min, Pouls</string>
@@ -190,7 +197,6 @@
     <string name="col_source">Source</string>
     <string name="err_voice_invalid">Valeurs non valides : SYS doit être plus haute que DIA.</string>
     <string name="credit_warn_low">Crédit presque épuisé : il reste environ 1 photo. Touchez ici.</string>
-    <string name="credit_page_title">Crédit pour la lecture par IA</string>
     <string name="credit_avg_fmt">Coût moyen par photo : %1$s</string>
     <string name="credit_money_left">Argent restant sur Anthropic (estimation)</string>
     <string name="credit_photos_can">Photos que vous pouvez encore prendre (environ)</string>
@@ -228,7 +234,7 @@
     <string name="key_amount_optional">Montant affiché maintenant chez Anthropic (laissez vide pour ne rien changer)</string>
     <string name="key_checking">Vérification de la clé…</string>
     <string name="key_save">Vérifier et enregistrer</string>
-    <string name="key_privacy">Votre clé est enregistrée chiffrée sur notre serveur et n\'est plus jamais affichée, même pas à vous. Seules vos photos l\'utilisent. Vous pouvez la remplacer ou la supprimer dans l\'onglet Crédit.</string>
+    <string name="key_privacy">Votre clé est enregistrée chiffrée sur notre serveur et n\'est plus jamais affichée, même pas à vous. Seules vos photos l\'utilisent. Vous pouvez la remplacer ou la supprimer dans l\'onglet Admin.</string>
     <string name="key_saved">Clé vérifiée et enregistrée</string>
     <string name="key_deleted">Clé supprimée</string>
     <string name="key_missing_banner">Ajoutez votre clé Anthropic pour lire les photos. Touchez ici.</string>
