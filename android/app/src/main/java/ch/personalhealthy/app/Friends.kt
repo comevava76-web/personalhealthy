@@ -85,16 +85,24 @@ fun KeyScreen(
                 Text(t(R.string.welcome_scan_title), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 Text(t(R.string.welcome_scan_text), color = C.Muted, fontSize = 14.sp)
             }
-            // the way out, before the steps: this part is not required
+            // the way out, before the steps: this part is not required, and it can be turned on later
             BigButton(t(R.string.welcome_skip), color = C.Surface2, textColor = C.Ink, onClick = onLater)
+            Text(t(R.string.welcome_later), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             Text(t(R.string.welcome_steps_intro), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 2.dp))
-        } else {
-            Header(t(if (hasKey) R.string.key_title_replace else R.string.key_title), null, t(R.string.later), onLater)
+        } else if (!hasKey) {
+            // Upgrade: short, just what it unlocks and the steps
+            Header(t(R.string.upgrade), null, t(R.string.later), onLater)
             Panel {
-                Text(t(R.string.key_how_title), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(6.dp))
-                Text(t(R.string.key_how_text), color = C.Muted, fontSize = 14.sp)
+                Text(t(R.string.upgrade_sub), color = C.Muted, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                listOf(R.string.upgrade_f1, R.string.upgrade_f2, R.string.upgrade_f3).forEach {
+                    Text(t(it), color = C.Ink, fontSize = 15.sp, modifier = Modifier.padding(vertical = 2.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(t(R.string.upgrade_cost), color = C.Muted, fontSize = 13.sp)
             }
+        } else {
+            Header(t(R.string.key_title_replace), null, t(R.string.later), onLater)
         }
         Panel {
             StepTitle(1, t(R.string.key_step0_title))

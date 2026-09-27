@@ -54,7 +54,7 @@
     <string name="scan_cost_note">Das Scannen eines Fotos nutzt kostenpflichtiges, optionales KI-Guthaben (etwa einen halben Cent pro Foto). Alles andere, Stimme inklusive, ist kostenlos.</string>
     <string name="scan_needs_key_title">Scannen ist optional</string>
     <string name="scan_needs_key_text">Das Lesen der Zahlen vom Foto nutzt künstliche Intelligenz, bezahlt mit deinem Anthropic-Guthaben (etwa einen halben Cent pro Foto). Du kannst es jetzt hinzufügen oder die Werte kostenlos ansagen.</string>
-    <string name="scan_needs_key_add">KI-Guthaben hinzufügen</string>
+    <string name="scan_needs_key_add">Upgrade</string>
     <string name="scan_needs_key_voice">Stimme nutzen</string>
     <string name="last7">Letzte 7 Tage</string>
     <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>
@@ -224,11 +224,8 @@
     <string name="err_friend_no_credit">Dein Anthropic-Guthaben ist aufgebraucht. Tippe auf Aufladen, um Geld hinzuzufügen.</string>
     <string name="err_friend_key_invalid">Anthropic akzeptiert deinen Schlüssel nicht. Tippe auf Schlüssel ersetzen und füge einen neuen ein.</string>
     <string name="err_key_test_failed">Der Schlüssel konnte gerade nicht geprüft werden. Versuche es gleich noch einmal.</string>
-    <string name="key_title">Fotolesen (optional)</string>
     <string name="key_title_replace">Schlüssel ersetzen</string>
     <string name="later">Später</string>
-    <string name="key_how_title">So funktioniert es</string>
-    <string name="key_how_text">Es ist optional: die ganze App ist kostenlos, Stimme inklusive. Nur das Lesen der Zahlen vom Foto nutzt die künstliche Intelligenz von Anthropic: etwa einen halben Cent pro Foto, bezahlt von dir mit deinem Prepaid-Guthaben bei Anthropic. Niemand sonst bezahlt deine Fotos und du bezahlst nicht die der anderen.</string>
     <string name="step_fmt">%1$d. %2$s</string>
     <string name="key_step0_title">Anthropic-Konto erstellen</string>
     <string name="key_step0_text">Anthropic ist das KI-Unternehmen, das die Fotos liest. Registriere dich mit deiner E-Mail: kostenlos.</string>
@@ -241,6 +238,13 @@
     <string name="welcome_scan_title">📷 Foto scannen: optional</string>
     <string name="welcome_scan_text">Fotografiere das Messgerät und künstliche Intelligenz liest die Zahlen. Es kostet weniger als einen Cent pro Foto, bezahlt von dir mit deinem eigenen Anthropic-Schlüssel. Nicht nötig: wenn du es nicht brauchst, mach ohne weiter.</string>
     <string name="welcome_skip">Ohne Scannen weiter</string>
+    <string name="upgrade">Upgrade</string>
+    <string name="upgrade_sub">Mit deinem eigenen Anthropic-Schlüssel schaltest du frei:</string>
+    <string name="upgrade_f1">📷 Fotos des Messgeräts scannen</string>
+    <string name="upgrade_f2">📊 Web-Dashboard zum Teilen (bald)</string>
+    <string name="upgrade_f3">🧪 Laborberichte als Tabellen und Grafiken (bald)</string>
+    <string name="upgrade_cost">Etwa 0,6 Cent pro gelesenem Foto, aus deinem Anthropic-Guthaben. Nie eine Diagnose: nur deine Daten.</string>
+    <string name="welcome_later">Du kannst es jederzeit mit Upgrade einschalten.</string>
     <string name="welcome_steps_intro">Wenn du das Scannen willst, sind es 4 Schritte:</string>
     <string name="key_step1_title">Guthaben aufladen</string>
     <string name="key_step1_text">Lade auf der Abrechnungsseite von Anthropic einen kleinen Betrag. Ein paar Dollar reichen für viele Monate.</string>
@@ -258,8 +262,7 @@
     <string name="key_privacy">Dein Schlüssel wird verschlüsselt auf unserem Server gespeichert und nie wieder angezeigt, auch dir nicht. Nur deine Fotos nutzen ihn. Du kannst ihn im Tab Admin ersetzen oder löschen.</string>
     <string name="key_saved">Schlüssel geprüft und gespeichert</string>
     <string name="key_deleted">Schlüssel gelöscht</string>
-    <string name="key_missing">Optional: füge deinen Schlüssel nur hinzu, wenn die Zahlen von Fotos gelesen werden sollen. Alles andere ist kostenlos.</string>
-    <string name="add_my_key">Meinen Schlüssel hinzufügen</string>
+    <string name="key_missing">Optional. Upgrade schaltet Scannen, Web-Dashboard und Laborberichte frei.</string>
     <string name="replace_key">Schlüssel ersetzen</string>
     <string name="delete_key">Meinen Schlüssel löschen</string>
     <string name="delete_key_q">Schlüssel löschen?</string>

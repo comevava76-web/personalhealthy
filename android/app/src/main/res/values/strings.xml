@@ -55,7 +55,7 @@
     <string name="scan_cost_note">Scanning a photo uses paid, optional AI credit (about half a cent per photo). Everything else, voice included, is free.</string>
     <string name="scan_needs_key_title">Scanning is optional</string>
     <string name="scan_needs_key_text">Reading the numbers from a photo uses artificial intelligence, paid with your Anthropic credit (about half a cent per photo). You can add it now, or say the values aloud, for free.</string>
-    <string name="scan_needs_key_add">Add AI credit</string>
+    <string name="scan_needs_key_add">Upgrade</string>
     <string name="scan_needs_key_voice">Use voice</string>
     <string name="last7">Last 7 days</string>
     <string name="week_hint">One value per day: the average of all that day\'s readings. SYS on top, DIA below.</string>
@@ -226,11 +226,8 @@
     <string name="err_friend_no_credit">Your Anthropic credit is finished. Tap Recharge to add money.</string>
     <string name="err_friend_key_invalid">Anthropic does not accept your key. Tap Replace key and paste a new one.</string>
     <string name="err_key_test_failed">The key could not be checked right now. Try again shortly.</string>
-    <string name="key_title">Photo reading (optional)</string>
     <string name="key_title_replace">Replace your key</string>
     <string name="later">Later</string>
-    <string name="key_how_title">How it works</string>
-    <string name="key_how_text">It is optional: the whole app is free, voice included. Only reading the numbers from a photo uses Anthropic\'s artificial intelligence: about half a cent per photo, paid by you with your prepaid Anthropic credit. Nobody else pays for your photos and you do not pay for theirs.</string>
     <string name="step_fmt">%1$d. %2$s</string>
     <string name="key_step0_title">Create an Anthropic account</string>
     <string name="key_step0_text">Anthropic is the artificial-intelligence company that reads the photos. Sign up with your email: it is free.</string>
@@ -243,6 +240,13 @@
     <string name="welcome_scan_title">📷 Scan the photo: optional</string>
     <string name="welcome_scan_text">Photograph the monitor and artificial intelligence reads the numbers. It costs less than a cent per photo, paid by you with your own Anthropic key. It is not required: if you do not need it, continue without.</string>
     <string name="welcome_skip">Continue without scanning</string>
+    <string name="upgrade">Upgrade</string>
+    <string name="upgrade_sub">With your own Anthropic key you unlock:</string>
+    <string name="upgrade_f1">📷 Scanning photos of the monitor</string>
+    <string name="upgrade_f2">📊 Web dashboard, to share (coming)</string>
+    <string name="upgrade_f3">🧪 Lab reports read into tables and charts (coming)</string>
+    <string name="upgrade_cost">About 0.6 cents per photo read, from your Anthropic credit. Never a diagnosis: only your data.</string>
+    <string name="welcome_later">You can turn it on any time with Upgrade.</string>
     <string name="welcome_steps_intro">If you want scanning, it takes 4 steps:</string>
     <string name="key_step1_title">Add credit</string>
     <string name="key_step1_text">On Anthropic\'s billing page load a small amount. A few dollars last for many months.</string>
@@ -260,8 +264,7 @@
     <string name="key_privacy">Your key is stored encrypted on our server and is never shown again, not even to you. Only your photos use it. You can replace or delete it in the Admin tab.</string>
     <string name="key_saved">Key checked and saved</string>
     <string name="key_deleted">Key deleted</string>
-    <string name="key_missing">Optional: add your key only if you want the numbers read from photos. Everything else is free.</string>
-    <string name="add_my_key">Add my key</string>
+    <string name="key_missing">Optional. Upgrade unlocks scanning, the web dashboard and lab reports.</string>
     <string name="replace_key">Replace key</string>
     <string name="delete_key">Delete my key</string>
     <string name="delete_key_q">Delete your key?</string>
