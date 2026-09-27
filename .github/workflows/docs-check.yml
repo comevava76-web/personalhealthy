@@ -1,0 +1,42 @@
+name: Docs check
+
+# The documents in docs/ must follow every change. This fails when:
+#  - docs/legal/ (terms, privacy, home) differs from the pages the site serves (worker/src/pages.ts);
+#  - an HTML source of a PDF changed and its PDF did not (architecture document, user guides).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Terms, privacy and home in docs/legal match the site
+        working-directory: worker
+        run: |
+          npm install --no-audit --no-fund --silent
+          node scripts/export-docs.mjs
+          git diff --exit-code -- ../docs/legal \
+            || { echo "docs/legal is out of date: run 'cd worker && node scripts/export-docs.mjs' and commit"; exit 1; }
+      - name: Every changed HTML source comes with its PDF
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then echo "Nothing to compare"; exit 0; fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          fail=0
+          pair() { if echo "$CHANGED" | grep -qx "$1" && ! echo "$CHANGED" | grep -qx "$2"; then echo "$1 changed but $2 did not"; fail=1; fi; }
+          pair docs/architecture/architecture.html docs/architecture/HINT-Architecture.pdf
+          pair docs/guide-it.html docs/HINT-Guida-IT.pdf
+          pair docs/guide-en.html docs/HINT-Guide-EN.pdf
+          exit $fail

@@ -138,7 +138,7 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>1 / 3</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.84</span><span>1 / 3</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
@@ -237,7 +237,7 @@
 
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>2 / 3</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.84</span><span>2 / 3</span></div>
 </section>
 <!-- ======================= PAGE 3: RUNTIME FLOW AND DELIVERY ======================= -->
 <section class="page">
@@ -263,7 +263,7 @@
     <line x1="32" y1="54" x2="56" y2="54" class="a3"/>
     <rect x="58" y="22" width="104" height="62" rx="7" class="n3" stroke="#13223F"/>
     <text x="66" y="37" class="h3">HINT 365 app</text>
-    <text x="66" y="48" class="x3">Android phone</text><text x="66" y="57" class="x3">every call signed by the phone key</text><text x="66" y="66" class="x3">talks only to the Worker,</text><text x="66" y="75" class="x3">never to the database</text>
+    <text x="66" y="48" class="x3">Android phone</text><text x="66" y="57" class="x3">calls signed by the phone key</text><text x="66" y="66" class="x3">talks only to the Worker,</text><text x="66" y="75" class="x3">never to the database</text>
     <line x1="110" y1="84" x2="110" y2="104" class="a3"/>
     <text x="114" y="97" class="l3">one-time link 60 s</text>
     <rect x="58" y="106" width="104" height="46" rx="7" class="n3" stroke="#13223F"/>
@@ -315,14 +315,14 @@
       <h2>Roles</h2>
       <table>
         <tr><th>Who</th><th>Does</th></tr>
-        <tr><td>Angelo · architect</td><td>Decides design, rules and priorities in the chat; tries each APK; says what goes and what does not.</td></tr>
-        <tr><td>Claude · developer</td><td>Writes the change, tests it, merges it, watches the pipeline, sends the APK in the chat.</td></tr>
+        <tr><td>Angelo · architect</td><td>Decides design, rules and priorities in the chat; tries each APK and reads the changed documents.</td></tr>
+        <tr><td>Claude · developer</td><td>Writes the change and its documents, tests, merges, watches the pipeline, sends the APK.</td></tr>
       </table>
       <h2>CI/CD, from the chat to the phone</h2>
       <ol>
-        <li><b>Change</b> on branch <code>claude/…</code>, with docs and rules updated in the same commit.</li>
+        <li><b>Change + documents</b> on branch <code>claude/…</code>: every document in <code>docs/</code> the change touches is updated in the same commit (index: <code>docs/README.md</code>).</li>
         <li><b>Test before merging</b>: Worker bundle (<code>wrangler deploy --dry-run</code>), page checks in Chromium at phone and desktop width, JavaScript and string files checked, documents rendered and looked at.</li>
-        <li><b>Pull request → squash merge</b> into <code>main</code>.</li>
+        <li><b>Pull request → squash merge</b> into <code>main</code>. <i>Docs check</i> fails if terms, privacy or home in <code>docs/legal</code> differ from the site, or an HTML source changed without its PDF.</li>
         <li><b>GitHub Actions</b> <code>build.yml</code>, on every push to <code>main</code>:
           <br>① <i>server</i>: D1 tables and new columns, Worker deployed, secrets set;
           <br>② <i>apk</i>: Gradle compiles (this is the Kotlin test), release <code>v0.1.N</code> with APK and AAB;
@@ -333,7 +333,7 @@
       <p class="muted" style="margin-top:1.5mm">Not yet automated: unit tests and tests on a real phone. The APK is tried by the architect.</p>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>3 / 3</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.84</span><span>3 / 3</span></div>
 </section>
 </body>
 </html>

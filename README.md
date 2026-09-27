@@ -67,7 +67,7 @@ Later versions install over the previous one without losing anything.
 
 ## User guide
 `docs/guide-it.html` and `docs/guide-en.html` are the sources of the user guide; `docs/HINT-Guida-IT.pdf` and
-`docs/HINT-Guide-EN.pdf` are made from them (print to PDF, A4). The build serves the PDFs next to the app:
+`docs/HINT-Guide-EN.pdf` are made from them with `node docs/render-guides.cjs`. Every document is listed in `docs/README.md`, with who updates it and when. The build serves the PDFs next to the app:
 `<server>/HINT-Guida-IT.pdf` and `<server>/HINT-Guide-EN.pdf`, linked from the home page.
 
 ## The app
