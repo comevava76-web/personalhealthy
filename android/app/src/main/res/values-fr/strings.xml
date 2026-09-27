@@ -241,8 +241,8 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">Avec votre propre clé Anthropic vous débloquez :</string>
     <string name="upgrade_f1">📷 Scan des photos du tensiomètre</string>
-    <string name="upgrade_f2">🧪 Analyses lues en tableaux et graphiques (bientôt)</string>
-    <string name="upgrade_cost">Environ 0,6 centime par photo lue, sur votre crédit Anthropic. Jamais de diagnostic : seulement vos données.</string>
+    <string name="upgrade_f2">🧪 Analyses : données chargées en tableaux et graphiques. Aucun diagnostic (bientôt)</string>
+    <string name="upgrade_cost">Environ 0,6 centime par photo lue, sur votre crédit Anthropic.</string>
     <string name="welcome_later">Vous pouvez l\'activer à tout moment avec Upgrade.</string>
     <string name="welcome_steps_intro">Si vous voulez le scan, il suffit de 4 étapes :</string>
     <string name="key_step1_title">Ajouter du crédit</string>
