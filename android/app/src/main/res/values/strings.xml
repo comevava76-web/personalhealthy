@@ -300,5 +300,5 @@
     <string name="disc_accepted_on">Accepted on %1$s</string>
     <string name="disc_lang" translatable="false">en</string>
     <string name="colophon_rights">© %1$s · All rights reserved</string>
-    <string name="disc_web">Open the web version, with the providers' links</string>
+    <string name="disc_web">Open the web version, with the providers\' links</string>
 </resources>
