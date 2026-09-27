@@ -171,6 +171,7 @@
     <string name="voice_retry">Redire</string>
     <string name="voice_not_understood">Je n\'ai pas compris les nombres. Réessayez : SYS, DIA et PUL.</string>
     <string name="listening">Je vous écoute…</string>
+    <string name="voice_done">Terminé</string>
     <string name="voice_permission">Pour dicter les valeurs, autorisez HINT à utiliser le micro.</string>
     <string name="voice_network">La reconnaissance vocale a besoin d\'internet. Vérifiez la connexion et réessayez.</string>
     <string name="voice_missing">J\'ai entendu seulement %1$s : il manque un nombre. Dites les trois : SYS, DIA et PUL.</string>

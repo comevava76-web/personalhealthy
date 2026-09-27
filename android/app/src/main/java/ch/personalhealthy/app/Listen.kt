@@ -2,6 +2,9 @@ package ch.personalhealthy.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -35,18 +38,44 @@ import java.util.Locale
 
 /**
  * Listening inside the app, instead of the phone's standard speech window: bars that move with the voice,
- * the words appearing while they are said, and it stops by itself when the person stops talking.
- * [onResult] gets the transcriptions the phone offers (best first); [onFail] a message to show.
+ * the words appearing while they are said. It gives time: a pause, or silence before starting, does not end it;
+ * listening starts again by itself and the pieces are joined ("127 … 80 … 70"). It ends by itself as soon as
+ * three numbers are heard, when the person taps Done, or after [MAX_LISTEN_MS].
+ * [onResult] gets the transcriptions (best first); [onFail] a message to show.
  */
 @Composable
 fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onCancel: () -> Unit) {
     val ctx = LocalContext.current
     var heard by remember { mutableStateOf("") }
     val levels = remember { mutableStateListOf<Float>().apply { repeat(BARS) { add(0f) } } }
+    val stop = remember { mutableStateOf<(() -> Unit)?>(null) }   // "Done": finish with what was heard
 
     DisposableEffect(Unit) {
         val rec = SpeechRecognizer.createSpeechRecognizer(ctx)
+        val main = Handler(Looper.getMainLooper())
+        val started = SystemClock.elapsedRealtime()
+        var committed = ""     // what was said in the earlier pieces
         var done = false
+        var finishing = false  // Done was tapped: the next result ends it
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+            .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+            // ask for longer pauses before a piece ends (some phones ignore it: listening restarts anyway)
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        fun numbersIn(text: String) = Regex("\\d{2,3}").findAll(text).count()
+        fun finish(alternatives: List<String>) {
+            if (done) return
+            done = true
+            val all = (listOf(committed.trim()) + alternatives).filter { it.isNotBlank() }.distinct()
+            if (all.isEmpty()) onFail(t(R.string.voice_not_understood)) else onResult(all)
+        }
+        fun listenAgain() = main.postDelayed({ if (!done) rec.startListening(intent) }, 150)
+        fun timeLeft() = SystemClock.elapsedRealtime() - started < MAX_LISTEN_MS
+        stop.value = { finishing = true; rec.stopListening(); main.postDelayed({ finish(emptyList()) }, 1500) }
+
         rec.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
             override fun onBeginningOfSpeech() {}
@@ -58,34 +87,34 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
             override fun onPartialResults(partialResults: Bundle?) {
-                partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.let { heard = it }
+                partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.let {
+                    heard = (committed + " " + it).trim()
+                }
             }
             override fun onResults(results: Bundle?) {
                 if (done) return
-                done = true
-                onResult(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty())
+                val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
+                val before = committed
+                committed = (committed + " " + (list.firstOrNull() ?: "")).trim()
+                heard = committed
+                val alternatives = list.map { (before + " " + it).trim() }
+                // three numbers heard, Done tapped, or time is up: finished; otherwise keep listening
+                if (finishing || numbersIn(committed) >= 3 || !timeLeft()) finish(alternatives) else listenAgain()
             }
             override fun onError(error: Int) {
                 if (done) return
-                done = true
-                onFail(
-                    when (error) {
-                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> t(R.string.voice_permission)
-                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER -> t(R.string.voice_network)
-                        else -> t(R.string.voice_not_understood)   // silence, nothing recognised
-                    }
-                )
+                when (error) {
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> { done = true; onFail(t(R.string.voice_permission)) }
+                    SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER ->
+                        { done = true; onFail(t(R.string.voice_network)) }
+                    // silence or nothing recognised: not a reason to stop, the person may still be about to speak
+                    else -> if (!finishing && timeLeft()) listenAgain() else finish(emptyList())
+                }
             }
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
-        rec.startListening(
-            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
-                .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-        )
-        onDispose { done = true; rec.destroy() }
+        rec.startListening(intent)
+        onDispose { done = true; main.removeCallbacksAndMessages(null); rec.destroy() }
     }
 
     Column(
@@ -115,8 +144,11 @@ fun ListenScreen(onResult: (List<String>) -> Unit, onFail: (String) -> Unit, onC
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().height(90.dp)
         )
         Spacer(Modifier.height(24.dp))
+        BigButton(t(R.string.voice_done)) { stop.value?.invoke() }
         BigButton(t(R.string.cancel), color = C.Surface2, textColor = C.Ink, onClick = onCancel)
     }
 }
 
 private const val BARS = 28
+/** How long the app keeps listening at most, pauses included. */
+private const val MAX_LISTEN_MS = 40_000L
