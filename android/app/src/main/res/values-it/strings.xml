@@ -126,7 +126,7 @@
     <string name="reminder_channel">Promemoria misure</string>
     <string name="reminder_morning">Buongiorno! Ricordati di misurare la pressione.</string>
     <string name="reminder_evening">Buonasera! Ricordati di misurare la pressione.</string>
-    <string name="pdf_title">Report della pressione arteriosa</string>
+    <string name="pdf_title">Pressione arteriosa</string>
     <string name="pdf_period">Ultimi %1$d giorni: dal %2$s al %3$s · ora svizzera</string>
     <string name="pdf_all">Elenco delle misure</string>
     <string name="pdf_generated">Generato il %1$s</string>
@@ -269,4 +269,23 @@
     <string name="sign_out_q">Uscire?</string>
     <string name="sign_out_t">Misure e credito restano al sicuro, legati a %1$s. Per rientrare, su questo telefono o su uno nuovo, accedi con Google e ritrovi tutto.</string>
     <string name="signed_out">Disconnesso. Accedi con Google per rientrare.</string>
+    <string name="pdf_range">dal %1$s al %2$s · %3$d giorni</string>
+    <string name="pdf_count">%1$d misure in %2$d giorni · ora svizzera</string>
+    <string name="pdf_chart_all">Andamento del periodo</string>
+    <string name="pdf_chart_all_sub">ogni misura, nell\'ordine in cui è stata presa</string>
+    <string name="pdf_units">SYS e DIA in mmHg · PUL in battiti al minuto</string>
+    <string name="pdf_units_pul">battiti al minuto</string>
+    <string name="pdf_morning_t">Mattina</string>
+    <string name="pdf_morning_sub">prima delle 12</string>
+    <string name="pdf_evening_t">Sera</string>
+    <string name="pdf_evening_sub">dalle 17</string>
+    <string name="pdf_pulse_t">Battiti (PUL)</string>
+    <string name="pdf_pulse_sub">ogni misura</string>
+    <string name="pdf_values">Valori del periodo</string>
+    <string name="pdf_values_sub">il più alto, il più basso e la media, con giorno e ora</string>
+    <string name="pdf_hi">%1$s più alta</string>
+    <string name="pdf_lo">%1$s più bassa</string>
+    <string name="pdf_avg">%1$s media</string>
+    <string name="pdf_avg_of">media di %1$d misure</string>
+    <string name="pdf_none_moment">Nessuna misura in questo momento della giornata</string>
 </resources>
