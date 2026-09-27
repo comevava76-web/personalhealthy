@@ -745,7 +745,7 @@ fun BigButton(
             if (trailing != null) {
                 // the AI sign stays well visible even when the button is off
                 Spacer(Modifier.width(8.dp))
-                Icon(painterResource(trailing), contentDescription = null, tint = if (enabled) textColor else textColor.copy(alpha = 0.85f), modifier = Modifier.size(24.dp))
+                Icon(painterResource(trailing), contentDescription = null, tint = if (enabled) textColor else textColor.copy(alpha = 0.85f), modifier = Modifier.size(19.dp))
             }
         }
     }
