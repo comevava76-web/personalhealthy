@@ -267,4 +267,8 @@
     <string name="delete_key_q">Delete your key?</string>
     <string name="delete_key_text">It is removed from our server. Photos cannot be read until you add a key again.</string>
     <string name="done">Done</string>
+    <string name="sign_out">Sign out of this phone</string>
+    <string name="sign_out_q">Sign out?</string>
+    <string name="sign_out_t">Your readings and credit stay safe, linked to %1$s. To come back, on this phone or a new one, sign in with Google and everything is there again.</string>
+    <string name="signed_out">Signed out. Sign in with Google to come back.</string>
 </resources>
