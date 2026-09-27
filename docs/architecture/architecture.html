@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>HINT 365 · Functional and architecture document</title>
 <!--
-  Functional (page 1) and architecture (page 2) document of HINT 365 · HealthyInstantTracker. Always in English.
+  Functional (page 1), architecture (page 2) and runtime flow / delivery (page 3) document of HINT 365 · HealthyInstantTracker. Always in English.
   Update it with every change to a flow, a technology or a rule; then rebuild the PDF:
   node docs/architecture/render.cjs   →   docs/architecture/HINT-Architecture.pdf
 -->
@@ -44,7 +44,7 @@
 <!-- ======================= PAGE 1: FUNCTIONAL OVERVIEW ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 1 OF 2</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 1 OF 3</div>
     <h1>Functional overview</h1>
     <p>What the app does, who does what and in which order. A blood-pressure diary for Android, with a web dashboard and reports for the doctor.</p>
   </div>
@@ -138,13 +138,13 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.81</span><span>1 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>1 / 3</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TECHNOLOGY ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 2</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 3</div>
     <h1>Architecture and technology</h1>
     <p>The components, how they talk, where the data live and how a new version is released.</p>
   </div>
@@ -237,7 +237,103 @@
 
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.81</span><span>2 / 2</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>2 / 3</span></div>
+</section>
+<!-- ======================= PAGE 3: RUNTIME FLOW AND DELIVERY ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 3 OF 3</div>
+    <h1>Runtime flow and delivery</h1>
+    <p>Where each part runs today, who talks to whom, and how a change goes from the chat to the phone.</p>
+  </div>
+
+  <h2>Runtime flow <small>everything runs on Cloudflare; only the Worker touches the database</small></h2>
+  <svg viewBox="0 0 520 206" width="100%" role="img" aria-label="Runtime flow of HINT 365">
+    <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
+    <style>
+      .n3 { fill:#fff; stroke:#C7D2E1; } .h3 { font-size:8px; font-weight:700; fill:#13223F; } .x3 { font-size:6.3px; fill:#5B6B88; }
+      .a3 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#c); } .l3 { font-size:6.1px; fill:#5B6B88; }
+    </style>
+    <!-- people -->
+    <circle cx="20" cy="40" r="7" fill="#6D5BD0"/><rect x="12" y="49" width="16" height="14" rx="5" fill="#6D5BD0"/>
+    <text x="20" y="74" text-anchor="middle" class="x3">User</text>
+    <circle cx="20" cy="150" r="7" fill="#0F9C8E"/><rect x="12" y="159" width="16" height="14" rx="5" fill="#0F9C8E"/>
+    <text x="20" y="184" text-anchor="middle" class="x3">Doctor</text>
+    <!-- clients -->
+    <line x1="32" y1="54" x2="56" y2="54" class="a3"/>
+    <rect x="58" y="22" width="104" height="62" rx="7" class="n3" stroke="#13223F"/>
+    <text x="66" y="37" class="h3">HINT 365 app</text>
+    <text x="66" y="48" class="x3">Android phone</text><text x="66" y="57" class="x3">every call signed by the phone key</text><text x="66" y="66" class="x3">talks only to the Worker,</text><text x="66" y="75" class="x3">never to the database</text>
+    <line x1="110" y1="84" x2="110" y2="104" class="a3"/>
+    <text x="114" y="97" class="l3">one-time link 60 s</text>
+    <rect x="58" y="106" width="104" height="46" rx="7" class="n3" stroke="#13223F"/>
+    <text x="66" y="121" class="h3">Browser</text>
+    <text x="66" y="132" class="x3">Web Dashboard /my/</text><text x="66" y="141" class="x3">cookie hint_s after consent</text>
+    <line x1="32" y1="166" x2="56" y2="170" class="a3"/>
+    <rect x="58" y="160" width="104" height="34" rx="7" class="n3"/>
+    <text x="66" y="174" class="h3">Doctor's browser</text><text x="66" y="185" class="x3">/s/… read-only, no cookie</text>
+    <!-- worker -->
+    <line x1="162" y1="50" x2="206" y2="70" class="a3"/><text x="168" y="52" class="l3">HTTPS /v1</text>
+    <line x1="162" y1="128" x2="206" y2="112" class="a3"/><text x="168" y="135" class="l3">HTTPS /my</text>
+    <line x1="162" y1="176" x2="206" y2="150" class="a3"/><text x="168" y="178" class="l3">HTTPS /s</text>
+    <rect x="208" y="30" width="148" height="150" rx="9" fill="#0F1C36"/>
+    <text x="218" y="46" class="h3" style="fill:#fff">Cloudflare · one Worker</text>
+    <text x="218" y="57" class="x3" style="fill:#AFC0DC">personalhealthy-api.….workers.dev</text>
+    <rect x="218" y="64" width="128" height="17" rx="3" fill="#1F3D72"/><text x="224" y="75" class="x3" style="fill:#fff">API /v1/… for the app</text>
+    <rect x="218" y="84" width="128" height="17" rx="3" fill="#1F3D72"/><text x="224" y="95" class="x3" style="fill:#fff">Web Dashboard /my/ + static files</text>
+    <rect x="218" y="104" width="128" height="17" rx="3" fill="#1F3D72"/><text x="224" y="115" class="x3" style="fill:#fff">pages, /download, doctor links /s/</text>
+    <rect x="218" y="124" width="128" height="17" rx="3" fill="#1F3D72"/><text x="224" y="135" class="x3" style="fill:#fff">nightly cron 03:17 UTC: 365-day purge</text>
+    <line x1="282" y1="141" x2="282" y2="152" class="a3"/>
+    <rect x="228" y="154" width="108" height="20" rx="3" fill="#2F5596"/><text x="236" y="167" class="x3" style="fill:#fff">D1 database · EU · binding DB</text>
+    <!-- outside -->
+    <line x1="356" y1="56" x2="398" y2="44" class="a3"/>
+    <rect x="400" y="24" width="116" height="36" rx="6" class="n3"/><text x="408" y="38" class="h3">Anthropic API</text><text x="408" y="49" class="x3">reads a photo (user's key)</text>
+    <line x1="356" y1="96" x2="398" y2="96" class="a3"/>
+    <rect x="400" y="78" width="116" height="36" rx="6" class="n3"/><text x="408" y="92" class="h3">Google</text><text x="408" y="103" class="x3">OAuth ID token · Play (later)</text>
+    <line x1="398" y1="150" x2="356" y2="150" class="a3"/>
+    <rect x="400" y="132" width="116" height="48" rx="6" class="n3" stroke="#1E9A5B"/><text x="408" y="146" class="h3">GitHub Actions</text><text x="408" y="157" class="x3">deploys the Worker, updates D1</text><text x="408" y="166" class="x3">builds APK + AAB, release vN</text><text x="408" y="175" class="x3">APK served at /download</text>
+  </svg>
+
+  <div class="cols">
+    <div>
+      <h2>Who reads and writes what</h2>
+      <ul>
+        <li><b>App → Worker → D1</b>: every reading (voice, photo, by hand), the account, the key, the acceptances. The app never opens the database; it calls <code>/v1/…</code>, signed by the phone key.</li>
+        <li><b>Browser → Worker → D1</b>: the Web Dashboard reads the readings through <code>/my/api/…</code> with the cookie; the owner's Admin tab reads usage numbers only.</li>
+        <li><b>Doctor → Worker → D1</b>: a read-only period through <code>/s/…</code>, until it expires or is withdrawn.</li>
+        <li><b>Not used</b>: Vercel. One provider only (Cloudflare) keeps the database next to the code that uses it, in the EU, on the free plan.</li>
+      </ul>
+      <h2>Four flows, step by step</h2>
+      <ol>
+        <li><b>Voice reading</b>: app → <code>POST /v1/bp/voice</code> → Worker checks signature and values → D1.</li>
+        <li><b>Photo (AI)</b>: app → <code>POST /v1/bp/scan</code> → Worker → Anthropic with the user's key → values back to the phone → user confirms → <code>/v1/bp/confirm</code> → D1. The photo is not kept.</li>
+        <li><b>Web Dashboard</b>: app → <code>/v1/web/code</code> → browser opens <code>/my/#c=…</code> → cookie notice → <code>/my/session</code> → cookie → <code>/my/api/data</code>.</li>
+        <li><b>Doctor</b>: dashboard → <code>/my/api/share</code> → link <code>/s/…</code> sent by WhatsApp or email.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Roles</h2>
+      <table>
+        <tr><th>Who</th><th>Does</th></tr>
+        <tr><td>Angelo · architect</td><td>Decides design, rules and priorities in the chat; tries each APK; says what goes and what does not.</td></tr>
+        <tr><td>Claude · developer</td><td>Writes the change, tests it, merges it, watches the pipeline, sends the APK in the chat.</td></tr>
+      </table>
+      <h2>CI/CD, from the chat to the phone</h2>
+      <ol>
+        <li><b>Change</b> on branch <code>claude/…</code>, with docs and rules updated in the same commit.</li>
+        <li><b>Test before merging</b>: Worker bundle (<code>wrangler deploy --dry-run</code>), page checks in Chromium at phone and desktop width, JavaScript and string files checked, documents rendered and looked at.</li>
+        <li><b>Pull request → squash merge</b> into <code>main</code>.</li>
+        <li><b>GitHub Actions</b> <code>build.yml</code>, on every push to <code>main</code>:
+          <br>① <i>server</i>: D1 tables and new columns, Worker deployed, secrets set;
+          <br>② <i>apk</i>: Gradle compiles (this is the Kotlin test), release <code>v0.1.N</code> with APK and AAB;
+          <br>③ <i>publish</i>: Worker deployed again with the new APK at <code>/download</code>.</li>
+        <li><b>Check after deploy</b>: release present, APK checksum matches, D1 checked when data changed; APK sent in the chat.</li>
+        <li><b>Rollback</b>: revert the pull request; the pipeline redeploys the previous state. Old apps can be blocked from the Admin tab.</li>
+      </ol>
+      <p class="muted" style="margin-top:1.5mm">Not yet automated: unit tests and tests on a real phone. The APK is tried by the architect.</p>
+    </div>
+  </div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 27.09.2026 · app version 0.1.82</span><span>3 / 3</span></div>
 </section>
 </body>
 </html>
