@@ -45,6 +45,11 @@ object Txt {
 val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 
 /** Opens the phone's share sheet with the app's download link, to send to a friend. */
+/** The notice on the web, the same text the app shows before first use. */
+val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
+/** Version of the notice: must match the server's; a new version asks everyone to accept again. */
+const val DISCLAIMER_VERSION = "1"
+
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
         .putExtra(android.content.Intent.EXTRA_TEXT, englishText(ctx, R.string.share_app_text, DOWNLOAD_URL))
@@ -138,7 +143,8 @@ data class Credit(
 /** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
 data class Me(
     val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false,
-    val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false
+    val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false,
+    val disclaimerOk: Boolean = true
 ) {
     val selfPays: Boolean get() = pays == "self"
     /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
@@ -375,6 +381,13 @@ object Repo {
     }
 
     /** Deletes this person's account and every data of theirs on the server. */
+    /** The notice accepted on this phone: the server records it with the account, the phone and the exact text shown. */
+    suspend fun acceptNotice(pid: String, version: String, lang: String, text: String, appVersion: String, phone: String) {
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        Api.call("POST", "/v1/accept", JSONObject().put("doc", "disclaimer").put("version", version).put("lang", lang)
+            .put("textSha256", sha).put("appVersion", appVersion).put("phone", phone), pid)
+    }
+
     suspend fun signOut(pid: String) {
         Api.call("POST", "/v1/signout", JSONObject(), pid)
     }
@@ -410,7 +423,8 @@ object Repo {
         return Me(
             j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")),
             j.optString("pays", "owner"), j.optBoolean("hasKey", false),
-            j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false)
+            j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
+            j.optBoolean("disclaimerOk", true)
         )
     }
 

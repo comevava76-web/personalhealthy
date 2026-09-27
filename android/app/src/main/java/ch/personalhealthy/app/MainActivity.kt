@@ -293,6 +293,16 @@ fun App() {
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
 
+    // the notice: accepted on this phone (remembered here) or already on the server (another phone, earlier)
+    var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
+    var noticeBusy by remember { mutableStateOf(false) }
+    val needsNotice = noticeLocal != DISCLAIMER_VERSION && me?.disclaimerOk != true
+    LaunchedEffect(me?.disclaimerOk) {
+        if (me?.disclaimerOk == true && noticeLocal != DISCLAIMER_VERSION) {
+            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply(); noticeLocal = DISCLAIMER_VERSION
+        }
+    }
+
     fun reload() {
         val pid = personId ?: return
         scope.launch {
@@ -431,6 +441,31 @@ fun App() {
                 prefs.edit().putString("personId", pid).apply()
                 personId = pid
             }
+            // the notice comes before anything else: without acceptance the app does not open
+            needsNotice -> DisclaimerScreen(
+                busy = noticeBusy,
+                onAccept = {
+                    val pid = personId ?: return@DisclaimerScreen
+                    noticeBusy = true
+                    scope.launch {
+                        try {
+                            val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+                            Repo.acceptNotice(
+                                pid, DISCLAIMER_VERSION, t(R.string.disc_lang), t(R.string.disc_title) + "\n\n" + t(R.string.disc_body),
+                                info.versionName ?: "", Build.MANUFACTURER + " " + Build.MODEL
+                            )
+                            prefs.edit().putString("noticeAccepted", DISCLAIMER_VERSION).apply()
+                            noticeLocal = DISCLAIMER_VERSION
+                            reload()
+                        } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                        noticeBusy = false
+                    }
+                },
+                onDecline = {
+                    toast(ctx, t(R.string.disc_declined))
+                    (ctx as? android.app.Activity)?.finishAndRemoveTask()
+                }
+            )
             screen == "scan" -> ScanScreen(
                 state = scan, saving = saving,
                 onSave = { r ->
@@ -783,6 +818,36 @@ fun LockScreen(onUnlock: () -> Unit) {
         Text(t(R.string.lock_text), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
         BigButton(t(R.string.lock_unlock), onClick = onUnlock)
     }
+    }
+}
+
+/** The notice, before first use: read it, tick the box, accept. Without acceptance the app closes. */
+@Composable
+fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit) {
+    var read by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        BrandHeader()
+        Text(t(R.string.disc_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+        // each part: a short title, then its text
+        t(R.string.disc_body).split("\n\n").forEach { part ->
+            val lines = part.split("\n", limit = 2)
+            Panel {
+                Text(lines[0], color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                if (lines.size > 1) Text(lines[1], color = C.Ink.copy(alpha = 0.85f), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(checked = read, onCheckedChange = { read = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
+            Text(t(R.string.disc_check), color = C.Ink, fontSize = 14.sp)
+        }
+        BigButton(t(R.string.disc_accept), enabled = read && !busy, onClick = onAccept)
+        TextButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) {
+            Text(t(R.string.disc_decline), color = C.Muted, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -1471,6 +1536,11 @@ fun CreditScreen(
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
         }
+        // the notice accepted at the start, to read again
+        val termsCtx = LocalContext.current
+        TextButton(onClick = {
+            termsCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL)))
+        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_legal), color = C.Muted, fontSize = 13.sp) }
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
         BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }

@@ -95,3 +95,21 @@ UPDATE measurements SET period = 'evening'   WHERE period = 'sera';
 UPDATE measurements SET source = 'photo'     WHERE source = 'foto';
 UPDATE settings SET value = 'private'  WHERE key = 'billing_mode' AND value = 'privato';
 UPDATE settings SET value = 'per_user' WHERE key = 'billing_mode' AND value = 'utente';
+
+-- Every acceptance of the notice ("disclaimer"): who, from which phone, which version of the text, when.
+-- Only ever added to, never changed. Kept after an account is deleted, as proof of what was accepted.
+CREATE TABLE IF NOT EXISTS acceptances (
+  id           TEXT PRIMARY KEY,
+  person_id    TEXT NOT NULL,
+  email        TEXT,
+  device       TEXT,                         -- SHA-256 of the phone's public key
+  phone        TEXT,                         -- phone make and model, as the app reports it
+  doc          TEXT NOT NULL,                -- 'disclaimer'
+  version      TEXT NOT NULL,
+  lang         TEXT,
+  text_sha256  TEXT,                         -- fingerprint of the exact text shown on the phone
+  app_version  TEXT,
+  accepted_at  INTEGER NOT NULL,
+  accepted_at_local TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_acceptances_person ON acceptances (person_id, doc, version);
