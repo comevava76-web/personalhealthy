@@ -5,6 +5,7 @@
 
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
+import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
@@ -19,6 +20,7 @@ interface Env {
   CONTACT_EMAIL?: string;      // shown on the privacy page (repository variable; empty = "the support email on Google's screen")   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
+  PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
 }
 
 const MICRO = 1_000_000; // money is kept in millionths of a dollar (integers, no rounding errors)
@@ -47,6 +49,33 @@ async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boo
     off: v.app_off === "1",
   };
 }
+/* ---------- the yearly subscription (Google Play) ----------
+   Off until the owner switches it on (setting subscription_on = "1", from the app). The owner never pays.
+   Without a valid subscription the app and the Web Dashboard show only the invitation to renew; the data stay,
+   under the usual 365-day rule, and come back as soon as the subscription is renewed. */
+const SUB_RECHECK = 6 * 3600e3;   // an expired subscription is asked to Google Play again at most every 6 hours
+async function subState(q: Q, env: Env, pid: string): Promise<{ required: boolean; active: boolean; until: number | null; state: string }> {
+  const [p] = await q("SELECT is_admin, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
+  if (!p) return { required: false, active: false, until: null, state: "" };
+  const on = (await getSetting(q, "subscription_on", "0")) === "1";
+  let until = Number(p.sub_until) || 0, state = String(p.sub_state || "");
+  // renewed on Google Play after it ran out here: ask again, now and then
+  if (!subValid(until, state) && p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
+    try {
+      const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, String(p.sub_token));
+      if (g) { until = g.until; state = g.state; }
+      await q("UPDATE persons SET sub_until = ?1, sub_state = ?2, sub_checked_at = ?3 WHERE id = ?4", [until, state, Date.now(), pid]);
+    } catch (e) { console.error(e); }
+  }
+  return { required: on && !p.is_admin, active: !!p.is_admin || subValid(until, state), until: until || null, state };
+}
+async function subOk(q: Q, env: Env, pid: string): Promise<boolean> {
+  const s = await subState(q, env, pid);
+  return !s.required || s.active;
+}
+// what still works without a subscription: seeing the invitation, renewing, the terms, leaving, deleting the account
+const SUB_FREE = new Set(["GET /v1/me", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me"]);
+
 async function appAllowed(q: Q, version: number): Promise<boolean> {
   const g = await appGate(q);
   return !g.off && version >= g.min && !g.blocked.includes(version);
@@ -222,7 +251,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "8";
+const DISCLAIMER_VERSION = "9";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -421,7 +450,7 @@ export default {
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
-      const web = await handleWeb(req, env, q, url);
+      const web = await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid));
       if (web) return web;
       return await handle(req, env, q, url);
     } catch (e: any) {
@@ -540,6 +569,9 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const pid = req.headers.get("X-Person") || "";
   const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays, google_sub, email FROM persons WHERE id = ?1", [pid]);
   if (!person || !(await verify(person.public_key, sig, message))) return fail("Unauthorized", 401, "unauthorized");
+  // no valid subscription: only the invitation to renew
+  if (!SUB_FREE.has(req.method + " " + url.pathname) && !(await subOk(q, env, pid)))
+    return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
   const pool = poolOf(person);
   const selfPays = person.pays === "self";
   const hasKey = async () => !!(await q("SELECT 1 FROM person_keys WHERE person_id = ?1", [pid]))[0];
@@ -567,8 +599,32 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       credit: await creditInfo(q, pool),
       disclaimerOk: await acceptedNotice(q, pid),
       ...(await aiState()),
-      ...(person.is_admin ? { appMinVersion: (await appGate(q)).min } : {}),
+      ...(person.is_admin ? { appMinVersion: (await appGate(q)).min, subscriptionOn: (await getSetting(q, "subscription_on", "0")) === "1" } : {}),
+      sub: await subState(q, env, pid),
     });
+  }
+
+  // A purchase or renewal made in Google Play: checked with Google Play, then kept (token and end date only)
+  if (req.method === "POST" && url.pathname === "/v1/sub/verify") {
+    if (!env.PLAY_SERVICE_ACCOUNT) return fail("Subscriptions cannot be checked yet", 503, "sub_unavailable");
+    const token = String(data.purchaseToken || "");
+    if (!token || token.length > 4096) return fail("Invalid purchase", 400, "sub_invalid");
+    const [other] = await q("SELECT id FROM persons WHERE sub_token = ?1 AND id <> ?2", [token, pid]);
+    if (other) return fail("This subscription belongs to another account", 409, "sub_other_account");
+    const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, token);
+    if (!g) return fail("Google Play does not know this purchase", 400, "sub_invalid");
+    if (g.account && g.account !== (await playAccountId(pid))) return fail("This subscription belongs to another account", 409, "sub_other_account");
+    await q("UPDATE persons SET sub_token = ?1, sub_until = ?2, sub_state = ?3, sub_checked_at = ?4 WHERE id = ?5",
+      [token, g.until, g.state, Date.now(), pid]);
+    return json({ sub: await subState(q, env, pid), package: PLAY_PACKAGE, product: SUB_PRODUCT });
+  }
+  // The owner switches the subscription on (everyone else must then pay) or off (the app is free for everyone)
+  if (req.method === "POST" && url.pathname === "/v1/admin/subscription") {
+    if (!person.is_admin) return fail("Only the app owner can change this", 403, "admin_only");
+    const on = data.on === true;
+    if (on && !env.PLAY_SERVICE_ACCOUNT) return fail("Subscriptions cannot be checked yet", 503, "sub_unavailable");
+    await q("INSERT INTO settings (key, value) VALUES ('subscription_on', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [on ? "1" : "0"]);
+    return json({ subscriptionOn: on });
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
   if (req.method === "POST" && url.pathname === "/v1/accept") {

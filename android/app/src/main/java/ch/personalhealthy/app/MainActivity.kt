@@ -312,6 +312,19 @@ fun App() {
     LaunchedEffect(AppGate.disabled) {
         if (AppGate.disabled) prefs.edit().putInt("appOff", BuildConfig.VERSION_CODE).apply()
     }
+    // the yearly subscription: Google Play's answers come back here
+    LaunchedEffect(Unit) {
+        Billing.onChanged = { reload() }
+        Billing.onError = { m -> toast(ctx, m) }
+    }
+    // the server said it has run out: fetch the account again, the invitation to renew follows from it
+    LaunchedEffect(AppGate.subExpired) { if (AppGate.subExpired) reload() }
+    // not paid (or run out): read the price and hand the server a renewal already made on Google Play
+    LaunchedEffect(personId, me?.sub?.blocked) {
+        val pid = personId
+        if (pid != null && me?.sub?.blocked == true) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
+    }
+
     fun checkAppGate() = scope.launch {
         when (Repo.appAllowed()) {
             false -> AppGate.disabled = true
@@ -330,6 +343,7 @@ fun App() {
                 readings.clear(); readings.addAll(l); message = null
                 var m = Repo.me(pid)
                 me = m
+                if (!m.sub.blocked) AppGate.subExpired = false
                 // Scan follows what Anthropic answers, not the estimate: checked again if the last check is over an hour old
                 if (m.selfPays && m.hasKey && (m.aiCheckedAt == null || System.currentTimeMillis() - m.aiCheckedAt!! > 3_600_000L)) {
                     try { Repo.checkAi(pid); m = Repo.me(pid); me = m } catch (_: Exception) { }
@@ -496,6 +510,14 @@ fun App() {
                     (ctx as? android.app.Activity)?.finishAndRemoveTask()
                 }
             )
+            // no valid subscription: only the courteous invitation to renew (the terms can still be read)
+            (me?.sub?.blocked == true || AppGate.subExpired) && screen != "terms" -> SubscribeScreen(
+                expired = me?.sub?.until != null,
+                price = Billing.price, busy = Billing.busy,
+                onBuy = { val pid = personId; val act = ctx as? android.app.Activity; if (pid != null && act != null) Billing.buy(act, pid) },
+                onManage = { try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { toast(ctx, t(R.string.no_browser)) } },
+                onTerms = { screen = "terms" }
+            )
             // the terms accepted at the start, to read again from the colophon
             screen == "terms" -> DisclaimerScreen(busy = false, onAccept = {}, onDecline = {}, onClose = { screen = "tabs" })
             screen == "scan" -> ScanScreen(
@@ -608,6 +630,13 @@ fun App() {
                         })
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
+                            onSubscriptionOn = { on ->
+                                val pid = personId ?: return@CreditScreen
+                                scope.launch {
+                                    try { Repo.setSubscriptionOn(pid, on); reload(); toast(ctx, t(R.string.versions_saved)) }
+                                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                }
+                            },
                             onAppMinVersion = { v ->
                                 val pid = personId ?: return@CreditScreen
                                 scope.launch {
@@ -987,6 +1016,24 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** No valid subscription: a courteous invitation to subscribe or renew. The data wait on the server. */
+@Composable
+fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -> Unit, onManage: () -> Unit, onTerms: () -> Unit) {
+    val p = price ?: t(R.string.sub_price_default)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        BrandHeader()
+        Spacer(Modifier.height(24.dp))
+        Text(t(if (expired) R.string.sub_title_expired else R.string.sub_title_new), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Panel {
+            Text(if (expired) t(R.string.sub_text_expired) else t(R.string.sub_text_new, p), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp)
+            Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp))
+        }
+        BigButton(t(if (expired) R.string.sub_renew else R.string.sub_buy, p), enabled = !busy, onClick = onBuy)
+        if (expired) BigButton(t(R.string.sub_manage), color = C.Surface2, textColor = C.Ink, onClick = onManage)
+        TextButton(onClick = onTerms, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_title), color = C.Muted, fontSize = 13.sp) }
     }
 }
 
@@ -1636,10 +1683,11 @@ fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit, onAppMinVersion: (Int) -> Unit = {}
+    onTerms: () -> Unit, onAppMinVersion: (Int) -> Unit = {}, onSubscriptionOn: (Boolean) -> Unit = {}
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
-    var appOffAsk by remember { mutableStateOf<Int?>(null) }   // administrator: the minimum version waiting for confirmation
+    var appOffAsk by remember { mutableStateOf<Int?>(null) }
+    var subAsk by remember { mutableStateOf<Boolean?>(null) }   // owner: subscription on (true) / off (false) waiting for confirmation   // administrator: the minimum version waiting for confirmation
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.tab_credit))
@@ -1655,23 +1703,18 @@ fun CreditScreen(
         // Anthropic lets no app read the balance: shown instead is what Anthropic answered (credit there or not),
         // what was spent with HINT (exact, from each reading) and the cost of one photo
         Panel {
-            // first the answer from Anthropic, on its own line; then the figures, one per row, label left and value right
-            val (stateText, stateCol) = when {
-                noKey -> "—" to C.Muted
-                me.aiStatus == "ok" -> t(R.string.credit_state_ok) to C.Ink
-                me.aiStatus == "no_credit" -> t(R.string.credit_state_empty) to C.Alert
-                else -> t(R.string.credit_state_key) to C.Alert
-            }
-            Text(t(R.string.credit_state), color = C.Muted, fontSize = 12.sp)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)) {
-                Box(Modifier.size(9.dp).background(if (stateCol == C.Ink) C.Sys else stateCol, CircleShape))
-                Text(stateText, color = stateCol, fontSize = 22.sp, fontWeight = FontWeight.Light, modifier = Modifier.padding(start = 10.dp))
-            }
+            // the money spent, as far as HINT 365 can count it; the balance itself only Anthropic knows
+            Text(t(R.string.credit_estimated), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
             val cost = c?.avgCost ?: 0.006
             CreditRow(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0))
             CreditRow(t(R.string.credit_per_photo), "≈ " + usdFine(cost))
             CreditRow(t(R.string.credit_photos_per_usd), if (cost > 0) "≈ " + (1.0 / cost).toInt() else "—")
-            Text(t(if (noKey) R.string.credit_needs_key else R.string.credit_how), color = C.Muted, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 10.dp))
+            // said only when Anthropic answered no: then Scan is off until the credit is back
+            if (!noKey && me.aiStatus != "ok")
+                Text(t(if (me.aiStatus == "no_credit") R.string.credit_out_note else R.string.credit_key_note), color = C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+            if (noKey) Text(t(R.string.credit_needs_key), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+            else Text(t(R.string.credit_see_anthropic), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 12.dp).clickable(onClick = onRecharge))
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
 
@@ -1734,6 +1777,28 @@ fun CreditScreen(
             }
         }
 
+        // Subscription: the owner switches it on for everyone else; a subscriber sees until when it is paid
+        if (me.isAdmin) {
+            SectionTitle(t(R.string.section_subscription))
+            Panel {
+                Text(t(if (me.subscriptionOn) R.string.sub_admin_on else R.string.sub_admin_off), color = C.Ink, fontSize = 14.sp)
+                Text(t(R.string.sub_admin_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            BigButton(t(if (me.subscriptionOn) R.string.sub_admin_turn_off else R.string.sub_admin_turn_on), color = C.Surface2, textColor = C.Ink) {
+                subAsk = !me.subscriptionOn
+            }
+        } else if (me.sub.required && me.sub.active) {
+            SectionTitle(t(R.string.section_subscription))
+            Panel {
+                Text(t(R.string.sub_active_until, me.sub.until?.let { Z.long(Z.date(it)) } ?: "—"), color = C.Ink, fontSize = 14.sp)
+                Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            }
+            val subCtx = LocalContext.current
+            BigButton(t(R.string.sub_manage), color = C.Surface2, textColor = C.Ink) {
+                try { subCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { }
+            }
+        }
+
         // App versions (administrator): switch off the apps installed with older versions, or let them all work again
         if (me.isAdmin) {
             SectionTitle(t(R.string.section_versions))
@@ -1750,6 +1815,16 @@ fun CreditScreen(
                 }
         }
         Colophon(onTerms)
+    }
+    subAsk?.let { on ->
+        AlertDialog(
+            onDismissRequest = { subAsk = null },
+            title = { Text(t(if (on) R.string.sub_admin_turn_on else R.string.sub_admin_turn_off)) },
+            text = { Text(t(if (on) R.string.sub_admin_on_q else R.string.sub_admin_off_q)) },
+            confirmButton = { TextButton(onClick = { subAsk = null; onSubscriptionOn(on) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
+            dismissButton = { TextButton(onClick = { subAsk = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
+        )
     }
     appOffAsk?.let { v ->
         AlertDialog(

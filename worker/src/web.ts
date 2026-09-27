@@ -77,7 +77,7 @@ export async function newWebCode(q: Q, pid: string, origin: string): Promise<Res
 }
 
 /** Everything the browser (not the app) calls: /my/... and /s/... . Returns null for other addresses. */
-export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise<Response | null> {
+export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (pid: string) => Promise<boolean>): Promise<Response | null> {
   const p = url.pathname;
 
   // shared read-only view for the doctor: the same page, which reads its data from /s/<token>/data
@@ -132,6 +132,9 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL): Promise
     const shares = await q("SELECT COUNT(*) AS n FROM web_shares WHERE person_id = ?1 AND expires_at > ?2", [pid, Date.now()]);
     return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0) });
   }
+  // the yearly subscription has run out: the readings and the links wait for the renewal
+  if ((p === "/my/api/data" || p === "/my/api/share") && !(await subOk(pid)))
+    return fail("The HINT 365 subscription has run out: renew it in the app.", 402, "sub_expired");
   if (p === "/my/api/data" && req.method === "GET") {
     const mod = MODULES[url.searchParams.get("module") || "bp"];
     if (!mod) return fail("Unknown module", 404);

@@ -148,6 +148,25 @@ Each Admin tab shows only its own pool: friends do not see the manager's balance
 friends' balances or keys. If a friend's key is refused or their credit is finished, the app tells them and offers
 **Recharge** and **Replace key**; the manager's key is never used in their place.
 
+## Subscription (Google Play, 3 US$ a year)
+The app can require a yearly subscription, bought and renewed through Google Play (people pay with Google Pay or
+any method Google Play offers, and cancel in Google Play at any time). It is **off** until the owner switches it on
+in the app (Admin → Subscription); the owner never pays. Without a valid subscription the app and the Web Dashboard
+show only a courteous invitation to renew; the readings stay and come back as soon as it is renewed.
+
+To make it work, once:
+1. Play Console (one-off 25 US$ developer fee): create the app `ch.personalhealthy.app` and upload the `.aab`
+   attached to each release (`HINT365-0.1.N.aab`), at least to the internal-testing track.
+2. Monetize → Subscriptions: create `hint365_annual` with one base plan, yearly, auto-renewing, 3 US$.
+3. Google Cloud: enable the *Google Play Android Developer API*, create a service account and a JSON key for it.
+4. Play Console → Users and permissions: invite the service account's email with *View financial data* and
+   *Manage orders and subscriptions*.
+5. GitHub → Settings → Secrets → Actions: `PLAY_SERVICE_ACCOUNT` = the whole JSON key. Run the build again.
+6. In the app, installed from Google Play: Admin → Subscription → switch it on.
+
+The server checks every purchase with Google Play (`worker/src/billing.ts`) and keeps only the purchase token,
+its state and its end date (`persons.sub_*`). A purchase works only for the account that made it.
+
 ## Languages
 The app uses the phone's language: English, Italian, German or French (in any other language it appears in English).
 PDF and Excel reports, notifications and error messages also follow the phone's language.
