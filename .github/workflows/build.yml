@@ -63,6 +63,11 @@ jobs:
           # The AI state of each person's own Anthropic key, as Anthropic last answered: ok / no_credit / invalid
           add_col person_keys status TEXT
           add_col person_keys checked_at INTEGER
+          # The yearly subscription (Google Play): the purchase token, the end date, Google Play's state, the last check
+          add_col persons sub_token TEXT
+          add_col persons sub_until INTEGER
+          add_col persons sub_state TEXT
+          add_col persons sub_checked_at INTEGER
           npx wrangler d1 execute personalhealthy --remote \
             --command "CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub)"
           # Everyone pays their own photo readings with their own Anthropic key. The shared credit ("owner") becomes the
@@ -91,6 +96,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
+          # JSON key of the Google Cloud service account that checks subscriptions with Google Play (optional)
+          PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
           # Google Cloud "Web client ID" for Sign in with Google (not a secret: it only names the app to Google).
           # The repository variable GOOGLE_WEB_CLIENT_ID, if set, takes its place.
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
@@ -111,6 +118,12 @@ jobs:
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
+          # sent only when the GitHub secret exists: an empty value would switch the subscription check off
+          if [ -n "$PLAY_SERVICE_ACCOUNT" ]; then
+            ( umask 077; jq -n --arg k "$PLAY_SERVICE_ACCOUNT" '{PLAY_SERVICE_ACCOUNT:$k}' > play.json )
+            npx wrangler secret bulk play.json
+            rm -f play.json
+          fi
           # KEY_ENCRYPTION_KEY encrypts friends' Anthropic keys. It is created once, here, and never
           # printed or replaced: a new one would make every stored friend key unreadable.
           # If the list of secrets cannot be read, stop rather than risk overwriting it.
@@ -148,18 +161,24 @@ jobs:
         env:
           BATTITO_API_URL: ${{ needs.server.outputs.url }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
       - name: Prepare the file
-        run: cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
+          # the same version as an App Bundle, the file Google Play asks for
+          cp android/app/build/outputs/bundle/release/app-release.aab "HINT365-0.1.${{ github.run_number }}.aab"
       - uses: actions/upload-artifact@v4
         with:
           name: HealthyInstantTracker-apk
-          path: HealthyInstantTracker-*.apk
+          path: |
+            HealthyInstantTracker-*.apk
+            HINT365-*.aab
       - name: Publish to Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v0.1.${{ github.run_number }}" "HealthyInstantTracker-0.1.${{ github.run_number }}.apk" \
+            "HINT365-0.1.${{ github.run_number }}.aab" \
             --title "HealthyInstantTracker 0.1.${{ github.run_number }}" \
             --notes "Download the .apk file on your phone and install it." --repo "${{ github.repository }}"
 

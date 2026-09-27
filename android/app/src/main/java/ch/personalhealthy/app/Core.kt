@@ -51,7 +51,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "8"
+const val DISCLAIMER_VERSION = "9"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -146,6 +146,11 @@ data class Credit(
  * [credit] is always this person's own pool: friends never see the manager's, and the other way round.
  */
 /** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
+/** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set. */
+data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "") {
+    val blocked: Boolean get() = required && !active
+}
+
 data class Me(
     val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false,
     val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false,
@@ -153,7 +158,9 @@ data class Me(
     /** The AI as Anthropic last answered: "ok", "no_credit", "invalid", or "none" (no key). Scan is on only when "ok". */
     val aiStatus: String = "ok", val aiCheckedAt: Long? = null,
     /** Administrator only: apps below this version are switched off (0 = none). */
-    val appMinVersion: Int = 0
+    val appMinVersion: Int = 0,
+    /** The yearly subscription; [subscriptionOn] (owner only) = everyone else must have one. */
+    val sub: Sub = Sub(), val subscriptionOn: Boolean = false
 ) {
     val selfPays: Boolean get() = pays == "self"
     /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
@@ -295,11 +302,17 @@ class ApiException(val code: String) : Exception(errorText(code))
 /** This version of the app switched off remotely: the app shows only the page to install the latest one. */
 object AppGate {
     var disabled by mutableStateOf(false)
+    /** The server said the subscription has run out (the app then shows the invitation to renew). */
+    var subExpired by mutableStateOf(false)
 }
 
 fun errorText(code: String): String = when (code) {
     "bad_clock" -> t(R.string.err_bad_clock)
     "app_disabled" -> t(R.string.app_off_title)
+    "sub_expired" -> t(R.string.sub_title_expired)
+    "sub_unavailable" -> t(R.string.err_sub_unavailable)
+    "sub_invalid" -> t(R.string.err_sub_invalid)
+    "sub_other_account" -> t(R.string.err_sub_other_account)
     "family_code" -> t(R.string.err_family_code)
     "invite_used" -> t(R.string.err_invite_used)
     "invite_expired" -> t(R.string.err_invite_expired)
@@ -370,6 +383,7 @@ object Api {
                 if (code !in 200..299) {
                     val err = j.optString("code", if (code >= 500) "server" else "generic")
                     if (err == "app_disabled") AppGate.disabled = true
+                    if (err == "sub_expired") AppGate.subExpired = true
                     throw ApiException(err)
                 }
                 j
@@ -451,8 +465,23 @@ object Repo {
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
             j.optBoolean("disclaimerOk", true),
             j.optString("aiStatus", "ok"), if (j.isNull("aiCheckedAt") || !j.has("aiCheckedAt")) null else j.optLong("aiCheckedAt"),
-            j.optInt("appMinVersion", 0)
+            j.optInt("appMinVersion", 0),
+            parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false)
         )
+    }
+
+    private fun parseSub(o: JSONObject?): Sub = if (o == null) Sub() else Sub(
+        o.optBoolean("required", false), o.optBoolean("active", true),
+        if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", "")
+    )
+
+    /** A purchase made in Google Play, checked by the server with Google Play. */
+    suspend fun subVerify(pid: String, purchaseToken: String): Sub =
+        parseSub(Api.call("POST", "/v1/sub/verify", JSONObject().put("purchaseToken", purchaseToken), pid).optJSONObject("sub"))
+
+    /** Owner: the subscription on (everyone else pays) or off (free for everyone). */
+    suspend fun setSubscriptionOn(pid: String, on: Boolean) {
+        Api.call("POST", "/v1/admin/subscription", JSONObject().put("on", on), pid)
     }
 
     /** Is this version of the app still allowed? Asked when the app opens. null = no answer (offline): nothing changes. */

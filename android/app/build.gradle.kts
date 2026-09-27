@@ -81,6 +81,8 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.fragment:fragment-ktx:1.8.1") // recent FragmentActivity: works with the camera and QR launchers
     // Sign in with Google (Credential Manager): only to create the account and to recover it on a new phone
+    // yearly subscription through Google Play
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
