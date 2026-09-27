@@ -175,9 +175,7 @@
     <string name="token_own_set">Votre clé Anthropic est enregistrée, chiffrée. Seules vos photos l\'utilisent.</string>
     <string name="token_owner_admin">Les lectures utilisent la clé Anthropic définie sur le serveur (le secret ANTHROPIC_API_KEY sur GitHub).</string>
     <string name="token_owner_member">Vos photos utilisent la clé Anthropic de la personne qui gère l\'app.</string>
-    <string name="photo_tip">Conseil : photographiez l\'écran de près, bien en face et sans reflet.</string>
     <string name="voice_button">Dicter les valeurs</string>
-    <string name="voice_tip">Ou touchez le micro et dites les valeurs de la mesure : Max Min, Pouls</string>
     <string name="voice_prompt">Dites SYS, DIA et PUL, par exemple : 127, 80, 70</string>
     <string name="voice_confirm_title">Valeurs dictées</string>
     <string name="voice_retry">Redire</string>

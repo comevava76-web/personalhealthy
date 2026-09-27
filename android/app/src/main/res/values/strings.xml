@@ -177,9 +177,7 @@
     <string name="token_own_set">Your Anthropic key is saved, encrypted. Only your photos use it.</string>
     <string name="token_owner_admin">The readings use the Anthropic key set on the server (the ANTHROPIC_API_KEY secret on GitHub).</string>
     <string name="token_owner_member">Your photos use the Anthropic key of the person who manages the app.</string>
-    <string name="photo_tip">Tip: photograph the display up close, straight on and without glare.</string>
     <string name="voice_button">Say the values</string>
-    <string name="voice_tip">Or tap the microphone and say the values of the reading: Max Min, Pulse</string>
     <string name="voice_prompt">Say SYS, DIA and PUL, for example: 127, 80, 70</string>
     <string name="voice_confirm_title">Values said aloud</string>
     <string name="voice_retry">Say again</string>
