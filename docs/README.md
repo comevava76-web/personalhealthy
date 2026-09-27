@@ -19,8 +19,15 @@ repository is built and set up) and `CLAUDE.md` (the working rules).
 
 | When | Who | What |
 |---|---|---|
-| A change is decided in the chat | Angelo, architect | decides design, rules, priorities |
+| A change is decided in the chat | Human, architect | decides design, rules, priorities |
 | In the same commit as the code | Claude, developer | updates every document above that the change touches, regenerates PDFs and pictures, looks at them |
 | On every pull request and push | GitHub Actions, *Docs check* | fails if `legal/` differs from the site code, or if an HTML source changed without its PDF |
 | After the merge | GitHub Actions, *Build* | publishes the guide PDFs next to the app, deploys the site whose pages match `legal/` |
-| When the APK arrives in the chat | Angelo | reads the documents that changed together with trying the app |
+| When the APK arrives in the chat | Human | reads the documents that changed together with trying the app |
+
+## Continuous improvement loop
+
+Every morning: *Error log report* (GitHub Actions, 06:30 Zurich) opens an issue labelled `error-log` when the D1
+error log has rows in the last 24 hours; the developer's scheduled routine (06:48 Zurich) reads it, fixes small bugs
+through pull requests (documents included), merges after *Docs check*, and reports in the issue. Larger changes wait
+for the human. Drawn on page 4 of the architecture document.
