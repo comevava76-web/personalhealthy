@@ -16,7 +16,6 @@
     <string name="setup_privacy">Ni nom ni e-mail : le téléphone reçoit un code anonyme, protégé dans le téléphone lui-même.</string>
     <string name="share_app">Partager l\'app</string>
     <string name="share_app_text">J\'utilise HINT, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
-    <string name="download_line">Télécharger l\'app : %1$s</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
     <string name="privacy_title">Vos données</string>
     <string name="privacy_note">Ce qui est enregistré : votre e-mail Google (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Admin.</string>
@@ -24,7 +23,6 @@
     <string name="privacy_accept_link">Accepter et associer</string>
     <string name="google_sign_in">Se connecter avec Google</string>
     <string name="have_invite">Vous avez un code d\'invitation ?</string>
-    <string name="invite_optional">Seulement si quelqu\'un paie vos photos : tapez ou scannez son invitation. Sans elle, vous utilisez votre propre clé Anthropic.</string>
     <string name="account_linked">Associé à Google : sur un nouveau téléphone, connectez-vous avec ce compte pour retrouver votre journal.</string>
     <string name="account_not_linked">Non associé à Google : si vous perdez ce téléphone, votre journal ne pourra pas être retrouvé.</string>
     <string name="google_link">Associer Google</string>
@@ -250,17 +248,5 @@
     <string name="delete_key_q">Supprimer votre clé ?</string>
     <string name="delete_key_text">Elle est retirée de notre serveur. Les photos ne pourront pas être lues tant que vous n\'aurez pas ajouté une clé.</string>
     <string name="credit_own_note">C\'est votre propre crédit : vous seul le voyez.</string>
-    <string name="invite_someone">Inviter quelqu\'un</string>
-    <string name="invite_family">Membre de la famille (je paie)</string>
-    <string name="invite_family_sub">Ses photos utilisent votre crédit.</string>
-    <string name="invite_friend">Ami (paie ses photos)</string>
-    <string name="invite_friend_sub">Utilise son propre crédit Anthropic. Vous ne voyez pas son solde.</string>
-    <string name="invite_note">Chaque invitation marche une fois, pendant 7 jours. Personne ne voit les mesures des autres.</string>
-    <string name="invite_title">Invitation</string>
     <string name="done">Terminé</string>
-    <string name="invite_valid">Marche une fois, jusqu\'à %s</string>
-    <string name="invite_how">À la première ouverture de l\'app, la personne saisit ce code ou scanne le code QR.</string>
-    <string name="share">Partager</string>
-    <string name="invite_message_family">Vous êtes invité à HINT, le carnet de tension. Installez l\'app, ouvrez-la et saisissez ce code : %1$s. Il marche une fois, jusqu\'à %2$s. Vos photos sont payées par moi.</string>
-    <string name="invite_message_friend">Vous êtes invité à HINT, le carnet de tension. Installez l\'app, ouvrez-la et saisissez ce code : %1$s. Il marche une fois, jusqu\'à %2$s. Lire chaque photo coûte environ un demi-centime, payé avec votre propre crédit Anthropic : l\'app vous montre comment faire.</string>
 </resources>

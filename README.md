@@ -58,7 +58,7 @@ In the repository open **Actions** → "Build PersonalHealthy" → **Run workflo
 ### 6. Install on the phone
 Anyone can download the latest app from the server: `https://personalhealthy-api.comevava76.workers.dev/download`
 (the build publishes it there, since the repository is private). The Admin tab has "Share the app", which sends this
-link, and invites include it too.
+link.
 1. Open the link on the phone and download `HINT.apk`.
 2. Open it: Android will ask you to allow installs from this source. Allow it.
 3. Open HINT and tap "Sign in with Google" (or enter an invite, if someone pays your photos).

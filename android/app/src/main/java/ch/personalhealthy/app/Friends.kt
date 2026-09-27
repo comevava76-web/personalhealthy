@@ -3,9 +3,7 @@ package ch.personalhealthy.app
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -33,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,9 +38,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
 
 /** Anthropic page where a friend creates their own key. */
 const val KEYS_URL = "https://console.anthropic.com/settings/keys"
@@ -127,73 +121,4 @@ fun KeyScreen(
 @Composable
 private fun StepTitle(n: Int, text: String) {
     Text(t(R.string.step_fmt, n, text), color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-}
-
-/* ---------------- Invites (app manager only) ---------------- */
-
-@Composable
-fun InviteTypeDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(t(R.string.invite_someone)) },
-        text = {
-            Column {
-                InviteChoice(t(R.string.invite_family), t(R.string.invite_family_sub)) { onPick("owner_pays") }
-                InviteChoice(t(R.string.invite_friend), t(R.string.invite_friend_sub)) { onPick("self_pays") }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(t(R.string.cancel)) } },
-        containerColor = C.Surface
-    )
-}
-
-@Composable
-private fun InviteChoice(title: String, sub: String, onClick: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface2)
-            .clickable(onClick = onClick).padding(14.dp)
-    ) {
-        Text(title, color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(sub, color = C.Muted, fontSize = 13.sp)
-    }
-}
-
-/** The new invite: code as text, QR code and a Share button. */
-@Composable
-fun InviteScreen(inv: Invite, onDone: () -> Unit) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val qr = remember(inv.code) { qrBitmap(inv.code).asImageBitmap() }
-    val until = Z.whenText(inv.expiresAt)
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Header(t(R.string.invite_title), t(if (inv.type == "self_pays") R.string.invite_friend else R.string.invite_family), t(R.string.done), onDone)
-        Panel {
-            Text(inv.code, color = C.Ink, fontSize = 30.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(14.dp))
-            Image(
-                qr, contentDescription = inv.code,
-                modifier = Modifier.align(Alignment.CenterHorizontally).size(240.dp).clip(RoundedCornerShape(12.dp)).background(Color.White)
-            )
-            Spacer(Modifier.height(14.dp))
-            Text(t(R.string.invite_valid, until), color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            Text(t(R.string.invite_how), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
-        }
-        BigButton(t(R.string.share)) {
-            val msg = t(if (inv.type == "self_pays") R.string.invite_message_friend else R.string.invite_message_family, inv.code, until) +
-                "\n\n" + t(R.string.download_line, DOWNLOAD_URL)
-            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, msg)
-            ctx.startActivity(Intent.createChooser(send, t(R.string.share)))
-        }
-    }
-}
-
-/** Black-on-white QR code of [text]. */
-fun qrBitmap(text: String, size: Int = 600): Bitmap {
-    val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, mapOf(EncodeHintType.MARGIN to 1))
-    val px = IntArray(size * size) { i -> if (m.get(i % size, i / size)) 0xFF000000.toInt() else 0xFFFFFFFF.toInt() }
-    return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888)
 }

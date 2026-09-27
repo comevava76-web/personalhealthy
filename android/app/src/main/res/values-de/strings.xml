@@ -16,7 +16,6 @@
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
     <string name="share_app">App teilen</string>
     <string name="share_app_text">Ich nutze HINT, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
-    <string name="download_line">App herunterladen: %1$s</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
     <string name="privacy_title">Deine Daten</string>
     <string name="privacy_note">Gespeichert werden: deine Google-E-Mail (nur um dein Tagebuch wiederzufinden), deine Messungen mit Datum und Uhrzeit, und ob sie von einem Foto oder deiner Stimme stammen. Fotos des Messgeräts werden zum Lesen der Zahlen an Anthropic gesendet und von dieser App nicht aufbewahrt. Die Daten liegen auf Cloudflare-Servern in der Europäischen Union; andere Nutzer sehen sie nicht; wer den Dienst betreibt, greift nur zur Wartung auf die Datenbank zu. Du kannst dein Konto und alle Daten jederzeit im Tab Admin löschen.</string>
@@ -24,7 +23,6 @@
     <string name="privacy_accept_link">Akzeptieren und verbinden</string>
     <string name="google_sign_in">Mit Google anmelden</string>
     <string name="have_invite">Hast du einen Einladungscode?</string>
-    <string name="invite_optional">Nur wenn jemand deine Fotos bezahlt: gib seine Einladung ein oder scanne sie. Ohne sie nutzt du deinen eigenen Anthropic-Schlüssel.</string>
     <string name="account_linked">Mit Google verbunden: auf einem neuen Telefon mit diesem Konto anmelden, um dein Tagebuch wiederzufinden.</string>
     <string name="account_not_linked">Nicht mit Google verbunden: verlierst du dieses Telefon, lässt sich dein Tagebuch nicht wiederfinden.</string>
     <string name="google_link">Google verbinden</string>
@@ -250,17 +248,5 @@
     <string name="delete_key_q">Schlüssel löschen?</string>
     <string name="delete_key_text">Er wird von unserem Server entfernt. Fotos können erst wieder gelesen werden, wenn du einen Schlüssel hinzufügst.</string>
     <string name="credit_own_note">Das ist dein eigenes Guthaben: nur du siehst es.</string>
-    <string name="invite_someone">Jemanden einladen</string>
-    <string name="invite_family">Familienmitglied (ich zahle)</string>
-    <string name="invite_family_sub">Die Fotos nutzen dein Guthaben.</string>
-    <string name="invite_friend">Freund (zahlt eigene Fotos)</string>
-    <string name="invite_friend_sub">Nutzt das eigene Anthropic-Guthaben. Du siehst den Stand nicht.</string>
-    <string name="invite_note">Jede Einladung gilt einmal, 7 Tage lang. Niemand sieht die Messungen der anderen.</string>
-    <string name="invite_title">Einladung</string>
     <string name="done">Fertig</string>
-    <string name="invite_valid">Gilt einmal, bis %s</string>
-    <string name="invite_how">Beim ersten Öffnen der App gibt die Person diesen Code ein oder scannt den QR-Code.</string>
-    <string name="share">Teilen</string>
-    <string name="invite_message_family">Du bist zu HINT eingeladen, dem Blutdruck-Tagebuch. Installiere die App, öffne sie und gib diesen Code ein: %1$s. Er gilt einmal, bis %2$s. Deine Fotos bezahle ich.</string>
-    <string name="invite_message_friend">Du bist zu HINT eingeladen, dem Blutdruck-Tagebuch. Installiere die App, öffne sie und gib diesen Code ein: %1$s. Er gilt einmal, bis %2$s. Das Lesen jedes Fotos kostet etwa einen halben Cent, bezahlt mit deinem eigenen Anthropic-Guthaben: Die App zeigt dir, wie es geht.</string>
 </resources>

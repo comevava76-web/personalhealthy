@@ -16,7 +16,6 @@
     <string name="setup_privacy">Nessun nome e nessuna email: il telefono riceve un codice anonimo, protetto dentro il telefono stesso.</string>
     <string name="share_app">Condividi l\'app</string>
     <string name="share_app_text">Uso HINT, un diario della pressione: fotografi il misuratore o detti i valori, e prepara il report per il medico. Scaricala per Android: %1$s — apri il file, consenti l\'installazione, poi tocca \"Accedi con Google\".</string>
-    <string name="download_line">Scarica l\'app: %1$s</string>
     <string name="google_intro">Accedi con il tuo account Google. Serve solo per creare il tuo diario e per ritrovarlo se cambi telefono. Ogni giorno l\'app si apre con impronta o volto.</string>
     <string name="privacy_title">I tuoi dati</string>
     <string name="privacy_note">Cosa viene salvato: la tua email Google (solo per ritrovare il tuo diario), le tue misure con data e ora, e se ognuna viene da una foto o dalla voce. Le foto del misuratore vengono inviate ad Anthropic per leggere i numeri e non vengono conservate da questa app. I dati stanno su server Cloudflare nell\'Unione Europea; gli altri utenti non li vedono; chi gestisce il servizio può accedere al database solo per manutenzione. Puoi cancellare account e dati in qualsiasi momento dalla scheda Admin.</string>
@@ -24,7 +23,6 @@
     <string name="privacy_accept_link">Accetta e collega</string>
     <string name="google_sign_in">Accedi con Google</string>
     <string name="have_invite">Hai un codice di invito?</string>
-    <string name="invite_optional">Solo se qualcuno ti paga le foto: scrivi o inquadra il suo invito. Senza, usi la tua chiave Anthropic.</string>
     <string name="account_linked">Collegato a Google: su un nuovo telefono accedi con questo account e ritrovi il tuo diario.</string>
     <string name="account_not_linked">Non collegato a Google: se perdi questo telefono, il tuo diario non si può ritrovare.</string>
     <string name="google_link">Collega Google</string>
@@ -250,17 +248,5 @@
     <string name="delete_key_q">Cancellare la tua chiave?</string>
     <string name="delete_key_text">Viene tolta dal nostro server. Le foto non potranno essere lette finché non aggiungi di nuovo una chiave.</string>
     <string name="credit_own_note">Questo è il tuo credito: lo vedi solo tu.</string>
-    <string name="invite_someone">Invita qualcuno</string>
-    <string name="invite_family">Familiare (pago io)</string>
-    <string name="invite_family_sub">Le sue foto usano il tuo credito.</string>
-    <string name="invite_friend">Amico (paga le sue foto)</string>
-    <string name="invite_friend_sub">Usa il suo credito Anthropic. Tu non vedi il suo saldo.</string>
-    <string name="invite_note">Ogni invito vale una volta, per 7 giorni. Nessuno vede le misurazioni degli altri.</string>
-    <string name="invite_title">Invito</string>
     <string name="done">Fatto</string>
-    <string name="invite_valid">Vale una volta, fino a %s</string>
-    <string name="invite_how">Quando apre l\'app la prima volta, scrive questo codice o scansiona il codice QR.</string>
-    <string name="share">Condividi</string>
-    <string name="invite_message_family">Sei invitato a HINT, il diario della pressione. Installa l\'app, aprila e inserisci questo codice: %1$s. Vale una volta, fino a %2$s. Le tue foto le pago io.</string>
-    <string name="invite_message_friend">Sei invitato a HINT, il diario della pressione. Installa l\'app, aprila e inserisci questo codice: %1$s. Vale una volta, fino a %2$s. Leggere ogni foto costa circa mezzo centesimo, pagato con il tuo credito Anthropic: l\'app ti mostra come fare.</string>
 </resources>
