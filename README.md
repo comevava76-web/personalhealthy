@@ -56,9 +56,12 @@ It is never replaced: a new one would make the stored friend keys unreadable, an
 In the repository open **Actions** → "Build PersonalHealthy" → **Run workflow**. It is ready after 5-8 minutes.
 
 ### 6. Install on the phone
-1. On the phone, open the repository → **Releases** → download `HealthyInstantTracker-0.1.x.apk`.
+Anyone can download the latest app from the server: `https://personalhealthy-api.comevava76.workers.dev/download`
+(the build publishes it there, since the repository is private). The Credit tab has "Share the app", which sends this
+link, and invites include it too.
+1. Open the link on the phone and download `HINT.apk`.
 2. Open it: Android will ask you to allow installs from this source. Allow it.
-3. Open HealthyInstantTracker and enter the family code.
+3. Open HINT and tap "Sign in with Google" (or enter an invite, if someone pays your photos).
 
 Later versions install over the previous one without losing anything.
 

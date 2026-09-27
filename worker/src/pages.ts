@@ -16,6 +16,7 @@ const style = `
   a { color:var(--coral); }
   .box { background:var(--panel); border-radius:14px; padding:4px 20px 16px; margin-top:18px; }
   .muted { color:var(--muted); font-size:14px; }
+  .btn { display:inline-block; background:var(--coral); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
   hr { border:0; border-top:1px solid #2A3F66; margin:36px 0; }
 `;
 const logo = `<svg viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
@@ -44,10 +45,14 @@ export function homePage(): Response {
   return page("HINT · HealthyInstantTracker", `
 <p><strong>HINT</strong> è un diario della pressione per Android. Fotografi il display del misuratore, oppure detti i valori a voce, e l'app registra massima, minima e battiti con data e ora. Prepara un report in PDF ed Excel da mandare al medico.</p>
 <p>L'app non valuta i valori e non dà consigli medici: la valutazione spetta al medico.</p>
+<p><a class="btn" href="/download">Scarica l'app per Android</a></p>
+<p class="muted">Dopo il download apri il file e consenti l'installazione. All'avvio tocchi "Accedi con Google": se cambi telefono, ritrovi tutto allo stesso modo.</p>
 <p><a href="/privacy">Informativa sulla privacy</a></p>
 <hr>
 <p><strong>HINT</strong> is a blood-pressure diary for Android. Photograph the monitor's display, or say the values aloud, and the app records systolic, diastolic and pulse with date and time. It prepares a PDF and Excel report for the doctor.</p>
 <p>The app does not assess the values and gives no medical advice: that is up to the doctor.</p>
+<p><a class="btn" href="/download">Download the Android app</a></p>
+<p class="muted">After the download, open the file and allow the installation. At first start tap "Sign in with Google": on a new phone you find everything again the same way.</p>
 <p><a href="/privacy">Privacy policy</a></p>`);
 }
 

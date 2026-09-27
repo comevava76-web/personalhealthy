@@ -14,6 +14,9 @@
     <string name="activate">Attiva</string>
     <string name="activating">Attivo…</string>
     <string name="setup_privacy">Nessun nome e nessuna email: il telefono riceve un codice anonimo, protetto dentro il telefono stesso.</string>
+    <string name="share_app">Condividi l\'app</string>
+    <string name="share_app_text">Uso HINT, un diario della pressione: fotografi il misuratore o detti i valori, e prepara il report per il medico. Scaricala per Android: %1$s — apri il file, consenti l\'installazione, poi tocca \"Accedi con Google\".</string>
+    <string name="download_line">Scarica l\'app: %1$s</string>
     <string name="google_intro">Accedi con il tuo account Google. Serve solo per creare il tuo diario e per ritrovarlo se cambi telefono. Ogni giorno l\'app si apre con impronta o volto.</string>
     <string name="privacy_title">I tuoi dati</string>
     <string name="privacy_note">Cosa viene salvato: la tua email Google (solo per ritrovare il tuo diario), le tue misure con data e ora, e se ognuna viene da una foto o dalla voce. Le foto del misuratore vengono inviate ad Anthropic per leggere i numeri e non vengono conservate da questa app. I dati stanno su server Cloudflare nell\'Unione Europea; gli altri utenti non li vedono; chi gestisce il servizio può accedere al database solo per manutenzione. Puoi cancellare account e dati in qualsiasi momento dalla scheda Credito.</string>

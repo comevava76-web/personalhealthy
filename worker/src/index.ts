@@ -335,6 +335,8 @@ export default {
     // public pages, linked from Google's sign-in screen
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) return homePage();
     if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "");
+    // the easy address to share: always the latest app
+    if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
       return await handle(req, env, q, url);

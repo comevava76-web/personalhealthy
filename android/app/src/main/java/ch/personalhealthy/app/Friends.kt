@@ -176,7 +176,8 @@ fun InviteScreen(inv: Invite, onDone: () -> Unit) {
             Text(t(R.string.invite_how), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
         }
         BigButton(t(R.string.share)) {
-            val msg = t(if (inv.type == "self_pays") R.string.invite_message_friend else R.string.invite_message_family, inv.code, until)
+            val msg = t(if (inv.type == "self_pays") R.string.invite_message_friend else R.string.invite_message_family, inv.code, until) +
+                "\n\n" + t(R.string.download_line, DOWNLOAD_URL)
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, msg)
             ctx.startActivity(Intent.createChooser(send, t(R.string.share)))
         }

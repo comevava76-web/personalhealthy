@@ -14,6 +14,9 @@
     <string name="activate">Aktivieren</string>
     <string name="activating">Wird aktiviert…</string>
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
+    <string name="share_app">App teilen</string>
+    <string name="share_app_text">Ich nutze HINT, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
+    <string name="download_line">App herunterladen: %1$s</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
     <string name="privacy_title">Deine Daten</string>
     <string name="privacy_note">Gespeichert werden: deine Google-E-Mail (nur um dein Tagebuch wiederzufinden), deine Messungen mit Datum und Uhrzeit, und ob sie von einem Foto oder deiner Stimme stammen. Fotos des Messgeräts werden zum Lesen der Zahlen an Anthropic gesendet und von dieser App nicht aufbewahrt. Die Daten liegen auf Cloudflare-Servern in der Europäischen Union; andere Nutzer sehen sie nicht; wer den Dienst betreibt, greift nur zur Wartung auf die Datenbank zu. Du kannst dein Konto und alle Daten jederzeit im Tab Guthaben löschen.</string>

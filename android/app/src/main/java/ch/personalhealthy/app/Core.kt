@@ -41,6 +41,16 @@ object Txt {
     fun init(ctx: Context) { res = ctx.resources }
 }
 
+/** Where anyone can download the latest app (the server publishes it; the repository is private). */
+val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
+
+/** Opens the phone's share sheet with the app's download link, to send to a friend. */
+fun shareApp(ctx: Context) {
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+        .putExtra(android.content.Intent.EXTRA_TEXT, t(R.string.share_app_text, DOWNLOAD_URL))
+    ctx.startActivity(android.content.Intent.createChooser(send, t(R.string.share_app)))
+}
+
 /** Translated text (English, Italian, German or French, following the phone). */
 fun t(id: Int, vararg args: Any): String = Txt.res?.getString(id, *args) ?: ""
 
