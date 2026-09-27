@@ -167,7 +167,7 @@
     <string name="tab_credit">Credito</string>
     <string name="photo_tip">Consiglio: fotografa il display da vicino, dritto e senza riflessi.</string>
     <string name="voice_button">Detta i valori</string>
-    <string name="voice_tip">Oppure tocca il microfono e di\' SYS, DIA e PUL.</string>
+    <string name="voice_tip">O tocca il microfono e pronuncia i valori della misura: Max Min, Pulsazioni</string>
     <string name="voice_prompt">Di\' SYS, DIA e PUL, per esempio: 127, 80, 70</string>
     <string name="voice_confirm_title">Valori detti a voce</string>
     <string name="voice_retry">Ripeti</string>

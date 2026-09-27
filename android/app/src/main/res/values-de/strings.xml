@@ -167,7 +167,7 @@
     <string name="tab_credit">Guthaben</string>
     <string name="photo_tip">Tipp: Fotografiere das Display von nah, gerade und ohne Spiegelung.</string>
     <string name="voice_button">Werte ansagen</string>
-    <string name="voice_tip">Oder tippe auf das Mikrofon und sage SYS, DIA und PUL.</string>
+    <string name="voice_tip">Oder tippe auf das Mikrofon und sprich die Werte der Messung: Max Min, Puls</string>
     <string name="voice_prompt">Sage SYS, DIA und PUL, zum Beispiel: 127, 80, 70</string>
     <string name="voice_confirm_title">Angesagte Werte</string>
     <string name="voice_retry">Nochmal sagen</string>
