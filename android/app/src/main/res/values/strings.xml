@@ -243,8 +243,7 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">With your own Anthropic key you unlock:</string>
     <string name="upgrade_f1">📷 Scanning photos of the monitor</string>
-    <string name="upgrade_f2">📊 Web dashboard, to share (coming)</string>
-    <string name="upgrade_f3">🧪 Lab reports read into tables and charts (coming)</string>
+    <string name="upgrade_f2">🧪 Lab reports read into tables and charts (coming)</string>
     <string name="upgrade_cost">About 0.6 cents per photo read, from your Anthropic credit. Never a diagnosis: only your data.</string>
     <string name="welcome_later">You can turn it on any time with Upgrade.</string>
     <string name="welcome_steps_intro">If you want scanning, it takes 4 steps:</string>

@@ -241,8 +241,7 @@
     <string name="upgrade">Upgrade</string>
     <string name="upgrade_sub">Con la tua chiave Anthropic sblocchi:</string>
     <string name="upgrade_f1">📷 Scansione delle foto del misuratore</string>
-    <string name="upgrade_f2">📊 Dashboard web, da condividere (in arrivo)</string>
-    <string name="upgrade_f3">🧪 Analisi lette in tabelle e grafici (in arrivo)</string>
+    <string name="upgrade_f2">🧪 Analisi lette in tabelle e grafici (in arrivo)</string>
     <string name="upgrade_cost">Circa 0,6 centesimi per foto letta, dal tuo credito Anthropic. Mai diagnosi: solo i tuoi dati.</string>
     <string name="welcome_later">Puoi attivarla quando vuoi con Upgrade.</string>
     <string name="welcome_steps_intro">Se vuoi la scansione, bastano 4 passaggi:</string>
