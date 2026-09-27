@@ -168,7 +168,7 @@
     <string name="tab_report">Bericht</string>
     <string name="tab_credit">Admin</string>
     <string name="section_credits">Guthaben</string>
-    <string name="section_token">Token</string>
+    <string name="section_token">KI-Funktionen</string>
     <string name="section_db">Messungsdatenbank</string>
     <string name="section_identity">Identität</string>
     <string name="db_count">%1$d Messungen gespeichert</string>
@@ -298,11 +298,11 @@
     <string name="app_off_text">Version %1$s kann nicht mehr verwendet werden. Installiere die neueste: Sie wird über diese installiert und deine Messungen bleiben sicher auf dem Server. Beim Öffnen wirst du gebeten, die Bedingungen erneut zu akzeptieren.</string>
     <string name="app_off_download">Neueste Version herunterladen</string>
     <string name="section_versions">App-Versionen</string>
-    <string name="versions_state">Diese App: %1$d · niedrigste erlaubte: %2$s</string>
-    <string name="versions_how">Mit einer älteren Version installierte Apps funktionieren sofort nicht mehr und zeigen nur die Seite zum Herunterladen der neuesten. Ihre Daten bleiben unberührt.</string>
+    <string name="versions_state">Diese App: Version %1$s</string>
+    <string name="versions_how">„Ältere Versionen abschalten“ stoppt sofort auf jedem Telefon die Apps, die älter sind als diese: Sie zeigen nur den Link zur neuesten. Die Daten bleiben.</string>
     <string name="versions_off_older">Ältere Versionen abschalten</string>
     <string name="versions_all_on">Alle Versionen wieder zulassen</string>
-    <string name="versions_off_q">Alle Apps unter Version %1$d funktionieren ab sofort auf keinem Telefon mehr, bis die neueste installiert ist.</string>
+    <string name="versions_off_q">Alle Apps vor Version %1$s funktionieren ab sofort auf keinem Telefon mehr, bis die neueste installiert ist.</string>
     <string name="versions_on_q">Alle installierten Versionen funktionieren wieder.</string>
     <string name="versions_saved">Erledigt</string>
     <string name="versions_confirm">Bestätigen</string>
@@ -350,4 +350,9 @@
     <string name="cost_ai_to">Anthropic, aus deinem Guthaben. Nicht an den Betreiber der App.</string>
     <string name="costs_note">Ohne KI zahlst du nichts weiter. Das Anthropic-Guthaben gehört dir: Du verwaltest es bei Anthropic und kannst es auch anders nutzen.</string>
     <string name="section_costs">Kosten</string>
+    <string name="ai_auto_check">Die Prüfung bei Anthropic läuft automatisch: beim Öffnen, nach einem Fehler und wenn du den Bildschirm nach unten ziehst.</string>
+    <string name="section_owner">Nur für dich, den Betreiber</string>
+    <string name="owner_note">Niemand sonst sieht diese Einstellungen, und der Server nimmt sie nur von dir an.</string>
+    <string name="versions_blocked_none">Keine Version gesperrt: Alle installierten Apps funktionieren.</string>
+    <string name="versions_blocked_below">Gesperrt: alle Versionen vor %1$s.</string>
 </resources>

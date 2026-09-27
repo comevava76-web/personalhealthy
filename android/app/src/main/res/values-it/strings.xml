@@ -168,7 +168,7 @@
     <string name="tab_report">Report</string>
     <string name="tab_credit">Admin</string>
     <string name="section_credits">Crediti</string>
-    <string name="section_token">Token</string>
+    <string name="section_token">Funzionalità AI</string>
     <string name="section_db">Database misure</string>
     <string name="section_identity">Identity</string>
     <string name="db_count">%1$d misure salvate</string>
@@ -325,11 +325,11 @@
     <string name="app_off_text">La versione %1$s non si può più usare. Installa l\'ultima: si mette sopra questa e le tue misure restano al sicuro sul server. Quando si apre, ti chiederà di accettare di nuovo le condizioni.</string>
     <string name="app_off_download">Scarica l\'ultima versione</string>
     <string name="section_versions">Versioni dell\'app</string>
-    <string name="versions_state">Questa app: %1$d · minima ammessa: %2$s</string>
-    <string name="versions_how">Le app installate con una versione più vecchia smettono subito di funzionare e mostrano solo la pagina per scaricare l\'ultima. I loro dati non vengono toccati.</string>
+    <string name="versions_state">Questa app: versione %1$s</string>
+    <string name="versions_how">«Disattiva le versioni precedenti» ferma subito, su ogni telefono, le app più vecchie di questa: mostrano solo il link per scaricare l\'ultima. I dati restano.</string>
     <string name="versions_off_older">Disattiva le versioni precedenti</string>
     <string name="versions_all_on">Riattiva tutte le versioni</string>
-    <string name="versions_off_q">Tutte le app sotto la versione %1$d smettono ora di funzionare, su ogni telefono, finché non si installa l\'ultima.</string>
+    <string name="versions_off_q">Tutte le app precedenti alla versione %1$s smettono ora di funzionare, su ogni telefono, finché non si installa l\'ultima.</string>
     <string name="versions_on_q">Tutte le versioni installate tornano a funzionare.</string>
     <string name="versions_saved">Fatto</string>
     <string name="versions_confirm">Conferma</string>
@@ -373,4 +373,9 @@
     <string name="cost_ai_to">Ad Anthropic, dal tuo credito. Non al proprietario dell\'app.</string>
     <string name="costs_note">Senza AI non paghi nient\'altro. Il credito Anthropic è tuo: lo gestisci su Anthropic e puoi usarlo anche per altri scopi.</string>
     <string name="section_costs">Costi</string>
+    <string name="ai_auto_check">Il controllo con Anthropic è automatico: all\'apertura, dopo un errore e quando trascini lo schermo in giù.</string>
+    <string name="section_owner">Solo per te, proprietario</string>
+    <string name="owner_note">Queste impostazioni non le vede nessun altro, e il server le accetta solo da te.</string>
+    <string name="versions_blocked_none">Nessuna versione bloccata: tutte le app installate funzionano.</string>
+    <string name="versions_blocked_below">Bloccate: tutte le versioni precedenti alla %1$s.</string>
 </resources>

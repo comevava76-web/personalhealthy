@@ -1746,23 +1746,22 @@ fun CreditScreen(
         }
         BigButton(t(R.string.recharge), onClick = onRecharge)
 
-        // Token: the Anthropic key that pays the readings
+        // AI features: on with the user's own Anthropic key. Checked with Anthropic by itself (on opening,
+        // after an error, when the screen is pulled down): no button for it
         SectionTitle(t(R.string.section_token))
-        // AI features off until the user's own Anthropic key is in, then on
-        Text(t(if (me.selfPays && me.hasKey) R.string.version_premium else R.string.version_standard), color = if (me.hasKey) C.Sys else C.Muted,
-            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
         if (me.selfPays) {
             if (!me.hasKey) {
                 Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
                 BigButton("✦ " + t(R.string.upgrade), onClick = onKey)
             } else {
                 Panel {
+                    Text(t(R.string.version_premium), color = C.Sys, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
                     Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp)
                     // what Anthropic answered at the last check, and when
                     val st = when (me.aiStatus) { "ok" -> R.string.ai_state_ok; "no_credit" -> R.string.ai_state_no_credit; "invalid" -> R.string.ai_state_invalid; else -> R.string.ai_state_ok }
                     Text(t(st) + (me.aiCheckedAt?.let { " · " + Z.whenText(it) } ?: ""), color = if (me.aiStatus == "ok") C.Muted else C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(t(R.string.ai_auto_check), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 }
-                BigButton(t(R.string.ai_check_now), color = C.Surface2, textColor = C.Ink, enabled = !checkingAi, onClick = onCheckAi)
                 BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onKey)
                 TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
                     Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
@@ -1809,10 +1808,13 @@ fun CreditScreen(
         SectionTitle(t(R.string.section_costs))
         CostsTable()
 
-        // Subscription: the owner switches it on for everyone else; a subscriber sees until when it is paid
+        // Subscription: the owner switches it on for everyone else; a subscriber sees until when it is paid.
+        // Everything below this title is shown to the owner only: nobody else sees it, and the server refuses it to anyone else.
         if (me.isAdmin) {
-            SectionTitle(t(R.string.section_subscription))
+            SectionTitle(t(R.string.section_owner))
+            Text(t(R.string.owner_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
             Panel {
+                Text(t(R.string.section_subscription), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
                 Text(t(if (me.subscriptionOn) R.string.sub_admin_on else R.string.sub_admin_off), color = C.Ink, fontSize = 14.sp)
                 Text(t(R.string.sub_admin_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
@@ -1833,10 +1835,12 @@ fun CreditScreen(
 
         // App versions (administrator): switch off the apps installed with older versions, or let them all work again
         if (me.isAdmin) {
-            SectionTitle(t(R.string.section_versions))
             val mine = BuildConfig.VERSION_CODE
             Panel {
-                Text(t(R.string.versions_state, mine, if (me.appMinVersion > 0) me.appMinVersion.toString() else "—"), color = C.Ink, fontSize = 14.sp)
+                Text(t(R.string.section_versions), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
+                Text(t(R.string.versions_state, BuildConfig.VERSION_NAME), color = C.Ink, fontSize = 14.sp)
+                Text(if (me.appMinVersion > 0) t(R.string.versions_blocked_below, "0.1." + me.appMinVersion) else t(R.string.versions_blocked_none),
+                    color = C.Ink, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
                 Text(t(R.string.versions_how), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             }
             if (me.appMinVersion < mine)
@@ -1862,7 +1866,7 @@ fun CreditScreen(
         AlertDialog(
             onDismissRequest = { appOffAsk = null },
             title = { Text(t(if (v > 0) R.string.versions_off_older else R.string.versions_all_on)) },
-            text = { Text(if (v > 0) t(R.string.versions_off_q, v) else t(R.string.versions_on_q)) },
+            text = { Text(if (v > 0) t(R.string.versions_off_q, "0.1.$v") else t(R.string.versions_on_q)) },
             confirmButton = { TextButton(onClick = { appOffAsk = null; onAppMinVersion(v) }) { Text(t(R.string.versions_confirm), color = C.Sys) } },
             dismissButton = { TextButton(onClick = { appOffAsk = null }) { Text(t(R.string.cancel)) } },
             containerColor = C.Surface
