@@ -375,6 +375,10 @@ object Repo {
     }
 
     /** Deletes this person's account and every data of theirs on the server. */
+    suspend fun signOut(pid: String) {
+        Api.call("POST", "/v1/signout", JSONObject(), pid)
+    }
+
     suspend fun deleteAccount(pid: String) {
         Api.call("DELETE", "/v1/me", null, pid)
     }

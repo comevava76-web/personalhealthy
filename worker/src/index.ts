@@ -473,6 +473,13 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
   // Delete my account and all my data (right to erasure). The app asks twice. The app manager cannot:
   // the family's credit and invites depend on them.
+  // Sign out of this phone: the phone is forgotten, the data stays and comes back with Google on any phone
+  if (req.method === "POST" && url.pathname === "/v1/signout") {
+    if (!person.google_sub) return fail("Link Google first, or you could not sign in again", 409, "google_needed");
+    await q("UPDATE persons SET public_key = ?1 WHERE id = ?2", ["signed-out:" + pid, pid]);
+    return json({ ok: true });
+  }
+
   if (req.method === "DELETE" && url.pathname === "/v1/me") {
     if (person.is_admin) return fail("The app manager cannot delete their account", 403, "admin_delete");
     await env.DB.batch([

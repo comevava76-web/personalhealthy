@@ -265,4 +265,8 @@
     <string name="delete_key_q">Cancellare la tua chiave?</string>
     <string name="delete_key_text">Viene tolta dal nostro server. Le foto non potranno essere lette finché non aggiungi di nuovo una chiave.</string>
     <string name="done">Fatto</string>
+    <string name="sign_out">Esci da questo telefono</string>
+    <string name="sign_out_q">Uscire?</string>
+    <string name="sign_out_t">Misure e credito restano al sicuro, legati a %1$s. Per rientrare, su questo telefono o su uno nuovo, accedi con Google e ritrovi tutto.</string>
+    <string name="signed_out">Disconnesso. Accedi con Google per rientrare.</string>
 </resources>

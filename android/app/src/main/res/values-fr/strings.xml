@@ -265,4 +265,8 @@
     <string name="delete_key_q">Supprimer votre clé ?</string>
     <string name="delete_key_text">Elle est retirée de notre serveur. Les photos ne pourront pas être lues tant que vous n\'aurez pas ajouté une clé.</string>
     <string name="done">Terminé</string>
+    <string name="sign_out">Se déconnecter de ce téléphone</string>
+    <string name="sign_out_q">Se déconnecter ?</string>
+    <string name="sign_out_t">Vos mesures et votre crédit restent en sécurité, liés à %1$s. Pour revenir, sur ce téléphone ou un nouveau, connectez-vous avec Google et tout est là.</string>
+    <string name="signed_out">Déconnecté. Connectez-vous avec Google pour revenir.</string>
 </resources>

@@ -522,6 +522,17 @@ fun App() {
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
+                            onSignOut = {
+                                val pid = personId ?: return@CreditScreen
+                                scope.launch {
+                                    try {
+                                        Repo.signOut(pid)
+                                        prefs.edit().remove("personId").apply()
+                                        readings.clear(); me = null; personId = null
+                                        toast(ctx, t(R.string.signed_out))
+                                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                                }
+                            },
                             onDeleteAccount = {
                                 val pid = personId ?: return@CreditScreen
                                 scope.launch {
@@ -1390,8 +1401,9 @@ fun ReportScreen(readings: List<Reading>) {
 fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit,
-    onLinkGoogle: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
+    onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
 ) {
+    var signOutAsk by remember { mutableStateOf(false) }
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.tab_credit))
@@ -1462,6 +1474,12 @@ fun CreditScreen(
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
         BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }
+        // leave this phone: only with Google linked, otherwise there would be no way back in
+        if (me.hasGoogle) {
+            TextButton(onClick = { signOutAsk = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.sign_out), color = C.Muted, fontSize = 13.sp)
+            }
+        }
         if (!me.isAdmin) {
             TextButton(onClick = { deleteStep = 1 }, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
@@ -1469,6 +1487,14 @@ fun CreditScreen(
         }
         Spacer(Modifier.height(24.dp))
     }
+    if (signOutAsk) AlertDialog(
+        onDismissRequest = { signOutAsk = false },
+        title = { Text(t(R.string.sign_out_q)) },
+        text = { Text(t(R.string.sign_out_t, me?.email ?: "Google")) },
+        confirmButton = { TextButton(onClick = { signOutAsk = false; onSignOut() }) { Text(t(R.string.sign_out), color = C.Sys) } },
+        dismissButton = { TextButton(onClick = { signOutAsk = false }) { Text(t(R.string.cancel)) } },
+        containerColor = C.Surface
+    )
     if (deleteStep > 0) AlertDialog(
         onDismissRequest = { deleteStep = 0 },
         title = { Text(t(if (deleteStep == 1) R.string.account_delete_q1 else R.string.reset_q2)) },

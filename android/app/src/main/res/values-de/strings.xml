@@ -265,4 +265,8 @@
     <string name="delete_key_q">Schlüssel löschen?</string>
     <string name="delete_key_text">Er wird von unserem Server entfernt. Fotos können erst wieder gelesen werden, wenn du einen Schlüssel hinzufügst.</string>
     <string name="done">Fertig</string>
+    <string name="sign_out">Von diesem Handy abmelden</string>
+    <string name="sign_out_q">Abmelden?</string>
+    <string name="sign_out_t">Messwerte und Guthaben bleiben sicher, verknüpft mit %1$s. Um zurückzukehren, auf diesem oder einem neuen Handy, melde dich mit Google an und alles ist wieder da.</string>
+    <string name="signed_out">Abgemeldet. Mit Google anmelden, um zurückzukehren.</string>
 </resources>
