@@ -305,7 +305,7 @@ private fun pdfChart(
 
 /**
  * The balance, as in the web report (report.js): morning on the left, evening on the right, each pan with its average
- * SYS/DIA over the period. The side with the higher average goes down (average of the SYS and DIA differences, at most
+ * SYS/DIA over the period. The side with the higher average goes up (like a higher point in the charts) (average of the SYS and DIA differences, at most
  * 10 degrees); within 1 mmHg the beam stays level. Only arithmetic, in neutral colours: nothing is good or bad.
  */
 private fun pdfBalance(c: Canvas, x: Float, y: Float, w: Float, h: Float, list: List<Reading>) {
@@ -323,7 +323,7 @@ private fun pdfBalance(c: Canvas, x: Float, y: Float, w: Float, h: Float, list: 
     }
     val ds = e.sys - m.sys; val dd = e.dia - m.dia
     val level = kotlin.math.abs(ds) < 1 && kotlin.math.abs(dd) < 1
-    val deg = if (level) 0f else ((ds + dd) / 2f * 1.2f).coerceIn(-10f, 10f)
+    val deg = if (level) 0f else -((ds + dd) / 2f * 1.2f).coerceIn(-10f, 10f)   // higher average = higher pan, as in the charts
     val a = Math.toRadians(deg.toDouble())
     val cx = x + w / 2f; val py = y + h * 0.56f; val half = minOf(w * 0.3f, 170f)
     val lx = cx - half * kotlin.math.cos(a).toFloat(); val ly = py - half * kotlin.math.sin(a).toFloat()

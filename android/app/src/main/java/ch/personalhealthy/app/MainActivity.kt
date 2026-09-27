@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -725,21 +726,51 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 @Composable
 fun BigButton(
     text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true,
-    modifier: Modifier = Modifier, icon: Int? = null, onClick: () -> Unit
+    modifier: Modifier = Modifier, icon: Int? = null, trailing: Int? = null, onClick: () -> Unit
 ) {
+    // switched off: clearly faded, background and text alike
+    val fg = if (enabled) textColor else textColor.copy(alpha = 0.5f)
     Box(
         modifier.fillMaxWidth().padding(vertical = 6.dp).height(58.dp).clip(RoundedCornerShape(18.dp))
-            .background(if (enabled) color else color.copy(alpha = 0.35f))
+            .background(if (enabled) color else color.copy(alpha = 0.25f))
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) {
-                Icon(painterResource(icon), contentDescription = null, tint = textColor, modifier = Modifier.size(22.dp))
+                Icon(painterResource(icon), contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text, color = textColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            if (trailing != null) {
+                Spacer(Modifier.width(6.dp))
+                Icon(painterResource(trailing), contentDescription = null, tint = fg, modifier = Modifier.size(18.dp))
+            }
         }
+    }
+}
+
+/** The Web Dashboard button: a soft violet glow runs across it from left to right, again and again. */
+@Composable
+fun GlowButton(text: String, onClick: () -> Unit) {
+    val x by rememberInfiniteTransition(label = "glow").animateFloat(
+        -0.4f, 1.4f, infiniteRepeatable(tween(2600, easing = LinearEasing)), label = "x"
+    )
+    Box(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp).height(58.dp).clip(RoundedCornerShape(18.dp))
+            .background(C.Surface2)
+            .drawBehind {
+                val w = size.width
+                drawRect(Brush.horizontalGradient(
+                    listOf(Color.Transparent, C.Sys.copy(alpha = 0.55f), Color.Transparent),
+                    startX = x * w - w * 0.35f, endX = x * w + w * 0.35f
+                ))
+            }
+            .border(1.dp, C.Sys.copy(alpha = 0.7f), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -1011,7 +1042,8 @@ fun HomeScreen(
             // the photo reading is the paid part: off until a key is saved, and off again when the credit is used up
             val c0 = me?.credit
             val scanOn = me == null || !me.selfPays || (me.hasKey && !(c0 != null && c0.configured && (c0.remaining ?: 0.0) <= 0.0))
-            BigButton(t(R.string.scan_short) + "*", enabled = scanOn, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onMeasure)
+            // the wand with sparkles says: artificial intelligence reads this photo
+            BigButton(t(R.string.scan_short) + "*", enabled = scanOn, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, trailing = R.drawable.ic_ai_sparkle, onClick = onMeasure)
         }
         Text("* " + t(R.string.scan_cost_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 6.dp))
 
@@ -1443,7 +1475,7 @@ fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Uni
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.report_title), t(R.string.report_sub))
         // the web dashboard, opened in the browser already signed in: bigger charts, and a link to send to the doctor
-        BigButton("↗  " + t(R.string.my_dash), color = C.Surface2, textColor = C.Ink, onClick = onDash)
+        GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
         Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(4.dp)) {

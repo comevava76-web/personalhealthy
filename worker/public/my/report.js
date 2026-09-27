@@ -268,7 +268,7 @@
 
   /**
    * The balance: morning on the left, evening on the right, each pan carrying its average SYS/DIA.
-   * The side with the higher average goes down (average of the SYS and DIA differences, at most 10°);
+   * The side with the higher average goes up (like a higher point in the charts) (average of the SYS and DIA differences, at most 10°);
    * within 1 mmHg the beam stays level. Only arithmetic, drawn in neutral colours: nothing is good or bad.
    * theme: { ink, muted, beam, panel, sys, dia }
    */
@@ -283,7 +283,7 @@
     if (!m.n || !e.n) { txt(g, x + w / 2, y + h / 2 + 8, W.balNone, 9, th.muted, { anchor: "middle" }); return; }
     const ds = e.sys - m.sys, dd = e.dia - m.dia;
     const level = Math.abs(ds) < 1 && Math.abs(dd) < 1;
-    const deg = level ? 0 : Math.max(-10, Math.min(10, ((ds + dd) / 2) * 1.2));
+    const deg = level ? 0 : -Math.max(-10, Math.min(10, ((ds + dd) / 2) * 1.2));   // higher average = higher pan, as in the charts
     const a = (deg * Math.PI) / 180;
     const cx = x + w / 2, py = y + h * 0.56, half = Math.min(w * 0.3, 170);
     const Lx = cx - half * Math.cos(a), Ly = py - half * Math.sin(a), Rx = cx + half * Math.cos(a), Ry = py + half * Math.sin(a);

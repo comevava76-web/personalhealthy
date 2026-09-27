@@ -5,11 +5,11 @@ Screenshot da usare per l'animazione che mostra come funziona l'app. Sono fatti 
 
 | File | Cosa mostra |
 |---|---|
-| `web-01-dashboard-computer.png` | My Dash sul computer, pagina intera: riquadri, grafici, valori del periodo |
+| `web-01-dashboard-computer.png` | Web Dashboard sul computer, pagina intera: riquadri, grafici, valori del periodo |
 | `web-02-grafico-con-cursore.png` | Il grafico del periodo con il cursore su una misura (giorno, ora, SYS, DIA) |
 | `web-03-invia-al-medico.png` | «Invia al medico»: link di sola lettura, WhatsApp, email, copia |
-| `web-04-dashboard-telefono.png` | My Dash sul telefono, prima schermata |
-| `web-05-dashboard-telefono-intera.png` | My Dash sul telefono, pagina intera |
+| `web-04-dashboard-telefono.png` | Web Dashboard sul telefono, prima schermata |
+| `web-05-dashboard-telefono-intera.png` | Web Dashboard sul telefono, pagina intera |
 | `web-06-vista-del-medico.png` | Cosa vede il medico aprendo il link |
 | `report-dal-web.pdf` | Il PDF A4 dalla dashboard (stesso modello del PDF dell'app) |
 
@@ -21,10 +21,10 @@ Mancano gli screenshot dell'app Android: vanno fatti sul telefono con dati di pr
 3. Registra a voce: ascolto e conferma dei valori
 4. Scansiona (Upgrade): foto del display e valori letti
 5. Report: 7 giorni, grafico, riquadri, PDF ed Excel
-6. Report → My Dash (si apre il browser già collegato)
+6. Report → Web Dashboard (si apre il browser già collegato)
 7. Admin: crediti, chiave, identità, «Esci da questo telefono»
 
-Storia suggerita per l'animazione: misuro (voce o foto) → vedo i numeri → apro My Dash → mando il link al medico →
+Storia suggerita per l'animazione: misuro (voce o foto) → vedo i numeri → apro Web Dashboard → mando il link al medico →
 il medico apre il report e scarica il PDF.
 
 Per rifare gli screenshot web: avviare il server in locale (`npx wrangler dev --local` nella cartella `worker`,
