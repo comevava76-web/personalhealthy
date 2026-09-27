@@ -1,4 +1,4 @@
-// The PDF report of My Dash: the same A4 template as the app's PDF (android/.../Report.kt), page by page,
+// The PDF report of My Dash: the same A4 template as the app's PDF; charts show one dot per day, the day's average (android/.../Report.kt), page by page,
 // with the same measures in points (1/72 inch). Drawn as SVG pages that only exist when printing:
 // "PDF" in the dashboard opens the browser's "Save as PDF" with these full A4 pages and nothing else.
 // If the layout changes in the app, change it here too.
@@ -10,9 +10,10 @@
   const W = {
     it: {
       title: "Pressione arteriosa", range: (a, b, n) => `dal ${a} al ${b} · ${n} giorni`, count: (n, d) => `${n} misure in ${d} giorni · ora svizzera`,
-      generated: (d) => `Generato il ${d}`, all: "Andamento del periodo", allSub: "ogni misura, nell'ordine in cui è stata presa",
-      units: "SYS e DIA in mmHg", unitsPul: "battiti al minuto", morning: "Mattina", morningSub: "prima delle 12",
-      evening: "Sera", eveningSub: "dalle 17", pulse: "Battiti (PUL)", pulseSub: "ogni misura",
+      generated: (d) => `Generato il ${d}`, all: "Andamento del periodo", allSub: "media di ogni giorno",
+      chartNote: "Nei grafici ogni punto è la media di tutte le misure di quel giorno (un aggregato). Le singole misure sono nell'elenco.",
+      units: "SYS e DIA in mmHg", unitsPul: "battiti al minuto", morning: "Mattina", morningSub: "prima delle 12 · media del giorno",
+      evening: "Sera", eveningSub: "dalle 17 · media del giorno", pulse: "Battiti (PUL)", pulseSub: "media di ogni giorno",
       values: "Valori del periodo", valuesSub: "il più alto, il più basso e la media, con giorno e ora",
       hi: (k) => `${k} più alta`, lo: (k) => `${k} più bassa`, avg: (k) => `${k} media`, avgOf: (n) => `media di ${n} misure`,
       none: "Nessuna misura in questo momento della giornata", list: "Elenco delle misure",
@@ -24,9 +25,10 @@
     },
     en: {
       title: "Blood pressure", range: (a, b, n) => `${a} to ${b} · ${n} days`, count: (n, d) => `${n} readings on ${d} days · Swiss time`,
-      generated: (d) => `Generated on ${d}`, all: "The whole period", allSub: "every reading, in the order it was taken",
-      units: "SYS and DIA in mmHg", unitsPul: "beats per minute", morning: "Morning", morningSub: "before 12:00",
-      evening: "Evening", eveningSub: "from 17:00", pulse: "Pulse (PUL)", pulseSub: "every reading",
+      generated: (d) => `Generated on ${d}`, all: "The whole period", allSub: "average of each day",
+      chartNote: "In the charts each dot is the average of all the readings of that day (an aggregate). The single readings are in the list.",
+      units: "SYS and DIA in mmHg", unitsPul: "beats per minute", morning: "Morning", morningSub: "before 12:00 · daily average",
+      evening: "Evening", eveningSub: "from 17:00 · daily average", pulse: "Pulse (PUL)", pulseSub: "average of each day",
       values: "Values of the period", valuesSub: "the highest, the lowest and the average, with day and time",
       hi: (k) => `${k} highest`, lo: (k) => `${k} lowest`, avg: (k) => `${k} average`, avgOf: (n) => `average of ${n} readings`,
       none: "No readings at this time of day", list: "All readings",
@@ -48,7 +50,6 @@
   const fLong = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
   const fDay = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" });
   const fTime = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
-  const fMonth = new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", month: "short" });
   const fParts = new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "numeric", day: "numeric" });
   const dayOf = (ms) => fDay.format(ms), timeOf = (ms) => fTime.format(ms);
   // the Swiss calendar day of a moment, as a UTC midnight (so days can be counted)
@@ -106,7 +107,6 @@
       if (d < days) {
         const day = new Date(t0 + d * 864e5);
         if (d % every === 0) txt(g, xx + slot / 2, pb + 9, day.getUTCDate(), 6.8, MUTED, { anchor: "middle" });
-        if (d === 0 || day.getUTCDate() === 1) txt(g, xx + slot / 2, pb + 17.5, fMonth.format(day).replace(".", ""), 6.5, INK, { anchor: "middle", bold: true });
       }
     }
     const all = lines.map((l) => list.filter((r) => r[l.k] != null).map((r) => ({ x: X(r.t), y: Y(r[l.k]), v: r[l.k], l })));
@@ -128,6 +128,17 @@
         taken.push(r); txt(g, p.x, by, p.v, fs, p.l.t, { anchor: "middle", bold: true }); break;
       }
     }
+  }
+
+  /** One point per day: the average of that day's readings, placed at midday so it sits in the middle of its day. */
+  function dailyMeans(list) {
+    const by = new Map();
+    for (const r of list) { const d = midnight(r.t); if (!by.has(d)) by.set(d, []); by.get(d).push(r); }
+    const avg = (a) => (a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null);
+    return [...by.keys()].sort((a, b) => a - b).map((d) => {
+      const l = by.get(d);
+      return { t: d + 12 * 3600e3, sys: avg(l.map((r) => r.sys)), dia: avg(l.map((r) => r.dia)), pul: avg(l.map((r) => r.pul).filter((v) => v != null)) };
+    });
   }
 
   /** Builds the A4 pages into `box` (emptied first). data = { from, to, items: [{t, period, sys, dia, pul, source}] } */
@@ -175,7 +186,8 @@
     txt(g, left, 62, W.title, 24, "#fff", { bold: true });
     txt(g, left, 82, range, 10.5, "#DCE5F3");
     txt(g, left, 98, W.count(list.length, new Set(list.map((r) => dayOf(r.t))).size), 8, "#AFC0DC");
-    chart(g, left, 146, cw, 300, list, [sysL, diaL], W.all, W.allSub, W.units, startDay, days);
+    txt(g, left, 130, W.chartNote, 7.5, MUTED);
+    chart(g, left, 146, cw, 300, dailyMeans(list), [sysL, diaL], W.all, W.allSub, W.units, startDay, days);
 
     let y = 486;
     txt(g, left, y, W.values, 11.5, INK, { bold: true });
@@ -211,13 +223,13 @@
 
     // ---------- page 2: morning and evening ----------
     g = page(); smallHeader(g);
-    chart(g, left, 74, cw, 330, list.filter((r) => r.period === "morning"), [sysL, diaL], W.morning, W.morningSub, W.units, startDay, days);
-    chart(g, left, 440, cw, 330, list.filter((r) => r.period === "evening"), [sysL, diaL], W.evening, W.eveningSub, W.units, startDay, days);
+    chart(g, left, 74, cw, 330, dailyMeans(list.filter((r) => r.period === "morning")), [sysL, diaL], W.morning, W.morningSub, W.units, startDay, days);
+    chart(g, left, 440, cw, 330, dailyMeans(list.filter((r) => r.period === "evening")), [sysL, diaL], W.evening, W.eveningSub, W.units, startDay, days);
     footer(g);
 
     // ---------- page 3: pulse ----------
     g = page(); smallHeader(g);
-    chart(g, left, 74, cw, 330, list, [pulL], W.pulse, W.pulseSub, W.unitsPul, startDay, days);
+    chart(g, left, 74, cw, 330, dailyMeans(list), [pulL], W.pulse, W.pulseSub, W.unitsPul, startDay, days);
     footer(g);
 
     // ---------- every reading ----------

@@ -272,15 +272,15 @@
     <string name="pdf_range">dal %1$s al %2$s · %3$d giorni</string>
     <string name="pdf_count">%1$d misure in %2$d giorni · ora svizzera</string>
     <string name="pdf_chart_all">Andamento del periodo</string>
-    <string name="pdf_chart_all_sub">ogni misura, nell\'ordine in cui è stata presa</string>
+    <string name="pdf_chart_all_sub">media di ogni giorno</string>
     <string name="pdf_units">SYS e DIA in mmHg</string>
     <string name="pdf_units_pul">battiti al minuto</string>
     <string name="pdf_morning_t">Mattina</string>
-    <string name="pdf_morning_sub">prima delle 12</string>
+    <string name="pdf_morning_sub">prima delle 12 · media del giorno</string>
     <string name="pdf_evening_t">Sera</string>
-    <string name="pdf_evening_sub">dalle 17</string>
+    <string name="pdf_evening_sub">dalle 17 · media del giorno</string>
     <string name="pdf_pulse_t">Battiti (PUL)</string>
-    <string name="pdf_pulse_sub">ogni misura</string>
+    <string name="pdf_pulse_sub">media di ogni giorno</string>
     <string name="pdf_values">Valori del periodo</string>
     <string name="pdf_values_sub">il più alto, il più basso e la media, con giorno e ora</string>
     <string name="pdf_hi">%1$s più alta</string>
@@ -301,4 +301,5 @@
     <string name="disc_web">Apri la versione web, con i link ai fornitori</string>
     <string name="my_dash">My Dash: la tua dashboard web</string>
     <string name="my_dash_sub">Si apre nel browser già collegata al tuo account: grafici grandi, e un link da inviare al medico via WhatsApp o email.</string>
+    <string name="pdf_note">Nei grafici ogni punto è la media di tutte le misure di quel giorno (un aggregato). Le singole misure sono nell\'elenco.</string>
 </resources>

@@ -274,15 +274,15 @@
     <string name="pdf_range">%1$s to %2$s · %3$d days</string>
     <string name="pdf_count">%1$d readings on %2$d days · Swiss time</string>
     <string name="pdf_chart_all">The whole period</string>
-    <string name="pdf_chart_all_sub">every reading, in the order it was taken</string>
+    <string name="pdf_chart_all_sub">average of each day</string>
     <string name="pdf_units">SYS and DIA in mmHg</string>
     <string name="pdf_units_pul">beats per minute</string>
     <string name="pdf_morning_t">Morning</string>
-    <string name="pdf_morning_sub">before 12:00</string>
+    <string name="pdf_morning_sub">before 12:00 · daily average</string>
     <string name="pdf_evening_t">Evening</string>
-    <string name="pdf_evening_sub">from 17:00</string>
+    <string name="pdf_evening_sub">from 17:00 · daily average</string>
     <string name="pdf_pulse_t">Pulse (PUL)</string>
-    <string name="pdf_pulse_sub">every reading</string>
+    <string name="pdf_pulse_sub">average of each day</string>
     <string name="pdf_values">Values of the period</string>
     <string name="pdf_values_sub">the highest, the lowest and the average, with day and time</string>
     <string name="pdf_hi">%1$s highest</string>
@@ -303,4 +303,5 @@
     <string name="disc_web">Open the web version, with the providers\' links</string>
     <string name="my_dash">My Dash: your web dashboard</string>
     <string name="my_dash_sub">Opens in the browser already signed in to your account: big charts, and a link to send to your doctor by WhatsApp or email.</string>
+    <string name="pdf_note">In the charts each dot is the average of all the readings of that day (an aggregate). The single readings are in the list.</string>
 </resources>
