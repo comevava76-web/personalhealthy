@@ -83,7 +83,7 @@ jobs:
           FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
           # Google Cloud "Web client ID" for Sign in with Google (not a secret: it only names the app to Google).
           # The repository variable GOOGLE_WEB_CLIENT_ID, if set, takes its place.
-          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-h0g0373krqt7lvq7m7123r696c7ic9hr.apps.googleusercontent.com' }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
           # contact email shown on the public privacy page (repository variable; optional)
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
         run: |
@@ -128,7 +128,7 @@ jobs:
         working-directory: android
         env:
           BATTITO_API_URL: ${{ needs.server.outputs.url }}
-          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-h0g0373krqt7lvq7m7123r696c7ic9hr.apps.googleusercontent.com' }}
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
         run: gradle assembleRelease --no-daemon --stacktrace
       - name: Prepare the file
         run: cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
