@@ -531,7 +531,9 @@ fun App() {
                     scope.launch {
                         try {
                             val c = Repo.saveKey(pid, key, amount)
-                            me = me?.copy(hasKey = true, credit = c ?: me?.credit)
+                            // the server has just tested the key with Anthropic: Scan can switch on straight away
+                            me = me?.copy(hasKey = true, credit = c ?: me?.credit, aiStatus = "ok", aiCheckedAt = System.currentTimeMillis())
+                            reload()
                             toast(ctx, t(R.string.key_saved))
                             screen = "tabs"
                         } catch (e: Exception) { keyError = e as? ApiException ?: ApiException("generic") }
@@ -1329,22 +1331,24 @@ fun HintLogo(size: Dp = 30.dp) {
     val shift by rememberInfiniteTransition(label = "ecg").animateFloat(
         0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "shift"
     )
+    // the same look as the launcher icon: diagonal violet-to-blue gradient, white heartbeat trace running through it
     Canvas(
         Modifier.size(size).clip(RoundedCornerShape(size * 0.28f))
-            .background(Brush.verticalGradient(listOf(C.Surface2, C.Bg))).border(1.dp, C.Line, RoundedCornerShape(size * 0.28f))
+            .background(Brush.linearGradient(listOf(Color(0xFFB07CF6), Color(0xFF7B6BEA), Color(0xFF2F86D9))))
     ) {
         // launcher trace from x 13 to 95 in a 108 box; both ends at the same height, so copies join seamlessly
         val pts = listOf(13f to 57.2f, 33.5f to 57.2f, 38.9f to 49.7f, 44.3f to 57.2f, 48.6f to 57.2f, 55.1f to 27f,
             62.1f to 84.2f, 68f to 57.2f, 74.5f to 57.2f, 79.9f to 51.8f, 85.3f to 57.2f, 95f to 57.2f)
         val period = 82f
-        val k = this.size.width / period
+        val k = this.size.width / period * 1.6f   // a little wider than the square: one beat and a half in view
         val trace = Path()
         for (copy in 0..1) pts.forEachIndexed { i, (x, y) ->
             val px = (x - 13f + period * copy - shift * period) * k
-            val py = (y - 57.2f) * k * 0.9f + this.size.height / 2f
+            // the tallest peak (30 units) reaches 36% of the height: the trace always stays inside the square
+            val py = (y - 57.2f) * (this.size.height * 0.36f / 30f) + this.size.height / 2f
             if (copy == 0 && i == 0) trace.moveTo(px, py) else trace.lineTo(px, py)
         }
-        drawPath(trace, C.Sys, style = Stroke(width = size.toPx() * 0.045f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(trace, Color.White, style = Stroke(width = size.toPx() * 0.06f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 
