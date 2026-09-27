@@ -466,6 +466,8 @@ fun App() {
                     (ctx as? android.app.Activity)?.finishAndRemoveTask()
                 }
             )
+            // the terms accepted at the start, to read again from the colophon
+            screen == "terms" -> DisclaimerScreen(busy = false, onAccept = {}, onDecline = {}, onClose = { screen = "tabs" })
             screen == "scan" -> ScanScreen(
                 state = scan, saving = saving,
                 onSave = { r ->
@@ -551,8 +553,9 @@ fun App() {
             else -> Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
                     when (tab) {
-                        Tab.REPORT.key -> ReportScreen(readings)
+                        Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" })
                         Tab.CREDIT.key -> CreditScreen(
+                            onTerms = { screen = "terms" },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
                             onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
                             onLinkGoogle = { linkAsk = true },
@@ -581,6 +584,7 @@ fun App() {
                             }
                         )
                         else -> HomeScreen(
+                            onTerms = { screen = "terms" },
                             readings = readings, message = message, me = me,
                             onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
                             // the photo reading is the only paid part: without a key, say so and offer the free voice
@@ -821,13 +825,35 @@ fun LockScreen(onUnlock: () -> Unit) {
     }
 }
 
+/** At the bottom of each tab: app version, copyright (the year updates itself) and the terms of use. */
+@Composable
+fun Colophon(onTerms: () -> Unit) {
+    val ctx = LocalContext.current
+    val version = remember { try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" } }
+    val y = Z.today().year
+    val years = if (y > 2026) "2026–$y" else "2026"
+    Column(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("HINT · HealthyInstantTracker · v$version", color = C.Muted, fontSize = 11.sp)
+        Text(t(R.string.colophon_rights, years), color = C.Muted, fontSize = 11.sp)
+        Text(
+            t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp,
+            textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+            modifier = Modifier.clickable(onClick = onTerms).padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
+}
+
 /** The notice, before first use: read it, tick the box, accept. Without acceptance the app closes. */
 @Composable
-fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit) {
+fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit, onClose: (() -> Unit)? = null) {
     var read by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        BrandHeader()
-        Text(t(R.string.disc_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+        // read again later (onClose): only the text and Close; at the start: the text, the box and the two buttons
+        if (onClose != null) Header(t(R.string.disc_title), null, t(R.string.close), onClose, titleSize = 22)
+        else {
+            BrandHeader()
+            Text(t(R.string.disc_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+        }
         // each part: a short title, then its text
         t(R.string.disc_body).split("\n\n").forEach { part ->
             val lines = part.split("\n", limit = 2)
@@ -836,16 +862,24 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit)
                 if (lines.size > 1) Text(lines[1], color = C.Ink.copy(alpha = 0.85f), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(checked = read, onCheckedChange = { read = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
-            Text(t(R.string.disc_check), color = C.Ink, fontSize = 14.sp)
-        }
-        BigButton(t(R.string.disc_accept), enabled = read && !busy, onClick = onAccept)
-        TextButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) {
-            Text(t(R.string.disc_decline), color = C.Muted, fontSize = 13.sp)
+        if (onClose == null) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(checked = read, onCheckedChange = { read = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
+                Text(t(R.string.disc_check), color = C.Ink, fontSize = 14.sp)
+            }
+            BigButton(t(R.string.disc_accept), enabled = read && !busy, onClick = onAccept)
+            TextButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) {
+                Text(t(R.string.disc_decline), color = C.Muted, fontSize = 13.sp)
+            }
+        } else {
+            // the same text on the web, where the providers' links can be opened
+            val webCtx = LocalContext.current
+            TextButton(onClick = {
+                webCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL)))
+            }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -949,7 +983,7 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit, onTerms: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null)
@@ -977,7 +1011,7 @@ fun HomeScreen(
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
-        Spacer(Modifier.height(24.dp))
+        Colophon(onTerms)
     }
 }
 
@@ -1391,7 +1425,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 /* ---------------- Report ---------------- */
 
 @Composable
-fun ReportScreen(readings: List<Reading>) {
+fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit) {
     val ctx = LocalContext.current
     var n by rememberSaveable { mutableIntStateOf(7) }
     val infos = listOf(7, 15, 30).associateWith { periodInfo(readings, it) }
@@ -1455,7 +1489,7 @@ fun ReportScreen(readings: List<Reading>) {
         BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
             try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
-        Spacer(Modifier.height(24.dp))
+        Colophon(onTerms)
     }
 }
 
@@ -1466,7 +1500,8 @@ fun ReportScreen(readings: List<Reading>) {
 fun CreditScreen(
     me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
     onKey: () -> Unit, onDeleteKey: () -> Unit,
-    onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit
+    onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
+    onTerms: () -> Unit
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
@@ -1536,11 +1571,6 @@ fun CreditScreen(
             Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
             BigButton(t(R.string.google_link), color = C.Surface2, textColor = C.Ink, onClick = onLinkGoogle)
         }
-        // the notice accepted at the start, to read again
-        val termsCtx = LocalContext.current
-        TextButton(onClick = {
-            termsCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL)))
-        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_legal), color = C.Muted, fontSize = 13.sp) }
         // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
         BigButton(t(R.string.share_app), color = C.Surface2, textColor = C.Ink) { shareApp(shareCtx) }
@@ -1555,7 +1585,7 @@ fun CreditScreen(
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Colophon(onTerms)
     }
     if (signOutAsk) AlertDialog(
         onDismissRequest = { signOutAsk = false },

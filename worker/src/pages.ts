@@ -25,10 +25,18 @@ const logo = `<svg viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradien
   <path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95"
    fill="none" stroke="#F2545B" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+/** 2026, or 2026–<this year> from next year on: updates itself every year. */
+function copyrightYears(): string {
+  const y = new Date().getUTCFullYear();
+  return y > 2026 ? `2026–${y}` : "2026";
+}
+
 function page(title: string, body: string): Response {
   const html = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${style}</style></head>
-<body><main><header>${logo}<div><h1>HINT</h1><p>HealthyInstantTracker</p></div></header>${body}</main></body></html>`;
+<body><main><header>${logo}<div><h1>HINT</h1><p>HealthyInstantTracker</p></div></header>${body}
+<footer class="muted"><hr>HINT · HealthyInstantTracker · © ${copyrightYears()} · Tutti i diritti riservati · All rights reserved<br>
+<a href="/">Home</a> · <a href="/terms">Condizioni d'uso · Terms of use</a> · <a href="/privacy">Privacy</a></footer></main></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600" } });
 }
 
@@ -44,16 +52,16 @@ function contactLine(email: string, it: boolean): string {
 export function homePage(): Response {
   return page("HINT · HealthyInstantTracker", `
 <p><strong>HINT</strong> è un diario della pressione per Android. Fotografi il display del misuratore, oppure detti i valori a voce, e l'app registra SYS, DIA e PUL con data e ora. Prepara un report in PDF ed Excel da mandare al medico.</p>
-<p>L'app non valuta i valori, non fa diagnosi e non dà consigli medici: la valutazione spetta al medico. Leggi le <a href="/terms">avvertenze</a>.</p>
+<p>L'app non valuta i valori, non fa diagnosi e non dà consigli medici: la valutazione spetta al medico. Leggi le <a href="/terms">condizioni d'uso</a>.</p>
 <p><a class="btn" href="/download">Scarica l'app per Android</a></p>
 <p class="muted">Dopo il download apri il file e consenti l'installazione. All'avvio tocchi "Accedi con Google": se cambi telefono, ritrovi tutto allo stesso modo.</p>
-<p><a href="/HINT-Guida-IT.pdf">Guida all'uso (PDF)</a> · <a href="/privacy">Informativa sulla privacy</a> · <a href="/terms">Avvertenze</a></p>
+<p><a href="/HINT-Guida-IT.pdf">Guida all'uso (PDF)</a> · <a href="/privacy">Informativa sulla privacy</a> · <a href="/terms">Condizioni d'uso</a></p>
 <hr>
 <p><strong>HINT</strong> is a blood-pressure diary for Android. Photograph the monitor's display, or say the values aloud, and the app records SYS, DIA and PUL with date and time. It prepares a PDF and Excel report for the doctor.</p>
-<p>The app does not assess the values, makes no diagnosis and gives no medical advice: that is up to the doctor. Read the <a href="/terms">notice</a>.</p>
+<p>The app does not assess the values, makes no diagnosis and gives no medical advice: that is up to the doctor. Read the <a href="/terms">terms of use</a>.</p>
 <p><a class="btn" href="/download">Download the Android app</a></p>
 <p class="muted">After the download, open the file and allow the installation. At first start tap "Sign in with Google": on a new phone you find everything again the same way.</p>
-<p><a href="/HINT-Guide-EN.pdf">User guide (PDF)</a> · <a href="/privacy">Privacy policy</a> · <a href="/terms">Notice</a></p>`);
+<p><a href="/HINT-Guide-EN.pdf">User guide (PDF)</a> · <a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a></p>`);
 }
 
 export function privacyPage(contactEmail: string): Response {
@@ -76,7 +84,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Dove stanno i dati e chi li vede</h3>
 <p>Su server <strong>Cloudflare</strong>, con il database vincolato all'<strong>Unione Europea</strong>. Gli altri utenti non vedono i tuoi dati. Chi gestisce il servizio può accedere al database solo per manutenzione. Non vendiamo né cediamo i dati e non facciamo pubblicità. Condizioni dei fornitori: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (condizioni)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
 <h3>Per quanto tempo</h3>
-<p>Finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Admin, "Elimina il mio account"). La cancellazione è immediata e definitiva. Resta solo la registrazione della tua accettazione delle <a href="/terms">avvertenze</a> (email, account, telefono, data e ora), conservata come prova.</p>
+<p>Finché hai l'account. Puoi cancellare singole misure, tutte le misure, oppure l'account con tutti i dati, dall'app (scheda Report, "Vedi tutte le misure"; scheda Admin, "Elimina il mio account"). La cancellazione è immediata e definitiva. Resta solo la registrazione della tua accettazione delle <a href="/terms">condizioni d'uso</a> (email, account, telefono, data e ora), conservata come prova.</p>
 <h3>Perché</h3>
 <p>Solo per offrirti il diario che hai chiesto, con il tuo consenso dato al primo accesso. Sono dati sulla salute: li usiamo per nient'altro.</p>
 <h3>I tuoi diritti</h3>
@@ -101,7 +109,7 @@ export function privacyPage(contactEmail: string): Response {
 <h3>Where the data is and who sees it</h3>
 <p>On <strong>Cloudflare</strong> servers, with the database bound to the <strong>European Union</strong>. Other users cannot see your data. The person who runs the service can reach the database only for maintenance. Data is not sold or shared, and there is no advertising. Providers' terms: <a href="https://www.cloudflare.com/privacypolicy">Cloudflare</a>, <a href="https://www.anthropic.com/legal/commercial-terms">Anthropic (terms)</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic (privacy)</a>, <a href="https://policies.google.com/privacy">Google</a>.</p>
 <h3>How long</h3>
-<p>As long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Admin tab, "Delete my account"). Deletion is immediate and final. Only the record of your acceptance of the <a href="/terms">notice</a> (email, account, phone, date and time) is kept, as proof.</p>
+<p>As long as you keep your account. You can delete single readings, all readings, or your account with all its data from the app (Report tab, "See all readings"; Admin tab, "Delete my account"). Deletion is immediate and final. Only the record of your acceptance of the <a href="/terms">terms of use</a> (email, account, phone, date and time) is kept, as proof.</p>
 <h3>Why</h3>
 <p>Only to provide the diary you asked for, with the consent you give at your first sign-in. This is health data: it is used for nothing else.</p>
 <h3>Your rights</h3>
@@ -109,48 +117,63 @@ export function privacyPage(contactEmail: string): Response {
 </div>`);
 }
 
-/** The notice every user accepts in the app before using it (version 4). Same text as in the app. */
+/** The terms of use and notice every user accepts in the app before using it. Same text as in the app. */
 export function termsPage(): Response {
-  return page("HINT · Avvertenze / Notice", `
-<h2>Avvertenze importanti</h2>
+  return page("HINT · Condizioni d'uso / Terms of use", `
+<h2>Condizioni d&#x27;uso e avvertenze</h2>
 <h3>Cos&#x27;è HINT</h3>
 <p>HINT serve solo ad annotare, conservare e rappresentare in grafici e tabelle i valori che misuri tu con il tuo apparecchio. Nient&#x27;altro.</p>
 <h3>Non è un dispositivo medico</h3>
 <p>HINT non misura nulla, non interpreta i dati, non fa diagnosi, non dà consigli, non suggerisce terapie e non dice se un valore è normale o no.</p>
-<h3>L&#x27;esattezza dei dati è a tuo carico</h3>
-<p>Sei tu a inserire i valori, a voce, da foto o a mano, e ne sei responsabile. La lettura automatica di foto e voce può sbagliare: controlla ogni valore prima di salvarlo e prima di condividerlo.</p>
 <h3>Decide solo il medico</h3>
 <p>Ogni valutazione, e ogni decisione di iniziare, cambiare o sospendere un farmaco, spetta esclusivamente al tuo medico. I dati di HINT servono solo per mostrarli al tuo medico. Non cambiare mai una terapia sulla base dell&#x27;app.</p>
 <h3>Emergenze</h3>
 <p>Se stai male, hai sintomi o valori che ti preoccupano, non affidarti all&#x27;app: chiama il medico o il numero di emergenza (144 in Svizzera, 112 in Europa).</p>
-<h3>Nessuna garanzia, nessuna responsabilità</h3>
-<p>L&#x27;app è fornita così com&#x27;è, senza garanzie di alcun tipo, nemmeno di funzionamento continuo o di conservazione dei dati. Nei limiti massimi consentiti dalla legge, l&#x27;autore declina ogni responsabilità per danni diretti o indiretti derivanti dall&#x27;uso o dal mancato uso dell&#x27;app, da dati inesatti, incompleti o persi, e da qualsiasi decisione presa sulla base dei dati. Chi usa l&#x27;app se ne assume interamente la responsabilità.</p>
+<h3>L&#x27;esattezza dei dati è a tuo carico</h3>
+<p>Sei tu a inserire i valori, a voce, da foto o a mano, e ne sei responsabile. La lettura automatica di foto e voce può sbagliare: controlla ogni valore prima di salvarlo e prima di condividerlo.</p>
+<h3>Uso personale e sicurezza del telefono</h3>
+<p>HINT è per uso personale e non commerciale: inserisci solo i tuoi valori, o quelli di una persona che ti ha dato il suo consenso. Chi può aprire il tuo telefono può vedere i tuoi dati: proteggilo con blocco schermo e impronta. Non usare l&#x27;app in modo illecito o per disturbarne il funzionamento.</p>
+<h3>Costi della lettura delle foto</h3>
+<p>La lettura delle foto è facoltativa e usa la tua chiave Anthropic: il costo viene addebitato da Anthropic sul tuo conto, secondo le sue condizioni. HINT non incassa nulla. Saldo, foto rimanenti e costo per foto mostrati nell&#x27;app sono stime indicative: fa fede solo il conto Anthropic.</p>
 <h3>Dove sono i tuoi dati</h3>
-<p>Le misure sono salvate su un cloud in Europa (Cloudflare, Unione Europea), legate a un codice anonimo dell&#x27;account e non al tuo nome: HINT non chiede e non conserva nome, cognome, indirizzo o telefono. L&#x27;email di Google serve solo per accedere e per ritrovare i dati. Puoi recuperarli in qualsiasi momento, su qualsiasi telefono, accedendo con Google, ed esportarli in PDF o Excel. Consiglio: se non vuoi che i dati siano riconducibili a te, registrati con un indirizzo Google che non contiene il tuo nome e cognome veri (per esempio non nome.cognome@gmail.com). Non vengono mai venduti né usati per pubblicità. Solo la foto del display viene inviata ad Anthropic per leggere i numeri, e non viene conservata.</p>
+<p>Le misure sono salvate su un cloud in Europa (Cloudflare, Unione Europea), legate a un codice anonimo dell&#x27;account e non al tuo nome: HINT non chiede e non conserva nome, cognome, indirizzo o telefono. L&#x27;email di Google serve solo per accedere e per ritrovare i dati. Finché il servizio è attivo puoi recuperarli in qualsiasi momento, su qualsiasi telefono, accedendo con Google, ed esportarli in PDF o Excel: ti consigliamo di farlo ogni tanto. Consiglio: se non vuoi che i dati siano riconducibili a te, registrati con un indirizzo Google che non contiene il tuo nome e cognome veri (per esempio non nome.cognome@gmail.com). I dati non vengono mai venduti né usati per pubblicità. Solo la foto del display viene inviata ad Anthropic per leggere i numeri, e HINT non la conserva. Puoi cancellare le misure o l&#x27;intero account quando vuoi, dall&#x27;app. I dettagli sono nell&#x27;informativa sulla privacy.</p>
 <h3>Fornitori e loro condizioni</h3>
 <p>HINT si appoggia a servizi di altre aziende, ognuna con le proprie condizioni, che ti invitiamo a leggere. Cloudflare: server e database in Europa; le foto e i file ci passano solo per essere elaborati, senza essere salvati (<a href="https://www.cloudflare.com/privacypolicy">cloudflare.com/privacypolicy</a>). Anthropic: lettura delle foto con la tua chiave (<a href="https://www.anthropic.com/legal/commercial-terms">anthropic.com/legal/commercial-terms</a> e <a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a>). Google: accesso con Google e riconoscimento vocale del telefono (<a href="https://policies.google.com/privacy">policies.google.com/privacy</a>). Per quello che fanno questi servizi valgono le loro condizioni, non quelle di HINT.</p>
+<h3>Nessuna garanzia, nessuna responsabilità</h3>
+<p>L&#x27;app è fornita così com&#x27;è, senza garanzie di alcun tipo, nemmeno di funzionamento continuo, di arrivo dei promemoria o di conservazione dei dati. Nei limiti massimi consentiti dalla legge, l&#x27;autore declina ogni responsabilità per danni diretti o indiretti derivanti dall&#x27;uso o dal mancato uso dell&#x27;app, da dati inesatti, incompleti o persi, da costi addebitati dai fornitori e da qualsiasi decisione presa sulla base dei dati. Chi usa l&#x27;app se ne assume interamente la responsabilità.</p>
+<h3>Modifiche e fine del servizio</h3>
+<p>L&#x27;autore può modificare, sospendere o chiudere l&#x27;app e il servizio, anche senza preavviso. Quando queste condizioni cambiano, l&#x27;app mostra la nuova versione e chiede di accettarla di nuovo: senza accettazione l&#x27;app non si apre. Puoi smettere di usare HINT e cancellare il tuo account in qualsiasi momento.</p>
+<h3>Legge applicabile</h3>
+<p>Queste condizioni sono regolate dal diritto svizzero, fatte salve le norme imperative a tutela dei consumatori del paese in cui vivi. Se una clausola risultasse non valida, le altre restano valide.</p>
 <h3>La tua accettazione viene registrata</h3>
-<p>Toccando «Prendo atto e accetto» confermi di avere almeno 18 anni, di aver letto e compreso queste avvertenze e di accettarle. Conserviamo la tua accettazione (email, account, telefono, versione del testo, data e ora) come prova, anche dopo un&#x27;eventuale cancellazione dell&#x27;account.</p>
+<p>Toccando «Prendo atto e accetto» confermi di avere almeno 18 anni, di aver letto e compreso queste condizioni d&#x27;uso e avvertenze e di accettarle. Conserviamo la tua accettazione (email, account, telefono, versione del testo, data e ora) come prova, anche dopo un&#x27;eventuale cancellazione dell&#x27;account.</p>
 <hr>
-<h2>Important notice</h2>
+<h2>Terms of use and notice</h2>
 <h3>What HINT is</h3>
 <p>HINT only helps you note, keep and show in charts and tables the values you measure yourself with your own device. Nothing more.</p>
 <h3>It is not a medical device</h3>
 <p>HINT measures nothing, does not interpret the data, makes no diagnosis, gives no advice, suggests no treatment and never says whether a value is normal or not.</p>
-<h3>You are responsible for the accuracy of the data</h3>
-<p>You enter the values, by voice, from a photo or by hand, and you are responsible for them. The automatic reading of photos and voice can be wrong: check every value before saving it and before sharing it.</p>
 <h3>Only your doctor decides</h3>
 <p>Every assessment, and every decision to start, change or stop a medicine, belongs only to your doctor. HINT&#x27;s data are only meant to be shown to your doctor. Never change a treatment because of the app.</p>
 <h3>Emergencies</h3>
 <p>If you feel unwell, have symptoms or values that worry you, do not rely on the app: call your doctor or the emergency number (144 in Switzerland, 112 in Europe).</p>
-<h3>No warranty, no liability</h3>
-<p>The app is provided as is, without warranty of any kind, including continuous operation or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.</p>
+<h3>You are responsible for the accuracy of the data</h3>
+<p>You enter the values, by voice, from a photo or by hand, and you are responsible for them. The automatic reading of photos and voice can be wrong: check every value before saving it and before sharing it.</p>
+<h3>Personal use and phone security</h3>
+<p>HINT is for personal, non-commercial use: enter only your own values, or those of a person who has given you their consent. Anyone who can open your phone can see your data: protect it with a screen lock and fingerprint. Do not use the app unlawfully or in a way that disrupts it.</p>
+<h3>Cost of reading photos</h3>
+<p>Reading photos is optional and uses your own Anthropic key: the cost is charged by Anthropic to your account, under its terms. HINT collects no money. The balance, photos left and cost per photo shown in the app are estimates: only your Anthropic account is authoritative.</p>
 <h3>Where your data is</h3>
-<p>Your readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. Your Google email is only used to sign in and to find your data again. You can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel. Tip: if you do not want the data to be traceable to you, sign up with a Google address that does not contain your real name (for example not name.surname@gmail.com). They are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and it is not kept.</p>
+<p>Your readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. Your Google email is only used to sign in and to find your data again. As long as the service is running you can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel: we suggest you do so now and then. Tip: if you do not want the data to be traceable to you, sign up with a Google address that does not contain your real name (for example not name.surname@gmail.com). The data are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and HINT does not keep it. You can delete your readings or your whole account whenever you like, from the app. The details are in the privacy policy.</p>
 <h3>Providers and their terms</h3>
 <p>HINT relies on services of other companies, each with its own terms, which we invite you to read. Cloudflare: server and database in Europe; photos and files only pass through it to be processed, without being saved (<a href="https://www.cloudflare.com/privacypolicy">cloudflare.com/privacypolicy</a>). Anthropic: reading of the photos with your own key (<a href="https://www.anthropic.com/legal/commercial-terms">anthropic.com/legal/commercial-terms</a> and <a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a>). Google: Sign in with Google and the phone&#x27;s speech recognition (<a href="https://policies.google.com/privacy">policies.google.com/privacy</a>). For what these services do, their terms apply, not HINT&#x27;s.</p>
+<h3>No warranty, no liability</h3>
+<p>The app is provided as is, without warranty of any kind, including continuous operation, delivery of reminders or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, from costs charged by providers and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.</p>
+<h3>Changes and end of the service</h3>
+<p>The author may change, suspend or close the app and the service, also without notice. When these terms change, the app shows the new version and asks you to accept it again: without acceptance the app does not open. You can stop using HINT and delete your account at any time.</p>
+<h3>Governing law</h3>
+<p>These terms are governed by Swiss law, without prejudice to the mandatory consumer protection rules of the country where you live. If a clause turns out to be invalid, the others remain valid.</p>
 <h3>Your acceptance is recorded</h3>
-<p>By tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood this notice and that you accept it. We keep your acceptance (email, account, phone, version of the text, date and time) as proof, also after your account is deleted.</p>
-<p class="muted">Versione 4 · Version 4</p>
-<p><a href="/">HINT</a> · <a href="/privacy">Privacy</a></p>`);
+<p>By tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood these terms of use and notice and that you accept them. We keep your acceptance (email, account, phone, version of the text, date and time) as proof, also after your account is deleted.</p>
+<p class="muted">Versione 5 · Version 5</p>`);
 }
