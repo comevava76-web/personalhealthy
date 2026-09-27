@@ -109,7 +109,7 @@ export function privacyPage(contactEmail: string): Response {
 </div>`);
 }
 
-/** The notice every user accepts in the app before using it (version 2). Same text as in the app. */
+/** The notice every user accepts in the app before using it (version 3). Same text as in the app. */
 export function termsPage(): Response {
   return page("HINT · Avvertenze / Notice", `
 <h2>Avvertenze importanti</h2>
@@ -126,7 +126,7 @@ export function termsPage(): Response {
 <h3>Nessuna garanzia, nessuna responsabilità</h3>
 <p>L&#x27;app è fornita così com&#x27;è, senza garanzie di alcun tipo, nemmeno di funzionamento continuo o di conservazione dei dati. Nei limiti massimi consentiti dalla legge, l&#x27;autore declina ogni responsabilità per danni diretti o indiretti derivanti dall&#x27;uso o dal mancato uso dell&#x27;app, da dati inesatti, incompleti o persi, e da qualsiasi decisione presa sulla base dei dati. Chi usa l&#x27;app se ne assume interamente la responsabilità.</p>
 <h3>Dove sono i tuoi dati</h3>
-<p>Le misure sono salvate su un cloud in Europa (Cloudflare, Unione Europea), legate a un codice anonimo dell&#x27;account e non al tuo nome: HINT non chiede e non conserva nome, cognome, indirizzo o telefono. L&#x27;email di Google serve solo per accedere e per ritrovare i dati. Puoi recuperarli in qualsiasi momento, su qualsiasi telefono, accedendo con Google, ed esportarli in PDF o Excel. Non vengono mai venduti né usati per pubblicità. Solo la foto del display viene inviata ad Anthropic per leggere i numeri, e non viene conservata.</p>
+<p>Le misure sono salvate su un cloud in Europa (Cloudflare, Unione Europea), legate a un codice anonimo dell&#x27;account e non al tuo nome: HINT non chiede e non conserva nome, cognome, indirizzo o telefono. L&#x27;email di Google serve solo per accedere e per ritrovare i dati. Puoi recuperarli in qualsiasi momento, su qualsiasi telefono, accedendo con Google, ed esportarli in PDF o Excel. Consiglio: se non vuoi che i dati siano riconducibili a te, registrati con un indirizzo Google che non contiene il tuo nome e cognome veri (per esempio non nome.cognome@gmail.com). Non vengono mai venduti né usati per pubblicità. Solo la foto del display viene inviata ad Anthropic per leggere i numeri, e non viene conservata.</p>
 <h3>La tua accettazione viene registrata</h3>
 <p>Toccando «Prendo atto e accetto» confermi di avere almeno 18 anni, di aver letto e compreso queste avvertenze e di accettarle. Conserviamo la tua accettazione (email, account, telefono, versione del testo, data e ora) come prova, anche dopo un&#x27;eventuale cancellazione dell&#x27;account.</p>
 <hr>
@@ -144,9 +144,9 @@ export function termsPage(): Response {
 <h3>No warranty, no liability</h3>
 <p>The app is provided as is, without warranty of any kind, including continuous operation or keeping of the data. To the fullest extent permitted by law, the author disclaims all liability for any direct or indirect damage arising from the use or non-use of the app, from inaccurate, incomplete or lost data, and from any decision taken on the basis of the data. Whoever uses the app takes full responsibility for it.</p>
 <h3>Where your data is</h3>
-<p>Your readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. Your Google email is only used to sign in and to find your data again. You can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel. They are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and it is not kept.</p>
+<p>Your readings are kept on a cloud in Europe (Cloudflare, European Union), linked to an anonymous account code and not to your name: HINT does not ask for or keep your name, address or phone number. Your Google email is only used to sign in and to find your data again. You can get them back at any time, on any phone, by signing in with Google, and export them to PDF or Excel. Tip: if you do not want the data to be traceable to you, sign up with a Google address that does not contain your real name (for example not name.surname@gmail.com). They are never sold or used for advertising. Only the photo of the display is sent to Anthropic to read the numbers, and it is not kept.</p>
 <h3>Your acceptance is recorded</h3>
 <p>By tapping “I understand and accept” you confirm that you are at least 18, that you have read and understood this notice and that you accept it. We keep your acceptance (email, account, phone, version of the text, date and time) as proof, also after your account is deleted.</p>
-<p class="muted">Versione 2 · Version 2</p>
+<p class="muted">Versione 3 · Version 3</p>
 <p><a href="/">HINT</a> · <a href="/privacy">Privacy</a></p>`);
 }
