@@ -1,7 +1,7 @@
 # HINT · regole per chi lavora su questo repository
 
 - **Documentazione sempre aggiornata, e sempre solo in inglese.** `docs/architecture/architecture.html` (pagina 1 funzionale, pagina 2 tecnologie)
-  va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
+  (pagina 3: flusso a runtime e CI/CD) va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
   `node docs/architecture/render.cjs` e si committano HTML, PDF e anteprime insieme alla modifica.
 - **Materiale demo** in `docs/demo/`: se cambia l'aspetto della dashboard o del PDF, rifare gli screenshot (solo dati di prova,
   mai misure reali).
@@ -32,3 +32,7 @@
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
   nella Web Dashboard la scheda **Admin** (utenti per codice anonimo, numeri d'uso, spazio D1, blocco versioni):
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
+- **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
+  App e browser non toccano mai D1: passa tutto dal Worker.
+- **Ruoli**: Angelo è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
+  il deploy e manda l'APK in chat.
