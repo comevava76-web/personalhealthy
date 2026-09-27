@@ -51,6 +51,9 @@
     <string name="no_readings_text">Misura la pressione e fotografa il display: i numeri li legge l\'app.</string>
     <string name="last_fmt">Ultima: %s</string>
     <string name="measure">Scansiona misura</string>
+    <string name="record_short">Registra</string>
+    <string name="scan_short">Scansiona</string>
+    <string name="scan_cost_note">La scansione della foto consuma crediti AI (circa mezzo centesimo a foto). La registrazione a voce è gratuita.</string>
     <string name="last7">Ultimi 7 giorni</string>
     <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. SYS sopra, DIA sotto.</string>
     <string name="summary_title">Riepilogo 7 giorni</string>
