@@ -29,3 +29,6 @@
 - **Politica dei costi** (tabella in app, condizioni e home): l'app 5 $/anno al proprietario via Google Play; le funzionalità AI
   sono facoltative, a consumo, pagate dall'utente ad Anthropic con il proprio credito (mai al proprietario). Mai chiamarle
   «Standard/Premium»: si dice «funzionalità AI attive / non attive», «Attiva AI».
+- **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
+  nella Web Dashboard la scheda **Admin** (utenti per codice anonimo, numeri d'uso, spazio D1, blocco versioni):
+  mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.

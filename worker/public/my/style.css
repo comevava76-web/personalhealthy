@@ -145,3 +145,12 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .cookie-in a { color: var(--accent); }
 .cookie-b { display: flex; gap: 10px; justify-content: flex-end; }
 @media print { .cookie { display: none; } }
+
+/* owner's area */
+.tiles.adm .tile { padding-left: 14px; }
+.meter { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+.tbl { overflow-x: auto; }
+table.list tr:hover td { background: var(--panel2); }
+b.you { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+@media (max-width: 700px) { .tiles.adm { grid-template-columns: repeat(2, 1fr); gap: 8px; } .tiles.adm .tile .v { font-size: 22px; } }

@@ -128,9 +128,26 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     await q("DELETE FROM web_sessions WHERE id_hash = ?1", [sh]);
     return json({ ok: true }, 200, { "set-cookie": `${COOKIE}=; Path=/my; Max-Age=0; HttpOnly; Secure; SameSite=Strict` });
   }
+  const [who] = await q("SELECT is_admin FROM persons WHERE id = ?1", [pid]);
+  const isOwner = !!who?.is_admin;
   if (p === "/my/api/me" && req.method === "GET") {
     const shares = await q("SELECT COUNT(*) AS n FROM web_shares WHERE person_id = ?1 AND expires_at > ?2", [pid, Date.now()]);
-    return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0) });
+    return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0), isOwner });
+  }
+  // The owner's area: usage numbers only, per anonymous account code. Never a reading, a report or a name.
+  if (p.startsWith("/my/api/admin/")) {
+    if (!isOwner) return fail("Only the app owner", 403, "admin_only");
+    if (p === "/my/api/admin/overview" && req.method === "GET") return json(await adminOverview(env, q));
+    if (p === "/my/api/admin/app-min-version" && req.method === "POST") {
+      let b: any = {};
+      try { b = await req.json(); } catch {}
+      const min = Math.max(0, Math.floor(Number(b.minVersion) || 0));
+      // never above the newest version anyone has installed, or every app (the owner's too) would stop
+      if (min > (await newestVersion(q))) return fail("That version does not exist yet", 400, "generic");
+      await q("INSERT INTO settings (key, value) VALUES ('app_min_version', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [String(min)]);
+      return json({ appMinVersion: min });
+    }
+    return fail("Not found", 404);
   }
   // the yearly subscription has run out: the readings and the links wait for the renewal
   if ((p === "/my/api/data" || p === "/my/api/share") && !(await subOk(pid)))
@@ -169,4 +186,64 @@ export async function endWebAccess(q: Q, pid: string, alsoShares: boolean) {
   await q("DELETE FROM web_sessions WHERE person_id = ?1", [pid]);
   await q("DELETE FROM web_codes WHERE person_id = ?1", [pid]);
   if (alsoShares) await q("DELETE FROM web_shares WHERE person_id = ?1", [pid]);
+}
+
+/* ---------- the owner's area ---------- */
+const DAY = 864e5;
+
+/** The newest app version number seen in the acceptances ("0.1.80" → 80). */
+async function newestVersion(q: Q): Promise<number> {
+  const rows = await q("SELECT DISTINCT app_version FROM acceptances WHERE app_version IS NOT NULL");
+  return Math.max(0, ...rows.map((r: any) => Number(String(r.app_version).split(".").pop()) || 0));
+}
+
+async function adminOverview(env: any, q: Q) {
+  const now = Date.now(), d7 = now - 7 * DAY, d30 = now - 30 * DAY;
+  const one = async (sql: string, params: unknown[] = []) => Number((await q(sql, params))[0]?.n || 0);
+  // size of the database, as D1 reports it after any query
+  const probe = await env.DB.prepare("SELECT 1").run();
+  const dbBytes = Number(probe?.meta?.size_after || 0);
+  const tables = ["persons", "measurements", "scans", "ledger", "person_keys", "acceptances", "web_sessions", "web_shares", "web_codes", "invites", "settings"];
+  const rows: Record<string, number> = {};
+  for (const t of tables) rows[t] = await one(`SELECT COUNT(*) AS n FROM ${t}`);
+  const users = await q(`
+    SELECT p.id, p.created_at, p.is_admin, p.last_seen_at, p.sub_until, p.sub_state,
+      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id) AS n,
+      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?1) AS n7,
+      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?2) AS n30,
+      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.source = 'voice') AS voice,
+      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.source = 'photo') AS photo,
+      (SELECT MAX(created_at) FROM measurements m WHERE m.person_id = p.id) AS last_reading,
+      (SELECT COALESCE(status, 'ok') FROM person_keys k WHERE k.person_id = p.id) AS ai,
+      (SELECT COUNT(*) FROM web_shares s WHERE s.person_id = p.id) AS shares,
+      (SELECT app_version FROM acceptances a WHERE a.person_id = p.id ORDER BY accepted_at DESC LIMIT 1) AS app
+    FROM persons p ORDER BY p.created_at DESC LIMIT 1000`, [d7, d30]);
+  const list = users.map((u: any) => ({
+    id: String(u.id), owner: !!u.is_admin, since: Number(u.created_at), lastSeen: u.last_seen_at == null ? null : Number(u.last_seen_at),
+    readings: Number(u.n), last7: Number(u.n7), last30: Number(u.n30), voice: Number(u.voice), photo: Number(u.photo),
+    lastReading: u.last_reading == null ? null : Number(u.last_reading), ai: u.ai == null ? "none" : String(u.ai),
+    shares: Number(u.shares), app: u.app ? String(u.app) : null,
+    subUntil: u.sub_until == null ? null : Number(u.sub_until),
+  }));
+  const active = (since: number) => list.filter((u) => (u.lastSeen || 0) > since || (u.lastReading || 0) > since).length;
+  const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'subscription_on')");
+  const set: Record<string, string> = {};
+  for (const r of gate as any[]) set[r.key] = String(r.value);
+  return {
+    at: now,
+    totals: {
+      users: list.length, newUsers30: list.filter((u) => u.since > d30).length,
+      active7: active(d7), active30: active(d30),
+      readings: rows.measurements, readings7: list.reduce((a, u) => a + u.last7, 0), readings30: list.reduce((a, u) => a + u.last30, 0),
+      voice: list.reduce((a, u) => a + u.voice, 0), photo: list.reduce((a, u) => a + u.photo, 0),
+      aiOn: list.filter((u) => u.ai !== "none").length,
+      aiSpentUsd: (await one("SELECT COALESCE(SUM(amount_micro), 0) AS n FROM ledger WHERE kind = 'usage'")) / 1e6,
+      webSessions: await one("SELECT COUNT(*) AS n FROM web_sessions WHERE expires_at > ?1", [now]),
+      doctorLinks: await one("SELECT COUNT(*) AS n FROM web_shares WHERE expires_at > ?1", [now]),
+    },
+    storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024, rows },
+    versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: await newestVersion(q) },
+    subscriptionOn: set.subscription_on === "1",
+    users: list,
+  };
 }
