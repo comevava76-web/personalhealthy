@@ -31,12 +31,10 @@
     subT: "Il tuo abbonamento è scaduto", subP: "Grazie per aver usato HINT 365. Rinnova l'abbonamento annuale dall'app (Google Play) per ripristinare tutte le funzioni: le tue misure sono al sicuro e tornano subito disponibili.",
     goneT: "Link scaduto", goneP: "Questo link non è più valido: è scaduto oppure è stato ritirato da chi l'ha inviato.",
     sharedB: (a, b, e) => `Report condiviso dal paziente: misure dal ${a} al ${b}. Link valido fino al ${e}.`,
-    shTitle: "Invia il report al medico", shIntro: "Crea un link di sola lettura con le misure del periodo scelto. Chi lo riceve vede solo i grafici e le misure: niente email, niente account.",
-    shValid: "Valido per", valid: { 1: "1 giorno", 7: "7 giorni", 30: "30 giorni" }, shMake: "Crea il link", shClose: "Chiudi",
-    shCopy: "Copia", shCopied: "Copiato", shNative: "Altre app", shRevoke: "Ritira tutti i link inviati", shRevoked: "Tutti i link sono stati ritirati",
-    shExp: (d) => `Il link smette di funzionare il ${d}.`,
-    shText: (a, b, url, e) => `Report della pressione (HINT 365), misure dal ${a} al ${b}: ${url} — link valido fino al ${e}.`,
-    shSubject: "Report della pressione",
+    shTitle: "Invia il report al medico", shIntro: "Scegli come inviarlo: parte il PDF del report insieme a un link di sola lettura, con un messaggio già scritto.",
+    shExp7: "Il link vale 7 giorni. Chi lo riceve vede solo grafici e misure del periodo: niente email, niente account.",
+    shClose: "Chiudi", shRevoke: "Ritira tutti i link inviati", shRevoked: "Tutti i link sono stati ritirati",
+    shWorking: "Preparo il PDF e il link…", shDone: "Inviato.", shAttach: "Il PDF è stato scaricato: allegalo al messaggio che si è aperto.",
     footNote: "HINT 365 non fa diagnosi e non valuta i valori: ogni valutazione spetta al medico.",
     rights: "Tutti i diritti riservati", terms: "Condizioni d'uso",
     err: "Qualcosa non ha funzionato. Riprova.",
@@ -60,12 +58,10 @@
     subT: "Your subscription has run out", subP: "Thank you for using HINT 365. Renew the yearly subscription in the app (Google Play) to bring back every feature: your readings are safe and come back at once.",
     goneT: "Link expired", goneP: "This link no longer works: it has expired or was withdrawn by the person who sent it.",
     sharedB: (a, b, e) => `Report shared by the patient: readings from ${a} to ${b}. Link valid until ${e}.`,
-    shTitle: "Send the report to your doctor", shIntro: "Creates a read-only link with the readings of the chosen period. Whoever gets it sees only the charts and readings: no email, no account.",
-    shValid: "Valid for", valid: { 1: "1 day", 7: "7 days", 30: "30 days" }, shMake: "Create link", shClose: "Close",
-    shCopy: "Copy", shCopied: "Copied", shNative: "Other apps", shRevoke: "Withdraw all links sent", shRevoked: "All links have been withdrawn",
-    shExp: (d) => `The link stops working on ${d}.`,
-    shText: (a, b, url, e) => `Blood pressure report (HINT 365), readings from ${a} to ${b}: ${url} — link valid until ${e}.`,
-    shSubject: "Blood pressure report",
+    shTitle: "Send the report to your doctor", shIntro: "Choose how to send it: the PDF of the report goes together with a read-only link, with a ready message.",
+    shExp7: "The link is valid for 7 days. Whoever gets it sees only the charts and readings of the period: no email, no account.",
+    shClose: "Close", shRevoke: "Withdraw all links sent", shRevoked: "All links have been withdrawn",
+    shWorking: "Preparing the PDF and the link…", shDone: "Sent.", shAttach: "The PDF has been downloaded: attach it to the message that opened.",
     footNote: "HINT 365 makes no diagnosis and does not assess the values: every assessment is up to the doctor.",
     rights: "All rights reserved", terms: "Terms of use",
     err: "Something went wrong. Please try again.",
@@ -336,27 +332,49 @@
   }
 
   /* ---------- share with the doctor ---------- */
+  /* ---------- send the report to the doctor ----------
+     One tap: the user chooses only Email or WhatsApp. Both the PDF and a read-only link (always 7 days) go,
+     with a ready message in the phone's language. On a phone the PDF is attached through the system share
+     (the browser cannot attach a file to WhatsApp or email otherwise); on a computer it is downloaded and
+     the message opens in WhatsApp or the email program, to attach it. */
+  const MSG = {
+    it: { hello: "Buongiorno,", body: (a, b) => `trasmetto il report pressorio rilevato nel periodo ${a} - ${b}.`, link: (u, e) => `Link al report (valido fino al ${e}): ${u}`, subject: "Report pressorio" },
+    en: { hello: "Good morning,", body: (a, b) => `I am sending the blood pressure report recorded in the period ${a} - ${b}.`, link: (u, e) => `Link to the report (valid until ${e}): ${u}`, subject: "Blood pressure report" },
+    de: { hello: "Guten Tag,", body: (a, b) => `ich übermittle den Blutdruckbericht für den Zeitraum ${a} - ${b}.`, link: (u, e) => `Link zum Bericht (gültig bis ${e}): ${u}`, subject: "Blutdruckbericht" },
+    fr: { hello: "Bonjour,", body: (a, b) => `je vous transmets le rapport de tension relevé sur la période ${a} - ${b}.`, link: (u, e) => `Lien vers le rapport (valable jusqu'au ${e}) : ${u}`, subject: "Rapport de tension" },
+  };
+  const LANG = (navigator.language || "en").slice(0, 2).toLowerCase();
+  const M = MSG[LANG] || MSG.en;
+  const fMsgDay = new Intl.DateTimeFormat(MSG[LANG] ? navigator.language : "en-GB", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" });
   function setupShare() {
     const dlg = $("share");
-    $("sh-title").textContent = T.shTitle; $("sh-intro").textContent = T.shIntro; $("sh-valid-l").textContent = T.shValid;
-    [...$("sh-valid").options].forEach((o) => (o.textContent = T.valid[o.value]));
-    $("sh-make").textContent = T.shMake; $("sh-close").textContent = T.shClose; $("sh-copy").textContent = T.shCopy;
-    $("sh-native").textContent = T.shNative; $("sh-revoke").textContent = T.shRevoke;
-    $("btn-share").onclick = () => { $("sh-result").hidden = true; $("sh-make").hidden = false; dlg.showModal(); };
-    $("sh-make").onclick = async () => {
+    $("sh-title").textContent = T.shTitle; $("sh-intro").textContent = T.shIntro;
+    $("sh-close").textContent = T.shClose; $("sh-revoke").textContent = T.shRevoke; $("sh-exp").textContent = T.shExp7;
+    $("sh-mail").textContent = "✉ Email"; $("sh-wa").textContent = "WhatsApp";
+    $("btn-share").onclick = () => { $("sh-status").textContent = ""; dlg.showModal(); };
+    const send = async (via) => {
+      const status = $("sh-status");
       try {
-        const r = await api("/my/api/share", { method: "POST", body: JSON.stringify({ days: current.days, validDays: +$("sh-valid").value }) });
-        const text = T.shText(date(r.from), date(r.to), r.url, date(r.expiresAt));
-        $("sh-url").value = r.url;
-        $("sh-wa").href = "https://wa.me/?text=" + encodeURIComponent(text);
-        $("sh-mail").href = `mailto:?subject=${encodeURIComponent(T.shSubject)}&body=${encodeURIComponent(text)}`;
-        $("sh-exp").textContent = T.shExp(date(r.expiresAt));
-        $("sh-copy").onclick = async () => { try { await navigator.clipboard.writeText(r.url); $("sh-copy").textContent = T.shCopied; } catch { $("sh-url").select(); } };
-        $("sh-native").hidden = !navigator.share;
-        $("sh-native").onclick = () => navigator.share({ title: T.shSubject, text }).catch(() => {});
-        $("sh-result").hidden = false; $("sh-make").hidden = true;
-      } catch (e) { alert(T.err); }
+        status.textContent = T.shWorking;
+        const r = await api("/my/api/share", { method: "POST", body: JSON.stringify({ days: current.days }) });
+        const text = [M.hello, M.body(fMsgDay.format(r.from), fMsgDay.format(r.to)), "", M.link(r.url, fMsgDay.format(r.expiresAt))].join("\n");
+        const { doc, name } = await buildPdf();
+        const file = new File([doc.output("blob")], name, { type: "application/pdf" });
+        // on a phone: the PDF and the message together, through the system share (the user picks WhatsApp or email)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: M.subject, text }); status.textContent = T.shDone; return; }
+          catch (e) { if (e && e.name === "AbortError") { status.textContent = ""; return; } }
+        }
+        // on a computer: the PDF is downloaded, the message opens with the link; the PDF is attached by hand
+        doc.save(name);
+        const href = via === "wa" ? "https://wa.me/?text=" + encodeURIComponent(text)
+          : `mailto:?subject=${encodeURIComponent(M.subject)}&body=${encodeURIComponent(text)}`;
+        window.open(href, "_blank", "noopener");
+        status.textContent = T.shAttach;
+      } catch (e) { logError("share", "Web/send-to-doctor", e && e.message); status.textContent = T.err; }
     };
+    $("sh-mail").onclick = () => send("mail");
+    $("sh-wa").onclick = () => send("wa");
     $("sh-revoke").onclick = async () => { try { await api("/my/api/shares", { method: "DELETE" }); alert(T.shRevoked); } catch { alert(T.err); } };
   }
 
@@ -536,25 +554,32 @@
   function loadScript(src) {
     return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
   }
-  async function printReport() {
-    if (!current.data || !window.HintReport) return;
-    const btn = $("btn-pdf"); btn.disabled = true;
+  // the A4 report as a jsPDF document (the same pages as the app)
+  async function buildPdf() {
+    // the PDF libraries (jsPDF, svg2pdf, MIT licence, served from this site) are loaded only when needed
+    if (!window.jspdf) await loadScript("/my/vendor/jspdf-4.2.1.umd.min.js");
+    if (!window.svg2pdf) await loadScript("/my/vendor/svg2pdf-2.8.1.umd.min.js");
+    const box = $("print");
+    window.HintReport.render(box, current.data);
+    box.classList.add("building");
     try {
-      // the PDF libraries (jsPDF, svg2pdf, MIT licence, served from this site) are loaded only when needed
-      if (!window.jspdf) await loadScript("/my/vendor/jspdf-4.2.1.umd.min.js");
-      if (!window.svg2pdf) await loadScript("/my/vendor/svg2pdf-2.8.1.umd.min.js");
-      const box = $("print");
-      window.HintReport.render(box, current.data);
-      box.classList.add("building");
       const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4", compress: true });
       const pages = [...box.querySelectorAll(".a4 svg")];
       for (let i = 0; i < pages.length; i++) {
         if (i) doc.addPage("a4");
         await doc.svg(pages[i], { x: 0, y: 0, width: 595.28, height: 841.89 });
       }
-      box.classList.remove("building");
-      doc.save(`HINT-${T.bpTitle.replace(/\s+/g, "-")}-${day(current.data.to).replace(/[./]/g, "-")}.pdf`);
+      return { doc, name: `HINT-${T.bpTitle.replace(/\s+/g, "-")}-${day(current.data.to).replace(/[./]/g, "-")}.pdf` };
+    } finally { box.classList.remove("building"); }
+  }
+  async function printReport() {
+    if (!current.data || !window.HintReport) return;
+    const btn = $("btn-pdf"); btn.disabled = true;
+    try {
+      const { doc, name } = await buildPdf();
+      doc.save(name);
     } catch (e) {
+      logError("pdf", "Web/PDF", e && e.message);
       // if anything goes wrong, the browser's own "Save as PDF" still gives the same pages
       setTimeout(() => window.print(), 50);
     } finally { btn.disabled = false; }

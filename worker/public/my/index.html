@@ -42,24 +42,16 @@
   <form method="dialog" class="dlg">
     <h3 id="sh-title"></h3>
     <p class="muted" id="sh-intro"></p>
-    <label class="row"><span id="sh-valid-l"></span>
-      <select id="sh-valid"><option value="1"></option><option value="7" selected></option><option value="30"></option></select>
-    </label>
-    <div id="sh-result" hidden>
-      <input id="sh-url" readonly>
-      <div class="send">
-        <a class="btn wa" id="sh-wa" target="_blank" rel="noopener">WhatsApp</a>
-        <a class="btn" id="sh-mail">Email</a>
-        <button class="btn" id="sh-copy" type="button"></button>
-        <button class="btn" id="sh-native" type="button" hidden></button>
-      </div>
-      <p class="muted small" id="sh-exp"></p>
+    <div class="send two-way">
+      <button class="btn primary" id="sh-mail" type="button"></button>
+      <button class="btn wa" id="sh-wa" type="button"></button>
     </div>
+    <p class="small" id="sh-status" role="status"></p>
+    <p class="muted small" id="sh-exp"></p>
     <div class="dlg-foot">
       <button class="btn ghost small" id="sh-revoke" type="button"></button>
       <span class="grow"></span>
       <button class="btn" value="close" id="sh-close"></button>
-      <button class="btn primary" id="sh-make" type="button"></button>
     </div>
   </form>
 </dialog>
