@@ -13,7 +13,7 @@
 // Modules: each part of the dashboard (blood pressure today, lab results later) is one entry of MODULES.
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
-import { logError, recentErrors } from "./errors";
+import { logError } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
@@ -163,7 +163,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   // The owner's area: usage numbers only, per anonymous account code. Never a reading, a report or a name.
   if (p.startsWith("/my/api/admin/")) {
     if (!isOwner) return fail("Only the app owner", 403, "admin_only");
-    if (p === "/my/api/admin/overview" && req.method === "GET") return json({ ...(await adminOverview(env, q)), errors: await recentErrors(q) });
+    if (p === "/my/api/admin/overview" && req.method === "GET") return json(await adminOverview(env, q));
     if (p === "/my/api/admin/app-min-version" && req.method === "POST") {
       let b: any = {};
       try { b = await req.json(); } catch {}
@@ -260,6 +260,5 @@ async function adminOverview(env: any, q: Q) {
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
     versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
     subscriptionOn: set.subscription_on === "1",
-    users: list,
   };
 }

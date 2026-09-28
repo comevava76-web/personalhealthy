@@ -170,7 +170,7 @@ for (const width of [390, 1280]) {
       await hasAdmin.click();
       await page.waitForSelector("table.list", { timeout: 8000 }).catch(() => {});
       const text = await page.textContent("main");
-      S.check("admin", `AT2-${tag}`, "Admin shows users by anonymous code, usage numbers and storage", /per_/.test(text) && /Database space/.test(text) && /500 MB/.test(text), text.slice(0, 120));
+      S.check("admin", `AT2-${tag}`, "Admin shows totals and storage only, no account codes", !/per_/.test(text) && /Database space/.test(text) && /500 MB/.test(text), text.slice(0, 120));
       S.check("layout", `AT3-${tag}`, "Admin without horizontal page scroll", await noHScroll(page), `scrollWidth ${await page.evaluate(() => document.documentElement.scrollWidth)}`);
       S.check("rules", `AT4-${tag}`, "no red on the Admin tab", (await redElements(page)).length === 0, (await redElements(page)).join(" | "));
       await page.screenshot({ path: path.join(SHOTS, `admin-${tag}.png`), fullPage: true });

@@ -45,15 +45,3 @@ export async function logError(q: Q, e: ErrorEntry): Promise<void> {
     console.error("error log failed", err);   // logging must never break a request
   }
 }
-
-/** The last 30 days of the log, newest first, for the owner's Admin tab. */
-export async function recentErrors(q: Q) {
-  const since = Date.now() - 30 * 864e5;
-  const rows = await q(
-    `SELECT day, source, code, place, app_version, count, last_at, message FROM error_log
-     WHERE last_at > ?1 ORDER BY last_at DESC LIMIT 200`, [since]);
-  return rows.map((r: any) => ({
-    day: String(r.day), source: String(r.source), code: String(r.code), place: String(r.place),
-    app: String(r.app_version || ""), count: Number(r.count), lastAt: Number(r.last_at), message: r.message ? String(r.message) : "",
-  }));
-}
