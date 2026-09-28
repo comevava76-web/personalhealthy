@@ -388,7 +388,7 @@
       <ul>
         <li><b>Each PR</b>: 160 functional and security checks, summer time (<code>security-tests.yml</code>, test data only).</li>
         <li><b>Nightly</b>: read-only probe of the live site; <b>vulnerability scan</b> of every library against OSV.dev (Android, web, server tools). Sundays: load and browser.</li>
-        <li><b>Dependabot</b>, Mondays: a PR for each outdated or vulnerable library; it must compile (<i>Android build check</i>).</li>
+        <li><b>Dependabot</b>, Mondays: a PR for each outdated or vulnerable library; it must compile (<i>Android build check</i>). Fixed within 48 h if critical, 7 days if high, 30 days if moderate: <code>docs/security/</code>.</li>
         <li><b>Who pays</b>: nobody extra. GitHub Actions on the owner's free plan (≈ 500 of 2,000 min a month), the routine inside the owner's Claude plan, Cloudflare free, OSV.dev public.</li>
       </ul>
     </div>
