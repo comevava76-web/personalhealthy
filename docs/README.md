@@ -6,10 +6,11 @@ documents are in English; user-facing documents are in Italian and English.
 
 | Document | Files | Made from | Update when |
 |---|---|---|---|
-| Functional overview, voice and camera input, architecture, hosting and runtime flow, roles and delivery, application flows and permissions (6 pages) | `architecture/architecture.html` → `HINT-Architecture.pdf`, `page-1..5.png` | hand-written HTML, `node docs/architecture/render.cjs` | a flow, technology, rule, table, cost or process changes |
+| Functional overview, voice and camera input, architecture, hosting and runtime flow, roles and delivery, application flows and permissions (6 pages) | `architecture/architecture.html` → `HINT-Architecture.pdf`, `page-1..6.png` | hand-written HTML, `node docs/architecture/render.cjs` | a flow, technology, rule, table, cost or process changes |
 | User guide IT / EN | `guide-it.html`, `guide-en.html` → `HINT-Guida-IT.pdf`, `HINT-Guide-EN.pdf` | hand-written HTML, `node docs/render-guides.cjs` | anything the user sees or does changes (buttons, screens, costs, data) |
 | Terms of use, privacy policy, home page | `legal/terms.html`, `legal/privacy.html`, `legal/home.html` | generated from `worker/src/pages.ts`: `cd worker && node scripts/export-docs.mjs` | the site pages change (the terms also change the version the app asks to accept) |
 | Test reports and security tests | `testing/test-report-<date>.md`; harness in `testing/harness/` (functional and security suite, time zones, load, browser on a local Worker; `prod-probe.mjs` read-only on the live site) | review runs; *Security tests* workflow | after each review; a failed check becomes a fix |
+| Vulnerability check and patching | `security/vulnerability-management.md` (what is scanned, severity and deadlines, how each kind of fix is made, blocking old app versions, who decides, findings on record) | hand-written | a scan, a tool, a deadline or a role changes; every accepted risk |
 | GDPR and Swiss FADP | `compliance/gdpr.md` (applicability, roles, gaps, record of processing) | hand-written | data, providers, retention or consent change |
 | Demo material | `demo/` (screenshots, sample PDF) | test data only: `testing/harness/demo-shots.mjs` | the look of the dashboard or of the PDF changes |
 | Mock-ups | `mockups/` | design drafts | kept as history |
