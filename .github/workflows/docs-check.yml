@@ -53,3 +53,8 @@ jobs:
             if [ -n "$missing" ]; then echo "values-$l is missing: $missing"; fail=1; fi
           done
           exit $fail
+      - name: No text overflows a box or a page (architecture document, guides)
+        run: |
+          npm install --no-save --no-audit --no-fund --silent playwright@1
+          npx playwright install --with-deps chromium >/dev/null
+          node docs/check-layout.cjs docs/architecture/architecture.html docs/guide-it.html docs/guide-en.html

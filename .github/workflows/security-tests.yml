@@ -1,6 +1,6 @@
 name: Security tests
 
-# Part of the continuous loop (docs/architecture, page 4). Test data only, never real readings.
+# Part of the continuous loop (docs/architecture, page 5). Test data only, never real readings.
 #  - On every pull request that touches the server, the web or the tests: the functional and security suite
 #    (signatures, replay, IDOR, limits, privacy, doctor links, admin rights, purge) and the time-zone checks
 #    against a local copy of the Worker. A failed check blocks the merge.
