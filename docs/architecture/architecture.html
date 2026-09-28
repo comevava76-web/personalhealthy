@@ -301,7 +301,7 @@
     <div>
       <h2>Error log <small>continuous testing and improvement</small></h2>
       <ul>
-        <li><b>Server</b>: every failed call to <code>/v1</code> or <code>/my/api</code> (status 400–599, except 402, 404, 426) and every exception.</li>
+        <li><b>Server</b>: every failed call to <code>/v1</code> or <code>/my/api</code> (status 400–599, except 402, 404, 426 and a browser without a session) and every exception.</li>
         <li><b>App</b>: crashes (sent when the app opens again) and failures of local work such as building the PDF or the Excel file. At most 20 a session.</li>
         <li><b>Web</b>: script errors of the Web Dashboard, at most 5 a page; never on a doctor's link.</li>
         <li><b>Short by design</b>: one row per day, source, code, place and app version, with a counter. Digits are removed from messages, so no reading value is stored; only the anonymous account code. Kept 90 days.</li>
