@@ -34,16 +34,17 @@ for (const f of ["android/app/build.gradle.kts", "android/build.gradle.kts"]) {
     if (PLUGINS[m[1]]) declared.set(PLUGINS[m[1]], { file: f + " (build plugin)", version: m[2] });
 }
 let fullTree = false;
-const depsFile = process.env.HINT_GRADLE_DEPS;
-if (depsFile && fs.existsSync(depsFile)) {
-  for (const line of fs.readFileSync(depsFile, "utf8").split("\n")) {
+// HINT_GRADLE_DEPS: the app's runtime tree (shipped to phones); HINT_GRADLE_BUILD: the build tools' tree (never shipped)
+for (const [file, build] of [[process.env.HINT_GRADLE_DEPS, false], [process.env.HINT_GRADLE_BUILD, true]]) {
+  if (!file || !fs.existsSync(file)) continue;
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
     if (!/--- /.test(line) || /--- project /.test(line)) continue;
     const m = line.match(/--- ([A-Za-z0-9_.-]+):([A-Za-z0-9_.-]+)(?::([A-Za-z0-9_.+-]+))?(?: -> ([A-Za-z0-9_.+-]+))?/);
     const version = m && (m[4] || m[3]);
     if (!m || !version) continue;
     const name = `${m[1]}:${m[2]}`;
     const d = declared.get(name);
-    add("Maven", name, version, d ? d.file : "android (pulled in by another library)");
+    add("Maven", name, version, d ? d.file : build ? "Android build tools (not in the app)" : "app (pulled in by another library)");
     fullTree = true;
   }
 }
@@ -87,7 +88,10 @@ for (const f of found) {
   } catch { f.summary = ""; f.severity = "UNKNOWN"; f.fixed = ""; f.aliases = []; }
   f.source = "https://osv.dev/vulnerability/" + f.id;
   const dec = decisions[f.id] || {};
-  f.rating = dec.rating || "";          // our rating after reachability; empty = not triaged yet
+  // our rating after reachability: a decision if there is one; otherwise code used only to build goes one level down
+  f.buildOnly = /build (tool|plugin)|not in the app/.test(f.where);
+  const DOWN = { CRITICAL: "HIGH", HIGH: "MODERATE", MODERATE: "LOW", LOW: "LOW" };
+  f.rating = dec.rating || (f.buildOnly && DOWN[f.severity] ? DOWN[f.severity] : "");
   f.plan = dec.plan || "";              // link to the remediation plan (issue or pull request)
 }
 

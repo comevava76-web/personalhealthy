@@ -14,6 +14,8 @@ const load = (f) => { try { return JSON.parse(fs.readFileSync(path.join(DIR, f),
 const blob = (file, line, ref = SHA) => `https://github.com/${REPO}/blob/${ref}/${file}${line ? "#L" + line : ""}`;
 const cut = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
+let decisions = {};
+try { decisions = JSON.parse(fs.readFileSync(new URL("../../security/decisions.json", import.meta.url), "utf8")); } catch {}
 const rows = [];
 const v = load("vulns.json");
 for (const f of v?.findings || [])
@@ -22,10 +24,11 @@ for (const f of v?.findings || [])
 const sg = load("semgrep.json");
 for (const r of sg?.results || []) {
   const sev = String(r.extra?.severity || "INFO").toUpperCase();
-  rows.push({ kind: "code", ref: cut(String(r.check_id).split(".").pop(), 80), name: r.path, version: String(r.start?.line || ""),
-    location: `${r.path}:${r.start?.line || ""}`, severity: sev === "ERROR" ? "HIGH" : sev === "WARNING" ? "MODERATE" : "LOW", rating: "",
-    fixed: "", summary: cut(r.extra?.message, 200), source_url: blob(r.path, r.start?.line),
-    plan_url: `https://semgrep.dev/r?q=${encodeURIComponent(r.check_id)}` });
+  const ref = cut(String(r.check_id).split(".").pop(), 80), dec = decisions[`${ref}@${r.path}`] || {};
+  rows.push({ kind: "code", ref, name: r.path, version: String(r.start?.line || ""),
+    location: `${r.path}:${r.start?.line || ""}`, severity: sev === "ERROR" ? "HIGH" : sev === "WARNING" ? "MODERATE" : "LOW", rating: dec.rating || "",
+    fixed: "", summary: cut(dec.note || r.extra?.message, 200), source_url: blob(r.path, r.start?.line),
+    plan_url: dec.plan || `https://semgrep.dev/r?q=${encodeURIComponent(r.check_id)}` });
 }
 const gl = load("gitleaks.json");
 for (const s of Array.isArray(gl) ? gl : [])
