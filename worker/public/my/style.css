@@ -161,3 +161,5 @@ b.you { color: var(--accent); font-size: 11px; text-transform: uppercase; letter
   table.list td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 2px; text-align: right; }
   table.list td::before { content: attr(data-l); color: var(--muted); font-size: 12px; text-align: left; }
 }
+.send.two-way { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 6px; }
+.send.two-way .btn { padding: 12px; font-size: 15px; }
