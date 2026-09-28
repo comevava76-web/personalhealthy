@@ -8,7 +8,8 @@
 - **Mai diagnosi**, mai giudizi sui valori; etichette sempre SYS, DIA, PUL; pressione e battiti mai nello stesso grafico;
   grafici di 7 giorni con un punto per giorno (la media del giorno, spiegata prima dei grafici) e il valore accanto, sotto solo i numeri dei giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
 - **Niente rosso**, in nessun grafico, pulsante o logo: SYS viola, DIA verde acqua, PUL ambra; nessun colore deve sembrare
-  un giudizio (né problema né «bene»).
+  un giudizio (né problema né «bene»). Unica eccezione, chiesta da Human: lo stato complessivo della console Security
+  (Secure verde, Vulnerable arancione, Vulnerable · High risk rosso); gli stati Open/Fixing/Fixed/Failed sempre in inglese.
 - **Conservazione**: misure al massimo 365 giorni (cancellazione automatica ogni notte); le accettazioni delle condizioni restano
   come prova. Se cambia, aggiornare condizioni d'uso (nuova versione), privacy e documento.
 - **Nessuna email nel database**: dell'account Google si salva solo un'impronta HMAC (`googleId` in `worker/src/index.ts`);

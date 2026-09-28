@@ -1,0 +1,7 @@
+{
+  "GHSA-r937-wjx7-w2jp": {
+    "rating": "LOW",
+    "plan": "https://github.com/comevava76-web/personalhealthy/issues/97",
+    "note": "kotlin-gradle-plugin: build-only, no shared build cache; move to Kotlin 2.x when a stable release has the fix; review by 2026-10-28"
+  }
+}

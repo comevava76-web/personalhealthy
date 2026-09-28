@@ -102,6 +102,8 @@ jobs:
           FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
           # JSON key of the Google Cloud service account that checks subscriptions with Google Play (optional)
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          # GitHub token that may open issues in this repository: the Security console's Fix button (optional)
+          SECURITY_FIX_TOKEN: ${{ secrets.SECURITY_FIX_TOKEN }}
           # Google Cloud "Web client ID" for Sign in with Google (not a secret: it only names the app to Google).
           # The repository variable GOOGLE_WEB_CLIENT_ID, if set, takes its place.
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
@@ -127,6 +129,11 @@ jobs:
             ( umask 077; jq -n --arg k "$PLAY_SERVICE_ACCOUNT" '{PLAY_SERVICE_ACCOUNT:$k}' > play.json )
             npx wrangler secret bulk play.json
             rm -f play.json
+          fi
+          if [ -n "$SECURITY_FIX_TOKEN" ]; then
+            ( umask 077; jq -n --arg k "$SECURITY_FIX_TOKEN" '{GITHUB_FIX_TOKEN:$k}' > fix.json )
+            npx wrangler secret bulk fix.json
+            rm -f fix.json
           fi
           # KEY_ENCRYPTION_KEY encrypts friends' Anthropic keys. It is created once, here, and never
           # printed or replaced: a new one would make every stored friend key unreadable.

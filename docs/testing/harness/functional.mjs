@@ -10,7 +10,7 @@ const sql = (q, ...p) => db.prepare(q).all(...p);
 const run = (q, ...p) => db.prepare(q).run(...p);
 const DAY = 864e5;
 // start from an empty local database (never run against a real one: lib.mjs refuses non-local addresses)
-for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log", "seen_sigs", "rate_limits"]) run(`DELETE FROM ${t}`);
+for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log", "seen_sigs", "rate_limits", "security_findings", "security_fixes", "security_fix_requests"]) run(`DELETE FROM ${t}`);
 run("DELETE FROM settings WHERE key <> 'billing_mode'");
 
 // ---------------------------------------------------------------- registration and identity
@@ -379,6 +379,29 @@ S.check("admin", "W16", "owner: isOwner true", r.json?.isOwner === true, r.text)
 r = await web("GET", "/my/api/admin/overview", { cookie: sessO.cookie });
 S.check("admin", "W17", "owner opens the admin overview: totals only, no list of accounts or errors", r.status === 200 && r.json.totals && r.json.users === undefined && r.json.errors === undefined, r.text.slice(0, 200));
 S.check("privacy", "W18", "admin overview holds no reading values (sis/dia/pul/data)", r.status === 200 && !/"(sis|dia|pul|sys|data)"/.test(r.text), "");
+r = await web("GET", "/my/api/admin/security", { cookie: sessO.cookie });
+S.check("admin", "W17b", "owner opens the Security console", r.status === 200 && Array.isArray(r.json.items), r.text.slice(0, 200));
+r = await web("GET", "/my/api/admin/security", { cookie: sessA.cookie });
+S.check("security", "W17c", "a non-owner cannot open the Security console -> 403", r.status === 403, r.text.slice(0, 200));
+// Security console "Fix": off without the GitHub token; progress only with the request's own key (Open → Fixing → Fixed | Failed)
+r = await web("POST", "/my/api/admin/security/fix", { cookie: sessO.cookie, body: { items: [] }, origin: BASE });
+S.check("security", "FX1", "Fix without the server's GitHub token -> 503 fix_not_configured", r.status === 503 && r.json?.code === "fix_not_configured", r.text);
+r = await web("POST", "/my/api/admin/security/fix", { cookie: sessA.cookie, body: { items: [] }, origin: BASE });
+S.check("security", "FX2", "a non-owner cannot request a fix -> 403", r.status === 403, r.text);
+{
+  const now = Date.now(), key = "k-" + crypto.randomBytes(16).toString("hex");
+  run("INSERT INTO security_fix_requests (id, key_hash, issue_url, created_at, expires_at) VALUES ('fxqa', ?, 'https://github.com/x/y/issues/1', ?, ?)", crypto.createHash("sha256").update(key).digest("hex"), now, now + 864e5);
+  for (const [n, name] of [[1, "lib-a"], [2, "lib-b"]])
+    run("INSERT INTO security_fixes (kind, ref, name, location, fix_id, idx, status, requested_at, updated_at) VALUES ('library', 'GHSA-qa', ?, 'android', 'fxqa', ?, 'fixing', ?, ?)", name, n, now, now);
+  r = await web("POST", "/hooks/fix-status", { body: { id: "fxqa", key: "wrong", items: [{ n: 1, status: "fixed" }] } });
+  S.check("security", "FX3", "fix progress with a wrong key -> 401, nothing changes", r.status === 401 && sql("SELECT status FROM security_fixes WHERE name = 'lib-a'")[0].status === "fixing", r.text);
+  r = await web("POST", "/hooks/fix-status", { body: { id: "fxqa", key, items: [{ n: 1, status: "fixed", url: "https://github.com/x/y/pull/2" }, { n: 1, status: "deleted" }] } });
+  S.check("security", "FX4", "fix progress with the request key: Fixed with its pull request; unknown states ignored", r.status === 200 && sql("SELECT status, detail_url FROM security_fixes WHERE name = 'lib-a'")[0].status === "fixed", r.text);
+  r = await web("POST", "/hooks/fix-status", { body: { id: "fxqa", key, finish: true } });
+  S.check("security", "FX5", "end of the run: what is still Fixing becomes Failed", sql("SELECT status FROM security_fixes WHERE name = 'lib-b'")[0].status === "failed", r.text);
+  r = await web("GET", "/my/api/admin/security/status", { cookie: sessO.cookie });
+  S.check("security", "FX6", "the console reads the states (owner only)", r.status === 200 && r.json.items.length === 2, r.text.slice(0, 200));
+}
 S.check("privacy", "W18b", "admin overview holds no email", !/@/.test(r.text), "");
 r = await web("POST", "/my/api/admin/app-min-version", { cookie: sessO.cookie, body: { minVersion: 99999 }, origin: BASE });
 S.check("admin", "W19", "web: min version above newest installed -> 400", r.status === 400, r.text);
