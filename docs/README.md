@@ -24,7 +24,8 @@ repository is built and set up) and `CLAUDE.md` (the working rules).
 | A change is decided in the chat | Human, architect | decides design, rules, priorities |
 | In the same commit as the code | Claude, developer | updates every document above that the change touches, regenerates PDFs and pictures, looks at them |
 | On every pull request and push | GitHub Actions, *Docs check* | fails if `legal/` differs from the site code, if an HTML source changed without its PDF, if an app text is missing in IT/DE/FR, or if a text overflows its box or a page (`node docs/check-layout.cjs`) |
-| On every pull request to the server, and every night | GitHub Actions, *Security tests* | functional and security suite, time zones; nightly also the live-site probe and the dependency audit; Sundays load and browser |
+| On every pull request to the server, and every night | GitHub Actions, *Security tests* | functional and security suite, time zones; nightly also the live-site probe and the vulnerability scan of every library (OSV.dev, `testing/harness/vuln-scan.mjs`); Sundays load and browser |
+| Every Monday | GitHub *Dependabot* (`.github/dependabot.yml`) | a pull request for each outdated or vulnerable library (Android, server tools, actions) |
 | After the merge | GitHub Actions, *Build* | publishes the guide PDFs next to the app, deploys the site whose pages match `legal/` |
 | When the APK arrives in the chat | Human | reads the documents that changed together with trying the app |
 
