@@ -460,6 +460,8 @@ export default {
         const task = (async () => {
           let code = "http_" + res.status, message = "";
           try { const j: any = await res.clone().json(); code = j.code || code; message = j.error || ""; } catch {}
+          // a browser opening the Web Dashboard without a session is the normal way in, not an error
+          if (code === "no_session") return;
           await logError(q, {
             source: "server", code, place: req.method + " " + url.pathname, message,
             appVersion: req.headers.get("X-App-Version"),
