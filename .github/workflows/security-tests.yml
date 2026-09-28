@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      QA: ${{ github.workspace }}/../qa
+      QA: ${{ github.workspace }}/qa-results
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

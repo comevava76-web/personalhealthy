@@ -8,3 +8,5 @@ worker/secrets.json
 worker/.dev.vars
 worker/public/*.apk
 worker/public/*.pdf
+
+qa-results/
