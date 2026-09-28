@@ -1,6 +1,6 @@
 name: Error log report
 
-# Step 1 of the continuous improvement loop (docs/architecture, page 4).
+# Step 1 of the continuous improvement loop (docs/architecture, page 5).
 # Every morning it reads the last 24 hours of the error log (D1 table error_log: grouped, no reading values)
 # and, if there is anything, opens an issue "Error log <date>" labelled error-log. The developer's scheduled
 # check (06:48 Zurich) reads the open error-log issues, fixes what can be fixed, and closes them with a report.
