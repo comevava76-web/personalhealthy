@@ -12,10 +12,18 @@ CREATE TABLE IF NOT EXISTS persons (
   birth_date  TEXT,
   sex         TEXT,
   is_admin    INTEGER NOT NULL DEFAULT 0,
-  pays        TEXT NOT NULL DEFAULT 'owner', -- 'owner' = the owner's key and credit; 'self' = a friend with their own key
+  pays        TEXT NOT NULL DEFAULT 'self',  -- everyone pays their own AI ('owner' only in old rows)
   created_at  INTEGER NOT NULL,
-  created_at_local TEXT
+  created_at_local TEXT,
+  -- the columns below are also added to older databases by build.yml (add_col)
+  google_sub  TEXT,                          -- "h1:" + HMAC of the Google account id: never the id or the email itself
+  email       TEXT,                          -- always empty: no email is kept (the nightly job clears old rows)
+  consent_at  INTEGER,
+  sub_token   TEXT, sub_until INTEGER, sub_state TEXT, sub_checked_at INTEGER,   -- yearly subscription (Google Play)
+  last_seen_at INTEGER,                      -- when the app was last opened (owner's Admin tab)
+  app_version TEXT                           -- the app version it last opened with
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_google ON persons (google_sub);
 
 CREATE TABLE IF NOT EXISTS scans (
   id          TEXT PRIMARY KEY,
@@ -156,4 +164,20 @@ CREATE TABLE IF NOT EXISTS error_log (
   message      TEXT,
   person_id    TEXT,                         -- last anonymous account that met it
   PRIMARY KEY (day, source, code, place, app_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_meas_taken ON measurements (taken_at);
+CREATE INDEX IF NOT EXISTS idx_error_last ON error_log (last_at);
+
+-- Signed calls already used (test report F-04): a copy of a call sent again is refused. Kept 10 minutes.
+CREATE TABLE IF NOT EXISTS seen_sigs (
+  sig_hash    TEXT PRIMARY KEY,              -- SHA-256 of the signature
+  expires_at  INTEGER NOT NULL
+);
+
+-- Limits against abuse (test report F-07): a counter per key and window. IP addresses only as a fingerprint.
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key          TEXT PRIMARY KEY,             -- e.g. "register:<ip fingerprint>", "voice:<person>"
+  window_start INTEGER NOT NULL,
+  count        INTEGER NOT NULL
 );

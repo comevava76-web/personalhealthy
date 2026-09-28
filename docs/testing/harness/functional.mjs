@@ -10,7 +10,7 @@ const sql = (q, ...p) => db.prepare(q).all(...p);
 const run = (q, ...p) => db.prepare(q).run(...p);
 const DAY = 864e5;
 // start from an empty local database (never run against a real one: lib.mjs refuses non-local addresses)
-for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log"]) run(`DELETE FROM ${t}`);
+for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log", "seen_sigs", "rate_limits"]) run(`DELETE FROM ${t}`);
 run("DELETE FROM settings WHERE key <> 'billing_mode'");
 
 // ---------------------------------------------------------------- registration and identity
@@ -29,6 +29,11 @@ S.check("auth", "R3", "wrong family code -> 403 family_code", r.status === 403 &
 const other = newPhone();
 r = await call(other, "POST", "/v1/register", { code: "QA-FAMILY-CODE-DUMMY", publicKey: bad.pub }, { person: null });
 S.check("auth", "R4", "register with a public key the signer does not own -> 401 bad_key", r.status === 401 && r.json?.code === "bad_key", r.text);
+{ // F-07: more than 10 sign-up attempts in an hour from one address are refused
+  let last;
+  for (let i = 0; i < 11; i++) { const p = newPhone(); last = await call(p, "POST", "/v1/register", { code: "WRONG-CODE", publicKey: p.pub }, { person: null, headers: { "CF-Connecting-IP": "10.99.0.1" } }); }
+  S.check("security", "RL1", "11th sign-up attempt from one address in an hour -> 429 too_many", last.status === 429 && last.json?.code === "too_many", last.text);
+}
 const alice = newPhone(); await register(alice);
 const bob = newPhone(); await register(bob);
 r = await call(alice, "GET", "/v1/me");
@@ -80,7 +85,7 @@ S.check("robustness", "A11", "unknown signed path -> 404", r.status === 404, r.t
 // ---------------------------------------------------------------- terms acceptance
 r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "13" });
 S.check("terms", "T1", "old terms version -> 400 bad_version", r.status === 400 && r.json?.code === "bad_version", r.text);
-r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "14", lang: "en-GB-very-long-language", textSha256: "a".repeat(200), appVersion: "0.1.200", phone: "X".repeat(500) });
+r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "15", lang: "en-GB-very-long-language", textSha256: "a".repeat(200), appVersion: "0.1.200", phone: "X".repeat(500) });
 S.check("terms", "T2", "current terms accepted", r.status === 200, r.text);
 {
   const [row] = sql("SELECT length(phone) AS lp, length(text_sha256) AS lt, lang, email FROM acceptances WHERE person_id = ?", alice.pid);
@@ -171,7 +176,7 @@ S.check("scan", "S6", "DELETE /v1/key -> hasKey false", r.status === 200 && r.js
 r = await call(bob, "POST", "/v1/key/check", {});
 S.check("scan", "S7", "key check without a key -> none", r.status === 200 && r.json.aiStatus === "none", r.text);
 r = await call(alice, "POST", "/v1/key", { apiKey: "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" });
-S.check("scan", "S8", "owner-paid account cannot store a key -> 403", r.status === 403 && r.json?.code === "not_self_pays", r.text);
+S.check("scan", "S8", "every account pays its own AI: a key is checked with Anthropic, not refused by role (F-08)", r.json?.code !== "not_self_pays" && r.status !== 403, r.text);
 // confirm: scans inserted directly, as if Anthropic had read them
 const mkScan = (pid, readable = true) => {
   const id = "scn_qa" + crypto.randomBytes(6).toString("hex");
@@ -195,7 +200,7 @@ S.check("scan", "C3", "unreadable scan cannot be saved -> 400 scan_invalid", r.s
 
 // ---------------------------------------------------------------- credit
 r = await call(alice, "POST", "/v1/credit", { action: "topup", amount: 5 });
-S.check("admin", "K1", "owner-paid non-admin cannot change credit -> 403", r.status === 403, r.text);
+S.check("admin", "K1", "a user changes only their own credit estimate (F-08)", r.status === 200 && sql("SELECT COUNT(*) n FROM ledger WHERE person_id = ? AND kind = 'topup'", alice.pid)[0].n >= 1, r.text);
 for (const [id, amt] of [["K2", -1], ["K3", 1001], ["K4", "abc"], ["K5", 0]]) {
   r = await call(owner, "POST", "/v1/credit", { action: "topup", amount: amt });
   S.check("admin", id, `credit top-up ${JSON.stringify(amt)} -> 400`, r.status === 400, r.text);
@@ -206,7 +211,7 @@ r = await call(owner, "GET", "/v1/credit/history");
 S.check("admin", "K7", "credit history", r.status === 200 && r.json.items.length >= 1, r.text);
 
 // ---------------------------------------------------------------- admin endpoints /v1/admin/*
-for (const [p, b] of [["/v1/admin/subscription", { on: false }], ["/v1/admin/settings", { billingMode: "private" }], ["/v1/admin/app-min-version", { minVersion: 1 }], ["/v1/admin/invites", { type: "self_pays" }], ["/v1/admin/credit", { action: "set", amount: 1 }]]) {
+for (const [p, b] of [["/v1/admin/subscription", { on: false }], ["/v1/admin/settings", { billingMode: "private" }], ["/v1/admin/app-min-version", { minVersion: 1 }], ["/v1/admin/invites", { type: "self_pays" }]]) {
   r = await call(alice, "POST", p, b);
   S.check("admin", "AD-" + p.split("/").pop(), `non-owner POST ${p} -> 403 admin_only`, r.status === 403, r.text);
 }
@@ -404,7 +409,7 @@ S.check("account", "X4", "browser sessions end with the phone sign-out", r.statu
 r = await call(owner, "DELETE", "/v1/me");
 S.check("account", "X5", "the owner cannot delete their account -> 403", r.status === 403, r.text);
 const carol = newPhone(); await register(carol);
-await call(carol, "POST", "/v1/accept", { doc: "disclaimer", version: "14" });
+await call(carol, "POST", "/v1/accept", { doc: "disclaimer", version: "15" });
 await voice(carol, { sis: 118, dia: 76, pul: 60, spokenAt: now() });
 const sessC = await webLogin(carol);
 const shareC = (await web("POST", "/my/api/share", { cookie: sessC.cookie, body: {}, origin: BASE })).json.url.split("/s/")[1];

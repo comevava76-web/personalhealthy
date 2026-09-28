@@ -148,6 +148,14 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 
 /* owner's area */
 .tiles.adm .tile { padding-left: 14px; }
+.card.space { padding: 16px; }
+.space-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.space-h .l { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+.space-h .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.space-h .v span { font-size: 13px; color: var(--muted); font-weight: 400; }
+.card.space .meter { height: 8px; border: 0; background: var(--panel2); border-radius: 4px; }
+.card.space .meter i { border-radius: 4px; }
+.card.space p { margin: 10px 0 0; }
 .meter { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .meter i { display: block; height: 100%; background: var(--accent); }
 .tbl { overflow-x: auto; }
@@ -163,3 +171,10 @@ b.you { color: var(--accent); font-size: 11px; text-transform: uppercase; letter
 }
 .send.two-way { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 6px; }
 .send.two-way .btn { padding: 12px; font-size: 15px; }
+.ck-state { font-weight: 600; color: var(--ink); }
+/* phone: footer links easy to tap; the readings table drops two columns instead of scrolling sideways (F-17) */
+.foot a { display: inline-block; padding: 12px 4px; }
+@media (max-width: 480px) {
+  table.readings th:nth-child(3), table.readings td:nth-child(3),
+  table.readings th:nth-child(7), table.readings td:nth-child(7) { display: none; }
+}

@@ -524,7 +524,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
             if (row % 2 == 1) c.drawRect(left, y, right, y + 17f, band)
             if (lastDay != null && day != lastDay) c.drawLine(left, y, right, y, dayRule)   // a new day starts
             val cells = listOf(
-                if (day != lastDay) Z.dmy(day) else "", Z.time(r.takenAt), periodLabel(r.period),
+                if (day != lastDay) Z.dmy(day) else "", Z.time(r.takenAt), ampm(r.period),
                 r.sis.toString(), r.dia.toString(), r.pul?.toString() ?: "–", sourceLabel(r.source)
             )
             cells.forEachIndexed { k, v -> c.drawText(v, cols[k] + 5f, y + 12f, (if (k in 3..5) bodyB else body).apply { color = cellCol[k] }) }
@@ -550,7 +550,7 @@ fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
     sb.append(listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys) + " (mmHg)", t(R.string.legend_dia) + " (mmHg)", t(R.string.label_pul), t(R.string.col_source)).joinToString(";"))
     sb.append("\r\n")
     per.list.forEach { r ->
-        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), periodLabel(r.period), r.sis, r.dia, r.pul ?: "", sourceLabel(r.source)).joinToString(";"))
+        sb.append(listOf(Z.dmy(Z.date(r.takenAt)), Z.time(r.takenAt), ampm(r.period), r.sis, r.dia, r.pul ?: "", sourceLabel(r.source)).joinToString(";"))
         sb.append("\r\n")
     }
     val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }

@@ -58,7 +58,9 @@ export async function call(phone, method, pathQ, body, opts = {}) {
 
 /** Registers a phone with the family code (first one becomes the owner). */
 export async function register(phone, code = FAMILY_CODE) {
-  const r = await call(phone, "POST", "/v1/register", { code, publicKey: phone.pub }, { person: null });
+  // each test phone comes from its own address, so the per-address sign-up limit (F-07) is not hit by the harness
+  phone.ip ??= "10.9." + Math.floor(Math.random() * 250) + "." + Math.floor(Math.random() * 250);
+  const r = await call(phone, "POST", "/v1/register", { code, publicKey: phone.pub }, { person: null, headers: { "CF-Connecting-IP": phone.ip } });
   if (r.status === 200) phone.pid = r.json.personId;
   return r;
 }
@@ -82,7 +84,7 @@ export async function webLogin(phone) {
   const c = await call(phone, "POST", "/v1/web/code", {});
   if (c.status !== 200) throw new Error("web/code " + c.status + " " + c.text);
   const code = c.json.url.split("#c=")[1];
-  const s = await web("POST", "/my/session", { body: { code }, origin: BASE });
+  const s = await web("POST", "/my/session", { body: { code }, origin: BASE, headers: phone.ip ? { "CF-Connecting-IP": phone.ip } : {} });
   const sc = s.headers.get("set-cookie") || "";
   const m = sc.match(/hint_s=([^;]+)/);
   return { status: s.status, cookie: m ? `hint_s=${m[1]}` : "", setCookie: sc, code, url: c.json.url };
@@ -111,7 +113,10 @@ export class Suite {
     for (const r of this.results) { by[r.area] ??= { pass: 0, fail: 0 }; by[r.area][r.ok ? "pass" : "fail"]++; }
     return { suite: this.name, by, failed: this.results.filter((r) => !r.ok) };
   }
-  save(file) { fs.writeFileSync(file, JSON.stringify({ ...this.summary(), results: this.results }, null, 2)); }
+  save(file) {
+    fs.writeFileSync(file, JSON.stringify({ ...this.summary(), results: this.results }, null, 2));
+    if (this.results.some((r) => !r.ok)) process.exitCode = 1;   // a failed check fails the CI job
+  }
 }
 
 export function pct(arr, p) {

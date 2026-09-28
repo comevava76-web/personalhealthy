@@ -6,13 +6,19 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const IT = (navigator.language || "en").toLowerCase().startsWith("it");
-  const LOCALE = IT ? "it-CH" : "en-GB";
+  // the page speaks the browser's language: Italian, German, French, otherwise English
+  const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
+  const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";
+  const IT = LG === "it";
+  const LOCALE = { it: "it-CH", de: "de-CH", fr: "fr-CH", en: "en-GB" }[LG];
   const TZ = "Europe/Zurich";
+  // the moment of the day in the tables, short to save space: before 12:00 AM, after PM
+  const ampm = (p) => (p === "morning" ? "AM" : "PM");
 
   /* ---------- words ---------- */
-  const T = IT ? {
-    share: "Invia al medico", pdf: "PDF", csv: "Excel", out: "Esci",
+  const T = {
+   it: {
+    share: "Invia al medico", pdf: "PDF", csv: "Excel",
     bp: "Pressione", labs: "Analisi",
     range: { 7: "7 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
@@ -22,12 +28,13 @@
     morning: "Mattina", morningSub: "prima delle 12", evening: "Sera", eveningSub: "dalle 17",
     pulse: "Battiti (PUL)", pulseSub: "battiti al minuto",
     values: "Valori del periodo", hi: "più alta", lo: "più bassa", mean: "media", meanOf: (n) => `media di ${n} misure`,
-    list: "Tutte le misure", cols: ["Data", "Ora", "Momento", "SYS", "DIA", "PUL", "Fonte"],
+    list: "Tutte le misure", cols: ["Data", "Ora", "AM/PM", "SYS", "DIA", "PUL", "Fonte"],
     per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" }, src: { photo: "Foto", voice: "Voce" },
     none: "Nessuna misura in questo periodo", noneMoment: "Nessuna misura in questo momento della giornata",
     signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT 365 vai su Report e tocca «Web Dashboard». Il browser si apre già collegato al tuo account.",
     ckT: "Cookie", ckP: "La Web Dashboard usa un solo cookie tecnico, <b>hint_s</b>, che ti tiene collegato per 7 giorni dopo averla aperta dall'app. Contiene solo un codice casuale, è di prima parte e non è leggibile dagli script (HttpOnly, Secure, SameSite=Strict). Nessun cookie di profilazione, di statistica, di pubblicità o di terze parti. La tua scelta resta salvata in questo browser. Dettagli nell'<a href=\"/privacy#cookie\">informativa privacy</a>.",
-    ckYes: "Accetto", ckNo: "Rifiuto", ckNoT: "Senza cookie non posso tenerti collegato", ckNoP: "Il cookie tecnico serve solo a tenerti collegato alla Web Dashboard. Senza di esso puoi continuare a usare l'app. Se cambi idea, riapri Web Dashboard dall'app e tocca «Accetto».", ckAgain: "Rivedi la scelta",
+    ckYes: "Accetto", ckNo: "Rifiuto", ckIsOn: "Adesso: hai accettato il cookie tecnico.", ckIsOff: "Adesso: il cookie tecnico non è salvato.",
+    ckShared: "Questa pagina di sola lettura non usa cookie e non salva nulla nel browser.", ckNoT: "Senza cookie non posso tenerti collegato", ckNoP: "Il cookie tecnico serve solo a tenerti collegato alla Web Dashboard. Senza di esso puoi continuare a usare l'app. Se cambi idea, riapri Web Dashboard dall'app e tocca «Accetto».", ckAgain: "Rivedi la scelta",
     subT: "Il tuo abbonamento è scaduto", subP: "Grazie per aver usato HINT 365. Rinnova l'abbonamento annuale dall'app (Google Play) per ripristinare tutte le funzioni: le tue misure sono al sicuro e tornano subito disponibili.",
     goneT: "Link scaduto", goneP: "Questo link non è più valido: è scaduto oppure è stato ritirato da chi l'ha inviato.",
     sharedB: (a, b, e) => `Report condiviso dal paziente: misure dal ${a} al ${b}. Link valido fino al ${e}.`,
@@ -38,8 +45,11 @@
     footNote: "HINT 365 non fa diagnosi e non valuta i valori: ogni valutazione spetta al medico.",
     rights: "Tutti i diritti riservati", terms: "Condizioni d'uso",
     err: "Qualcosa non ha funzionato. Riprova.",
-  } : {
-    share: "Send to doctor", pdf: "PDF", csv: "Excel", out: "Sign out",
+    shRevokeQ: "Rendere subito non validi tutti i link inviati?",
+    chartAria: (k, a, b) => `${k}, medie giornaliere dal ${a} al ${b}`,
+   },
+   en: {
+    share: "Send to doctor", pdf: "PDF", csv: "Excel",
     bp: "Blood pressure", labs: "Lab results",
     range: { 7: "7 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
@@ -49,12 +59,13 @@
     morning: "Morning", morningSub: "before 12:00", evening: "Evening", eveningSub: "from 17:00",
     pulse: "Pulse (PUL)", pulseSub: "beats per minute",
     values: "Values of the period", hi: "highest", lo: "lowest", mean: "average", meanOf: (n) => `average of ${n} readings`,
-    list: "All readings", cols: ["Date", "Time", "Moment", "SYS", "DIA", "PUL", "Source"],
+    list: "All readings", cols: ["Date", "Time", "AM/PM", "SYS", "DIA", "PUL", "Source"],
     per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" }, src: { photo: "Photo", voice: "Voice" },
     none: "No readings in this period", noneMoment: "No readings at this time of day",
     signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT 365 app go to Report and tap “Web Dashboard”. The browser opens already signed in to your account.",
     ckT: "Cookies", ckP: "The Web Dashboard uses a single technical cookie, <b>hint_s</b>, which keeps you signed in for 7 days after you open it from the app. It holds only a random code, is first-party and cannot be read by scripts (HttpOnly, Secure, SameSite=Strict). No profiling, statistics, advertising or third-party cookies. Your choice is saved in this browser. Details in the <a href=\"/privacy#cookie\">privacy policy</a>.",
-    ckYes: "Accept", ckNo: "Decline", ckNoT: "Without the cookie I cannot keep you signed in", ckNoP: "The technical cookie only keeps you signed in to the Web Dashboard. Without it you can keep using the app. If you change your mind, open Web Dashboard again from the app and tap “Accept”.", ckAgain: "Review the choice",
+    ckYes: "Accept", ckNo: "Decline", ckIsOn: "Now: you have accepted the technical cookie.", ckIsOff: "Now: the technical cookie is not saved.",
+    ckShared: "This read-only page uses no cookies and saves nothing in the browser.", ckNoT: "Without the cookie I cannot keep you signed in", ckNoP: "The technical cookie only keeps you signed in to the Web Dashboard. Without it you can keep using the app. If you change your mind, open Web Dashboard again from the app and tap “Accept”.", ckAgain: "Review the choice",
     subT: "Your subscription has run out", subP: "Thank you for using HINT 365. Renew the yearly subscription in the app (Google Play) to bring back every feature: your readings are safe and come back at once.",
     goneT: "Link expired", goneP: "This link no longer works: it has expired or was withdrawn by the person who sent it.",
     sharedB: (a, b, e) => `Report shared by the patient: readings from ${a} to ${b}. Link valid until ${e}.`,
@@ -65,7 +76,70 @@
     footNote: "HINT 365 makes no diagnosis and does not assess the values: every assessment is up to the doctor.",
     rights: "All rights reserved", terms: "Terms of use",
     err: "Something went wrong. Please try again.",
-  };
+    shRevokeQ: "Make every link you sent stop working now?",
+    chartAria: (k, a, b) => `${k}, daily averages from ${a} to ${b}`,
+   },
+   de: {
+    share: "An den Arzt senden", pdf: "PDF", csv: "Excel",
+    bp: "Blutdruck", labs: "Laborwerte",
+    range: { 7: "7 Tage" },
+    bpTitle: "Blutdruck", readings: (n) => `${n} Messungen`,
+    last: "Letzte Messung", avgBp: "Mittel SYS / DIA", avgPul: "Mittel PUL", count: "Messungen", days: (d, n) => `an ${d} von ${n} Tagen`,
+    chartsNote: "So lesen Sie die Grafiken: Jeder Punkt ist der Mittelwert aller Messungen dieses Tages (ein Durchschnitt), also 7 Punkte für 7 Tage. Die einzelnen Messungen stehen in der Liste unten und bei den Werten des Zeitraums.",
+    whole: "Verlauf des Zeitraums", dailyAvg: "Mittel jedes Tages", nOf: (n) => (n === 1 ? "1 Messung" : `${n} Messungen`),
+    morning: "Morgen", morningSub: "vor 12 Uhr", evening: "Abend", eveningSub: "ab 17 Uhr",
+    pulse: "Puls (PUL)", pulseSub: "Schläge pro Minute",
+    values: "Werte des Zeitraums", hi: "höchster", lo: "tiefster", mean: "Mittel", meanOf: (n) => `Mittel aus ${n} Messungen`,
+    list: "Alle Messungen", cols: ["Datum", "Zeit", "AM/PM", "SYS", "DIA", "PUL", "Quelle"],
+    per: { morning: "Morgen", afternoon: "Nachmittag", evening: "Abend" }, src: { photo: "Foto", voice: "Stimme" },
+    none: "Keine Messungen in diesem Zeitraum", noneMoment: "Keine Messungen zu dieser Tageszeit",
+    signinT: "Web Dashboard aus der App öffnen", signinP: "Ohne Passwort hinein: In der App HINT 365 auf Bericht gehen und «Web Dashboard» tippen. Der Browser öffnet sich bereits mit Ihrem Konto verbunden.",
+    ckT: "Cookies", ckP: "Das Web Dashboard verwendet ein einziges technisches Cookie, <b>hint_s</b>, das Sie nach dem Öffnen aus der App 7 Tage angemeldet hält. Es enthält nur einen Zufallscode, ist ein Erstanbieter-Cookie und für Skripte nicht lesbar (HttpOnly, Secure, SameSite=Strict). Keine Cookies für Profile, Statistik, Werbung oder Dritte. Ihre Wahl bleibt in diesem Browser gespeichert. Details in der <a href=\"/privacy#cookie\">Datenschutzerklärung</a>.",
+    ckYes: "Akzeptieren", ckNo: "Ablehnen", ckIsOn: "Jetzt: Sie haben das technische Cookie akzeptiert.", ckIsOff: "Jetzt: Das technische Cookie ist nicht gespeichert.",
+    ckShared: "Diese Nur-Lese-Seite verwendet keine Cookies und speichert nichts im Browser.", ckNoT: "Ohne Cookie kann ich Sie nicht angemeldet halten", ckNoP: "Das technische Cookie dient nur dazu, Sie im Web Dashboard angemeldet zu halten. Ohne es können Sie die App weiter verwenden. Wenn Sie es sich anders überlegen, öffnen Sie das Web Dashboard erneut aus der App und tippen Sie «Akzeptieren».", ckAgain: "Wahl ändern",
+    subT: "Ihr Abo ist abgelaufen", subP: "Danke, dass Sie HINT 365 nutzen. Verlängern Sie das Jahresabo in der App (Google Play), um alle Funktionen wiederherzustellen: Ihre Messungen sind sicher und sofort wieder da.",
+    goneT: "Link abgelaufen", goneP: "Dieser Link gilt nicht mehr: Er ist abgelaufen oder wurde von der Person zurückgezogen, die ihn gesendet hat.",
+    sharedB: (a, b, e) => `Vom Patienten geteilter Bericht: Messungen vom ${a} bis ${b}. Link gültig bis ${e}.`,
+    shTitle: "Bericht an den Arzt senden", shIntro: "Wählen Sie, wie Sie ihn senden: Das PDF des Berichts geht zusammen mit einem Nur-Lese-Link und einer fertigen Nachricht.",
+    shExp7: "Der Link gilt 7 Tage. Wer ihn erhält, sieht nur Grafiken und Messungen des Zeitraums: keine E-Mail, kein Konto.",
+    shClose: "Schliessen", shRevoke: "Alle gesendeten Links zurückziehen", shRevoked: "Alle Links wurden zurückgezogen", shRevokeQ: "Alle gesendeten Links sofort ungültig machen?",
+    shWorking: "PDF und Link werden vorbereitet…", shDone: "Gesendet.", shAttach: "Das PDF wurde heruntergeladen: Hängen Sie es an die geöffnete Nachricht an.",
+    footNote: "HINT 365 stellt keine Diagnosen und bewertet die Werte nicht: Jede Beurteilung ist Sache des Arztes.",
+    rights: "Alle Rechte vorbehalten", terms: "Nutzungsbedingungen",
+    err: "Etwas hat nicht funktioniert. Bitte erneut versuchen.",
+    chartAria: (k, a, b) => `${k}, Tagesmittel vom ${a} bis ${b}`,
+   },
+   fr: {
+    share: "Envoyer au médecin", pdf: "PDF", csv: "Excel",
+    bp: "Tension", labs: "Analyses",
+    range: { 7: "7 jours" },
+    bpTitle: "Tension artérielle", readings: (n) => `${n} mesures`,
+    last: "Dernière mesure", avgBp: "Moyenne SYS / DIA", avgPul: "Moyenne PUL", count: "Mesures", days: (d, n) => `sur ${d} jours de ${n}`,
+    chartsNote: "Comment lire les graphiques : chaque point est la moyenne de toutes les mesures de ce jour (un agrégat), donc 7 points pour 7 jours. Les mesures une à une sont dans la liste en bas et dans les valeurs de la période.",
+    whole: "Évolution de la période", dailyAvg: "moyenne de chaque jour", nOf: (n) => (n === 1 ? "1 mesure" : `${n} mesures`),
+    morning: "Matin", morningSub: "avant 12 h", evening: "Soir", eveningSub: "dès 17 h",
+    pulse: "Pouls (PUL)", pulseSub: "battements par minute",
+    values: "Valeurs de la période", hi: "la plus haute", lo: "la plus basse", mean: "moyenne", meanOf: (n) => `moyenne de ${n} mesures`,
+    list: "Toutes les mesures", cols: ["Date", "Heure", "AM/PM", "SYS", "DIA", "PUL", "Source"],
+    per: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" }, src: { photo: "Photo", voice: "Voix" },
+    none: "Aucune mesure sur cette période", noneMoment: "Aucune mesure à ce moment de la journée",
+    signinT: "Ouvrez le Web Dashboard depuis l'app", signinP: "Pour entrer sans mot de passe : dans l'app HINT 365, allez dans Rapport et touchez « Web Dashboard ». Le navigateur s'ouvre déjà connecté à votre compte.",
+    ckT: "Cookies", ckP: "Le Web Dashboard utilise un seul cookie technique, <b>hint_s</b>, qui vous garde connecté 7 jours après l'avoir ouvert depuis l'app. Il ne contient qu'un code aléatoire, est interne et illisible par les scripts (HttpOnly, Secure, SameSite=Strict). Aucun cookie de profilage, de statistiques, de publicité ou de tiers. Votre choix reste enregistré dans ce navigateur. Détails dans la <a href=\"/privacy#cookie\">politique de confidentialité</a>.",
+    ckYes: "J'accepte", ckNo: "Je refuse", ckIsOn: "Actuellement : vous avez accepté le cookie technique.", ckIsOff: "Actuellement : le cookie technique n'est pas enregistré.",
+    ckShared: "Cette page en lecture seule n'utilise pas de cookies et n'enregistre rien dans le navigateur.", ckNoT: "Sans cookie, je ne peux pas vous garder connecté", ckNoP: "Le cookie technique sert seulement à vous garder connecté au Web Dashboard. Sans lui, vous pouvez continuer à utiliser l'app. Si vous changez d'avis, rouvrez le Web Dashboard depuis l'app et touchez « J'accepte ».", ckAgain: "Revoir le choix",
+    subT: "Votre abonnement a expiré", subP: "Merci d'utiliser HINT 365. Renouvelez l'abonnement annuel dans l'app (Google Play) pour retrouver toutes les fonctions : vos mesures sont en sécurité et reviennent tout de suite.",
+    goneT: "Lien expiré", goneP: "Ce lien n'est plus valable : il a expiré ou a été retiré par la personne qui l'a envoyé.",
+    sharedB: (a, b, e) => `Rapport partagé par le patient : mesures du ${a} au ${b}. Lien valable jusqu'au ${e}.`,
+    shTitle: "Envoyer le rapport au médecin", shIntro: "Choisissez comment l'envoyer : le PDF du rapport part avec un lien en lecture seule et un message déjà rédigé.",
+    shExp7: "Le lien est valable 7 jours. La personne qui le reçoit ne voit que les graphiques et les mesures de la période : pas d'e-mail, pas de compte.",
+    shClose: "Fermer", shRevoke: "Retirer tous les liens envoyés", shRevoked: "Tous les liens ont été retirés", shRevokeQ: "Rendre immédiatement invalides tous les liens envoyés ?",
+    shWorking: "Préparation du PDF et du lien…", shDone: "Envoyé.", shAttach: "Le PDF a été téléchargé : joignez-le au message qui s'est ouvert.",
+    footNote: "HINT 365 ne pose pas de diagnostic et n'évalue pas les valeurs : toute évaluation revient au médecin.",
+    rights: "Tous droits réservés", terms: "Conditions d'utilisation",
+    err: "Quelque chose n'a pas fonctionné. Réessayez.",
+    chartAria: (k, a, b) => `${k}, moyennes journalières du ${a} au ${b}`,
+   },
+  }[LG];
 
   /* ---------- dates: everything in Swiss time ---------- */
   const fDate = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
@@ -153,7 +227,8 @@
       const lo = Math.floor((Math.min(...vals) - 6) / 10) * 10, hi = Math.ceil((Math.max(...vals) + 6) / 10) * 10;
       const Y = (v) => B - (v - lo) / (hi - lo) * (B - TOP);
       const step = (R - L) / days, X = (i) => L + step * (i + 0.5);
-      const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot" });
+      const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot", role: "img",
+        "aria-label": T.chartAria(keys.map((k) => k.toUpperCase()).join(" / "), date(range.from), date(range.to)) });
       for (let v = lo; v <= hi; v += 10) {
         svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: "#1F2E50", "stroke-width": 1 });
         svgEl(svg, "text", { x: R + 8, y: Y(v) + 4, class: "ax" }, v);
@@ -202,7 +277,7 @@
   }
 
   // the morning / evening balance, the same drawing as in the PDF (report.js), in the dark colours
-  const DARK_BAL = { ink: "#EAF0FA", muted: "#8C9BBA", beam: "#6F7FA3", panel: "#1C2B4F", sys: "#B3A7FF", dia: "#5FD3C6" };
+  const DARK_BAL = { ink: "#EAF0FA", muted: "#8C9BBA", beam: "#6F7FA3", panel: "#1C2B4F", sys: "#B3A7FF", dia: "#5FD3C6", scale: 1.5 };
   function drawBalance(el, items) {
     const draw = () => {
       el.innerHTML = "";
@@ -221,7 +296,7 @@
         const items = data.items;
         const n = items.length;
         const dayCount = new Set(items.map((r) => day(r.t))).size;
-        const spanDays = Math.max(1, Math.round((data.to - data.from) / 864e5));
+        const spanDays = Math.round((midnight(data.to) - midnight(data.from)) / 864e5) + 1;
         const avg = (k) => { const v = items.map((r) => r[k]).filter((x) => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
         const last = items[n - 1];
         const per = `${fRange.formatRange(data.from, data.to)} · ${T.dailyAvg}`;   // e.g. "21–27 set · media di ogni giorno"
@@ -262,7 +337,7 @@
       },
       csv(items) {
         const rows = [T.cols.map((c, i) => (i === 3 || i === 4 ? c + " (mmHg)" : c))];
-        for (const r of items) rows.push([day(r.t), time(r.t), T.per[r.period] || r.period, r.sys, r.dia, r.pul ?? "", T.src[r.source] || r.source]);
+        for (const r of items) rows.push([day(r.t), time(r.t), ampm(r.period), r.sys, r.dia, r.pul ?? "", T.src[r.source] || r.source]);
         return rows.map((r) => r.join(";")).join("\r\n");
       },
     },
@@ -289,10 +364,10 @@
     let lastDay = "";
     const rows = [...items].reverse().map((r) => {
       const d = day(r.t), nd = d !== lastDay; lastDay = d;
-      return `<tr class="${nd ? "newday" : ""}"><td>${nd ? d : ""}</td><td>${time(r.t)}</td><td>${T.per[r.period] || r.period}</td>
+      return `<tr class="${nd ? "newday" : ""}"><td>${nd ? d : ""}</td><td>${time(r.t)}</td><td>${ampm(r.period)}</td>
         <td class="sys"><b>${r.sys}</b></td><td class="dia"><b>${r.dia}</b></td><td class="pul">${r.pul ?? "–"}</td><td>${T.src[r.source] || r.source}</td></tr>`;
     }).join("");
-    return `<div style="overflow-x:auto"><table><thead><tr>${T.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div style="overflow-x:auto"><table class="readings"><thead><tr>${T.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   /* ---------- page ---------- */
@@ -301,10 +376,10 @@
     current.days = 7;   // one week only: every reading readable
 
   function words() {
-    $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv; $("btn-out").textContent = T.out;
+    $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv;
     $("foot-note").textContent = T.footNote; $("rights").textContent = T.rights; $("terms-link").textContent = T.terms; 
     const y = new Date().getFullYear(); $("years").textContent = y > 2026 ? `2026–${y}` : "2026";
-    document.documentElement.lang = IT ? "it" : "en";
+    document.documentElement.lang = LG;
   }
   function message(title, text) { main.innerHTML = `<div class="center"><h1>${title}</h1><p class="muted">${text}</p></div>`; }
   function charts0() { redraws.length = 0; }
@@ -346,6 +421,7 @@
   const LANG = (navigator.language || "en").slice(0, 2).toLowerCase();
   const M = MSG[LANG] || MSG.en;
   const fMsgDay = new Intl.DateTimeFormat(MSG[LANG] ? navigator.language : "en-GB", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" });
+  let lastShare = null;
   function setupShare() {
     const dlg = $("share");
     $("sh-title").textContent = T.shTitle; $("sh-intro").textContent = T.shIntro;
@@ -356,7 +432,9 @@
       const status = $("sh-status");
       try {
         status.textContent = T.shWorking;
-        const r = await api("/my/api/share", { method: "POST", body: JSON.stringify({ days: current.days }) });
+        // a second tap within 10 minutes reuses the same link instead of creating another one
+        const r = lastShare && Date.now() - lastShare.at < 10 * 60e3 ? lastShare.r
+          : (lastShare = { at: Date.now(), r: await api("/my/api/share", { method: "POST", body: JSON.stringify({ days: current.days }) }) }).r;
         const text = [M.hello, M.body(fMsgDay.format(r.from), fMsgDay.format(r.to)), "", M.link(r.url, fMsgDay.format(r.expiresAt))].join("\n");
         const { doc, name } = await buildPdf();
         const file = new File([doc.output("blob")], name, { type: "application/pdf" });
@@ -375,7 +453,7 @@
     };
     $("sh-mail").onclick = () => send("mail");
     $("sh-wa").onclick = () => send("wa");
-    $("sh-revoke").onclick = async () => { try { await api("/my/api/shares", { method: "DELETE" }); alert(T.shRevoked); } catch { alert(T.err); } };
+    $("sh-revoke").onclick = async () => { if (!confirm(T.shRevokeQ)) return; try { await api("/my/api/shares", { method: "DELETE" }); alert(T.shRevoked); } catch { alert(T.err); } };
   }
 
   /* ---------- cookie consent ----------
@@ -384,12 +462,15 @@
   const CK_KEY = "hint.cookies", CK_VER = "1";
   const ckGet = () => { try { return localStorage.getItem(CK_KEY); } catch { return null; } };
   const ckSet = (v) => { try { v == null ? localStorage.removeItem(CK_KEY) : localStorage.setItem(CK_KEY, v); } catch {} };
-  function cookieBanner() {
+  // the notice; "state" adds the current choice on top, "info" shows only an OK (pages that set no cookie)
+  function cookieBanner(opts = {}) {
     return new Promise((done) => {
       const box = document.createElement("div");
       box.className = "cookie"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
-      box.innerHTML = `<div class="cookie-in"><h3>${T.ckT}</h3><p>${T.ckP}</p><div class="cookie-b">
-        <button class="btn" type="button" data-v="no">${T.ckNo}</button><button class="btn primary" type="button" data-v="yes">${T.ckYes}</button></div></div>`;
+      const state = opts.state ? `<p class="ck-state">${opts.state}</p>` : "";
+      const buttons = opts.info ? `<button class="btn primary" type="button" data-v="ok">OK</button>`
+        : `<button class="btn" type="button" data-v="no">${T.ckNo}</button><button class="btn primary" type="button" data-v="yes">${T.ckYes}</button>`;
+      box.innerHTML = `<div class="cookie-in"><h3>${T.ckT}</h3>${state}<p>${opts.info ? T.ckShared : T.ckP}</p><div class="cookie-b">${buttons}</div></div>`;
       box.onclick = (e) => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; box.remove(); done(v === "yes"); };
       document.body.appendChild(box);
     });
@@ -405,12 +486,13 @@
     message(T.ckNoT, T.ckNoP);
   }
   // footer link: see the notice again; declining now signs this browser out and removes the cookie
-  function bindCookieLink() {
+  function bindCookieLink(shared) {
     const a = $("cookie-link"); if (!a) return;
     a.textContent = T.ckT;
     a.onclick = async (e) => {
       e.preventDefault();
-      const yes = await cookieBanner();
+      if (shared) { await cookieBanner({ info: true }); return; }
+      const yes = await cookieBanner({ state: ckGet() === "yes:" + CK_VER ? T.ckIsOn : T.ckIsOff });
       ckSet(yes ? "yes:" + CK_VER : "no:" + CK_VER);
       if (!yes) { try { await api("/my/session", { method: "DELETE" }); } catch {} cookiesRefused(); }
     };
@@ -440,7 +522,6 @@
     };
     $("btn-pdf").onclick = printReport;
     $("btn-csv").onclick = () => current.data && download(`hint-${current.module}-${current.days}d.csv`, MODULES[current.module].csv(current.data.items), "text/csv");
-    $("btn-out").onclick = async () => { try { await api("/my/session", { method: "DELETE" }); } catch {} signedOut(); };
     setupShare();
     load();
   }
@@ -450,40 +531,36 @@
      Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
   const AD = IT ? {
     tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo numeri d'uso, legati al codice anonimo: nessuna misura, nessun report, nessun nome",
-    upd: "Aggiornato", users: "Utenti", new30: (n) => `${n} nuovi in 30 giorni`, act7: "Attivi 7 giorni", act30: "Attivi 30 giorni",
-    act: "hanno aperto l'app o misurato", rd: "Misure", rd7: "Misure 7 giorni", rd30: "Misure 30 giorni", total: "in totale",
-    split: (v, f) => `${v} a voce · ${f} da foto`, ai: "AI attiva", aiU: "utenti con chiave Anthropic", aiSp: "Spesa AI", aiSpU: "sui crediti Anthropic degli utenti",
-    web: "Web Dashboard", webU: "sessioni aperte", links: "Link al medico", linksU: "attivi ora",
-    stT: "Spazio su Cloudflare", stDb: (a, b, pc) => `Database D1: ${a} su ${b} (${pc}) del piano gratuito`, stRows: "Righe per tabella",
-    stNote: "Il limite di 500 MB è quello di un database D1 nel piano gratuito di Cloudflare. Le misure oltre 365 giorni vengono cancellate ogni notte.",
-    vT: "Versioni dell'app", vNew: (v) => `Versione più recente installata: ${v}`, vNone: "Nessuna versione bloccata: tutte le app installate funzionano.",
+    upd: "Aggiornato", users: "Utenti", usersU: "in totale", aiOn: "Con funzionalità AI", aiOnU: "chiave Anthropic attiva", aiOff: "Senza funzionalità AI", aiOffU: "solo l'app",
+    rd: "Misure", split: (v, f) => `${v} a voce · ${f} con Scan`, aiSp: "Spesa AI", aiSpU: "in totale, sui crediti Anthropic degli utenti",
+    errs: "Errori", errsU: "in totale, ultimi 90 giorni",
+    stT: "Spazio database", stOf: (a, b) => `${a} <span>di ${b}</span>`, stNote: (pc) => `${pc} usato · piano gratuito Cloudflare D1 · misure oltre 365 giorni cancellate ogni notte`,
+    vT: "Versioni dell'app", vNew: (v) => `Versione più recente: ${v}`, vNone: "Nessuna versione bloccata: tutte le app installate funzionano.",
     vMin: (v) => `Bloccate tutte le versioni precedenti alla ${v}: mostrano solo il link per scaricare l'ultima.`,
     vOff: (v) => `Blocca le versioni precedenti alla ${v}`, vOn: "Sblocca tutte le versioni",
     vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
     vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
     uT: "Utenti", uNote: "Codice anonimo dell'account e numeri d'uso. «tu» è il tuo account.",
-    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "7 gg", "30 gg", "Voce / foto", "Funzionalità AI", "Versione app"],
+    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "Voce / Scan", "Funzionalità AI", "Versione app"],
     errT: "Errori degli ultimi 30 giorni", errNote: "Raggruppati per giorno, punto e versione: il numero dice quante volte è successo. Nessun valore delle misure.",
-    errNone: "Nessun errore registrato.", errCols: ["Giorno", "Dove", "Codice", "Volte", "Versione", "Messaggio"], errTile: "Errori 7 giorni", errTileU: "registrati dal sistema",
+    errNone: "Nessun errore registrato.", errCols: ["Giorno", "Dove", "Codice", "Volte", "Versione", "Messaggio"],
     src: { server: "Server", app: "App", web: "Web" },
     aiS: { none: "Non attive", ok: "Attive", no_credit: "Attive · credito finito", invalid: "Attive · chiave non valida" }, you: "tu", never: "—",
   } : {
     tab: "Admin", title: "Owner's area", sub: "Only you see it · usage numbers only, tied to the anonymous code: no readings, no reports, no names",
-    upd: "Updated", users: "Users", new30: (n) => `${n} new in 30 days`, act7: "Active 7 days", act30: "Active 30 days",
-    act: "opened the app or measured", rd: "Readings", rd7: "Readings 7 days", rd30: "Readings 30 days", total: "in total",
-    split: (v, f) => `${v} by voice · ${f} by photo`, ai: "AI on", aiU: "users with an Anthropic key", aiSp: "AI spending", aiSpU: "on the users' own Anthropic credit",
-    web: "Web Dashboard", webU: "open sessions", links: "Doctor links", linksU: "active now",
-    stT: "Space on Cloudflare", stDb: (a, b, pc) => `D1 database: ${a} of ${b} (${pc}) on the free plan`, stRows: "Rows per table",
-    stNote: "500 MB is the size limit of one D1 database on Cloudflare's free plan. Readings older than 365 days are deleted every night.",
-    vT: "App versions", vNew: (v) => `Newest version installed: ${v}`, vNone: "No version blocked: every installed app works.",
+    upd: "Updated", users: "Users", usersU: "in total", aiOn: "With AI features", aiOnU: "Anthropic key on", aiOff: "Without AI features", aiOffU: "the app only",
+    rd: "Readings", split: (v, f) => `${v} by voice · ${f} with Scan`, aiSp: "AI spending", aiSpU: "in total, on the users' own Anthropic credit",
+    errs: "Errors", errsU: "in total, last 90 days",
+    stT: "Database space", stOf: (a, b) => `${a} <span>of ${b}</span>`, stNote: (pc) => `${pc} used · Cloudflare D1 free plan · readings older than 365 days deleted every night`,
+    vT: "App versions", vNew: (v) => `Newest version: ${v}`, vNone: "No version blocked: every installed app works.",
     vMin: (v) => `Every version older than ${v} is blocked: it shows only the link to download the latest.`,
     vOff: (v) => `Block versions older than ${v}`, vOn: "Unblock every version",
     vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
     vAskOn: "Every installed version works again. Confirm?",
     uT: "Users", uNote: "Anonymous account code and usage numbers. “you” is your own account.",
-    cols: ["Code", "Joined", "Last opened", "Readings", "7 d", "30 d", "Voice / photo", "AI features", "App version"],
+    cols: ["Code", "Joined", "Last opened", "Readings", "Voice / Scan", "AI features", "App version"],
     errT: "Errors of the last 30 days", errNote: "Grouped by day, place and version: the number says how many times it happened. No reading values.",
-    errNone: "No errors logged.", errCols: ["Day", "Where", "Code", "Times", "Version", "Message"], errTile: "Errors 7 days", errTileU: "logged by the system",
+    errNone: "No errors logged.", errCols: ["Day", "Where", "Code", "Times", "Version", "Message"],
     src: { server: "Server", app: "App", web: "Web" },
     aiS: { none: "Off", ok: "On", no_credit: "On · credit out", invalid: "On · key refused" }, you: "you", never: "—",
   };
@@ -497,26 +574,23 @@
     const t = d.totals, st = d.storage, v = d.versions;
     const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
     const pc = st.freeLimitBytes ? Math.min(100, (st.dbBytes / st.freeLimitBytes) * 100) : 0;
+    const pcText = pc.toLocaleString(LOCALE, { maximumFractionDigits: pc < 1 ? 2 : 1 }) + " %";
     const when = (ms) => (ms ? `${day(ms)} ${time(ms)}` : AD.never);
     main.innerHTML = `
       <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
       <p class="note">${AD.sub}</p>
       <section class="tiles adm">
-        ${tile(AD.users, t.users, AD.new30(t.newUsers30))}
-        ${tile(AD.act7, t.active7, AD.act)}
-        ${tile(AD.act30, t.active30, AD.act)}
+        ${tile(AD.users, t.users, AD.usersU)}
+        ${tile(AD.aiOn, t.aiOn, AD.aiOnU)}
+        ${tile(AD.aiOff, t.aiOff, AD.aiOffU)}
         ${tile(AD.rd, t.readings, AD.split(t.voice, t.photo))}
-        ${tile(AD.rd7, t.readings7, AD.total)}
-        ${tile(AD.rd30, t.readings30, AD.total)}
-        ${tile(AD.ai, t.aiOn, AD.aiU)}
         ${tile(AD.aiSp, "$" + t.aiSpentUsd.toFixed(2), AD.aiSpU)}
-        ${tile(AD.errTile, t.errors7 || 0, AD.errTileU)}
+        ${tile(AD.errs, t.errors, AD.errsU)}
       </section>
-      <div class="card"><div class="card-h"><h2>${AD.stT}</h2></div>
-        <p>${AD.stDb(mb(st.dbBytes), mb(st.freeLimitBytes), (pc < 0.1 ? "< 0,1%".replace(",", IT ? "," : ".") : pc.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) + "%"))}</p>
-        <div class="meter"><i style="width:${Math.max(pc, 0.5)}%"></i></div>
-        <p class="muted small" style="margin-top:10px">${AD.stRows}: ${Object.entries(st.rows).map(([k, n]) => `<code>${esc(k)}</code> ${n}`).join(" · ")}</p>
-        <p class="muted small">${AD.stNote}</p>
+      <div class="card space">
+        <div class="space-h"><span class="l">${AD.stT}</span><span class="v">${AD.stOf(mb(st.dbBytes), mb(st.freeLimitBytes))}</span></div>
+        <div class="meter" role="img" aria-label="${pcText}"><i style="width:${Math.max(pc, 0.6)}%"></i></div>
+        <p class="muted small">${AD.stNote(pcText)}</p>
       </div>
       <div class="card"><div class="card-h"><h2>${AD.vT}</h2></div>
         <p>${v.newest ? AD.vNew(ver(v.newest)) : ""}</p>
@@ -526,20 +600,20 @@
           ${v.min ? `<button class="btn ghost" type="button" id="adm-on">${AD.vOn}</button>` : ""}
         </div>
       </div>
-      <div class="card"><div class="card-h"><h2>${AD.errT}</h2><span class="sub">${AD.errNote}</span></div>
-        ${(d.errors || []).length ? `<div class="tbl"><table class="list"><thead><tr>${AD.errCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-          ${d.errors.map((x) => { const L = AD.errCols; return `<tr><td data-l="${L[0]}">${esc(x.day)}</td><td data-l="${L[1]}"><span>${esc(AD.src[x.source] || x.source)} · <code>${esc(x.place)}</code></span></td><td data-l="${L[2]}"><code>${esc(x.code)}</code></td>
-            <td data-l="${L[3]}">${x.count}</td><td data-l="${L[4]}">${x.app ? esc(x.app) : "—"}</td><td data-l="${L[5]}" class="muted small">${esc(x.message)}</td></tr>`; }).join("")}
-        </tbody></table></div>` : `<p class="muted">${AD.errNone}</p>`}
-      </div>
       <div class="card"><div class="card-h"><h2>${AD.uT}</h2><span class="sub">${AD.uNote}</span></div>
         <div class="tbl"><table class="list"><thead><tr>${AD.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
           ${d.users.map((u) => { const L = AD.cols; return `<tr>
             <td data-l="${L[0]}"><span><code>${esc(u.id)}</code>${u.owner ? ` <b class="you">${AD.you}</b>` : ""}</span></td>
             <td data-l="${L[1]}">${day(u.since)}</td><td data-l="${L[2]}">${when(u.lastSeen)}</td>
-            <td data-l="${L[3]}">${u.readings}</td><td data-l="${L[4]}">${u.last7}</td><td data-l="${L[5]}">${u.last30}</td><td data-l="${L[6]}">${u.voice} / ${u.photo}</td>
-            <td data-l="${L[7]}" class="${u.ai === "none" ? "muted" : ""}">${AD.aiS[u.ai] || esc(u.ai)}</td><td data-l="${L[8]}"><b>${u.app ? esc(u.app) : "—"}</b></td></tr>`; }).join("")}
+            <td data-l="${L[3]}">${u.readings}</td><td data-l="${L[4]}">${u.voice} / ${u.photo}</td>
+            <td data-l="${L[5]}" class="${u.ai === "none" ? "muted" : ""}">${AD.aiS[u.ai] || esc(u.ai)}</td><td data-l="${L[6]}"><b>${u.app ? esc(u.app) : "—"}</b></td></tr>`; }).join("")}
         </tbody></table></div>
+      </div>
+      <div class="card"><div class="card-h"><h2>${AD.errT}</h2><span class="sub">${AD.errNote}</span></div>
+        ${(d.errors || []).length ? `<div class="tbl"><table class="list"><thead><tr>${AD.errCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+          ${d.errors.map((x) => { const L = AD.errCols; return `<tr><td data-l="${L[0]}">${esc(x.day)}</td><td data-l="${L[1]}"><span>${esc(AD.src[x.source] || x.source)} · <code>${esc(x.place)}</code></span></td><td data-l="${L[2]}"><code>${esc(x.code)}</code></td>
+            <td data-l="${L[3]}">${x.count}</td><td data-l="${L[4]}">${x.app ? esc(x.app) : "—"}</td><td data-l="${L[5]}" class="muted small">${esc(x.message)}</td></tr>`; }).join("")}
+        </tbody></table></div>` : `<p class="muted">${AD.errNone}</p>`}
       </div>`;
     const setMin = async (min, ask) => {
       if (!confirm(ask)) return;
@@ -586,9 +660,10 @@
   }
 
   async function startShared(token) {
+    bindCookieLink(true);
     // the doctor's view: only the PDF button
     $("actions").hidden = false;
-    for (const id of ["btn-share", "btn-csv", "btn-out"]) $(id).hidden = true;
+    for (const id of ["btn-share", "btn-csv"]) $(id).hidden = true;
     $("btn-pdf").onclick = printReport;
     try {
       const data = await api(`/s/${token}/data?module=bp`);

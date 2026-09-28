@@ -4,8 +4,10 @@
 // If the layout changes in the app, change it here too.
 (function () {
   "use strict";
-  const IT = (navigator.language || "en").toLowerCase().startsWith("it");
-  const LOCALE = IT ? "it-CH" : "en-GB";
+  // the report speaks the browser's language: Italian, German, French, otherwise English
+  const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
+  const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";
+  const LOCALE = { it: "it-CH", de: "de-CH", fr: "fr-CH", en: "en-GB" }[LG];
   const TZ = "Europe/Zurich";
   const W = {
     it: {
@@ -17,7 +19,7 @@
       values: "Valori del periodo", valuesSub: "il più alto, il più basso e la media, con giorno e ora",
       hi: (k) => `${k} più alta`, lo: (k) => `${k} più bassa`, avg: (k) => `${k} media`, avgOf: (n) => `media di ${n} misure`,
       none: "Nessuna misura in questo momento della giornata", list: "Elenco delle misure",
-      cols: ["Data", "Ora", "Momento", "SYS", "DIA", "PUL", "Fonte"], per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" },
+      cols: ["Data", "Ora", "AM/PM", "SYS", "DIA", "PUL", "Fonte"], per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" },
       src: { photo: "Foto", voice: "Voce" }, empty: "Nessuna misura in questo periodo.",
       note: "Misure a domicilio. Fonte di ogni valore: foto del display del misuratore, letta dall'app, oppure detto a voce (colonna Fonte).",
       disclaimer: "Documento preparato dal paziente, senza valutazioni sui valori. La valutazione clinica spetta al medico.",
@@ -36,7 +38,7 @@
       values: "Values of the period", valuesSub: "the highest, the lowest and the average, with day and time",
       hi: (k) => `${k} highest`, lo: (k) => `${k} lowest`, avg: (k) => `${k} average`, avgOf: (n) => `average of ${n} readings`,
       none: "No readings at this time of day", list: "All readings",
-      cols: ["Date", "Time", "Time of day", "SYS", "DIA", "PUL", "Source"], per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" },
+      cols: ["Date", "Time", "AM/PM", "SYS", "DIA", "PUL", "Source"], per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" },
       src: { photo: "Photo", voice: "Voice" }, empty: "No readings in this period.",
       note: "Home readings. Source of each value: photo of the monitor display, read by the app, or said aloud (see the Source column).",
       disclaimer: "Document prepared by the patient, with no assessment of the values. Clinical evaluation is up to the doctor.",
@@ -46,7 +48,45 @@
       balSame: "Morning and evening have the same average.", balDiff: (s, d) => `Evening - morning: SYS ${s} · DIA ${d} mmHg`,
       balNone: "Readings are needed both in the morning and in the evening.",
     },
-  }[IT ? "it" : "en"];
+    de: {
+      title: "Blutdruck", range: (a, b, n) => `vom ${a} bis ${b} · ${n} Tage`, count: (n, d) => `${n} Messungen an ${d} Tagen · Schweizer Zeit`,
+      generated: (d) => `Erstellt am ${d}`, all: "Verlauf des Zeitraums", allSub: "Mittel jedes Tages",
+      chartNote: "In den Grafiken ist jeder Punkt der Mittelwert aller Messungen dieses Tages (ein Durchschnitt). Die einzelnen Messungen stehen in der Liste.",
+      units: "SYS und DIA in mmHg", unitsPul: "Schläge pro Minute", morning: "Morgen", morningSub: "vor 12 Uhr · Tagesmittel",
+      evening: "Abend", eveningSub: "ab 17 Uhr · Tagesmittel", pulse: "Puls (PUL)", pulseSub: "Mittel jedes Tages",
+      values: "Werte des Zeitraums", valuesSub: "der höchste, der tiefste und das Mittel, mit Tag und Uhrzeit",
+      hi: (k) => `${k} höchster`, lo: (k) => `${k} tiefster`, avg: (k) => `${k} Mittel`, avgOf: (n) => `Mittel aus ${n} Messungen`,
+      none: "Keine Messungen zu dieser Tageszeit", list: "Liste der Messungen",
+      cols: ["Datum", "Zeit", "AM/PM", "SYS", "DIA", "PUL", "Quelle"], per: { morning: "Morgen", afternoon: "Nachmittag", evening: "Abend" },
+      src: { photo: "Foto", voice: "Stimme" }, empty: "Keine Messungen in diesem Zeitraum.",
+      note: "Messungen zu Hause. Quelle jedes Werts: Foto der Anzeige des Messgeräts, von der App gelesen, oder angesagt (Spalte Quelle).",
+      disclaimer: "Vom Patienten erstelltes Dokument, ohne Bewertung der Werte. Die klinische Beurteilung ist Sache des Arztes.",
+      page: (a, b) => `Seite ${a} von ${b}`,
+      balT: "Morgen und Abend im Vergleich", balSub: "Mittel aller Messungen des Zeitraums · nur eine Rechnung, keine Bewertung",
+      balM: "Morgen", balE: "Abend", balN: (n) => (n === 1 ? "1 Messung" : `${n} Messungen`),
+      balSame: "Morgen und Abend haben dasselbe Mittel.", balDiff: (s, d) => `Abend - Morgen: SYS ${s} · DIA ${d} mmHg`,
+      balNone: "Es braucht Messungen am Morgen und am Abend.",
+    },
+    fr: {
+      title: "Tension artérielle", range: (a, b, n) => `du ${a} au ${b} · ${n} jours`, count: (n, d) => `${n} mesures sur ${d} jours · heure suisse`,
+      generated: (d) => `Généré le ${d}`, all: "Évolution de la période", allSub: "moyenne de chaque jour",
+      chartNote: "Dans les graphiques, chaque point est la moyenne de toutes les mesures de ce jour (un agrégat). Les mesures une à une sont dans la liste.",
+      units: "SYS et DIA en mmHg", unitsPul: "battements par minute", morning: "Matin", morningSub: "avant 12 h · moyenne du jour",
+      evening: "Soir", eveningSub: "dès 17 h · moyenne du jour", pulse: "Pouls (PUL)", pulseSub: "moyenne de chaque jour",
+      values: "Valeurs de la période", valuesSub: "la plus haute, la plus basse et la moyenne, avec jour et heure",
+      hi: (k) => `${k} la plus haute`, lo: (k) => `${k} la plus basse`, avg: (k) => `${k} moyenne`, avgOf: (n) => `moyenne de ${n} mesures`,
+      none: "Aucune mesure à ce moment de la journée", list: "Liste des mesures",
+      cols: ["Date", "Heure", "AM/PM", "SYS", "DIA", "PUL", "Source"], per: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" },
+      src: { photo: "Photo", voice: "Voix" }, empty: "Aucune mesure sur cette période.",
+      note: "Mesures à domicile. Source de chaque valeur : photo de l'écran du tensiomètre, lue par l'app, ou dictée (colonne Source).",
+      disclaimer: "Document préparé par le patient, sans évaluation des valeurs. L'évaluation clinique revient au médecin.",
+      page: (a, b) => `Page ${a} sur ${b}`,
+      balT: "Matin et soir comparés", balSub: "moyenne de toutes les mesures de la période · un simple calcul, aucune évaluation",
+      balM: "Matin", balE: "Soir", balN: (n) => (n === 1 ? "1 mesure" : `${n} mesures`),
+      balSame: "Le matin et le soir ont la même moyenne.", balDiff: (s, d) => `Soir - matin : SYS ${s} · DIA ${d} mmHg`,
+      balNone: "Il faut des mesures le matin et le soir.",
+    },
+  }[LG];
 
   // print colours, as in the app's PDF
   const SYS = "#6D5BD0", DIA = "#0F9C8E", PUL = "#B7860B";
@@ -258,7 +298,7 @@
         const r = list[i], d = dayOf(r.t);
         if (row % 2 === 1) el(g, "rect", { x: left, y, width: cw, height: 17, fill: "#F6F8FB" });
         if (lastDay != null && d !== lastDay) el(g, "line", { x1: left, x2: right, y1: y, y2: y, stroke: "#9FB0C8", "stroke-width": 0.8 });
-        const cells = [d !== lastDay ? d : "", timeOf(r.t), W.per[r.period] || r.period, r.sys, r.dia, r.pul ?? "–", W.src[r.source] || r.source];
+        const cells = [d !== lastDay ? d : "", timeOf(r.t), (r.period === "morning" ? "AM" : "PM"), r.sys, r.dia, r.pul ?? "–", W.src[r.source] || r.source];
         cells.forEach((v, k) => txt(g, cols[k] + 5, y + 12, v, 9.5, colCol[k], { bold: k >= 3 && k <= 5 }));
         lastDay = d; y += 17; i++; row++;
       }
@@ -273,14 +313,17 @@
    * theme: { ink, muted, beam, panel, sys, dia }
    */
   function balance(g, x, y, w, h, list, th) {
+    const K = th.scale || 1;   // on a screen the small texts are drawn larger (the PDF keeps 1)
     const avg = (a) => (a.length ? Math.round(a.reduce((p, q) => p + q, 0) / a.length) : null);
     const side = (per) => { const l = list.filter((r) => r.period === per); return { n: l.length, sys: avg(l.map((r) => r.sys)), dia: avg(l.map((r) => r.dia)) }; };
     const m = side("morning"), e = side("evening");
     txt(g, x, y + 12, W.balT, 11.5, th.ink, { bold: true });
     // the explanation beside the title, or below it when the space is narrow (phone)
+    // larger on a screen, but never wider than the space: it shrinks to fit a narrow phone
+    const subSize = Math.min(7.5 * K, 7.5 * (w - 4) / Math.max(1, tw(W.balSub, 7.5)));
     if (w >= 440) txt(g, x + w, y + 12, W.balSub, 7.5, th.muted, { anchor: "end" });
-    else txt(g, x, y + 26, W.balSub, 7.5, th.muted);
-    if (!m.n || !e.n) { txt(g, x + w / 2, y + h / 2 + 8, W.balNone, 9, th.muted, { anchor: "middle" }); return; }
+    else txt(g, x, y + 26, W.balSub, subSize, th.muted);
+    if (!m.n || !e.n) { txt(g, x + w / 2, y + h / 2 + 8, W.balNone, 9 * K, th.muted, { anchor: "middle" }); return; }
     const ds = e.sys - m.sys, dd = e.dia - m.dia;
     const level = Math.abs(ds) < 1 && Math.abs(dd) < 1;
     const deg = level ? 0 : -Math.max(-10, Math.min(10, ((ds + dd) / 2) * 1.2));   // higher average = higher pan, as in the charts
@@ -298,7 +341,7 @@
       el(g, "line", { x1: px, y1: pyy, x2: px - 22, y2: pyy + 16, stroke: th.beam, "stroke-width": 1 });
       el(g, "line", { x1: px, y1: pyy, x2: px + 22, y2: pyy + 16, stroke: th.beam, "stroke-width": 1 });
       el(g, "path", { d: `M${px - 30} ${pyy + 16} Q${px} ${pyy + 30} ${px + 30} ${pyy + 16} Z`, fill: th.panel, stroke: th.beam, "stroke-width": 1 });
-      txt(g, px, pyy - 30, `${lab} · ${W.balN(v.n)}`, 7.5, th.muted, { anchor: "middle" });
+      txt(g, px, pyy - 30, `${lab} · ${W.balN(v.n)}`, 7.5 * K, th.muted, { anchor: "middle" });
       const sw = tw(v.sys, 15, true), dw = tw(v.dia, 15, true), slash = tw("/", 15, false);
       const x0 = px - (sw + slash + dw) / 2;
       txt(g, x0, pyy - 11, v.sys, 15, th.sys, { bold: true });
@@ -306,7 +349,7 @@
       txt(g, x0 + sw + slash, pyy - 11, v.dia, 15, th.dia, { bold: true });
     }
     const sgn = (v) => (v > 0 ? "+" + v : String(v));
-    txt(g, x + w / 2, y + h - 2, level ? W.balSame : W.balDiff(sgn(ds), sgn(dd)), 8, th.ink, { anchor: "middle" });
+    txt(g, x + w / 2, y + h - 2, level ? W.balSame : W.balDiff(sgn(ds), sgn(dd)), 8 * K, th.ink, { anchor: "middle" });
   }
 
   const PRINT_THEME = { ink: INK, muted: MUTED, beam: "#8A97B0", panel: "#EEF2F7", sys: SYS_T, dia: DIA_T };

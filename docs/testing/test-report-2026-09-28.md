@@ -241,3 +241,34 @@ When Google sign-in replaces an empty account on the phone, only the `persons` r
 11. **F-17 to F-22** Accessibility, schema file, orphan rows, confirmation on withdraw, Android polish.
 
 After each change, rerun the harness (section 2). The failing checks listed above are the acceptance tests for these fixes; per the project rules, changes to flows or rules also need the architecture document, guides and legal pages updated in the same commit.
+
+## 7. Follow-up · what was fixed (28.09.2026, same day)
+
+Backup of the version as tested: branch `backup/as-is-2026-09-28` (= release v0.1.88).
+
+| Finding | Status | How |
+|---|---|---|
+| F-01 keystore in the repository | **prepared, needs the owner** | `build.gradle.kts` signs with the key from GitHub secrets (`ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`) when they exist; until then the old key. A new key means one reinstall of the app. |
+| F-02 `/v1/me` full scans | fixed | anonymisation and local-date back-fill moved to the nightly job |
+| F-03, F-09, F-16 error-log write path | fixed | only authenticated calls or 5xx logged, route names, `place` whitelist, digits removed, 300 new rows a day, 404 outside `/v1/`, Zurich date; routine prompt treats log text as data |
+| F-04 replay | fixed | `seen_sigs`: a signed call that changes something works once (reads are not recorded) |
+| F-05 newest version from one header | fixed | `APP_VERSION` set by the build |
+| F-06 security headers | fixed | CSP, frame DENY, nosniff, no-referrer, HSTS; `robots.txt` |
+| F-07 rate limits | fixed | `rate_limits`: sign-up 10/h per IP, Google sign-in 20/h, web session 30/h, share 20/day, log 100/day, Scan and voice 60/day |
+| F-08 owner-paid accounts | fixed | every new account pays its own AI |
+| F-10 account moved to another phone | fixed | the app goes back to the sign-in screen with a message |
+| F-11 Google token bound to the phone key | fixed | nonce = SHA-256 of the phone's public key; required from app version 100 |
+| F-12 DE/FR | fixed | app texts complete (the long terms stay in English, as shown on screen), Web Dashboard and PDF in DE/FR; *Docs check* fails on a missing text |
+| F-13 DST, F-14 day counter | fixed | calendar arithmetic |
+| F-15 doctor link after the subscription ends | fixed | link answers 404 |
+| F-17 accessibility | fixed | chart labels, table on phones, bigger footer links, balance text |
+| F-18 schema | fixed | `schema.sql` complete, indexes |
+| F-19 orphan rows | fixed | replaced accounts lose scans, keys, ledger, web access |
+| F-20 withdraw links | fixed | confirmation; the link is reused for 10 minutes |
+| F-21 Android polish | fixed | AtomicInteger, bitmaps recycled, purchase acknowledgement checked and logged, `voice` without `!!` |
+| F-22 | fixed | Zurich date in the error log, only valid links counted |
+
+Rerun of the harness after the fixes (local Worker): **functional 160/160**, time zones 8/8, **stress 10/10 with
+0 errors** in 4,000 concurrent voice saves, browser 60/60, probe 17/17. Two tests were updated to the new rules
+(every account self-pays; sign-ups limited per address) and a rate-limit check (RL1) was added. The harness now
+runs by itself: *Security tests* workflow (every PR, every night, Sundays in full).

@@ -22,7 +22,10 @@ object GoogleSignIn {
      * or null if the person closed the window. [ctx] must be the activity.
      */
     suspend fun idToken(ctx: Context): String? {
-        val option = GetSignInWithGoogleOption.Builder(BuildConfig.GOOGLE_CLIENT_ID).build()
+        // the token is asked for this phone's key: the server accepts it only together with that key (test report F-11)
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(Keys.publicKeyB64().toByteArray(Charsets.UTF_8))
+        val nonce = android.util.Base64.encodeToString(digest, android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
+        val option = GetSignInWithGoogleOption.Builder(BuildConfig.GOOGLE_CLIENT_ID).setNonce(nonce).build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         return try {
             val result = CredentialManager.create(ctx).getCredential(ctx, request)

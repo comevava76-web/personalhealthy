@@ -6,6 +6,7 @@
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
 import { logError } from "./errors";
+import { tooMany, ipKey, HOUR, DAY } from "./limits";
 import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
@@ -22,6 +23,7 @@ interface Env {
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
+  APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
 }
 
 const MICRO = 1_000_000; // money is kept in millionths of a dollar (integers, no rounding errors)
@@ -141,6 +143,18 @@ async function addMoney(q: Q, pool: Pool, pid: string, kind: "set" | "topup", am
 const TZ = "Europe/Zurich";
 const enc = new TextEncoder();
 
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
+  "connect-src 'self'; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+function secured(res: Response): Response {
+  const r = new Response(res.body, res);
+  r.headers.set("X-Content-Type-Options", "nosniff");
+  r.headers.set("Referrer-Policy", "no-referrer");
+  r.headers.set("X-Frame-Options", "DENY");
+  r.headers.set("Strict-Transport-Security", "max-age=31536000");
+  if ((r.headers.get("content-type") || "").includes("text/html")) r.headers.set("Content-Security-Policy", CSP);
+  return r;
+}
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 // "code" is what the app translates into the phone's language; "error" is for the logs
@@ -228,7 +242,11 @@ async function anonymizeGoogle(env: Env) {
 
 // Returns the Google account (its stable id "sub" and its email) only if the token is genuine,
 // was made for this app, has not expired and the email is verified by Google.
-async function verifyGoogle(token: string, clientId: string): Promise<{ sub: string; email: string } | null> {
+/** Apps from this build on send a nonce with Google sign-in (older ones cannot); see /v1/auth/google. */
+const NONCE_REQUIRED_FROM = 100;
+const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+async function verifyGoogle(token: string, clientId: string): Promise<{ sub: string; email: string; nonce: string } | null> {
   try {
     const [h, p, sg] = token.split(".");
     if (!h || !p || !sg) return null;
@@ -245,14 +263,16 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
     if (!(Number(claims.exp) * 1000 > Date.now())) return null;
     if (claims.email_verified !== true && claims.email_verified !== "true") return null;
     if (!claims.sub) return null;
-    return { sub: String(claims.sub), email: String(claims.email || "") };
+    // issued in the last 5 minutes: an old token cannot be used again
+    if (claims.iat && Math.abs(Date.now() - Number(claims.iat) * 1000) > 5 * 60e3) return null;
+    return { sub: String(claims.sub), email: String(claims.email || ""), nonce: claims.nonce ? String(claims.nonce) : "" };
   } catch {
     return null;
   }
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "14";
+const DISCLAIMER_VERSION = "15";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -421,6 +441,8 @@ async function readDisplay(env: Env, apiKey: string, image: string, lang: string
  */
 export async function purgeOld(env: Env) {
   await anonymizeGoogle(env);
+  const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
+  await fillLocalDates(q);
   const now = Date.now(), yearAgo = now - 365 * 864e5;
   await env.DB.batch([
     env.DB.prepare("DELETE FROM measurements WHERE taken_at < ?1").bind(yearAgo),
@@ -429,6 +451,8 @@ export async function purgeOld(env: Env) {
     env.DB.prepare("DELETE FROM web_sessions WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM web_shares WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM error_log WHERE last_at < ?1").bind(now - 90 * 864e5),
+    env.DB.prepare("DELETE FROM seen_sigs WHERE expires_at < ?1").bind(now),
+    env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1").bind(now - 2 * 864e5),
   ]);
 }
 
@@ -438,6 +462,24 @@ export default {
   },
 
   async fetch(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
+    return secured(await serve(req, env, ctx));
+  },
+};
+
+/** Calls that passed authentication (a verified phone signature or a valid web session). */
+const AUTHENTICATED = new WeakSet<Request>();
+/** Route names for the error log: a known route, or "unknown" (never a path typed by a stranger). */
+const ROUTES = new Set([
+  "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout", "/v1/credit", "/v1/admin/credit", "/v1/credit/history",
+  "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription", "/v1/key", "/v1/key/check",
+  "/v1/bp/scan", "/v1/bp/confirm", "/v1/bp/voice", "/v1/bp", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
+  "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
+  "/my/api/admin/app-min-version",
+]);
+const routeName = (method: string, path: string) => (ROUTES.has(path) ? method + " " + path : "unknown");
+
+async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
+  {
     const url = new URL(req.url);
     if (url.pathname === "/v1/health") return json({ ok: true });
     // public pages, linked from Google's sign-in screen
@@ -452,20 +494,23 @@ export default {
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
-      const res = (await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid))) ?? (await handle(req, env, q, url));
-      // errors met by users go to the error log, grouped (see errors.ts). Not logged: pages not found,
-      // a subscription that ran out and an app version switched off, which are expected answers.
+      const res = (await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid), () => AUTHENTICATED.add(req)))
+        ?? (await handle(req, env, q, url));
+      // errors met by users go to the error log, grouped (see errors.ts). Logged only for calls that passed
+      // authentication, or for server failures (5xx): a stranger cannot write into the log (test report F-03).
+      // Not logged: pages not found, a subscription that ran out and an app version switched off (expected answers).
       const api = url.pathname.startsWith("/v1/") || url.pathname.startsWith("/my/api/");
-      if (api && res.status >= 400 && ![402, 404, 426].includes(res.status) && !url.pathname.endsWith("/log")) {
+      const authed = AUTHENTICATED.has(req);
+      if (api && res.status >= 400 && ![402, 404, 426].includes(res.status) && !url.pathname.endsWith("/log") && (authed || res.status >= 500)) {
         const task = (async () => {
           let code = "http_" + res.status, message = "";
           try { const j: any = await res.clone().json(); code = j.code || code; message = j.error || ""; } catch {}
           // a browser opening the Web Dashboard without a session is the normal way in, not an error
           if (code === "no_session") return;
           await logError(q, {
-            source: "server", code, place: req.method + " " + url.pathname, message,
-            appVersion: req.headers.get("X-App-Version"),
-            personId: url.pathname.startsWith("/v1/") ? req.headers.get("X-Person") : null,
+            source: "server", code, place: routeName(req.method, url.pathname), message,
+            appVersion: authed ? req.headers.get("X-App-Version") : null,
+            personId: authed && url.pathname.startsWith("/v1/") ? req.headers.get("X-Person") : null,
           });
         })();
         if (ctx) ctx.waitUntil(task); else await task;
@@ -473,14 +518,15 @@ export default {
       return res;
     } catch (e: any) {
       console.error(e?.stack || e);
-      const task = logError(q, { source: "server", code: "exception", place: req.method + " " + url.pathname, message: String(e?.message || e), appVersion: req.headers.get("X-App-Version") });
+      const task = logError(q, { source: "server", code: "exception", place: routeName(req.method, url.pathname), message: String(e?.message || e) });
       if (ctx) ctx.waitUntil(task); else await task;
       return fail("Internal server error", 500, "server");
     }
-  },
-};
+  }
+}
 
 async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response> {
+  if (!url.pathname.startsWith("/v1/")) return fail("Not found", 404, "not_found");
   const body = new Uint8Array(await req.arrayBuffer());
   const ts = req.headers.get("X-Ts") || "";
   const sig = req.headers.get("X-Sig") || "";
@@ -503,6 +549,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // Phone activation: the family code (family member, the owner pays) or a single-use invite code,
   // plus the anonymous key generated on the phone
   if (req.method === "POST" && url.pathname === "/v1/register") {
+    if (await tooMany(q, await ipKey(req, "register"), 10, HOUR)) return fail("Too many attempts: try again later", 429, "too_many");
     const typed = String(data.code ?? data.familyCode ?? "").trim();
     const isFamily = !!env.FAMILY_CODE && typed === env.FAMILY_CODE;
     const invite = isFamily ? "" : normInvite(typed);
@@ -517,10 +564,10 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       // the first activated phone manages credit, settings and invites
       await q(
         "INSERT INTO persons (id, public_key, is_admin, pays, created_at, created_at_local) " +
-        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'owner', ?3, ?4)",
+        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'self', ?3, ?4)",
         [id, data.publicKey, now, localStamp(now)]
       );
-      return json({ personId: id, pays: "owner" });
+      return json({ personId: id, pays: "self" });
     }
     // Invite: one atomic step that marks the invite as used and creates the person, or does nothing
     const results = await env.DB.batch([
@@ -529,7 +576,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       ).bind(id, now, localStamp(now), invite),
       env.DB.prepare(
         `INSERT INTO persons (id, public_key, is_admin, pays, created_at, created_at_local)
-         SELECT ?1, ?2, 0, CASE type WHEN 'self_pays' THEN 'self' ELSE 'owner' END, ?3, ?4 FROM invites WHERE code = ?5 AND used_by = ?1`
+         SELECT ?1, ?2, 0, 'self', ?3, ?4 FROM invites WHERE code = ?5 AND used_by = ?1`
       ).bind(id, data.publicKey, now, localStamp(now), invite),
     ]);
     if (!results[1]?.meta?.changes) {
@@ -550,10 +597,15 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // After this, day to day the phone only uses its own key, unlocked with fingerprint or face.
   if (req.method === "POST" && url.pathname === "/v1/auth/google") {
     if (!env.GOOGLE_CLIENT_ID) return fail("Google sign-in is not set up", 503, "google_off");
+    if (await tooMany(q, await ipKey(req, "google"), 20, HOUR)) return fail("Too many attempts: try again later", 429, "too_many");
     if (typeof data.publicKey !== "string" || !(await verify(data.publicKey, sig, message)))
       return fail("Invalid phone key", 401, "bad_key");
     const g = await verifyGoogle(String(data.idToken || ""), env.GOOGLE_CLIENT_ID);
     if (!g) return fail("Google sign-in not valid", 401, "google_invalid");
+    // the token must have been asked for this very phone key: a token taken elsewhere cannot be replayed
+    const expectedNonce = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(data.publicKey))));
+    const appVersion = Number(req.headers.get("X-App-Version")) || 0;
+    if (g.nonce ? g.nonce !== expectedNonce : appVersion >= NONCE_REQUIRED_FROM) return fail("Google sign-in not valid", 401, "google_invalid");
     const now = Date.now();
     const gid = await googleId(env, g.sub);
     const [owner] = await q("SELECT id, COALESCE(pays, 'owner') AS pays FROM persons WHERE google_sub = ?1 OR google_sub = ?2", [gid, g.sub]);
@@ -563,7 +615,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
         // this phone holds another account: only an empty one without Google may be replaced
         const [used] = await q("SELECT 1 FROM measurements WHERE person_id = ?1 LIMIT 1", [onPhone.id]);
         if (onPhone.google_sub || used) return fail("This phone is used by another account", 409, "phone_in_use");
-        await q("DELETE FROM persons WHERE id = ?1", [onPhone.id]);
+        // the empty account goes with everything it had (only the acceptances stay, as proof)
+        await endWebAccess(q, onPhone.id, true);
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM scans WHERE person_id = ?1").bind(onPhone.id),
+          env.DB.prepare("DELETE FROM person_keys WHERE person_id = ?1").bind(onPhone.id),
+          env.DB.prepare("DELETE FROM ledger WHERE payer = ?1 OR person_id = ?1").bind(onPhone.id),
+          env.DB.prepare("DELETE FROM persons WHERE id = ?1").bind(onPhone.id),
+        ]);
       }
       await q("UPDATE persons SET public_key = ?1, google_sub = ?2, email = NULL WHERE id = ?3", [data.publicKey, gid, owner.id]);
       return json({ personId: owner.id, pays: owner.pays, recovered: true });
@@ -589,8 +648,18 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const pid = req.headers.get("X-Person") || "";
   const [person] = await q("SELECT id, public_key, is_admin, COALESCE(pays, 'owner') AS pays, google_sub, email FROM persons WHERE id = ?1", [pid]);
   if (!person || !(await verify(person.public_key, sig, message))) return fail("Unauthorized", 401, "unauthorized");
+  AUTHENTICATED.add(req);
+  // a signed call that changes something works once: the same call sent again (a copy taken on the way) is refused
+  // (test report F-04). Reads change nothing, so they are not recorded: half the writes on the database.
+  if (req.method !== "GET") {
+    const sigHash = await sha256Hex(enc.encode(sig));
+    const [fresh] = await q("INSERT INTO seen_sigs (sig_hash, expires_at) VALUES (?1, ?2) ON CONFLICT (sig_hash) DO NOTHING RETURNING sig_hash",
+      [sigHash, Date.now() + 10 * 60e3]);
+    if (!fresh) return fail("This request was already used", 401, "replay");
+  }
   // An error met in the app (a crash, a screen that failed): into the grouped error log, never a reading value
   if (req.method === "POST" && url.pathname === "/v1/log") {
+    if (await tooMany(q, "log:" + pid, 100, DAY)) return json({ ok: true, dropped: true });
     await logError(q, {
       source: "app", code: String(data.code || "app_error"), place: String(data.place || ""),
       message: String(data.message || ""), appVersion: req.headers.get("X-App-Version"), personId: pid,
@@ -602,7 +671,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   if (!SUB_FREE.has(req.method + " " + url.pathname) && !(await subOk(q, env, pid)))
     return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
   const pool = poolOf(person);
-  const selfPays = person.pays === "self";
+  // everyone pays their own AI with their own Anthropic key; the owner-paid model is gone (test report F-08)
+  const selfPays = true;
   const hasKey = async () => !!(await q("SELECT 1 FROM person_keys WHERE person_id = ?1", [pid]))[0];
   // Scan is on only when Anthropic itself said yes: key accepted and credit available, at the last real check
   const aiState = async () => {
@@ -613,12 +683,12 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // 0) Who am I, and the credit of my own pool (a friend never sees the owner's pool, nor the other way round)
   if (req.method === "GET" && url.pathname === "/v1/me") {
-    // an account from before: its Google id becomes a fingerprint and its email is erased, right now
-    if (person.email || (person.google_sub && !String(person.google_sub).startsWith("h1:"))) await anonymizeGoogle(env);
-    await fillLocalDates(q);
+    // (Google fingerprints and readable local dates are completed by the nightly job, not here: test report F-02)
     // when the app was last opened: shown to the owner as a usage figure, nothing more
     // and with which app version: the owner sees, for every account, the version it really runs
-    const code = Number(req.headers.get("X-App-Version")) || 0;
+    // kept only if it is a version that really exists (a header can say anything)
+    const sent = Number(req.headers.get("X-App-Version")) || 0;
+    const code = sent > 0 && sent <= (Number(env.APP_VERSION) || Infinity) ? sent : 0;
     await q("UPDATE persons SET last_seen_at = ?1, app_version = COALESCE(?2, app_version) WHERE id = ?3", [Date.now(), code ? "0.1." + code : null, pid]);
     return json({
       personId: pid,
@@ -810,6 +880,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // 1) Photo reading: the numbers are decided only by the reading
   if (req.method === "POST" && url.pathname === "/v1/bp/scan") {
+    if (await tooMany(q, "scan:" + pid, 60, DAY)) return fail("Too many photos today: try again tomorrow", 429, "too_many");
     const takenAt = Number(data.takenAt);
     const now = Date.now();
     if (!takenAt || takenAt > now + 2 * 60e3 || takenAt < now - 30 * 60e3)
@@ -891,6 +962,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // from photo readings. All three values are needed. Date and time: when they were said, accepted only
   // if that was in the last 15 minutes (not in the future). Same limits as a photo reading.
   if (req.method === "POST" && url.pathname === "/v1/bp/voice") {
+    if (await tooMany(q, "voice:" + pid, 60, DAY)) return fail("Too many readings today: try again tomorrow", 429, "too_many");
     const num = (v: any, min: number, max: number) =>
       typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v) : null;
     const sis = num(data.sis, 50, 260), dia = num(data.dia, 30, 160);

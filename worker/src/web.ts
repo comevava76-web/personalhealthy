@@ -14,6 +14,7 @@
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
 import { logError, recentErrors } from "./errors";
+import { tooMany, ipKey, HOUR, DAY } from "./limits";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
@@ -41,12 +42,22 @@ async function fingerprint(token: string): Promise<string> {
 }
 
 /** Swiss midnight at the start of the day that is `days` days long ending today: a period of 7 days = today and the 6 before. */
-const zurichClock = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" });
+const zurichClock = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" });
+// the Zurich calendar date first, then the instant of its midnight: right also on the days the clocks change
+// (a day of 23 or 25 hours), where subtracting the time of day would be one hour off (test report F-13)
 function periodStart(now: number, days: number): number {
-  const t = now - (days - 1) * 864e5;
+  // today's date in Zurich, then back (days - 1) calendar days (not 24-hour steps)
   const p: Record<string, string> = {};
-  for (const x of zurichClock.formatToParts(new Date(t))) p[x.type] = x.value;
-  return t - ((+p.hour * 60 + +p.minute) * 60 + +p.second) * 1000 - (t % 1000);
+  for (const x of zurichClock.formatToParts(new Date(now))) p[x.type] = x.value;
+  const utcMidnight = Date.UTC(+p.year, +p.month - 1, +p.day - (days - 1));
+  const day = new Date(utcMidnight).getUTCDate();
+  for (const offsetH of [1, 2]) {
+    const t = utcMidnight - offsetH * 3600e3;
+    const q: Record<string, string> = {};
+    for (const x of zurichClock.formatToParts(new Date(t))) q[x.type] = x.value;
+    if (+q.hour % 24 === 0 && +q.minute === 0 && +q.day === day) return t;
+  }
+  return utcMidnight - 3600e3;
 }
 
 /* ---------- modules ---------- */
@@ -79,7 +90,8 @@ export async function newWebCode(q: Q, pid: string, origin: string): Promise<Res
 }
 
 /** Everything the browser (not the app) calls: /my/... and /s/... . Returns null for other addresses. */
-export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (pid: string) => Promise<boolean>): Promise<Response | null> {
+export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (pid: string) => Promise<boolean>,
+  markAuthenticated: () => void = () => {}): Promise<Response | null> {
   const p = url.pathname;
 
   // shared read-only view for the doctor: the same page, which reads its data from /s/<token>/data
@@ -90,6 +102,8 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       return shared[2] ? fail("This link has expired or was withdrawn", 404, "share_gone") : env.ASSETS.fetch(new Request(url.origin + "/my/"));
     }
     if (!shared[2]) return env.ASSETS.fetch(new Request(url.origin + "/my/"));
+    // the same rule as the dashboard: when the subscription has run out, the link stops too (test report F-15)
+    if (!(await subOk(String(row.person_id)))) return fail("This link has expired or was withdrawn", 404, "share_gone");
     const mod = MODULES[url.searchParams.get("module") || "bp"];
     if (!mod) return fail("Unknown module", 404);
     const items = await mod.load(q, row.person_id, Number(row.date_from), Number(row.date_to));
@@ -103,6 +117,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
 
   // step 3: the one-time code becomes a cookie
   if (p === "/my/session" && req.method === "POST") {
+    if (await tooMany(q, await ipKey(req, "session"), 30, HOUR)) return fail("Too many attempts: try again later", 429, "too_many");
     let code = "";
     try { code = String((await req.json() as any).code || ""); } catch {}
     const h = await fingerprint(code);
@@ -125,6 +140,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   const [sess] = sh ? await q("SELECT person_id, expires_at FROM web_sessions WHERE id_hash = ?1", [sh]) : [];
   if (!sess || Number(sess.expires_at) < Date.now()) return fail("Not signed in", 401, "no_session");
   const pid = String(sess.person_id);
+  markAuthenticated();
 
   if (p === "/my/session" && req.method === "DELETE") {
     await q("DELETE FROM web_sessions WHERE id_hash = ?1", [sh]);
@@ -138,6 +154,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   }
   // An error met in the browser (a script error, a page that failed): into the grouped error log
   if (p === "/my/api/log" && req.method === "POST") {
+    if (await tooMany(q, "weblog:" + pid, 100, DAY)) return json({ ok: true, dropped: true });
     let b: any = {};
     try { b = await req.json(); } catch {}
     await logError(q, { source: "web", code: String(b.code || "web_error"), place: String(b.place || ""), message: String(b.message || ""), personId: pid });
@@ -152,7 +169,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       try { b = await req.json(); } catch {}
       const min = Math.max(0, Math.floor(Number(b.minVersion) || 0));
       // never above the newest version anyone has installed, or every app (the owner's too) would stop
-      if (min > (await newestVersion(q))) return fail("That version does not exist yet", 400, "generic");
+      if (min > newestVersion(env)) return fail("That version does not exist yet", 400, "generic");
       await q("INSERT INTO settings (key, value) VALUES ('app_min_version', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [String(min)]);
       return json({ appMinVersion: min });
     }
@@ -171,6 +188,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   }
   // a read-only link for the doctor: the chosen period, as it is now, valid for a few days
   if (p === "/my/api/share" && req.method === "POST") {
+    if (await tooMany(q, "share:" + pid, 20, DAY)) return fail("Too many links today: try again tomorrow", 429, "too_many");
     let b: any = {};
     try { b = await req.json(); } catch {}
     const days = Math.min(Math.max(Math.round(Number(b.days) || 7), 1), MAX_PERIOD_DAYS);
@@ -198,61 +216,49 @@ export async function endWebAccess(q: Q, pid: string, alsoShares: boolean) {
 }
 
 /* ---------- the owner's area ---------- */
-const DAY = 864e5;
 
-/** The newest app version number seen in the acceptances ("0.1.80" → 80). */
-async function newestVersion(q: Q): Promise<number> {
-  const rows = await q("SELECT DISTINCT app_version FROM acceptances WHERE app_version IS NOT NULL UNION SELECT DISTINCT app_version FROM persons WHERE app_version IS NOT NULL");
-  return Math.max(0, ...rows.map((r: any) => Number(String(r.app_version).split(".").pop()) || 0));
+
+/** The newest app version that exists: the build number the pipeline deploys with (never data sent by users). */
+function newestVersion(env: any): number {
+  return Number(env.APP_VERSION) || 0;
 }
 
 async function adminOverview(env: any, q: Q) {
-  const now = Date.now(), d7 = now - 7 * DAY, d30 = now - 30 * DAY;
+  const now = Date.now();
   const one = async (sql: string, params: unknown[] = []) => Number((await q(sql, params))[0]?.n || 0);
   // size of the database, as D1 reports it after any query
   const probe = await env.DB.prepare("SELECT 1").run();
   const dbBytes = Number(probe?.meta?.size_after || 0);
-  const tables = ["persons", "measurements", "scans", "ledger", "person_keys", "acceptances", "web_sessions", "web_shares", "web_codes", "invites", "settings"];
-  const rows: Record<string, number> = {};
-  for (const t of tables) rows[t] = await one(`SELECT COUNT(*) AS n FROM ${t}`);
-  const users = await q(`
-    SELECT p.id, p.created_at, p.is_admin, p.last_seen_at, p.sub_until, p.sub_state, p.app_version AS app_now,
-      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id) AS n,
-      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?1) AS n7,
-      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.created_at > ?2) AS n30,
-      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.source = 'voice') AS voice,
-      (SELECT COUNT(*) FROM measurements m WHERE m.person_id = p.id AND m.source = 'photo') AS photo,
-      (SELECT MAX(created_at) FROM measurements m WHERE m.person_id = p.id) AS last_reading,
-      (SELECT COALESCE(status, 'ok') FROM person_keys k WHERE k.person_id = p.id) AS ai,
-      (SELECT COUNT(*) FROM web_shares s WHERE s.person_id = p.id) AS shares,
-      (SELECT app_version FROM acceptances a WHERE a.person_id = p.id ORDER BY accepted_at DESC LIMIT 1) AS app
-    FROM persons p ORDER BY p.created_at DESC LIMIT 1000`, [d7, d30]);
-  const list = users.map((u: any) => ({
-    id: String(u.id), owner: !!u.is_admin, since: Number(u.created_at), lastSeen: u.last_seen_at == null ? null : Number(u.last_seen_at),
-    readings: Number(u.n), last7: Number(u.n7), last30: Number(u.n30), voice: Number(u.voice), photo: Number(u.photo),
-    lastReading: u.last_reading == null ? null : Number(u.last_reading), ai: u.ai == null ? "none" : String(u.ai),
-    shares: Number(u.shares), app: u.app_now ? String(u.app_now) : u.app ? String(u.app) : null,
-    subUntil: u.sub_until == null ? null : Number(u.sub_until),
-  }));
-  const active = (since: number) => list.filter((u) => (u.lastSeen || 0) > since || (u.lastReading || 0) > since).length;
+  // one grouped pass per table instead of a sub-query per person
+  const users = await q("SELECT id, created_at, is_admin, last_seen_at, sub_until, app_version FROM persons ORDER BY created_at DESC LIMIT 1000");
+  const counts = await q("SELECT person_id, COUNT(*) AS n, SUM(source = 'voice') AS voice, SUM(source = 'photo') AS photo FROM measurements GROUP BY person_id");
+  const keys = await q("SELECT person_id, COALESCE(status, 'ok') AS status FROM person_keys");
+  const byPerson = new Map(counts.map((r: any) => [String(r.person_id), r]));
+  const aiOf = new Map(keys.map((r: any) => [String(r.person_id), String(r.status)]));
+  const list = users.map((u: any) => {
+    const c: any = byPerson.get(String(u.id)) || {};
+    return {
+      id: String(u.id), owner: !!u.is_admin, since: Number(u.created_at), lastSeen: u.last_seen_at == null ? null : Number(u.last_seen_at),
+      readings: Number(c.n || 0), voice: Number(c.voice || 0), photo: Number(c.photo || 0),
+      ai: aiOf.get(String(u.id)) || "none", app: u.app_version ? String(u.app_version) : null,
+      subUntil: u.sub_until == null ? null : Number(u.sub_until),
+    };
+  });
   const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'subscription_on')");
   const set: Record<string, string> = {};
   for (const r of gate as any[]) set[r.key] = String(r.value);
+  const aiOn = list.filter((u) => u.ai !== "none").length;
   return {
     at: now,
     totals: {
-      users: list.length, newUsers30: list.filter((u) => u.since > d30).length,
-      active7: active(d7), active30: active(d30),
-      readings: rows.measurements, readings7: list.reduce((a, u) => a + u.last7, 0), readings30: list.reduce((a, u) => a + u.last30, 0),
+      users: list.length, aiOn, aiOff: list.length - aiOn,
+      readings: list.reduce((a, u) => a + u.readings, 0),
       voice: list.reduce((a, u) => a + u.voice, 0), photo: list.reduce((a, u) => a + u.photo, 0),
-      aiOn: list.filter((u) => u.ai !== "none").length,
       aiSpentUsd: (await one("SELECT COALESCE(SUM(amount_micro), 0) AS n FROM ledger WHERE kind = 'usage'")) / 1e6,
-      webSessions: await one("SELECT COUNT(*) AS n FROM web_sessions WHERE expires_at > ?1", [now]),
-      doctorLinks: await one("SELECT COUNT(*) AS n FROM web_shares WHERE expires_at > ?1", [now]),
-      errors7: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log WHERE last_at > ?1", [d7]),
+      errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },
-    storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024, rows },
-    versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: await newestVersion(q) },
+    storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
+    versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
     subscriptionOn: set.subscription_on === "1",
     users: list,
   };

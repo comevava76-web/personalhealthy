@@ -348,7 +348,12 @@ fun App() {
                 }
                 // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
             } catch (e: Exception) {
-                message = e.message ?: t(R.string.err_generic)
+                // this account now lives on another phone (Google sign-in there): back to the sign-in screen (F-10)
+                if (e is ApiException && e.code == "unauthorized") {
+                    prefs.edit().remove("personId").apply()
+                    readings.clear(); me = null; personId = null
+                    toast(ctx, t(R.string.err_moved))
+                } else message = e.message ?: t(R.string.err_generic)
             } finally { loading = false }
         }
     }
@@ -567,7 +572,7 @@ fun App() {
                 values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
                 onSave = {
                     val pid = personId ?: return@VoiceScreen
-                    val (sis, dia, pul) = voice!!
+                    val (sis, dia, pul) = voice ?: return@VoiceScreen
                     voiceSaving = true
                     scope.launch {
                         try {

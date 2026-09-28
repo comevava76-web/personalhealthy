@@ -54,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "14"
+const val DISCLAIMER_VERSION = "15"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -70,6 +70,9 @@ fun englishText(ctx: Context, id: Int, vararg args: Any): String {
 
 /** Translated text (English, Italian, German or French, following the phone). */
 fun t(id: Int, vararg args: Any): String = Txt.res?.getString(id, *args) ?: ""
+
+/** The moment of the day in the tables, short to save space: before 12:00 AM, after PM. */
+fun ampm(p: String): String = if (p == "morning") "AM" else "PM"
 
 fun periodLabel(p: String): String = when (p) {
     "morning" -> t(R.string.period_morning)
@@ -310,7 +313,7 @@ class ApiException(val code: String) : Exception(errorText(code))
 object ErrorReport {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile var personId: String? = null
-    private var sent = 0
+    private val sent = java.util.concurrent.atomic.AtomicInteger(0)
 
     fun report(place: String, e: Throwable) {
         if (e is ApiException) return
@@ -319,8 +322,7 @@ object ErrorReport {
 
     fun send(code: String, place: String, message: String) {
         val pid = personId ?: return
-        if (sent >= 20) return
-        sent++
+        if (sent.incrementAndGet() > 20) return
         scope.launch {
             try { Api.call("POST", "/v1/log", JSONObject().put("code", code).put("place", place.take(80)).put("message", message.take(300)), pid) }
             catch (_: Exception) { }
@@ -600,6 +602,9 @@ object Img {
         val out = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
         val bos = ByteArrayOutputStream()
         out.compress(Bitmap.CompressFormat.JPEG, 85, bos)
+        // a 12-megapixel photo is tens of MB in memory: freed at once
+        if (out !== bmp) out.recycle()
+        bmp.recycle()
         return Base64.encodeToString(bos.toByteArray(), Base64.NO_WRAP)
     }
 }
