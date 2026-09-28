@@ -379,10 +379,17 @@
     <div>
       <h2>Error log <small>continuous testing and improvement</small></h2>
       <ul>
-        <li><b>Server</b>: every failed call to <code>/v1</code> or <code>/my/api</code> (status 400–599, except 402, 404, 426 and a browser without a session) and every exception.</li>
-        <li><b>App</b>: crashes (sent when the app opens again) and failures of local work such as building the PDF or the Excel file. At most 20 a session.</li>
-        <li><b>Web</b>: script errors of the Web Dashboard, at most 5 a page; never on a doctor's link.</li>
-        <li><b>Short by design</b>: one row per day, source, code, place and app version, with a counter. Digits are removed from messages, so no reading value is stored; only the anonymous account code. Kept 90 days.</li>
+        <li><b>Server</b>: failed signed calls (400–599, except 402, 404, 426) and every exception.</li>
+        <li><b>App</b>: crashes and failed PDF or Excel files; at most 20 a session.</li>
+        <li><b>Web</b>: script errors, at most 5 a page; never on a doctor's link.</li>
+        <li><b>Short</b>: one row per day, source, code, place, version, with a counter; digits removed, so no reading value; 90 days.</li>
+      </ul>
+      <h2>Security tests <small>and who pays the loop</small></h2>
+      <ul>
+        <li><b>Each PR</b>: 160 functional and security checks, summer time (<code>security-tests.yml</code>, test data only).</li>
+        <li><b>Nightly</b>: read-only probe of the live site; <b>vulnerability scan</b> of every library against OSV.dev (Android, web, server tools). Sundays: load and browser.</li>
+        <li><b>Dependabot</b>, Mondays: a PR for each outdated or vulnerable library.</li>
+        <li><b>Who pays</b>: nobody extra. GitHub Actions on the owner's free plan (≈ 500 of 2,000 min a month), the routine inside the owner's Claude plan, Cloudflare free, OSV.dev public.</li>
       </ul>
     </div>
     <div>
@@ -391,7 +398,6 @@
         <li><b>Owner</b>: Admin tab → total errors (90 days); the details reach the developer through the daily issue.</li>
         <li><b>Developer</b>: every morning a scheduled routine reads the report of the log and fixes (page 5); in working sessions it is also read after every release.</li>
         <li><b>Table</b>: <code>error_log</code> in D1, written by <code>worker/src/errors.ts</code>; app side <code>ErrorReport</code> in <code>Core.kt</code>; web side in <code>app.js</code>.</li>
-        <li>Also on every account: the app version it last opened with and whether the AI features are on, for the owner's Admin tab.</li>
       </ul>
       <h2>Data protection <small>GDPR · Swiss FADP</small></h2>
       <ul>
@@ -499,7 +505,7 @@
     <line x1="218" y1="102" x2="50" y2="102" class="a5"/><line x1="50" y1="102" x2="50" y2="84" class="a5"/>
     <text x="70" y="98" class="x5">the next day, with the fixed version in use</text>
   </svg>
-  <p class="muted"><b>Security tests</b> (<code>security-tests.yml</code>, test data only): each PR 160 functional and security checks and summer time; nightly also a read-only probe of the live site and a dependency audit; Sundays load and browser. Larger fixes wait for the human.</p>
+  <p class="muted">Security tests, vulnerability scan, Dependabot and who pays for the loop: page 4. Larger fixes wait for the human.</p>
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>5 / 6</span></div>
 </section>
 

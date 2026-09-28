@@ -5,7 +5,8 @@ name: Security tests
 #    (signatures, replay, IDOR, limits, privacy, doctor links, admin rights, purge) and the time-zone checks
 #    against a local copy of the Worker. A failed check blocks the merge.
 #  - Every night: the same, plus a passive probe of the live site (headers, forged credentials, guessed links,
-#    error pages, CORS; read-only, it never signs in) and the audit of the server's dependencies.
+#    error pages, CORS; read-only, it never signs in), the audit of the server's tools and the vulnerability scan
+#    of every library against OSV.dev (report kept as an artifact).
 #  - Every Sunday: also the load test (200 clients) and the browser test at 390 px and 1280 px.
 # A scheduled run that fails opens (or updates) an issue labelled security-test; the developer's daily check
 # (06:48 Zurich) reads it together with the error log, fixes what it can and reports in the issue.
@@ -59,6 +60,11 @@ jobs:
         if: always() && github.event_name != 'pull_request'
         working-directory: worker
         run: npm i --package-lock-only --silent --no-fund && npm audit --audit-level=critical
+      - name: Vulnerability scan of every library (OSV.dev)
+        # Android libraries and plugins, the web libraries in worker/public/my/vendor, the server's tools
+        if: always() && github.event_name != 'pull_request'
+        working-directory: docs/testing/harness
+        run: node vuln-scan.mjs "$QA/vulnerability-scan.md"
       - name: Passive probe of the live site
         if: always() && github.event_name != 'pull_request'
         working-directory: docs/testing/harness
@@ -97,6 +103,9 @@ jobs:
             for f in "$QA"/*.json; do
               jq -r --arg s "$(basename "$f" .json)" '(.failed // .checks // [])[] | select(.ok == false) | "| \($s) | \(.id) | \(.desc) | \(.detail // "" | tostring | .[0:160] | gsub("\\|"; "/") | gsub("\n"; " ")) |"' "$f" 2>/dev/null || true
             done
+            if [ -f "$QA/vulnerability-scan.md" ] && grep -q "known vulnerabilit" "$QA/vulnerability-scan.md" && ! grep -q "No known vulnerability" "$QA/vulnerability-scan.md"; then
+              echo; sed -n '3,/^## Libraries checked/p' "$QA/vulnerability-scan.md" | sed '$d'
+            fi
             echo
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} (results kept 30 days as an artifact)."
             echo "Picked up by the developer's daily check (06:48 Zurich) with the error log. Test data only: no real readings."

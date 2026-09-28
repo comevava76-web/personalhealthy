@@ -1,0 +1,19 @@
+# Dependabot (GitHub, free): watches every library HINT 365 uses and opens a pull request when a newer version
+# exists, at once when it fixes a known vulnerability. Each pull request goes through Docs check and Security tests;
+# the developer's daily routine reviews and merges it (a major version waits for the human).
+version: 2
+updates:
+  - package-ecosystem: gradle          # Android app: Compose, billing, credentials, zxing, Gradle plugins
+    directory: /android
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Europe/Zurich }
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+  - package-ecosystem: npm             # the server's build and deploy tool (wrangler)
+    directory: /worker
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Europe/Zurich }
+    open-pull-requests-limit: 3
+    labels: [dependencies]
+  - package-ecosystem: github-actions  # the actions the workflows use
+    directory: /
+    schedule: { interval: monthly }
+    labels: [dependencies]
