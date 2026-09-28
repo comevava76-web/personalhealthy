@@ -209,10 +209,13 @@ td.pick .st { margin-left: 8px; }
 
 /* overall status of the Security console (the owner asked for red on high or critical: the only red in the product) */
 .overall { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 18px; border-radius: 14px; margin: 4px 0 12px; color: #fff; }
-.overall .dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.25); }
+.overall .dot { width: 12px; height: 12px; border-radius: 50%; }
 .overall .lab { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
 .overall b { font-size: 20px; letter-spacing: .01em; }
 .overall .det { margin-left: auto; font-size: 13px; opacity: .92; }
-.overall.o-ok { background: #1E9A5B; }
-.overall.o-warn { background: #D9791C; }
-.overall.o-high { background: #C62828; }
+.overall.o-ok { background: rgba(46, 170, 110, .20); border: 1px solid rgba(46, 170, 110, .55); }
+.overall.o-warn { background: rgba(232, 146, 56, .20); border: 1px solid rgba(232, 146, 56, .55); }
+.overall.o-high { background: rgba(232, 84, 84, .20); border: 1px solid rgba(232, 84, 84, .55); }
+.overall.o-ok .dot { background: #4ED39A; box-shadow: 0 0 0 4px rgba(78, 211, 154, .18); }
+.overall.o-warn .dot { background: #F2A65A; box-shadow: 0 0 0 4px rgba(242, 166, 90, .18); }
+.overall.o-high .dot { background: #F07272; box-shadow: 0 0 0 4px rgba(240, 114, 114, .18); }
