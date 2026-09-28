@@ -18,7 +18,7 @@
     <string name="share_app_text">J\'utilise HINT 365, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
     <string name="privacy_title">Vos données</string>
-    <string name="privacy_note">Ce qui est enregistré : une empreinte chiffrée de votre compte Google, sans e-mail (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Admin.</string>
+    <string name="privacy_note">Ce qui est enregistré : une empreinte chiffrée de votre compte Google, sans e-mail (seulement pour retrouver votre journal), vos mesures avec date et heure, et si chacune vient d\'une photo ou de la voix. Les photos du tensiomètre sont envoyées à Anthropic pour lire les nombres et ne sont pas conservées par cette app. Les données sont sur des serveurs Cloudflare dans l\'Union européenne ; les autres utilisateurs ne les voient pas ; qui gère le service n\'accède à la base que pour la maintenance. Vous pouvez supprimer votre compte et toutes vos données à tout moment dans l\'onglet Admin. Ce sont des données de santé : en acceptant, vous consentez explicitement à leur traitement (RGPD art. 9, LPD suisse) ; vous pouvez retirer ce consentement en supprimant votre compte.</string>
     <string name="privacy_accept">J\'ai lu et j\'accepte</string>
     <string name="privacy_accept_link">Accepter et associer</string>
     <string name="google_sign_in">Se connecter avec Google</string>
@@ -147,7 +147,7 @@
     <string name="pdf_page">Page %1$d sur %2$d</string>
     <string name="col_date">Date</string>
     <string name="col_time">Heure</string>
-    <string name="col_period">Moment</string>
+    <string name="col_period">AM/PM</string>
     <string name="err_bad_clock">L\'heure du téléphone est incorrecte : activez la date et l\'heure automatiques.</string>
     <string name="err_family_code">Code non valide</string>
     <string name="err_unauthorized">Accès non autorisé</string>
@@ -355,4 +355,26 @@
     <string name="owner_note">Personne d\'autre ne voit ces réglages, et le serveur ne les accepte que de vous.</string>
     <string name="versions_blocked_none">Aucune version bloquée : toutes les apps installées fonctionnent.</string>
     <string name="versions_blocked_below">Bloquées : toutes les versions antérieures à %1$s.</string>
+    <string name="err_moved">Ce compte est maintenant utilisé sur un autre téléphone : reconnectez-vous avec Google.</string>
+    <string name="ai_check_now">Vérifier à nouveau auprès d\'Anthropic</string>
+    <string name="ai_key_invalid">Scan désactivé : Anthropic n\'accepte plus votre clé. Remplacez-la dans Admin.</string>
+    <string name="ai_no_credit">Scan désactivé : votre crédit Anthropic est épuisé. Rechargez-le chez Anthropic, puis Admin → « Vérifier à nouveau auprès d\'Anthropic ».</string>
+    <string name="ai_state_invalid">Anthropic : clé non acceptée</string>
+    <string name="ai_state_no_credit">Anthropic : crédit épuisé</string>
+    <string name="ai_state_ok">Anthropic : clé valide et crédit disponible</string>
+    <string name="colophon_rights">© %1$s · Tous droits réservés</string>
+    <string name="credit_spent">Dépensé avec HINT 365</string>
+    <string name="credit_state_empty">Épuisé</string>
+    <string name="credit_state_key">Clé ?</string>
+    <string name="credit_state_ok">Disponible</string>
+    <string name="disc_accept">J\'ai compris et j\'accepte</string>
+    <string name="disc_accepted_on">Accepté le %1$s</string>
+    <string name="disc_check">J\'ai lu et compris les conditions d\'utilisation et l\'avis (en anglais)</string>
+    <string name="disc_decline">Je n\'accepte pas</string>
+    <string name="disc_declined">Sans votre acceptation, HINT 365 ne peut pas être utilisé. Vous pouvez relire l\'avis et l\'accepter quand vous le souhaitez.</string>
+    <string name="disc_legal">Conditions d\'utilisation</string>
+    <string name="disc_title">Conditions d\'utilisation et avis</string>
+    <string name="disc_web">Ouvrir la version web, avec les liens des fournisseurs</string>
+    <string name="my_dash">Web Dashboard</string>
+    <string name="my_dash_sub">S\'ouvre dans le navigateur, déjà connecté à votre compte : grands graphiques et un lien à envoyer à votre médecin par WhatsApp ou e-mail.</string>
 </resources>

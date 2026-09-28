@@ -1,0 +1,107 @@
+name: Security tests
+
+# Part of the continuous loop (docs/architecture, page 4). Test data only, never real readings.
+#  - On every pull request that touches the server, the web or the tests: the functional and security suite
+#    (signatures, replay, IDOR, limits, privacy, doctor links, admin rights, purge) and the time-zone checks
+#    against a local copy of the Worker. A failed check blocks the merge.
+#  - Every night: the same, plus a passive probe of the live site (headers, forged credentials, guessed links,
+#    error pages, CORS; read-only, it never signs in) and the audit of the server's dependencies.
+#  - Every Sunday: also the load test (200 clients) and the browser test at 390 px and 1280 px.
+# A scheduled run that fails opens (or updates) an issue labelled security-test; the developer's daily check
+# (06:48 Zurich) reads it together with the error log, fixes what it can and reports in the issue.
+on:
+  pull_request:
+    paths: ["worker/**", "docs/testing/**", ".github/workflows/security-tests.yml"]
+  schedule:
+    - cron: "10 4 * * *"   # 06:10 in Zurich in summer, before the error log report (06:30)
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Also run the load test and the browser test"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      QA: ${{ github.workspace }}/qa-results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Weekly extras on Sundays
+        if: github.event_name == 'schedule'
+        run: '[ "$(date -u +%u)" = "7" ] && echo "WEEKLY=1" >> "$GITHUB_ENV" || true'
+      - name: Start a local copy of the Worker (dummy secrets, empty database)
+        run: |
+          cd worker && npm install --no-audit --no-fund --silent && cd ..
+          bash docs/testing/harness/setup-local.sh "$QA"
+      - name: Functional and security suite
+        working-directory: docs/testing/harness
+        run: HINT_WORKER_DIR="$QA/w" HINT_OUT="$QA/functional.json" node functional.mjs
+      - name: Time zone and summer time
+        if: always()
+        working-directory: docs/testing/harness
+        run: HINT_OUT="$QA/timezone.json" node timezone.mjs
+      - name: Same probe as on the live site, on the local copy
+        if: always()
+        working-directory: docs/testing/harness
+        run: HINT_OUT="$QA/probe-local.json" node prod-probe.mjs http://127.0.0.1:8787
+      - name: Tools that build and deploy the server (known critical vulnerabilities)
+        # the Worker itself has no runtime packages; wrangler is what deploys it
+        if: always() && github.event_name != 'pull_request'
+        working-directory: worker
+        run: npm i --package-lock-only --silent --no-fund && npm audit --audit-level=critical
+      - name: Passive probe of the live site
+        if: always() && github.event_name != 'pull_request'
+        working-directory: docs/testing/harness
+        run: HINT_OUT="$QA/probe-live.json" node prod-probe.mjs
+      - name: Load test (200 clients)
+        if: always() && (env.WEEKLY == '1' || inputs.full == true)
+        working-directory: docs/testing/harness
+        run: HINT_WORKER_DIR="$QA/w" CLIENTS=200 HINT_OUT="$QA/stress.json" node stress.mjs
+      - name: Browser test (390 px and 1280 px)
+        if: always() && (env.WEEKLY == '1' || inputs.full == true)
+        working-directory: docs/testing/harness
+        run: |
+          npm install --no-save --no-audit --no-fund --silent playwright@1
+          npx playwright install --with-deps chromium >/dev/null
+          HINT_WORKER_DIR="$QA/w" HINT_SHOTS="$QA/shots" HINT_OUT="$QA/ui.json" node ui.mjs
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-tests-${{ github.run_number }}
+          path: |
+            ${{ env.QA }}/*.json
+            ${{ env.QA }}/shots
+            ${{ env.QA }}/wrangler.log
+          retention-days: 30
+      - name: Open or update the security-test issue when a scheduled run fails
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "The scheduled security tests failed on \`${GITHUB_SHA::7}\` ($(date -u +%F))."
+            echo
+            echo "| Suite | Check | What | Detail |"
+            echo "|---|---|---|---|"
+            for f in "$QA"/*.json; do
+              jq -r --arg s "$(basename "$f" .json)" '(.failed // .checks // [])[] | select(.ok == false) | "| \($s) | \(.id) | \(.desc) | \(.detail // "" | tostring | .[0:160] | gsub("\\|"; "/") | gsub("\n"; " ")) |"' "$f" 2>/dev/null || true
+            done
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} (results kept 30 days as an artifact)."
+            echo "Picked up by the developer's daily check (06:48 Zurich) with the error log. Test data only: no real readings."
+          } > body.md
+          gh label create security-test --color 4FB6A8 --description "Scheduled security tests failed" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          N=$(gh issue list --repo "$GITHUB_REPOSITORY" --label security-test --state open --json number -q '.[0].number')
+          if [ -n "$N" ]; then gh issue comment "$N" --repo "$GITHUB_REPOSITORY" --body-file body.md
+          else gh issue create --repo "$GITHUB_REPOSITORY" --title "Security tests $(date -u +%F)" --label security-test --body-file body.md; fi

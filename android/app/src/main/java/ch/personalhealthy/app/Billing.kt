@@ -125,7 +125,9 @@ object Billing {
         try {
             Repo.subVerify(pid, p.purchaseToken)
             if (!p.isAcknowledged) {
-                client?.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build())
+                // not acknowledged within 3 days, Google refunds it: a failure is logged, and restore() tries again
+                val r = client?.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build())
+                if (r != null && r.responseCode != BillingClient.BillingResponseCode.OK) ErrorReport.send("billing_ack", "Billing/ack", r.debugMessage)
             }
             AppGate.subExpired = false
             onChanged?.invoke()

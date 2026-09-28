@@ -22,13 +22,23 @@ android {
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
     }
 
-    // Fixed signing key: every new version installs over the previous one without losing anything
+    // Fixed signing key: every new version installs over the previous one without losing anything.
+    // The key comes from the GitHub secrets (ANDROID_KEYSTORE_*, decoded by the workflow into HINT_KEYSTORE_FILE);
+    // until the owner adds them, the old key in the repository is used.
+    val ksFile = System.getenv("HINT_KEYSTORE_FILE").orEmpty()
     signingConfigs {
         create("family") {
-            storeFile = file("personalhealthy.keystore")
-            storePassword = "battito-family"
-            keyAlias = "battito"
-            keyPassword = "battito-family"
+            if (ksFile.isNotBlank() && file(ksFile).exists()) {
+                storeFile = file(ksFile)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS").orEmpty().ifBlank { "hint365" }
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            } else {
+                storeFile = file("personalhealthy.keystore")
+                storePassword = "battito-family"
+                keyAlias = "battito"
+                keyPassword = "battito-family"
+            }
         }
     }
 

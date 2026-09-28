@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /my/
+Disallow: /s/
+Disallow: /v1/

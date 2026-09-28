@@ -11,7 +11,7 @@ const DAY = 864e5;
 const db = localDb();
 const run = (q, ...p) => db.prepare(q).run(...p);
 const one = (q, ...p) => db.prepare(q).get(...p);
-for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log"]) run(`DELETE FROM ${t}`);
+for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log", "seen_sigs", "rate_limits"]) run(`DELETE FROM ${t}`);
 run("DELETE FROM settings WHERE key <> 'billing_mode'");
 
 const report = { config: { CLIENTS, VOICE_PER_CLIENT }, phases: [], checks: [] };
@@ -127,4 +127,5 @@ db.exec("UPDATE measurements SET taken_at_local = NULL, created_at_local = NULL 
 await phase("GET /v1/me while back-filling 2000 legacy rows (x10, sequential)", Array.from({ length: 10 }, (_, i) => () => call(phones[i], "GET", "/v1/me")), 1);
 
 console.log(JSON.stringify(report.checks.filter((c) => !c.ok)));
+if (report.checks.some((c) => !c.ok)) process.exitCode = 1;
 (await import("node:fs")).writeFileSync(process.env.HINT_OUT || "stress-results.json", JSON.stringify(report, null, 2));

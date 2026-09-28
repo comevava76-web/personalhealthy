@@ -18,7 +18,7 @@
     <string name="share_app_text">Ich nutze HINT 365, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
     <string name="privacy_title">Deine Daten</string>
-    <string name="privacy_note">Gespeichert werden: ein verschlüsselter Fingerabdruck deines Google-Kontos, ohne E-Mail (nur um dein Tagebuch wiederzufinden), deine Messungen mit Datum und Uhrzeit, und ob sie von einem Foto oder deiner Stimme stammen. Fotos des Messgeräts werden zum Lesen der Zahlen an Anthropic gesendet und von dieser App nicht aufbewahrt. Die Daten liegen auf Cloudflare-Servern in der Europäischen Union; andere Nutzer sehen sie nicht; wer den Dienst betreibt, greift nur zur Wartung auf die Datenbank zu. Du kannst dein Konto und alle Daten jederzeit im Tab Admin löschen.</string>
+    <string name="privacy_note">Gespeichert werden: ein verschlüsselter Fingerabdruck deines Google-Kontos, ohne E-Mail (nur um dein Tagebuch wiederzufinden), deine Messungen mit Datum und Uhrzeit, und ob sie von einem Foto oder deiner Stimme stammen. Fotos des Messgeräts werden zum Lesen der Zahlen an Anthropic gesendet und von dieser App nicht aufbewahrt. Die Daten liegen auf Cloudflare-Servern in der Europäischen Union; andere Nutzer sehen sie nicht; wer den Dienst betreibt, greift nur zur Wartung auf die Datenbank zu. Du kannst dein Konto und alle Daten jederzeit im Tab Admin löschen. Es sind Gesundheitsdaten: Mit deiner Zustimmung willigst du ausdrücklich in ihre Bearbeitung ein (DSGVO Art. 9, Schweizer DSG); du kannst sie widerrufen, indem du dein Konto löschst.</string>
     <string name="privacy_accept">Gelesen und akzeptiert</string>
     <string name="privacy_accept_link">Akzeptieren und verbinden</string>
     <string name="google_sign_in">Mit Google anmelden</string>
@@ -147,7 +147,7 @@
     <string name="pdf_page">Seite %1$d von %2$d</string>
     <string name="col_date">Datum</string>
     <string name="col_time">Uhrzeit</string>
-    <string name="col_period">Tageszeit</string>
+    <string name="col_period">AM/PM</string>
     <string name="err_bad_clock">Die Uhrzeit des Telefons ist falsch: Aktiviere automatisches Datum und Uhrzeit.</string>
     <string name="err_family_code">Ungültiger Code</string>
     <string name="err_unauthorized">Zugriff nicht erlaubt</string>
@@ -355,4 +355,26 @@
     <string name="owner_note">Niemand sonst sieht diese Einstellungen, und der Server nimmt sie nur von dir an.</string>
     <string name="versions_blocked_none">Keine Version gesperrt: Alle installierten Apps funktionieren.</string>
     <string name="versions_blocked_below">Gesperrt: alle Versionen vor %1$s.</string>
+    <string name="err_moved">Dieses Konto wird jetzt auf einem anderen Telefon verwendet: Melde dich erneut mit Google an.</string>
+    <string name="ai_check_now">Bei Anthropic erneut prüfen</string>
+    <string name="ai_key_invalid">Scan ist aus: Anthropic akzeptiert deinen Schlüssel nicht mehr. Ersetze ihn in Admin.</string>
+    <string name="ai_no_credit">Scan ist aus: Dein Anthropic-Guthaben ist aufgebraucht. Lade es bei Anthropic auf, dann Admin → „Bei Anthropic erneut prüfen“.</string>
+    <string name="ai_state_invalid">Anthropic: Schlüssel nicht akzeptiert</string>
+    <string name="ai_state_no_credit">Anthropic: Guthaben aufgebraucht</string>
+    <string name="ai_state_ok">Anthropic: Schlüssel gültig und Guthaben vorhanden</string>
+    <string name="colophon_rights">© %1$s · Alle Rechte vorbehalten</string>
+    <string name="credit_spent">Mit HINT 365 ausgegeben</string>
+    <string name="credit_state_empty">Aufgebraucht</string>
+    <string name="credit_state_key">Schlüssel?</string>
+    <string name="credit_state_ok">Vorhanden</string>
+    <string name="disc_accept">Ich habe verstanden und akzeptiere</string>
+    <string name="disc_accepted_on">Akzeptiert am %1$s</string>
+    <string name="disc_check">Ich habe die Nutzungsbedingungen und den Hinweis (auf Englisch) gelesen und verstanden</string>
+    <string name="disc_decline">Ich akzeptiere nicht</string>
+    <string name="disc_declined">Ohne deine Zustimmung kann HINT 365 nicht verwendet werden. Du kannst den Hinweis jederzeit erneut lesen und akzeptieren.</string>
+    <string name="disc_legal">Nutzungsbedingungen</string>
+    <string name="disc_title">Nutzungsbedingungen und Hinweis</string>
+    <string name="disc_web">Webversion öffnen, mit den Links der Anbieter</string>
+    <string name="my_dash">Web Dashboard</string>
+    <string name="my_dash_sub">Öffnet sich im Browser, bereits mit deinem Konto angemeldet: große Diagramme und ein Link, den du deinem Arzt per WhatsApp oder E-Mail senden kannst.</string>
 </resources>

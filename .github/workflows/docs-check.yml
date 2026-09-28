@@ -40,3 +40,16 @@ jobs:
           pair docs/guide-it.html docs/HINT-Guida-IT.pdf
           pair docs/guide-en.html docs/HINT-Guide-EN.pdf
           exit $fail
+      - name: Every app text exists in Italian, German and French
+        # Long legal texts may stay in English (Android falls back to it): list them in ALLOWED.
+        run: |
+          ALLOWED="disc_body"
+          R=android/app/src/main/res
+          keys() { grep -o '<string name="[^"]*"' "$1" | grep -v translatable | sed 's/.*name="//;s/"//' | sort -u; }
+          grep '<string ' $R/values/strings.xml | grep -v 'translatable="false"' | grep -o 'name="[^"]*"' | sed 's/name="//;s/"//' | sort -u > /tmp/base
+          fail=0
+          for l in it de fr; do
+            missing=$(keys $R/values-$l/strings.xml | comm -23 /tmp/base - | grep -vxF "$(echo $ALLOWED | tr ' ' '\n')" || true)
+            if [ -n "$missing" ]; then echo "values-$l is missing: $missing"; fail=1; fi
+          done
+          exit $fail

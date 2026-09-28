@@ -34,8 +34,10 @@ for (const [label, iso] of [["spring (first day 29 Mar 2026)", "2026-04-04T10:00
     `got ${local(got)} (${new Date(got).toISOString()}), want ${local(want)} (${new Date(want).toISOString()}): off by ${(got - want) / 3600e3} h`);
 }
 
-// app.js: "on d of N days" uses N = round((to - from) / day); the window always has 7 calendar days
-const spanDays = (from, to) => Math.max(1, Math.round((to - from) / 864e5));
+// app.js (after F-14): N = calendar days between the Swiss dates of "from" and "to", both included
+const fYmd = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" });
+const midnight = (ms) => { const p = {}; for (const x of fYmd.formatToParts(ms)) p[x.type] = x.value; return Date.UTC(+p.year, +p.month - 1, +p.day); };
+const spanDays = (from, to) => Math.round((midnight(to) - midnight(from)) / 864e5) + 1;
 for (const iso of ["2026-09-28T06:00:00Z", "2026-09-28T14:00:00Z"]) {
   const to = Date.parse(iso), from = periodStart(to, 7);
   S.check("web", "SPAN-" + iso, `Web Dashboard says "of 7 days" at ${local(to)}`, spanDays(from, to) === 7, `says "of ${spanDays(from, to)} days" (window has 7 calendar days)`);
