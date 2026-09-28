@@ -181,3 +181,48 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   window_start INTEGER NOT NULL,
   count        INTEGER NOT NULL
 );
+
+-- Results of the nightly security scans (Security tests workflow → publish-security.mjs), for the owner's
+-- Security console. Replaced at every run. Libraries with a known vulnerability, findings in our code (Semgrep),
+-- secrets written in the repository (gitleaks: rule, file and line only, never the value). No personal data.
+CREATE TABLE IF NOT EXISTS security_findings (
+  kind        TEXT NOT NULL,                 -- 'library' | 'code' | 'secret'
+  ref         TEXT NOT NULL,                 -- advisory id (GHSA, CVE…), Semgrep rule or gitleaks rule
+  name        TEXT NOT NULL,                 -- library name, or file path
+  version     TEXT,                          -- library version, or line / commit
+  location    TEXT,                          -- where it is in the repository
+  severity    TEXT,                          -- from the advisory or the tool
+  rating      TEXT,                          -- our rating after reachability (docs/security/decisions.json)
+  fixed       TEXT,                          -- version that fixes it
+  summary     TEXT,
+  source_url  TEXT,                          -- the advisory or the line in the repository
+  plan_url    TEXT,                          -- the remediation plan (issue, pull request, rule)
+  found_at    INTEGER NOT NULL,
+  PRIMARY KEY (kind, ref, name, location)
+);
+
+-- Fix requests from the Security console. One row per request (the key lets the fix workflow report progress,
+-- stored only as a fingerprint, valid 24 hours) and one row per finding with its state:
+-- Open (no fix requested, or it waits for the owner's decision) -> Fixing -> Fixed | Failed. Always in English.
+CREATE TABLE IF NOT EXISTS security_fix_requests (
+  id          TEXT PRIMARY KEY,
+  key_hash    TEXT NOT NULL,
+  issue_url   TEXT,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS security_fixes (
+  kind          TEXT NOT NULL,
+  ref           TEXT NOT NULL,
+  name          TEXT NOT NULL,
+  location      TEXT NOT NULL,
+  fix_id        TEXT,                        -- security_fix_requests.id
+  idx           INTEGER,                     -- number of the finding in the request's issue
+  status        TEXT NOT NULL DEFAULT 'fixing',   -- open | fixing | fixed | failed
+  detail_url    TEXT,                        -- the pull request (or the issue comment) with the fix
+  note          TEXT,                        -- short reason: why it failed, or what the owner must decide
+  requested_at  INTEGER NOT NULL,
+  updated_at    INTEGER,
+  issue_url     TEXT,
+  PRIMARY KEY (kind, ref, name, location)
+);

@@ -178,3 +178,41 @@ b.you { color: var(--accent); font-size: 11px; text-transform: uppercase; letter
   table.readings th:nth-child(3), table.readings td:nth-child(3),
   table.readings th:nth-child(7), table.readings td:nth-child(7) { display: none; }
 }
+
+/* Security console: risk chips (no red: amber for serious, grey for low) */
+.risk { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; }
+.risk.r-crit { background: #C98320; color: #fff; }
+.risk.r-high { background: #E0A64E; color: #1c1300; }
+.risk.r-mod { background: #F3D9AE; color: #4a3200; }
+.risk.r-low { background: var(--panel2); color: var(--muted); }
+.tiles.adm.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 720px) { .tiles.adm.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+th.pick, td.pick { width: 1%; white-space: nowrap; }
+td.pick input, th.pick input { width: 18px; height: 18px; accent-color: #8C7BF2; vertical-align: middle; }
+.fixbar { position: sticky; bottom: 0; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-top: 6px; }
+@media (max-width: 700px) { table.list td.pick { justify-content: flex-start; } }
+
+/* fix states, always in English: Open → Fixing → Fixed (green) | Failed (dark amber: no red anywhere) */
+td.pick { display: table-cell; }
+td.pick .st { margin-left: 8px; }
+.state { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.state.s-open { background: var(--panel2); color: var(--muted); }
+.state.s-fixing { background: #2E2766; color: #CFC6FF; }
+.state.s-fixed { background: #1E9A5B; color: #fff; }
+.state.s-failed { background: #8A5412; color: #fff; }
+.state .spin { width: 9px; height: 9px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .state .spin { animation: none; } }
+
+/* overall status of the Security console (the owner asked for red on high or critical: the only red in the product) */
+.overall { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 18px; border-radius: 14px; margin: 4px 0 12px; color: #fff; }
+.overall .dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.25); }
+.overall .lab { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.overall b { font-size: 20px; letter-spacing: .01em; }
+.overall .det { margin-left: auto; font-size: 13px; opacity: .92; }
+.overall.o-ok { background: #1E9A5B; }
+.overall.o-warn { background: #D9791C; }
+.overall.o-high { background: #C62828; }

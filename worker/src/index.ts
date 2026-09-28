@@ -24,6 +24,8 @@ interface Env {
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
   APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
+  GITHUB_FIX_TOKEN?: string;     // Security console "Fix": a GitHub token that may open issues in the repository (owner sets it)
+  GITHUB_REPO?: string;          // owner/name of the repository (default comevava76-web/personalhealthy)
 }
 
 const MICRO = 1_000_000; // money is kept in millionths of a dollar (integers, no rounding errors)
@@ -474,7 +476,7 @@ const ROUTES = new Set([
   "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription", "/v1/key", "/v1/key/check",
   "/v1/bp/scan", "/v1/bp/confirm", "/v1/bp/voice", "/v1/bp", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
   "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
-  "/my/api/admin/app-min-version",
+  "/my/api/admin/app-min-version", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
 ]);
 const routeName = (method: string, path: string) => (ROUTES.has(path) ? method + " " + path : "unknown");
 

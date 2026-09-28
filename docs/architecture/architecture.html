@@ -384,12 +384,12 @@
         <li><b>Web</b>: script errors, at most 5 a page; never on a doctor's link.</li>
         <li><b>Short</b>: one row per day, source, code, place, version, with a counter; digits removed, so no reading value; 90 days.</li>
       </ul>
-      <h2>Security tests <small>and who pays the loop</small></h2>
+      <h2>Security <small>docs/security/</small></h2>
       <ul>
-        <li><b>Each PR</b>: 160 functional and security checks, summer time (<code>security-tests.yml</code>, test data only).</li>
-        <li><b>Nightly</b>: read-only probe of the live site; <b>vulnerability scan</b> of every library against OSV.dev (Android, web, server tools). Sundays: load and browser.</li>
-        <li><b>Dependabot</b>, Mondays: a PR for each outdated or vulnerable library; it must compile (<i>Android build check</i>). Fixed within 48 h if critical, 7 days if high, 30 days if moderate: <code>docs/security/</code>.</li>
-        <li><b>Who pays</b>: nobody extra. GitHub Actions on the owner's free plan (≈ 500 of 2,000 min a month), the routine inside the owner's Claude plan, Cloudflare free, OSV.dev public.</li>
+        <li><b>Each PR</b>: 168 security and functional checks; the app must compile.</li>
+        <li><b>Nightly</b>: live probe; every library (full tree) on OSV.dev; Semgrep; gitleaks → Admin → Security, with <b>Fix</b> (Claude Code).</li>
+        <li><b>Deadlines</b>: critical 48 h, high 7 days, moderate 30 days. Dependabot PRs on Mondays.</li>
+        <li><b>Cost</b>: 0 $ extra (GitHub free plan, owner's Claude plan, OSV.dev public).</li>
       </ul>
     </div>
     <div>
