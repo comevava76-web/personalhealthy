@@ -300,7 +300,7 @@
         <li><b>Web</b>: a 60 s one-time code in the <code>#</code> part of the address becomes the only cookie, <code>hint_s</code> (technical, 7 days, HttpOnly, Secure, SameSite=Strict), set only after consent. The app uses no cookies.</li>
         <li><b>Doctor links</b>: read-only, fixed period, expire after 7 days, withdrawable; no email, no account, no cookie.</li>
         <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only, from the web Admin area.</li>
-        <li><b>Owner's area</b> (web, owner only): totals, D1 size vs the 500 MB free limit, per anonymous code: joined, last seen, readings, AI on, app version. Never values or names.</li>
+        <li><b>Owner's area</b> (web, owner only): totals only (users, AI on/off, readings by voice/Scan, AI spent, errors), D1 size vs the 500 MB free limit. Never values, codes or names.</li>
         <li><b>Subscription</b> (ready, off until Google Play): Play Billing, checked with the Play Developer API.</li>
                 <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an append-only register.</li>
         <li><b>Personal data</b>: no name, no email (Google account only as HMAC-SHA256); codes, cookies, links only as SHA-256; Anthropic keys AES-GCM; photos discarded; data in the EU.</li>
@@ -388,7 +388,7 @@
     <div>
       <h2>Who uses it</h2>
       <ul>
-        <li><b>Owner</b>: Admin tab → total errors (90 days) and the table of the last 30 days.</li>
+        <li><b>Owner</b>: Admin tab → total errors (90 days); the details reach the developer through the daily issue.</li>
         <li><b>Developer</b>: every morning a scheduled routine reads the report of the log and fixes (page 5); in working sessions it is also read after every release.</li>
         <li><b>Table</b>: <code>error_log</code> in D1, written by <code>worker/src/errors.ts</code>; app side <code>ErrorReport</code> in <code>Core.kt</code>; web side in <code>app.js</code>.</li>
         <li>Also on every account: the app version it last opened with and whether the AI features are on, for the owner's Admin tab.</li>
@@ -524,7 +524,7 @@
     <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Report → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
     <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
     <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
-    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>Web → Admin: totals, D1 size, per anonymous code, version switch-off</td><td>counts only</td></tr>
+    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>Web → Admin: totals, D1 size, version switch-off</td><td>counts only</td></tr>
     <tr><td>12</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
   </table>
 
@@ -535,7 +535,7 @@
     <tr><td>See own charts and report, export PDF/Excel</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
     <tr><td>Create or withdraw a doctor link</td><td>—</td><td>✓</td><td>—</td><td>own only</td><td>—</td></tr>
     <tr><td>See another person's readings or report</td><td>—</td><td>—</td><td>—</td><td><b>never</b></td><td><b>never</b></td></tr>
-    <tr><td>See usage numbers, app version, AI on/off per account</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>via the owner's connector, for checks</td></tr>
+    <tr><td>See usage totals (never per account)</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>via the owner's connector, for checks</td></tr>
     <tr><td>Read the error log</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>✓ to fix</td></tr>
     <tr><td>Switch app versions off</td><td>—</td><td>—</td><td>—</td><td>✓ Admin, Actions</td><td>—</td></tr>
     <tr><td>Change code, docs, deploy</td><td>—</td><td>—</td><td>—</td><td>decides</td><td>✓ through pull requests</td></tr>

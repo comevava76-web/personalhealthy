@@ -30,14 +30,14 @@
   sono facoltative, a consumo, pagate dall'utente ad Anthropic con il proprio credito (mai al proprietario). Mai chiamarle
   «Standard/Premium»: si dice «funzionalità AI attive / non attive», «Attiva AI».
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la scheda **Admin** (utenti per codice anonimo, numeri d'uso, spazio D1, blocco versioni):
+  nella Web Dashboard la scheda **Admin** (solo totali: utenti, con/senza AI, misure voce/Scan, spesa AI, errori; spazio D1, blocco versioni):
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat.
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
-  stesso commit i documenti che tocca: architettura (3 pagine), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni

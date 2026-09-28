@@ -377,7 +377,7 @@ const sessO = await webLogin(owner);
 r = await web("GET", "/my/api/me", { cookie: sessO.cookie });
 S.check("admin", "W16", "owner: isOwner true", r.json?.isOwner === true, r.text);
 r = await web("GET", "/my/api/admin/overview", { cookie: sessO.cookie });
-S.check("admin", "W17", "owner opens the admin overview", r.status === 200 && Array.isArray(r.json.users), r.text.slice(0, 200));
+S.check("admin", "W17", "owner opens the admin overview: totals only, no list of accounts or errors", r.status === 200 && r.json.totals && r.json.users === undefined && r.json.errors === undefined, r.text.slice(0, 200));
 S.check("privacy", "W18", "admin overview holds no reading values (sis/dia/pul/data)", r.status === 200 && !/"(sis|dia|pul|sys|data)"/.test(r.text), "");
 S.check("privacy", "W18b", "admin overview holds no email", !/@/.test(r.text), "");
 r = await web("POST", "/my/api/admin/app-min-version", { cookie: sessO.cookie, body: { minVersion: 99999 }, origin: BASE });

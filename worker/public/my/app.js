@@ -530,7 +530,7 @@
      Usage numbers per anonymous account code: when it joined, when it was last used, how many readings.
      Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
   const AD = IT ? {
-    tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo numeri d'uso, legati al codice anonimo: nessuna misura, nessun report, nessun nome",
+    tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo totali: nessuna misura, nessun report, nessun nome",
     upd: "Aggiornato", users: "Utenti", usersU: "in totale", aiOn: "Con funzionalità AI", aiOnU: "chiave Anthropic attiva", aiOff: "Senza funzionalità AI", aiOffU: "solo l'app",
     rd: "Misure", split: (v, f) => `${v} a voce · ${f} con Scan`, aiSp: "Spesa AI", aiSpU: "in totale, sui crediti Anthropic degli utenti",
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
@@ -540,14 +540,8 @@
     vOff: (v) => `Blocca le versioni precedenti alla ${v}`, vOn: "Sblocca tutte le versioni",
     vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
     vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
-    uT: "Utenti", uNote: "Codice anonimo dell'account e numeri d'uso. «tu» è il tuo account.",
-    cols: ["Codice", "Iscritto", "Ultimo accesso", "Misure", "Voce / Scan", "Funzionalità AI", "Versione app"],
-    errT: "Errori degli ultimi 30 giorni", errNote: "Raggruppati per giorno, punto e versione: il numero dice quante volte è successo. Nessun valore delle misure.",
-    errNone: "Nessun errore registrato.", errCols: ["Giorno", "Dove", "Codice", "Volte", "Versione", "Messaggio"],
-    src: { server: "Server", app: "App", web: "Web" },
-    aiS: { none: "Non attive", ok: "Attive", no_credit: "Attive · credito finito", invalid: "Attive · chiave non valida" }, you: "tu", never: "—",
   } : {
-    tab: "Admin", title: "Owner's area", sub: "Only you see it · usage numbers only, tied to the anonymous code: no readings, no reports, no names",
+    tab: "Admin", title: "Owner's area", sub: "Only you see it · totals only: no readings, no reports, no names",
     upd: "Updated", users: "Users", usersU: "in total", aiOn: "With AI features", aiOnU: "Anthropic key on", aiOff: "Without AI features", aiOffU: "the app only",
     rd: "Readings", split: (v, f) => `${v} by voice · ${f} with Scan`, aiSp: "AI spending", aiSpU: "in total, on the users' own Anthropic credit",
     errs: "Errors", errsU: "in total, last 90 days",
@@ -557,12 +551,6 @@
     vOff: (v) => `Block versions older than ${v}`, vOn: "Unblock every version",
     vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
     vAskOn: "Every installed version works again. Confirm?",
-    uT: "Users", uNote: "Anonymous account code and usage numbers. “you” is your own account.",
-    cols: ["Code", "Joined", "Last opened", "Readings", "Voice / Scan", "AI features", "App version"],
-    errT: "Errors of the last 30 days", errNote: "Grouped by day, place and version: the number says how many times it happened. No reading values.",
-    errNone: "No errors logged.", errCols: ["Day", "Where", "Code", "Times", "Version", "Message"],
-    src: { server: "Server", app: "App", web: "Web" },
-    aiS: { none: "Off", ok: "On", no_credit: "On · credit out", invalid: "On · key refused" }, you: "you", never: "—",
   };
   const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const mb = (b) => (b / 1048576).toLocaleString(LOCALE, { maximumFractionDigits: b < 10485760 ? 2 : 0 }) + " MB";
@@ -575,7 +563,6 @@
     const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
     const pc = st.freeLimitBytes ? Math.min(100, (st.dbBytes / st.freeLimitBytes) * 100) : 0;
     const pcText = pc.toLocaleString(LOCALE, { maximumFractionDigits: pc < 1 ? 2 : 1 }) + " %";
-    const when = (ms) => (ms ? `${day(ms)} ${time(ms)}` : AD.never);
     main.innerHTML = `
       <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
       <p class="note">${AD.sub}</p>
@@ -599,21 +586,6 @@
           ${v.newest && v.min < v.newest ? `<button class="btn" type="button" id="adm-off">${AD.vOff(ver(v.newest))}</button>` : ""}
           ${v.min ? `<button class="btn ghost" type="button" id="adm-on">${AD.vOn}</button>` : ""}
         </div>
-      </div>
-      <div class="card"><div class="card-h"><h2>${AD.uT}</h2><span class="sub">${AD.uNote}</span></div>
-        <div class="tbl"><table class="list"><thead><tr>${AD.cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-          ${d.users.map((u) => { const L = AD.cols; return `<tr>
-            <td data-l="${L[0]}"><span><code>${esc(u.id)}</code>${u.owner ? ` <b class="you">${AD.you}</b>` : ""}</span></td>
-            <td data-l="${L[1]}">${day(u.since)}</td><td data-l="${L[2]}">${when(u.lastSeen)}</td>
-            <td data-l="${L[3]}">${u.readings}</td><td data-l="${L[4]}">${u.voice} / ${u.photo}</td>
-            <td data-l="${L[5]}" class="${u.ai === "none" ? "muted" : ""}">${AD.aiS[u.ai] || esc(u.ai)}</td><td data-l="${L[6]}"><b>${u.app ? esc(u.app) : "—"}</b></td></tr>`; }).join("")}
-        </tbody></table></div>
-      </div>
-      <div class="card"><div class="card-h"><h2>${AD.errT}</h2><span class="sub">${AD.errNote}</span></div>
-        ${(d.errors || []).length ? `<div class="tbl"><table class="list"><thead><tr>${AD.errCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-          ${d.errors.map((x) => { const L = AD.errCols; return `<tr><td data-l="${L[0]}">${esc(x.day)}</td><td data-l="${L[1]}"><span>${esc(AD.src[x.source] || x.source)} · <code>${esc(x.place)}</code></span></td><td data-l="${L[2]}"><code>${esc(x.code)}</code></td>
-            <td data-l="${L[3]}">${x.count}</td><td data-l="${L[4]}">${x.app ? esc(x.app) : "—"}</td><td data-l="${L[5]}" class="muted small">${esc(x.message)}</td></tr>`; }).join("")}
-        </tbody></table></div>` : `<p class="muted">${AD.errNone}</p>`}
       </div>`;
     const setMin = async (min, ask) => {
       if (!confirm(ask)) return;
