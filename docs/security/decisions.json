@@ -3,5 +3,10 @@
     "rating": "LOW",
     "plan": "https://github.com/comevava76-web/personalhealthy/issues/97",
     "note": "kotlin-gradle-plugin: build-only, no shared build cache; move to Kotlin 2.x when a stable release has the fix; review by 2026-10-28"
+  },
+  "exported_activity@android/app/src/main/AndroidManifest.xml": {
+    "rating": "LOW",
+    "plan": "https://developer.android.com/guide/topics/manifest/activity-element#exported",
+    "note": "false positive: MainActivity is the launcher screen, Android requires it to be exported; it takes no data from other apps"
   }
 }

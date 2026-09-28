@@ -81,13 +81,13 @@ jobs:
           GOOGLE_WEB_CLIENT_ID: check.apps.googleusercontent.com
         run: |
           gradle -q :app:dependencies --configuration releaseRuntimeClasspath --no-daemon > "$QA/gradle-deps.txt"
-          gradle -q buildEnvironment --no-daemon >> "$QA/gradle-deps.txt"
-          grep -c -- '--- ' "$QA/gradle-deps.txt"
+          gradle -q buildEnvironment --no-daemon > "$QA/gradle-build.txt"
+          grep -c -- '--- ' "$QA/gradle-deps.txt" "$QA/gradle-build.txt"
       - name: Vulnerability scan of every library (OSV.dev)
         # Android (full tree), the web libraries in worker/public/my/vendor, the server's tools
         if: always() && github.event_name != 'pull_request'
         working-directory: docs/testing/harness
-        run: HINT_GRADLE_DEPS="$QA/gradle-deps.txt" HINT_JSON="$QA/vulns.json" node vuln-scan.mjs "$QA/vulnerability-scan.md"
+        run: HINT_GRADLE_DEPS="$QA/gradle-deps.txt" HINT_GRADLE_BUILD="$QA/gradle-build.txt" HINT_JSON="$QA/vulns.json" node vuln-scan.mjs "$QA/vulnerability-scan.md"
       - name: Our own code (Semgrep, open-source rules)
         if: always() && github.event_name != 'pull_request'
         run: |
