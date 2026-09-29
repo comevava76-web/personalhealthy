@@ -5,11 +5,38 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: hint365-production
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
+  quality:
+    name: Verify before publishing
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --experimental-strip-types
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Local functional and lab security tests
+        run: |
+          cd worker && npm ci --no-audit --no-fund && cd ..
+          bash docs/testing/harness/setup-local.sh "$RUNNER_TEMP/hint-qa"
+          HINT_WORKER_DIR="$RUNNER_TEMP/hint-qa/w" node docs/testing/harness/functional.mjs
+          HINT_WORKER_DIR="$RUNNER_TEMP/hint-qa/w" node docs/testing/harness/labs-security.mjs
+          node docs/testing/harness/timezone.mjs
+      - name: Canonical legal pages are current
+        run: |
+          cd worker && node scripts/export-docs.mjs && cd ..
+          git diff --exit-code -- docs/legal
+
   server:
+    needs: [quality, apk]
     name: Deploy the server
     runs-on: ubuntu-latest
     outputs:
@@ -20,6 +47,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: HealthyInstantTracker-apk
+          path: apk
       - id: db
         name: PersonalHealthy database (D1, data bound to the European Union)
         working-directory: worker
@@ -27,7 +58,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
         run: |
-          npm install --no-audit --no-fund --silent
+          npm ci --no-audit --no-fund --silent
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
           ID=$(curl -s -H "$AUTH" "$API?name=personalhealthy" | jq -r '.result[]? | select(.name=="personalhealthy") | .uuid' | head -1)
@@ -114,12 +145,8 @@ jobs:
           set -o pipefail
           # the user guides (PDF, Italian and English) are served next to the app
           cp ../docs/HINT-*.pdf public/
-          # keep the app downloadable while this version is built: publish the latest released one again
-          if gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir public --clobber; then
-            mv public/HealthyInstantTracker-*.apk public/HINT.apk
-          else
-            echo "No earlier app to publish"
-          fi
+          # Promote the tested server and the APK from this same revision together.
+          cp ../apk/HealthyInstantTracker-*.apk public/HINT.apk
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}" 2>&1 | tee deploy.log
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
@@ -156,10 +183,12 @@ jobs:
 
   apk:
     name: Build the APK
-    needs: server
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -175,7 +204,8 @@ jobs:
             echo "$KS" | base64 -d > "$RUNNER_TEMP/hint.keystore"
             echo "HINT_KEYSTORE_FILE=$RUNNER_TEMP/hint.keystore" >> "$GITHUB_ENV"
           else
-            echo "::warning::ANDROID_KEYSTORE_B64 not set: signing with the old key in the repository"
+            echo "::error::ANDROID_KEYSTORE_B64 is required. Provision a new private signing key."
+            exit 1
           fi
       - name: Compile
         working-directory: android
@@ -183,9 +213,11 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          BATTITO_API_URL: ${{ needs.server.outputs.url }}
+          BATTITO_API_URL: ${{ vars.BATTITO_API_URL || 'https://personalhealthy-api.comevava76.workers.dev' }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
-        run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
+        run: |
+          gradle testDebugUnitTest assembleRelease bundleRelease --no-daemon --stacktrace
+          python3 scripts/sign-rotated.py
       - name: Prepare the file
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
@@ -197,6 +229,15 @@ jobs:
           path: |
             HealthyInstantTracker-*.apk
             HINT365-*.aab
+  release:
+    name: Record the promoted release
+    needs: [server, apk]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: HealthyInstantTracker-apk
+          path: .
       - name: Publish to Releases
         env:
           GH_TOKEN: ${{ github.token }}
@@ -205,32 +246,3 @@ jobs:
             "HINT365-0.1.${{ github.run_number }}.aab" \
             --title "HealthyInstantTracker 0.1.${{ github.run_number }}" \
             --notes "Download the .apk file on your phone and install it." --repo "${{ github.repository }}"
-
-  # The new app, downloadable by anyone at <server>/download: the server is deployed again with it.
-  # (The repository is private, so the Releases page is not reachable by friends.)
-  publish:
-    name: Publish the app for download
-    needs: [server, apk]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: actions/download-artifact@v4
-        with:
-          name: HealthyInstantTracker-apk
-          path: apk
-      - name: Deploy the server with the new app
-        working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
-          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
-          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
-        run: |
-          npm install --no-audit --no-fund --silent
-          sed -i "s/D1_DATABASE_ID/${{ needs.server.outputs.db }}/" wrangler.toml
-          cp ../apk/HealthyInstantTracker-*.apk public/HINT.apk
-          cp ../docs/HINT-*.pdf public/
-          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}"

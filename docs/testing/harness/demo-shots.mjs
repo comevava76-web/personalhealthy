@@ -3,6 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { NOTICE_TEXT, NOTICE_VERSION } from "../../../worker/src/notices.ts";
+const notice = {doc: "disclaimer", version: NOTICE_VERSION, lang: "en", healthConsent: true, textSha256: crypto.createHash("sha256").update(NOTICE_TEXT.en).digest("hex")};
 import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)("playwright");
 import { BASE, call, newPhone, register, web, localDb } from "./lib.mjs";
@@ -13,6 +15,8 @@ const run = (q, ...p) => db.prepare(q).run(...p);
 for (const t of ["persons", "measurements", "scans", "ledger", "invites", "person_keys", "acceptances", "web_codes", "web_sessions", "web_shares", "error_log", "seen_sigs", "rate_limits"]) run(`DELETE FROM ${t}`);
 
 const owner = newPhone(); await register(owner);
+db.prepare("UPDATE persons SET is_admin = 1 WHERE id = ?").run(owner.pid);
+await call(owner, "POST", "/v1/accept", notice);
 await call(owner, "GET", "/v1/me");
 // seven days of test readings, morning and evening, values that move a little
 const ins = db.prepare("INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at) VALUES (?, ?, 'bp', ?, 'Europe/Zurich', ?, ?, ?, ?)");

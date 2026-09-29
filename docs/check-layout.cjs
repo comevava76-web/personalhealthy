@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
   const files = process.argv.slice(2);
-  const b = await chromium.launch();
+  const b = await chromium.launch({ executablePath: process.env.HINT_CHROMIUM || undefined });
   let bad = 0;
   for (const f of files) {
     const p = await b.newPage({ viewport: { width: 794, height: 1123 } });

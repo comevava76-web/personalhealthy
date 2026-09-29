@@ -13,6 +13,7 @@
 // Modules: each part of the dashboard (blood pressure today, lab results later) is one entry of MODULES.
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
+import { loadLabs } from "./labs";
 import { logError } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 
@@ -66,6 +67,7 @@ interface Module {
   load(q: Q, pid: string, from: number, to: number): Promise<unknown[]>;
 }
 const MODULES: Record<string, Module> = {
+  labs: { load: loadLabs },
   bp: {
     async load(q, pid, from, to) {
       const rows = await q(
@@ -104,7 +106,8 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     if (!shared[2]) return env.ASSETS.fetch(new Request(url.origin + "/my/"));
     // the same rule as the dashboard: when the subscription has run out, the link stops too (test report F-15)
     if (!(await subOk(String(row.person_id)))) return fail("This link has expired or was withdrawn", 404, "share_gone");
-    const mod = MODULES[url.searchParams.get("module") || "bp"];
+    if ((url.searchParams.get("module") || "bp") !== "bp") return fail("This link only shares blood pressure", 403, "share_scope");
+    const mod = MODULES.bp;
     if (!mod) return fail("Unknown module", 404);
     const items = await mod.load(q, row.person_id, Number(row.date_from), Number(row.date_to));
     return json({ shared: true, from: Number(row.date_from), to: Number(row.date_to), expiresAt: Number(row.expires_at), items });
@@ -143,8 +146,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     let code = "";
     try { code = String((await req.json() as any).code || ""); } catch {}
     const h = await fingerprint(code);
-    const [row] = await q("SELECT person_id, expires_at FROM web_codes WHERE code_hash = ?1", [h]);
-    await q("DELETE FROM web_codes WHERE code_hash = ?1", [h]);   // one use only, valid or not
+    const [row] = await q("DELETE FROM web_codes WHERE code_hash = ?1 RETURNING person_id, expires_at", [h]); // atomic redemption
     if (!row || Number(row.expires_at) < Date.now()) return fail("This link has expired: open My Dash again from the app", 401, "code_gone");
     const token = randomToken();
     const now = Date.now();
@@ -191,11 +193,15 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       const [row] = await q("SELECT value FROM settings WHERE key = 'security_scan'");
       let scan: any = null;
       try { scan = row ? JSON.parse(String(row.value)) : null; } catch {}
+      const [attempt] = await q("SELECT value FROM settings WHERE key = 'security_scan_attempt'");
+      if (attempt) { try { const a = JSON.parse(String(attempt.value)); if (!scan || a.at > scan.at) scan = { ...scan, complete: false, attempt: a }; } catch {} }
+      const table = scan?.snapshot ? "security_snapshot_findings" : "security_findings";
       const items = await q(
         `SELECT f.kind, f.ref, f.name, f.version, f.location, f.severity, f.rating, f.fixed, f.summary, f.source_url, f.plan_url,
                 x.requested_at AS fix_at, x.issue_url AS fix_url, x.status AS fix_status, x.detail_url AS fix_detail, x.note AS fix_note
-         FROM security_findings f LEFT JOIN security_fixes x
+         FROM ${table} f LEFT JOIN security_fixes x
            ON x.kind = f.kind AND x.ref = f.ref AND x.name = f.name AND x.location = f.location
+         WHERE ${scan?.snapshot ? "f.found_at = " + Number(scan.at) : "1 = 1"}
          ORDER BY CASE COALESCE(NULLIF(f.rating, ''), f.severity) WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MODERATE' THEN 2 WHEN 'LOW' THEN 3 ELSE 4 END,
                   f.kind, f.name LIMIT 500`);
       return json({ scan, items });
@@ -216,7 +222,10 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       const wanted = (Array.isArray(b.items) ? b.items : []).slice(0, 50);
       const rows: any[] = [];
       for (const w of wanted) {
-        const [f] = await q("SELECT kind, ref, name, version, location, severity, fixed, source_url FROM security_findings WHERE kind = ?1 AND ref = ?2 AND name = ?3 AND location = ?4",
+        const [activeScan] = await q("SELECT value FROM settings WHERE key = 'security_scan'");
+        let snapshot: any = null; try { snapshot = JSON.parse(String(activeScan?.value)); } catch {}
+        const sourceTable = snapshot?.snapshot ? "security_snapshot_findings" : "security_findings";
+        const [f] = await q(`SELECT kind, ref, name, version, location, severity, fixed, source_url FROM ${sourceTable} WHERE kind = ?1 AND ref = ?2 AND name = ?3 AND location = ?4 ${snapshot?.snapshot ? "AND found_at = " + Number(snapshot.at) : ""}`,
           [String(w?.kind || ""), String(w?.ref || ""), String(w?.name || ""), String(w?.location || "")]);
         if (f) rows.push(f);
       }
@@ -262,12 +271,12 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     return fail("Not found", 404);
   }
   // the yearly subscription has run out: the readings and the links wait for the renewal
-  if ((p === "/my/api/data" || p === "/my/api/share") && !(await subOk(pid)))
+  if (p === "/my/api/share" && !(await subOk(pid)))
     return fail("The HINT 365 subscription has run out: renew it in the app.", 402, "sub_expired");
   if (p === "/my/api/data" && req.method === "GET") {
     const mod = MODULES[url.searchParams.get("module") || "bp"];
     if (!mod) return fail("Unknown module", 404);
-    const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 7, 1), MAX_PERIOD_DAYS);
+    const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 7, 1), mod === MODULES.labs ? 365 : MAX_PERIOD_DAYS);
     const to = Date.now();
     const from = periodStart(to, days);
     return json({ shared: false, from, to, items: await mod.load(q, pid, from, to) });
@@ -317,7 +326,7 @@ async function adminOverview(env: any, q: Q) {
   const dbBytes = Number(probe?.meta?.size_after || 0);
   // one grouped pass per table instead of a sub-query per person
   const users = await q("SELECT id, created_at, is_admin, last_seen_at, sub_until, app_version FROM persons ORDER BY created_at DESC LIMIT 1000");
-  const counts = await q("SELECT person_id, COUNT(*) AS n, SUM(source = 'voice') AS voice, SUM(source = 'photo') AS photo FROM measurements GROUP BY person_id");
+  const counts = await q("SELECT person_id, COUNT(*) AS n, SUM(source = 'voice') AS voice, SUM(source = 'photo') AS photo FROM measurements WHERE kind = 'bp' GROUP BY person_id");
   const keys = await q("SELECT person_id, COALESCE(status, 'ok') AS status FROM person_keys");
   const byPerson = new Map(counts.map((r: any) => [String(r.person_id), r]));
   const aiOf = new Map(keys.map((r: any) => [String(r.person_id), String(r.status)]));
@@ -333,13 +342,15 @@ async function adminOverview(env: any, q: Q) {
   const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'subscription_on', 'security_scan')");
   const set: Record<string, string> = {};
   for (const r of gate as any[]) set[r.key] = String(r.value);
-  const aiOn = list.filter((u) => u.ai !== "none").length;
+  const aiOn = await one("SELECT COUNT(*) AS n FROM person_keys");
+  const allUsers = await one("SELECT COUNT(*) AS n FROM persons");
   return {
     at: now,
     totals: {
-      users: list.length, aiOn, aiOff: list.length - aiOn,
-      readings: list.reduce((a, u) => a + u.readings, 0),
-      voice: list.reduce((a, u) => a + u.voice, 0), photo: list.reduce((a, u) => a + u.photo, 0),
+      users: allUsers, aiOn, aiOff: allUsers - aiOn,
+      readings: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp'"),
+      labReports: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'lab'"),
+      voice: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp' AND source = 'voice'"), photo: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp' AND source = 'photo'"),
       aiSpentUsd: (await one("SELECT COALESCE(SUM(amount_micro), 0) AS n FROM ledger WHERE kind = 'usage'")) / 1e6,
       errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },

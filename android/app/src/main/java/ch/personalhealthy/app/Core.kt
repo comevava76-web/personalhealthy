@@ -54,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "15"
+const val DISCLAIMER_VERSION = "16"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -105,7 +105,7 @@ class Spoken(val values: Triple<Int, Int, Int?>?, val problem: String?, val unus
 fun parseSpoken(texts: List<String>): Spoken {
     var firstProblem: String? = null
     for (text in texts) {
-        val n = Regex("\\d{2,3}").findAll(text).map { it.value.toInt() }.toList()
+        val n = Regex("\\d+").findAll(text).map { it.value.toIntOrNull() ?: Int.MAX_VALUE }.toList()
         if (n.isEmpty()) continue
         val sis = n[0]; val dia = n.getOrNull(1) ?: 0; val pul = n.getOrNull(2)
         val problem = when {
@@ -198,6 +198,24 @@ sealed class ScanState {
     data class Done(val r: ScanResult) : ScanState()
     data class Failed(val msg: String, val code: String? = null) : ScanState()
 }
+
+// Preserve confirmed extraction across Activity recreation. Never restore a canceled request as Loading.
+val ScanStateSaver = androidx.compose.runtime.saveable.mapSaver<ScanState>(
+    save = { state -> when (state) {
+        is ScanState.Done -> mapOf("state" to "done", "id" to state.r.scanId, "readable" to state.r.readable,
+            "sis" to state.r.sis, "dia" to state.r.dia, "pul" to state.r.pul, "note" to state.r.note,
+            "takenAt" to state.r.takenAt, "period" to state.r.period)
+        is ScanState.Failed -> mapOf("state" to "failed", "msg" to state.msg, "code" to state.code)
+        else -> mapOf("state" to "idle")
+    } },
+    restore = { fields -> when (fields["state"]) {
+        "done" -> ScanState.Done(ScanResult(fields["id"] as String, fields["readable"] as Boolean,
+            fields["sis"] as? Int, fields["dia"] as? Int, fields["pul"] as? Int, fields["note"] as String,
+            fields["takenAt"] as Long, fields["period"] as String, null))
+        "failed" -> ScanState.Failed(fields["msg"] as String, fields["code"] as? String)
+        else -> ScanState.Idle
+    } }
+)
 
 /** Amber of the short warning lines (credit low, key missing). */
 const val WARN_COLOR = 0xFFFFB35C
@@ -458,7 +476,7 @@ object Repo {
     suspend fun acceptNotice(pid: String, version: String, lang: String, text: String, appVersion: String, phone: String) {
         val sha = java.security.MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
         Api.call("POST", "/v1/accept", JSONObject().put("doc", "disclaimer").put("version", version).put("lang", lang)
-            .put("textSha256", sha).put("appVersion", appVersion).put("phone", phone), pid)
+            .put("healthConsent", true).put("textSha256", sha).put("appVersion", appVersion).put("phone", phone), pid)
     }
 
     /** My Dash: the address of the web dashboard with a one-time code (60 seconds), to open it already signed in. */

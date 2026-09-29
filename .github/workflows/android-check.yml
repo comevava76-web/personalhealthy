@@ -27,4 +27,4 @@ jobs:
         env:
           BATTITO_API_URL: https://example.invalid
           GOOGLE_WEB_CLIENT_ID: check.apps.googleusercontent.com
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle testDebugUnitTest assembleDebug --no-daemon --stacktrace

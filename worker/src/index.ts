@@ -3,6 +3,8 @@
 // All database access goes through the q() function: to move to PostgreSQL/Azure one day,
 // change q() and a few SQL expressions; the rest of the code stays the same.
 
+import { NOTICE_TEXT } from "./notices";
+import { validateLabImport, loadLabs } from "./labs";
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
 import { logError } from "./errors";
@@ -19,6 +21,7 @@ interface Env {
   KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
   MODEL?: string;
   GOOGLE_CLIENT_ID?: string;
+  OWNER_GOOGLE_ID?: string; // explicit owner HMAC; never grant admin to the first public registrant
   CONTACT_EMAIL?: string;      // shown on the privacy page (repository variable; empty = "the support email on Google's screen")   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
@@ -65,12 +68,12 @@ async function subState(q: Q, env: Env, pid: string): Promise<{ required: boolea
   const on = (await getSetting(q, "subscription_on", "0")) === "1";
   let until = Number(p.sub_until) || 0, state = String(p.sub_state || "");
   // renewed on Google Play after it ran out here: ask again, now and then
-  if (!subValid(until, state) && p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
+  if (p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
     try {
       const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, String(p.sub_token));
       if (g) { until = g.until; state = g.state; }
       await q("UPDATE persons SET sub_until = ?1, sub_state = ?2, sub_checked_at = ?3 WHERE id = ?4", [until, state, Date.now(), pid]);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("subscription check failed"); }
   }
   return { required: on && !p.is_admin, active: !!p.is_admin || subValid(until, state), until: until || null, state };
 }
@@ -79,7 +82,7 @@ async function subOk(q: Q, env: Env, pid: string): Promise<boolean> {
   return !s.required || s.active;
 }
 // what still works without a subscription: seeing the invitation, renewing, the terms, leaving, deleting the account
-const SUB_FREE = new Set(["GET /v1/me", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me", "POST /v1/log"]);
+const SUB_FREE = new Set(["GET /v1/me", "GET /v1/bp", "GET /v1/labs", "POST /v1/web/code", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me", "POST /v1/log"]);
 
 async function appAllowed(q: Q, version: number): Promise<boolean> {
   const g = await appGate(q);
@@ -158,7 +161,7 @@ function secured(res: Response): Response {
 }
 
 const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8" } });
+  new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 // "code" is what the app translates into the phone's language; "error" is for the logs
 const fail = (msg: string, status = 400, code = "generic") => json({ error: msg, code }, status);
 
@@ -245,7 +248,7 @@ async function anonymizeGoogle(env: Env) {
 // Returns the Google account (its stable id "sub" and its email) only if the token is genuine,
 // was made for this app, has not expired and the email is verified by Google.
 /** Apps from this build on send a nonce with Google sign-in (older ones cannot); see /v1/auth/google. */
-const NONCE_REQUIRED_FROM = 100;
+
 const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 async function verifyGoogle(token: string, clientId: string): Promise<{ sub: string; email: string; nonce: string } | null> {
@@ -266,7 +269,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
     if (claims.email_verified !== true && claims.email_verified !== "true") return null;
     if (!claims.sub) return null;
     // issued in the last 5 minutes: an old token cannot be used again
-    if (claims.iat && Math.abs(Date.now() - Number(claims.iat) * 1000) > 5 * 60e3) return null;
+    if (!Number.isFinite(Number(claims.iat)) || Math.abs(Date.now() - Number(claims.iat) * 1000) > 5 * 60e3) return null;
     return { sub: String(claims.sub), email: String(claims.email || ""), nonce: claims.nonce ? String(claims.nonce) : "" };
   } catch {
     return null;
@@ -274,7 +277,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "15";
+const DISCLAIMER_VERSION = "16";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -387,6 +390,7 @@ async function anthropicError(res: Response): Promise<Error> {
 // The smallest possible request, to check a friend's key before storing it
 async function testKey(env: Env, apiKey: string) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
+    signal: AbortSignal.timeout(45_000),
     method: "POST",
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: env.MODEL || "claude-sonnet-5", max_tokens: 1, messages: [{ role: "user", content: "Hi" }] }),
@@ -396,6 +400,7 @@ async function testKey(env: Env, apiKey: string) {
 
 async function readDisplay(env: Env, apiKey: string, image: string, lang: string) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
+    signal: AbortSignal.timeout(45_000),
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -487,7 +492,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     // public pages, linked from Google's sign-in screen
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) return homePage();
     if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "");
-    if (req.method === "GET" && url.pathname === "/terms") return termsPage();
+    if (req.method === "GET" && url.pathname === "/terms") return termsPage(url.searchParams.get("lang") || (req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase());
     // the easy address to share: always the latest app
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
@@ -519,7 +524,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
       }
       return res;
     } catch (e: any) {
-      console.error(e?.stack || e);
+      console.error("worker request failed");
       const task = logError(q, { source: "server", code: "exception", place: routeName(req.method, url.pathname), message: String(e?.message || e) });
       if (ctx) ctx.waitUntil(task); else await task;
       return fail("Internal server error", 500, "server");
@@ -529,7 +534,19 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
 
 async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response> {
   if (!url.pathname.startsWith("/v1/")) return fail("Not found", 404, "not_found");
-  const body = new Uint8Array(await req.arrayBuffer());
+  // Bound streaming input before allocation, including requests without Content-Length.
+  const chunks: Uint8Array[] = []; let size = 0;
+  const reader = req.body?.getReader();
+  if (reader) {
+    while (true) {
+      const { value, done } = await reader.read(); if (done) break;
+      size += value.length;
+      if (size > 8 * 1024 * 1024) { await reader.cancel(); return fail("Request too large", 413, "too_large"); }
+      chunks.push(value);
+    }
+  }
+  const body = new Uint8Array(size); let offset = 0;
+  for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
   const ts = req.headers.get("X-Ts") || "";
   const sig = req.headers.get("X-Sig") || "";
   const tsn = Number(ts);
@@ -566,7 +583,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       // the first activated phone manages credit, settings and invites
       await q(
         "INSERT INTO persons (id, public_key, is_admin, pays, created_at, created_at_local) " +
-        "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'self', ?3, ?4)",
+        "VALUES (?1, ?2, 0, 'self', ?3, ?4)",
         [id, data.publicKey, now, localStamp(now)]
       );
       return json({ personId: id, pays: "self" });
@@ -606,9 +623,11 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (!g) return fail("Google sign-in not valid", 401, "google_invalid");
     // the token must have been asked for this very phone key: a token taken elsewhere cannot be replayed
     const expectedNonce = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(data.publicKey))));
-    const appVersion = Number(req.headers.get("X-App-Version")) || 0;
-    if (g.nonce ? g.nonce !== expectedNonce : appVersion >= NONCE_REQUIRED_FROM) return fail("Google sign-in not valid", 401, "google_invalid");
+    if (!g.nonce || g.nonce !== expectedNonce) return fail("Google sign-in not valid", 401, "google_invalid");
     const now = Date.now();
+    const [unusedToken] = await q("INSERT INTO seen_sigs (sig_hash, expires_at) VALUES (?1, ?2) ON CONFLICT (sig_hash) DO NOTHING RETURNING sig_hash",
+      [await sha256Hex(enc.encode("google-token:" + data.idToken)), now + 10 * 60e3]);
+    if (!unusedToken) return fail("Google sign-in already used", 401, "google_invalid");
     const gid = await googleId(env, g.sub);
     const [owner] = await q("SELECT id, COALESCE(pays, 'owner') AS pays FROM persons WHERE google_sub = ?1 OR google_sub = ?2", [gid, g.sub]);
     const [onPhone] = await q("SELECT id, google_sub FROM persons WHERE public_key = ?1", [data.publicKey]);
@@ -626,6 +645,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
           env.DB.prepare("DELETE FROM persons WHERE id = ?1").bind(onPhone.id),
         ]);
       }
+      await endWebAccess(q, String(owner.id), false);
       await q("UPDATE persons SET public_key = ?1, google_sub = ?2, email = NULL WHERE id = ?3", [data.publicKey, gid, owner.id]);
       return json({ personId: owner.id, pays: owner.pays, recovered: true });
     }
@@ -640,8 +660,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const id = newId("per_");
     await q(
       "INSERT INTO persons (id, public_key, is_admin, pays, google_sub, email, consent_at, created_at, created_at_local) " +
-      "VALUES (?1, ?2, NOT EXISTS (SELECT 1 FROM persons), 'self', ?3, ?4, ?5, ?5, ?6)",
-      [id, data.publicKey, gid, null, now, localStamp(now)]
+      "VALUES (?1, ?2, ?7, 'self', ?3, ?4, ?5, ?5, ?6)",
+      [id, data.publicKey, gid, null, now, localStamp(now), env.OWNER_GOOGLE_ID && env.OWNER_GOOGLE_ID === gid ? 1 : 0]
     );
     return json({ personId: id, pays: "self" });
   }
@@ -654,7 +674,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // a signed call that changes something works once: the same call sent again (a copy taken on the way) is refused
   // (test report F-04). Reads change nothing, so they are not recorded: half the writes on the database.
   if (req.method !== "GET") {
-    const sigHash = await sha256Hex(enc.encode(sig));
+    const sigHash = await sha256Hex(enc.encode(pid + "\n" + message));
     const [fresh] = await q("INSERT INTO seen_sigs (sig_hash, expires_at) VALUES (?1, ?2) ON CONFLICT (sig_hash) DO NOTHING RETURNING sig_hash",
       [sigHash, Date.now() + 10 * 60e3]);
     if (!fresh) return fail("This request was already used", 401, "replay");
@@ -669,8 +689,11 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
+  const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/bp/scan", "/v1/bp/confirm", "/v1/labs", "/v1/web/code"].includes(url.pathname);
+  if (requiresNotice && !(await acceptedNotice(q, pid))) return fail("Accept the current terms first", 403, "notice_required");
+
   // no valid subscription: only the invitation to renew
-  if (!SUB_FREE.has(req.method + " " + url.pathname) && !(await subOk(q, env, pid)))
+  if (!SUB_FREE.has(req.method + " " + url.pathname) && !(req.method === "DELETE" && /^\/v1\/(bp|labs)(?:\/[^/]+)?$/.test(url.pathname)) && !(await subOk(q, env, pid)))
     return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
   const pool = poolOf(person);
   // everyone pays their own AI with their own Anthropic key; the owner-paid model is gone (test report F-08)
@@ -719,8 +742,9 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, token);
     if (!g) return fail("Google Play does not know this purchase", 400, "sub_invalid");
     if (g.account && g.account !== (await playAccountId(pid))) return fail("This subscription belongs to another account", 409, "sub_other_account");
-    await q("UPDATE persons SET sub_token = ?1, sub_until = ?2, sub_state = ?3, sub_checked_at = ?4 WHERE id = ?5",
+    const [assigned] = await q("UPDATE persons SET sub_token = ?1, sub_until = ?2, sub_state = ?3, sub_checked_at = ?4 WHERE id = ?5 AND NOT EXISTS (SELECT 1 FROM persons WHERE sub_token = ?1 AND id <> ?5) RETURNING id",
       [token, g.until, g.state, Date.now(), pid]);
+    if (!assigned) return fail("This subscription belongs to another account", 409, "sub_other_account");
     return json({ sub: await subState(q, env, pid), package: PLAY_PACKAGE, product: SUB_PRODUCT });
   }
   // The owner switches the subscription on (everyone else must then pay) or off (the app is free for everyone)
@@ -733,7 +757,11 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
   if (req.method === "POST" && url.pathname === "/v1/accept") {
-    if (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION) return fail("Unknown notice version", 400, "bad_version");
+    if (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION || data.healthConsent !== true) return fail("Unknown notice version", 400, "bad_version");
+    const lang = String(data.lang || "").toLowerCase();
+    if (!NOTICE_TEXT[lang]) return fail("Unsupported notice language", 400, "bad_version");
+    const textHash = await sha256Hex(enc.encode(NOTICE_TEXT[lang]));
+    if (data.textSha256 !== textHash) return fail("Notice text differs from the current version", 400, "bad_version");
     const now = Date.now();
     const device = [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(person.public_key)))]
       .map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -742,8 +770,32 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       "INSERT INTO acceptances (id, person_id, email, device, phone, doc, version, lang, text_sha256, app_version, accepted_at, accepted_at_local) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, 'disclaimer', ?6, ?7, ?8, ?9, ?10, ?11)",
       [newId("acc_"), pid, null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
-       str(data.textSha256, 64), str(data.appVersion, 20), now, localStamp(now)]
+       textHash, req.headers.get("X-App-Version"), now, localStamp(now)]
     );
+    return json({ ok: true });
+  }
+
+  if (url.pathname === "/v1/labs" && req.method === "GET") {
+    return json({ items: await loadLabs(q, pid, Date.now() - 365 * 864e5, Date.now()) });
+  }
+  if (url.pathname === "/v1/labs" && req.method === "POST") {
+    if (await tooMany(q, "labs:" + pid, 30, DAY)) return fail("Too many imports", 429, "too_many");
+    const lab = validateLabImport(data);
+    if (!lab) return fail("Check the lab results and date", 400, "lab_invalid");
+    const id = "lab_" + lab.id;
+    const [existing] = await q("SELECT person_id, data, taken_at FROM measurements WHERE id = ?1", [id]);
+    if (existing) {
+      if (existing.person_id !== pid || existing.data !== JSON.stringify(lab.items) || Number(existing.taken_at) !== lab.takenAt)
+        return fail("Import identifier already used", 409, "lab_conflict");
+      return json({ ok: true, id });
+    }
+    const now = Date.now();
+    await q("INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at, taken_at_local, created_at_local) VALUES (?1, ?2, 'lab', ?3, ?4, 'lab', ?5, 'local-import', ?6, ?7, ?8)",
+      [id, pid, lab.takenAt, TZ, JSON.stringify(lab.items), now, localStamp(lab.takenAt), localStamp(now)]);
+    return json({ ok: true, id });
+  }
+  if (url.pathname.startsWith("/v1/labs/") && req.method === "DELETE") {
+    await q("DELETE FROM measurements WHERE id = ?1 AND person_id = ?2 AND kind = 'lab'", [url.pathname.split('/').pop(), pid]);
     return json({ ok: true });
   }
 
@@ -769,6 +821,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       env.DB.prepare("DELETE FROM person_keys WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM ledger WHERE payer = ?1").bind(pid),                     // their own money records
       env.DB.prepare("UPDATE ledger SET person_id = NULL WHERE person_id = ?1").bind(pid),  // photos on the shared credit: kept, without who
+      env.DB.prepare("UPDATE error_log SET person_id = NULL WHERE person_id = ?1").bind(pid),
+      env.DB.prepare("DELETE FROM invites WHERE used_by = ?1 OR created_by = ?1").bind(pid),
       env.DB.prepare("DELETE FROM persons WHERE id = ?1").bind(pid),
     ]);
     return json({ ok: true });
@@ -843,7 +897,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       try {
         await testKey(env, apiKey);
       } catch (e: any) {
-        console.error("key test: " + String(e?.message).slice(0, 200)); // Anthropic's reply; never the key itself
+        console.error("key test failed"); // Anthropic's reply; never the key itself
         if (e instanceof NoAnthropicCredit) return fail("Key works, but the Anthropic credit is empty", 402, "friend_no_credit");
         if (e instanceof BadAnthropicKey) return fail("Anthropic does not accept this key", 400, "friend_key_invalid");
         return fail("Could not check the key. Try again shortly.", 502, "key_test_failed");
@@ -896,7 +950,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       try {
         apiKey = await openKey(env, pid, String(k.sealed_key));
       } catch (e: any) {
-        console.error("key open: " + e?.message);
+        console.error("key open failed");
         return fail("Your key can no longer be used. Add it again.", 402, "friend_key_invalid");
       }
     }
@@ -906,7 +960,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     try {
       ({ reading: r, costMicro } = await readDisplay(env, apiKey, data.image, (req.headers.get("X-Lang") || "en").slice(0, 2).toLowerCase()));
     } catch (e: any) {
-      console.error(e?.message);
+      console.error("provider request failed");
       if (e instanceof NoAnthropicCredit) {
         if (selfPays) await q("UPDATE person_keys SET status = 'no_credit', checked_at = ?1 WHERE person_id = ?2", [Date.now(), pid]);
         return selfPays ? fail("Your Anthropic credit is finished", 402, "friend_no_credit") : fail("Anthropic credit is finished", 402, "anthropic_no_credit");

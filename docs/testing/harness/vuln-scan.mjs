@@ -71,7 +71,8 @@ const res = await fetch("https://api.osv.dev/v1/querybatch", {
   body: JSON.stringify({ queries: list.map((p) => ({ package: { ecosystem: p.ecosystem, name: p.name }, version: p.version })) }),
 });
 if (!res.ok) { console.error("OSV.dev did not answer: " + res.status); process.exit(2); }
-const batch = (await res.json()).results || [];
+const batch = (await res.json()).results;
+if (!Array.isArray(batch) || batch.length !== list.length || batch.some(x => !x || x.error)) throw new Error("OSV response incomplete; no clean scan can be published");
 const found = [];
 for (let i = 0; i < list.length; i++) for (const v of batch[i]?.vulns || []) found.push({ ...list[i], id: v.id });
 
