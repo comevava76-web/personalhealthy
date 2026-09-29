@@ -46,3 +46,5 @@ for the human. Drawn on page 5 of the architecture document.
 - `testing/harness/labs-security.mjs`: consent, schema minimization, isolation, replay, atomic sessions and history regressions.
 - `testing/harness/labs-ui.mjs`: lab history, localized names and PDF at mobile/desktop widths.
 - Canonical terms version 16: `worker/src/notices.ts`; public pages generated in `legal/`.
+- `demo/labs-it-mobile.png`, `demo/labs-en-desktop.png`, `demo/lab-results.pdf`: localized synthetic lab history and export, regenerated before release.
+- Dashboard demo images and PDF refreshed for the Share/PDF toolbar; public favicon added to eliminate a browser resource error.
