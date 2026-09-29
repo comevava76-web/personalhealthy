@@ -48,3 +48,5 @@ for the human. Drawn on page 5 of the architecture document.
 - Canonical terms version 16: `worker/src/notices.ts`; public pages generated in `legal/`.
 - `demo/labs-it-mobile.png`, `demo/labs-en-desktop.png`, `demo/lab-results.pdf`: localized synthetic lab history and export, regenerated before release.
 - Dashboard demo images and PDF refreshed for the Share/PDF toolbar; public favicon added to eliminate a browser resource error.
+
+APK binaries are hosted in GitHub Releases: bundled local OCR exceeds the Cloudflare static-asset limit. `/download` and `/HINT.apk` redirect to the promoted version. `promote-built-apk.yml` supports retrying deployment with an already verified APK after database migration has completed.

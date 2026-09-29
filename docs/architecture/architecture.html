@@ -309,7 +309,7 @@
       <h2>Releasing a version</h2>
       <ol>
         <li>Change on a branch → pull request → merge into <code>main</code>.</li>
-        <li>GitHub Actions updates D1, deploys the Worker, builds the APK and the AAB, creates release <code>v0.1.N</code> and puts the APK at <code>/download</code>.</li>
+        <li>GitHub Actions updates D1, deploys the Worker, builds the APK and the AAB, stores APK/AAB in GitHub release <code>v0.1.N</code>; <code>/download</code> redirects there.</li>
         <li>The site changes at once; the app updates by installing the new APK.</li>
       </ol>
 

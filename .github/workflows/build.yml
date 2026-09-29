@@ -146,7 +146,14 @@ jobs:
           # the user guides (PDF, Italian and English) are served next to the app
           cp ../docs/HINT-*.pdf public/
           # Promote the tested server and the APK from this same revision together.
-          cp ../apk/HealthyInstantTracker-*.apk public/HINT.apk
+          # Bundled OCR makes the APK larger than Cloudflare's 25 MiB asset limit.
+          rm -f public/HINT.apk
+          TAG="v0.1.${{ github.run_number }}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" ../apk/HealthyInstantTracker-*.apk ../apk/HINT365-*.aab --clobber --repo "${{ github.repository }}"
+          else
+            gh release create "$TAG" ../apk/HealthyInstantTracker-*.apk ../apk/HINT365-*.aab --target "${{ github.sha }}" --title "HINT 365 0.1.${{ github.run_number }}" --notes "Android APK update; no uninstall required." --repo "${{ github.repository }}"
+          fi
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}" 2>&1 | tee deploy.log
           jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
@@ -242,7 +249,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v0.1.${{ github.run_number }}" "HealthyInstantTracker-0.1.${{ github.run_number }}.apk" \
+          gh release view "v0.1.${{ github.run_number }}" --repo "${{ github.repository }}" >/dev/null 2>&1 || gh release create "v0.1.${{ github.run_number }}" "HealthyInstantTracker-0.1.${{ github.run_number }}.apk" \
             "HINT365-0.1.${{ github.run_number }}.aab" \
             --title "HealthyInstantTracker 0.1.${{ github.run_number }}" \
             --notes "Download the .apk file on your phone and install it." --repo "${{ github.repository }}"

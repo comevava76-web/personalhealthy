@@ -495,6 +495,10 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     if (req.method === "GET" && url.pathname === "/terms") return termsPage(url.searchParams.get("lang") || (req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase());
     // the easy address to share: always the latest app
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
+    if (req.method === "GET" && url.pathname === "/HINT.apk") {
+      const version = Number(env.APP_VERSION) || 98;
+      return new Response(null, { status: 302, headers: { Location: `https://github.com/comevava76-web/personalhealthy/releases/download/v0.1.${version}/HealthyInstantTracker-0.1.${version}.apk`, "Cache-Control": "no-store" } });
+    }
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
       // asked by the app when it opens, before anything else: is this version still allowed?

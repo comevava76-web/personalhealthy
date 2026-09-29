@@ -1,0 +1,49 @@
+name: Promote verified APK and server
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run:
+        description: Successful APK build run
+        required: true
+      app_version:
+        description: APK version code
+        required: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: HealthyInstantTracker-apk
+          path: apk
+          run-id: ${{ inputs.artifact_run }}
+          github-token: ${{ github.token }}
+      - name: Verify version and deploy existing database
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+          GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          [[ "$APP_VERSION" =~ ^[0-9]+$ ]]
+          test -f "../apk/HealthyInstantTracker-0.1.$APP_VERSION.apk"
+          curl -fsIL "https://github.com/${{ github.repository }}/releases/download/v0.1.$APP_VERSION/HealthyInstantTracker-0.1.$APP_VERSION.apk" >/dev/null
+          npm ci --no-audit --no-fund --silent
+          ID=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database?name=personalhealthy" | jq -r '.result[]? | select(.name=="personalhealthy") | .uuid' | head -1)
+          test -n "$ID"
+          sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
+          cp ../docs/HINT-*.pdf public/
+          rm -f public/HINT.apk
+          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:$APP_VERSION"
+          curl -fsS https://personalhealthy-api.comevava76.workers.dev/v1/health
+          curl -fsS 'https://personalhealthy-api.comevava76.workers.dev/terms?lang=en' | grep -q 'Version 16'
