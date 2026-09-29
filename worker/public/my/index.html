@@ -20,7 +20,6 @@
   <div class="actions" id="actions" hidden>
     <button class="btn primary" id="btn-share" type="button"></button>
     <button class="btn" id="btn-pdf" type="button"></button>
-    <button class="btn" id="btn-csv" type="button"></button>
   </div>
 </header>
 
@@ -37,7 +36,7 @@
     <a href="/terms" id="terms-link"></a> · <a href="/privacy">Privacy</a> · <a href="#" id="cookie-link">Cookie</a></p>
 </footer>
 
-<dialog id="share">
+<dialog id="share" aria-labelledby="sh-title">
   <form method="dialog" class="dlg">
     <h3 id="sh-title"></h3>
     <p class="muted" id="sh-intro"></p>
@@ -55,6 +54,7 @@
   </form>
 </dialog>
 
+<script src="/my/lab-labels.js"></script>
 <script src="/my/report.js"></script>
 <script src="/my/app.js"></script>
 </body>

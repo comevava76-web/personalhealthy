@@ -13,7 +13,7 @@ name: Security tests
 # (06:48 Zurich) reads it together with the error log, fixes what it can and reports in the issue.
 on:
   pull_request:
-    paths: ["worker/**", "docs/testing/**", ".github/workflows/security-tests.yml"]
+    paths: ["android/**", "worker/**", "docs/testing/**", ".github/workflows/security-tests.yml"]
   schedule:
     - cron: "10 4 * * *"   # 06:10 in Zurich in summer, before the error log report (06:30)
   workflow_dispatch:
@@ -22,6 +22,10 @@ on:
         description: "Also run the load test and the browser test"
         type: boolean
         default: false
+
+concurrency:
+  group: hint365-security-scans
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -50,6 +54,9 @@ jobs:
       - name: Functional and security suite
         working-directory: docs/testing/harness
         run: HINT_WORKER_DIR="$QA/w" HINT_OUT="$QA/functional.json" node functional.mjs
+      - name: Lab import and security regressions
+        working-directory: docs/testing/harness
+        run: HINT_WORKER_DIR="$QA/w" node --experimental-strip-types labs-security.mjs
       - name: Time zone and summer time
         if: always()
         working-directory: docs/testing/harness

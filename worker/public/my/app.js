@@ -9,6 +9,7 @@
   // the page speaks the browser's language: Italian, German, French, otherwise English
   const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
   const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";
+  document.documentElement.lang = LG;
   const IT = LG === "it";
   const LOCALE = { it: "it-CH", de: "de-CH", fr: "fr-CH", en: "en-GB" }[LG];
   const TZ = "Europe/Zurich";
@@ -18,7 +19,7 @@
   /* ---------- words ---------- */
   const T = {
    it: {
-    share: "Invia al medico", pdf: "PDF", csv: "Excel",
+    share: "Condividi", pdf: "Scarica PDF", csv: "Excel",
     bp: "Pressione", labs: "Analisi",
     range: { 7: "7 giorni" },
     bpTitle: "Pressione arteriosa", readings: (n) => `${n} misure`,
@@ -49,7 +50,7 @@
     chartAria: (k, a, b) => `${k}, medie giornaliere dal ${a} al ${b}`,
    },
    en: {
-    share: "Send to doctor", pdf: "PDF", csv: "Excel",
+    share: "Share", pdf: "Download PDF", csv: "Excel",
     bp: "Blood pressure", labs: "Lab results",
     range: { 7: "7 days" },
     bpTitle: "Blood pressure", readings: (n) => `${n} readings`,
@@ -80,7 +81,7 @@
     chartAria: (k, a, b) => `${k}, daily averages from ${a} to ${b}`,
    },
    de: {
-    share: "An den Arzt senden", pdf: "PDF", csv: "Excel",
+    share: "Teilen", pdf: "PDF herunterladen", csv: "Excel",
     bp: "Blutdruck", labs: "Laborwerte",
     range: { 7: "7 Tage" },
     bpTitle: "Blutdruck", readings: (n) => `${n} Messungen`,
@@ -110,7 +111,7 @@
     chartAria: (k, a, b) => `${k}, Tagesmittel vom ${a} bis ${b}`,
    },
    fr: {
-    share: "Envoyer au médecin", pdf: "PDF", csv: "Excel",
+    share: "Partager", pdf: "Télécharger PDF", csv: "Excel",
     bp: "Tension", labs: "Analyses",
     range: { 7: "7 jours" },
     bpTitle: "Tension artérielle", readings: (n) => `${n} mesures`,
@@ -288,8 +289,27 @@
     draw(); redraws.push(draw);
   }
 
+  const LAB = {"it": {"title": "Referti", "note": "Documenti elaborati sul telefono. Qui trovi solo risultati confermati e sincronizzati. Nessuna interpretazione medica.", "empty": "Importa un referto dall’app per iniziare lo storico.", "date": "Data", "test": "Analisi", "value": "Valore", "unit": "Unità", "reference": "Riferimento", "trend": "Andamento", "period": "Ultimi 365 giorni", "share": "Condividi il PDF delle analisi. Il documento originale non è incluso."}, "en": {"title": "Lab results", "note": "Documents are processed on your phone. Only confirmed, synchronized results appear here. No medical interpretation.", "empty": "Import a lab report in the app to start your history.", "date": "Date", "test": "Test", "value": "Value", "unit": "Unit", "reference": "Reference", "trend": "Trend", "period": "Last 365 days", "share": "Share the lab results PDF. The original document is not included."}, "de": {"title": "Laborbefunde", "note": "Dokumente werden auf Ihrem Telefon verarbeitet. Hier erscheinen nur bestätigte, synchronisierte Ergebnisse. Keine medizinische Interpretation.", "empty": "Importieren Sie einen Laborbefund in der App, um den Verlauf zu starten.", "date": "Datum", "test": "Test", "value": "Wert", "unit": "Einheit", "reference": "Referenzbereich", "trend": "Verlauf", "period": "Letzte 365 Tage", "share": "PDF der Laborwerte teilen. Das Originaldokument ist nicht enthalten."}, "fr": {"title": "Analyses", "note": "Les documents sont traités sur votre téléphone. Seuls les résultats confirmés et synchronisés apparaissent ici. Aucune interprétation médicale.", "empty": "Importez un compte rendu dans l’application pour commencer votre historique.", "date": "Date", "test": "Analyse", "value": "Valeur", "unit": "Unité", "reference": "Référence", "trend": "Évolution", "period": "365 derniers jours", "share": "Partager le PDF des analyses. Le document original n’est pas inclus."}}[LG];
+  const labName = code => window.HintLabLabels[LG][code] || code;
+  const htmlSafe = x => String(x ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function labRows(data) { return data.items.flatMap(report => report.items.map(x => ({ ...x, t: report.t }))); }
+  function renderLabs(main, data) {
+    const rows = labRows(data), groups = new Map();
+    for (const x of rows) { const key = x.code + ':' + x.unit; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(x); }
+    const charts = [...groups.values()].map(xs => {
+      const points = xs.filter(x => /^-?\d+(?:[.,]\d+)?$/.test(x.value)).map(x => ({ ...x, n: Number(x.value.replace(',', '.')) }));
+      if (points.length < 2) return '';
+      const lo = Math.min(...points.map(x=>x.n)), hi = Math.max(...points.map(x=>x.n));
+      const t0 = points[0].t, t1 = points[points.length - 1].t;
+      const coords = points.map(x => `${40 + 500 * (x.t-t0)/(t1-t0 || 1)},${150 - 110 * (x.n-lo)/(hi-lo || 1)}`);
+      return `<section class="card"><h2>${htmlSafe(labName(xs[0].code))} · ${htmlSafe(xs[0].unit)}</h2><p class="muted">${LAB.trend} · ${day(t0)} – ${day(t1)} · ${lo}–${hi}</p><svg viewBox="0 0 580 190" role="img" aria-label="${htmlSafe(labName(xs[0].code)+' '+LAB.trend)}"><polyline points="${coords.join(' ')}" fill="none" stroke="#8C7BF2" stroke-width="3"/>${points.map((p,i)=>`<circle cx="${coords[i].split(',')[0]}" cy="${coords[i].split(',')[1]}" r="4" fill="#8C7BF2"/>`).join('')}</svg></section>`;
+    }).join('');
+    main.innerHTML = `<div class="bar"><h1>${LAB.title}</h1><span>${LAB.period}</span></div><p class="note">${LAB.note}</p>${!rows.length ? `<section class="card"><p>${LAB.empty}</p></section>` : charts + `<section class="card"><div class="table-wrap"><table><thead><tr>${[LAB.date,LAB.test,LAB.value,LAB.unit,LAB.reference].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.slice().reverse().map(x=>`<tr><td>${day(x.t)}</td><td>${htmlSafe(labName(x.code))}</td><td>${htmlSafe(x.value)}</td><td>${htmlSafe(x.unit)}</td><td>${htmlSafe(x.reference)}</td></tr>`).join('')}</tbody></table></div></section>`}`;
+  }
+
   /* ---------- modules ---------- */
   const MODULES = {
+    labs: { title: () => LAB.title, render: renderLabs },
     bp: {
       title: () => T.bp,
       render(main, data, ctx) {
@@ -376,7 +396,7 @@
     current.days = 7;   // one week only: every reading readable
 
   function words() {
-    $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf; $("btn-csv").textContent = T.csv;
+    $("btn-share").textContent = "✉ " + T.share; $("btn-pdf").textContent = T.pdf;
     $("foot-note").textContent = T.footNote; $("rights").textContent = T.rights; $("terms-link").textContent = T.terms; 
     const y = new Date().getFullYear(); $("years").textContent = y > 2026 ? `2026–${y}` : "2026";
     document.documentElement.lang = LG;
@@ -393,7 +413,7 @@
   }
   async function load() {
     try {
-      const data = await api(`/my/api/data?module=${current.module}&days=${current.days}`);
+      const data = await api(`/my/api/data?module=${current.module}&days=${current.module === "labs" ? 365 : current.days}`);
       current.data = data; charts0();
       MODULES[current.module].render(main, data, {});   // one period only (7 days): no period buttons
     } catch (e) { if (e.status === 401) signedOut(); else if (e.status === 402) message(T.subT, T.subP); else message(T.err, ""); }
@@ -427,11 +447,22 @@
     $("sh-title").textContent = T.shTitle; $("sh-intro").textContent = T.shIntro;
     $("sh-close").textContent = T.shClose; $("sh-revoke").textContent = T.shRevoke; $("sh-exp").textContent = T.shExp7;
     $("sh-mail").textContent = "✉ Email"; $("sh-wa").textContent = "WhatsApp";
-    $("btn-share").onclick = () => { $("sh-status").textContent = ""; dlg.showModal(); };
+    $("btn-share").onclick = () => { $("sh-status").textContent = ""; $("sh-intro").textContent = current.module === "labs" ? LAB.share : T.shIntro; $("sh-exp").hidden = $("sh-revoke").hidden = current.module === "labs"; dlg.showModal(); };
     const send = async (via) => {
       const status = $("sh-status");
       try {
         status.textContent = T.shWorking;
+        if (current.module === "labs") {
+          const { doc, name } = await buildPdf();
+          const file = new File([doc.output("blob")], name, { type: "application/pdf" });
+          if (navigator.canShare?.({ files: [file] })) {
+            try { await navigator.share({ files: [file], title: LAB.title }); status.textContent = T.shDone; return; }
+            catch (e) { if (e?.name === "AbortError") { status.textContent = ""; return; } }
+          }
+          doc.save(name);
+          window.open(via === "wa" ? "https://wa.me/?text=" + encodeURIComponent(LAB.title) : "mailto:?subject=" + encodeURIComponent(LAB.title), "_blank", "noopener");
+          status.textContent = T.shAttach; return;
+        }
         // a second tap within 10 minutes reuses the same link instead of creating another one
         const r = lastShare && Date.now() - lastShare.at < 10 * 60e3 ? lastShare.r
           : (lastShare = { at: Date.now(), r: await api("/my/api/share", { method: "POST", body: JSON.stringify({ days: current.days }) }) }).r;
@@ -453,7 +484,7 @@
     };
     $("sh-mail").onclick = () => send("mail");
     $("sh-wa").onclick = () => send("wa");
-    $("sh-revoke").onclick = async () => { if (!confirm(T.shRevokeQ)) return; try { await api("/my/api/shares", { method: "DELETE" }); alert(T.shRevoked); } catch { alert(T.err); } };
+    $("sh-revoke").onclick = async () => { if (!confirm(T.shRevokeQ)) return; try { await api("/my/api/shares", { method: "DELETE" }); lastShare = null; alert(T.shRevoked); } catch { alert(T.err); } };
   }
 
   /* ---------- cookie consent ----------
@@ -521,7 +552,6 @@
       $("actions").hidden = false; current.module = id; load();
     };
     $("btn-pdf").onclick = printReport;
-    $("btn-csv").onclick = () => current.data && download(`hint-${current.module}-${current.days}d.csv`, MODULES[current.module].csv(current.data.items), "text/csv");
     setupShare();
     load();
   }
@@ -634,7 +664,7 @@
     let d;
     try { d = await api("/my/api/admin/security"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
     const s = d.scan, items = d.items || [];
-    secItems = items;
+    secItems = items; secScan = s;
     const link = (u, label) => (u && /^https:\/\//.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(label)}</a>` : "—");
     const risk = (x) => {
       const r = String(x.rating || x.severity || "").toUpperCase();
@@ -662,7 +692,7 @@
     main.innerHTML = `
       <div class="bar"><button class="btn ghost small" type="button" id="sec-back">${AD.back}</button><h1>${AD.conT}</h1></div>
       <p class="note">${AD.conSub}${s ? ` ${AD.secAt(day(s.at) + " " + time(s.at))}${s.runUrl ? " · " + link(s.runUrl, AD.run) : ""}` : ""}</p>
-      ${s ? `<div id="sec-overall">${overall(items)}</div>` : ""}
+      ${s ? `<div id="sec-overall">${s.complete === true && Date.now() - s.at < 48 * 3600e3 ? overall(items) : `<p class="note">Scan incomplete or stale — last findings retained</p>`}</div>` : ""}
       ${s ? `<section class="tiles adm four">
         ${tile(AD.kLib, s.libraries ?? "?", AD.kLibU(s.fullTree))}
         ${tile(AD.kVul, s.vulnerable, AD.kVulU)}
@@ -704,14 +734,14 @@
     $("sec-back").onclick = () => { clearTimeout(secTimer); loadAdmin(); };
     watch();
   }
-  let secTimer = 0, secItems = [];
+  let secTimer = 0, secItems = [], secScan = null;
   // Overall status of the system, always in English: Secure (green) when nothing is open; Vulnerable (orange) while a
   // finding is open; Vulnerable · High risk (red) while a high or critical one is open. Our rating wins over the advisory's.
   function overall(items) {
     const open = items.filter((x) => x.fix_status !== "fixed");
     const lvl = (x) => String(x.rating || x.severity || "").toUpperCase();
     const high = open.filter((x) => lvl(x) === "CRITICAL" || lvl(x) === "HIGH").length;
-    const [cls, label] = !open.length ? ["ok", "Secure"] : high ? ["high", "Vulnerable · High risk"] : ["warn", "Vulnerable"];
+    const [cls, label] = !open.length ? ["ok", "No open findings"] : high ? ["high", "Vulnerable · High risk"] : ["warn", "Vulnerable"];
     const detail = !open.length ? "No open findings" : `${open.length} open finding${open.length === 1 ? "" : "s"}${high ? ` · ${high} high or critical` : ""}`;
     return `<div class="overall o-${cls}" role="status"><span class="dot" aria-hidden="true"></span><span class="lab">Overall status</span>
       <b>${label}</b><span class="det">${detail}</span></div>`;
@@ -744,7 +774,7 @@
           if (it) it.fix_status = x.status;
         }
         const ov = document.getElementById("sec-overall");
-        if (ov) { const html = overall(secItems); if (ov.innerHTML !== html) ov.innerHTML = html; }
+        if (ov && secScan?.complete === true && Date.now() - secScan.at < 48 * 3600e3) { const html = overall(secItems); if (ov.innerHTML !== html) ov.innerHTML = html; }
       } catch {}
       if (busy()) secTimer = setTimeout(tick, 8000);
     }, 8000);
@@ -758,6 +788,17 @@
   async function buildPdf() {
     // the PDF libraries (jsPDF, svg2pdf, MIT licence, served from this site) are loaded only when needed
     if (!window.jspdf) await loadScript("/my/vendor/jspdf-4.2.1.umd.min.js");
+    if (current.module === "labs") {
+      const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+      doc.setFontSize(18); doc.text("HINT 365 · " + LAB.title, 40, 45);
+      doc.setFontSize(10); doc.text(LAB.period, 40, 65); let y = 95;
+      for (const x of labRows(current.data)) {
+        const lines = doc.splitTextToSize(`${day(x.t)}   ${labName(x.code)}   ${x.value} ${x.unit.replaceAll('µ','u')}   [${x.reference.replaceAll('–','-')}]`, 515);
+        if (y + lines.length * 14 > 790) { doc.addPage(); y = 45; }
+        doc.text(lines, 40, y); y += lines.length * 14 + 10;
+      }
+      return { doc, name: "HINT-lab-results.pdf" };
+    }
     if (!window.svg2pdf) await loadScript("/my/vendor/svg2pdf-2.8.1.umd.min.js");
     const box = $("print");
     window.HintReport.render(box, current.data);
@@ -789,7 +830,7 @@
     bindCookieLink(true);
     // the doctor's view: only the PDF button
     $("actions").hidden = false;
-    for (const id of ["btn-share", "btn-csv"]) $(id).hidden = true;
+    for (const id of ["btn-share"]) $(id).hidden = true;
     $("btn-pdf").onclick = printReport;
     try {
       const data = await api(`/s/${token}/data?module=bp`);

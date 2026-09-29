@@ -271,6 +271,7 @@ const val RECHARGE_URL = "https://console.anthropic.com/settings/billing"
  */
 enum class Tab(val key: String, val label: Int) {
     BP("bp", R.string.tab_bp),
+    LABS("labs", R.string.tab_labs),
     REPORT("report", R.string.tab_report),
     CREDIT("credit", R.string.tab_credit),
 }
@@ -287,7 +288,7 @@ fun App() {
     val readings = remember { mutableStateListOf<Reading>() }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-    var scan by remember { mutableStateOf<ScanState>(ScanState.Idle) }
+    var scan by rememberSaveable(stateSaver = ScanStateSaver) { mutableStateOf<ScanState>(ScanState.Idle) }
     var saving by remember { mutableStateOf(false) }
     var takenAt by rememberSaveable { mutableLongStateOf(0L) }
     var me by remember { mutableStateOf<Me?>(null) }
@@ -305,11 +306,11 @@ fun App() {
 
     // the notice is binding and accepted once per installed version: at the first installation, after every update
     // of the app and whenever its text changes. Remembered as "text version @ app version".
-    val noticeKey = DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
+    val noticeKey = (personId ?: "signed-out") + "@" + DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
     var checkingAi by remember { mutableStateOf(false) }
-    val needsNotice = noticeLocal != noticeKey
+    val needsNotice = noticeLocal != noticeKey || me?.disclaimerOk == false
 
     // switched off remotely: remembered, so that without a connection the app stays closed too
     LaunchedEffect(Unit) {
@@ -332,10 +333,10 @@ fun App() {
         scope.launch {
             loading = true
             try {
-                val l = Repo.list(pid)
-                readings.clear(); readings.addAll(l); message = null
                 var m = Repo.me(pid)
                 me = m
+                val l = if (m.sub.blocked) emptyList() else Repo.list(pid)
+                readings.clear(); readings.addAll(l); message = null
                 if (!m.sub.blocked) AppGate.subExpired = false
                 // Scan follows what Anthropic answers, not the estimate: checked again if the last check is over an hour old
                 if (m.selfPays && m.hasKey && (m.aiCheckedAt == null || System.currentTimeMillis() - m.aiCheckedAt!! > 3_600_000L)) {
@@ -365,6 +366,7 @@ fun App() {
             try {
                 val img = withContext(Dispatchers.IO) { Img.prepare(photoFile) }
                 val res = Repo.scan(pid, img, takenAt)
+                photoFile.delete()
                 scan = ScanState.Done(res)
                 if (res.credit != null) me = me?.copy(credit = res.credit)
             } catch (e: Exception) {
@@ -494,7 +496,7 @@ fun App() {
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     BackHandler(enabled = screen != "tabs" || tab != Tab.BP.key) {
-        if (screen != "tabs") { screen = "tabs"; scan = ScanState.Idle; keyError = null } else tab = Tab.BP.key
+        if (screen != "tabs") { if (screen == "scan") photoFile.delete(); screen = "tabs"; scan = ScanState.Idle; keyError = null } else tab = Tab.BP.key
     }
 
     fun openKeySteps() { keyError = null; scan = ScanState.Idle; screen = "key" }
@@ -538,7 +540,9 @@ fun App() {
                 price = Billing.price, busy = Billing.busy,
                 onBuy = { val pid = personId; val act = ctx as? android.app.Activity; if (pid != null && act != null) Billing.buy(act, pid) },
                 onManage = { try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { toast(ctx, t(R.string.no_browser)) } },
-                onTerms = { screen = "terms" }
+                onTerms = { screen = "terms" },
+                onDataAccess = { val pid = personId; if (pid != null) scope.launch { try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Repo.webDashUrl(pid)))) } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } } },
+                onDeleteAccount = { val pid = personId; if (pid != null) scope.launch { try { Repo.deleteAccount(pid); prefs.edit().remove("personId").remove("googleEmail").apply(); readings.clear(); me = null; personId = null } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } } }
             )
             // the terms accepted at the start, to read again from the colophon
             screen == "terms" -> DisclaimerScreen(busy = false, onAccept = {}, onDecline = {}, onClose = { screen = "tabs" })
@@ -555,13 +559,13 @@ fun App() {
                             reload()
                         } catch (e: Exception) {
                             toast(ctx, e.message ?: t(R.string.err_generic))
-                        } finally { saving = false }
+                        } finally { photoFile.delete(); saving = false }
                     }
                 },
                 onRetake = { openCamera() },
                 onRecharge = { openRecharge() },
                 onReplaceKey = { openKeySteps() },
-                onCancel = { screen = "tabs"; scan = ScanState.Idle }
+                onCancel = { photoFile.delete(); screen = "tabs"; scan = ScanState.Idle }
             )
             screen == "listen" -> ListenScreen(
                 onResult = { onSpoken(it) },
@@ -641,6 +645,7 @@ fun App() {
                 }
                 Box(Modifier.weight(1f).nestedScroll(pull.nestedScrollConnection)) {
                     when (tab) {
+                        Tab.LABS.key -> personId?.let { LabsScreen(it) }
                         Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" }, onDash = {
                             val pid = personId ?: return@ReportScreen
                             scope.launch {
@@ -1016,6 +1021,7 @@ fun Colophon(onTerms: () -> Unit) {
 @Composable
 fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit, onClose: (() -> Unit)? = null) {
     var read by remember { mutableStateOf(false) }
+    var healthConsent by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         // read again later (onClose): only the text and Close; at the start: the text, the box and the two buttons
         if (onClose != null) Header(t(R.string.disc_title), null, t(R.string.close), onClose, titleSize = 22)
@@ -1039,7 +1045,11 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
                 Checkbox(checked = read, onCheckedChange = { read = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
                 Text(t(R.string.disc_check), color = C.Ink, fontSize = 14.sp)
             }
-            BigButton(t(R.string.disc_accept), enabled = read && !busy, onClick = onAccept)
+            Row(Modifier.fillMaxWidth().clickable { healthConsent = !healthConsent }, verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = healthConsent, onCheckedChange = { healthConsent = it })
+                Text(t(R.string.disc_health_consent), color = C.Ink, fontSize = 14.sp)
+            }
+            BigButton(t(R.string.disc_accept), enabled = read && healthConsent && !busy, onClick = onAccept)
             TextButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.disc_decline), color = C.Muted, fontSize = 13.sp)
             }
@@ -1056,7 +1066,8 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
 
 /** No valid subscription: a courteous invitation to subscribe or renew. The data wait on the server. */
 @Composable
-fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -> Unit, onManage: () -> Unit, onTerms: () -> Unit) {
+fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -> Unit, onManage: () -> Unit, onTerms: () -> Unit, onDataAccess: () -> Unit, onDeleteAccount: () -> Unit) {
+    var deleteAsk by remember { mutableStateOf(false) }
     val p = price ?: t(R.string.sub_price_default)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         BrandHeader()
@@ -1067,10 +1078,13 @@ fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -
             Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp))
         }
         BigButton(t(if (expired) R.string.sub_renew else R.string.sub_buy, p), enabled = !busy, onClick = onBuy)
+        BigButton(t(R.string.sub_data_access), color = C.Surface2, textColor = C.Ink, onClick = onDataAccess)
+        TextButton(onClick = { deleteAsk = true }) { Text(t(R.string.account_delete)) }
         CostsTable()
         if (expired) BigButton(t(R.string.sub_manage), color = C.Surface2, textColor = C.Ink, onClick = onManage)
         TextButton(onClick = onTerms, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_title), color = C.Muted, fontSize = 13.sp) }
     }
+    if (deleteAsk) AlertDialog(onDismissRequest = { deleteAsk = false }, title = { Text(t(R.string.account_delete_q1)) }, text = { Text(t(R.string.account_delete_t1)) }, confirmButton = { TextButton(onClick = { deleteAsk = false; onDeleteAccount() }) { Text(t(R.string.account_delete_confirm)) } }, dismissButton = { TextButton(onClick = { deleteAsk = false }) { Text(t(R.string.cancel)) } })
 }
 
 /** This version was switched off remotely: nothing works until the latest one is installed. The data stay on the server. */
@@ -1539,7 +1553,11 @@ fun ScanScreen(
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.new_reading), t(R.string.new_reading_sub), t(R.string.cancel), onCancel)
         when (state) {
-            is ScanState.Idle, is ScanState.Loading -> Panel {
+            is ScanState.Idle -> Panel {
+                Text(t(R.string.err_read_failed), color = C.Ink, fontSize = 16.sp)
+                BigButton(t(R.string.labs_retry_scan), onClick = onRetake)
+            }
+            is ScanState.Loading -> Panel {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(color = C.Sys, strokeWidth = 3.dp, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.width(14.dp))

@@ -219,3 +219,7 @@ td.pick .st { margin-left: 8px; }
 .overall.o-ok .dot { background: #4ED39A; box-shadow: 0 0 0 4px rgba(78, 211, 154, .18); }
 .overall.o-warn .dot { background: #F2A65A; box-shadow: 0 0 0 4px rgba(242, 166, 90, .18); }
 .overall.o-high .dot { background: #F07272; box-shadow: 0 0 0 4px rgba(240, 114, 114, .18); }
+
+/* Lab history keeps numeric columns readable without widening the phone page. */
+.table-wrap { max-width: 100%; overflow-x: auto; }
+#main .card svg[viewBox="0 0 580 190"] { width: 100%; height: auto; display: block; }

@@ -6,6 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { NOTICE_TEXT, NOTICE_VERSION } from "../../../worker/src/notices.ts";
+const notice = {doc: "disclaimer", version: NOTICE_VERSION, lang: "en", healthConsent: true, textSha256: crypto.createHash("sha256").update(NOTICE_TEXT.en).digest("hex")};
 import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)("playwright");   // resolved through NODE_PATH (global install)
 import { BASE, call, newPhone, register, web, webLogin, localDb, Suite } from "./lib.mjs";
@@ -19,7 +21,10 @@ for (const t of ["persons", "measurements", "scans", "ledger", "invites", "perso
 run("DELETE FROM settings WHERE key <> 'billing_mode'");
 
 const owner = newPhone(); await register(owner);
+run("UPDATE persons SET is_admin = 1 WHERE id = ?", owner.pid);
+await call(owner, "POST", "/v1/accept", notice);
 const user = newPhone(); await register(user);
+await call(user, "POST", "/v1/accept", notice);
 await call(owner, "GET", "/v1/me");
 // a week of test readings: morning, afternoon and evening, one day left empty
 const ins = db.prepare("INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at) VALUES (?, ?, 'bp', ?, 'Europe/Zurich', ?, ?, ?, ?)");
@@ -136,11 +141,7 @@ for (const width of [390, 1280]) {
     S.check("pdf", `PDF1-${tag}`, "PDF downloads, A4, 4 pages (summary, morning/evening, pulse, list)", buf.slice(0, 4).toString() === "%PDF" && pages === 4 && /595\.2\d* 841\.8\d*/.test(buf.toString("latin1")), `${buf.length} bytes, ${pages} pages, name ${dl.suggestedFilename()}`);
   } else S.check("pdf", `PDF1-${tag}`, "PDF downloads", false, "no download event");
   // CSV
-  const [csv] = await Promise.all([page.waitForEvent("download", { timeout: 10000 }).catch(() => null), page.click("#btn-csv")]);
-  if (csv) {
-    const t = fs.readFileSync(await csv.path(), "utf8");
-    S.check("web", `CSV1-${tag}`, "CSV (Excel) export has a header with SYS/DIA/PUL and one row per reading", /SYS \(mmHg\);DIA \(mmHg\);PUL/.test(t) && t.trim().split(/\r\n/).length > 5, t.slice(0, 80));
-  }
+  S.check("export", `CSV-${tag}`, "web has no CSV button", await page.locator("#btn-csv").count() === 0, "");
   // send to the doctor
   await page.click("#btn-share");
   await page.waitForSelector("dialog#share[open]");

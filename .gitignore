@@ -10,3 +10,7 @@ worker/public/*.apk
 worker/public/*.pdf
 
 qa-results/
+
+# Signing material is supplied by private CI secrets only.
+*.keystore
+*.jks

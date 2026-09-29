@@ -39,3 +39,10 @@ Every morning: *Security tests* (06:10 Zurich) open or update an issue labelled 
 error log has rows in the last 24 hours; the developer's scheduled routine (06:48 Zurich) reads both, fixes small bugs
 through pull requests (documents included), merges after *Docs check*, and reports in the issue. Larger changes wait
 for the human. Drawn on page 5 of the architecture document.
+
+## 2026-09-30: local lab import and security hardening
+
+- `testing/labs-security-review-2026-09-30.md`: implementation, synthetic verification and release blockers.
+- `testing/harness/labs-security.mjs`: consent, schema minimization, isolation, replay, atomic sessions and history regressions.
+- `testing/harness/labs-ui.mjs`: lab history, localized names and PDF at mobile/desktop widths.
+- Canonical terms version 16: `worker/src/notices.ts`; public pages generated in `legal/`.

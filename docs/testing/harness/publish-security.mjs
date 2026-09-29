@@ -36,7 +36,8 @@ for (const s of Array.isArray(gl) ? gl : [])
     severity: "HIGH", rating: "", fixed: "", summary: "a secret is written in the repository (value not stored)",
     source_url: blob(s.File, s.StartLine, s.Commit || SHA), plan_url: `https://github.com/${REPO}/blob/main/docs/security/vulnerability-management.md` });
 
-const summary = { at: Date.now(), libraries: v?.libraries ?? null, android: v?.android ?? null, fullTree: !!v?.fullTree,
+const complete = !!v && Array.isArray(v.findings) && v.fullTree === true && Array.isArray(sg?.results) && !(sg.errors?.length) && Array.isArray(gl);
+const summary = { complete, commit: SHA, at: Date.now(), libraries: v?.libraries ?? null, android: v?.android ?? null, fullTree: !!v?.fullTree,
   vulnerable: rows.filter((r) => r.kind === "library").length, code: rows.filter((r) => r.kind === "code").length,
   secrets: rows.filter((r) => r.kind === "secret").length, runUrl: RUN_URL };
 
@@ -49,12 +50,18 @@ const q = async (sql, params = []) => {
   const r = await (await fetch(`${API}/${id}/query`, { method: "POST", headers: H, body: JSON.stringify({ sql, params }) })).json();
   if (!r.success) throw new Error(JSON.stringify(r.errors));
 };
-await q("DELETE FROM security_findings");
-const now = Date.now();
+if (!complete) {
+  await q("INSERT INTO settings (key, value) VALUES ('security_scan_attempt', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [JSON.stringify({ at: Date.now(), complete: false, commit: SHA, runUrl: RUN_URL })]);
+  throw new Error("Scan incomplete; the last complete snapshot is retained");
+}
+await q("CREATE TABLE IF NOT EXISTS security_snapshot_findings AS SELECT * FROM security_findings WHERE 0");
+const now = summary.at;
 for (const r of rows.slice(0, 500))
-  await q(`INSERT OR REPLACE INTO security_findings (kind, ref, name, version, location, severity, rating, fixed, summary, source_url, plan_url, found_at)
+  await q(`INSERT INTO security_snapshot_findings (kind, ref, name, version, location, severity, rating, fixed, summary, source_url, plan_url, found_at)
            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
     [r.kind, cut(r.ref, 120), cut(r.name, 200), cut(r.version, 60), cut(r.location, 200), cut(r.severity, 20), cut(r.rating, 20),
      cut(r.fixed, 80), cut(r.summary, 240), cut(r.source_url, 300), cut(r.plan_url, 300), now]);
-await q("INSERT INTO settings (key, value) VALUES ('security_scan', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [JSON.stringify(summary)]);
+await q("INSERT INTO settings (key, value) VALUES ('security_scan', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [JSON.stringify({ ...summary, snapshot: true })]);
+await q("DELETE FROM settings WHERE key = 'security_scan_attempt'");
+await q("DELETE FROM security_snapshot_findings WHERE found_at <> ?1", [now]);
 console.log(`published: ${rows.length} findings`, summary);

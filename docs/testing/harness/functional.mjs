@@ -2,6 +2,8 @@
 // Needs a LOCAL worker started from a scratch copy (setup-local.sh) and a fresh local D1.
 // Run: HINT_WORKER_DIR=<scratch worker dir> node functional.mjs
 import crypto from "node:crypto";
+import { NOTICE_TEXT, NOTICE_VERSION } from "../../../worker/src/notices.ts";
+const notice = {doc: "disclaimer", version: NOTICE_VERSION, lang: "en", healthConsent: true, textSha256: crypto.createHash("sha256").update(NOTICE_TEXT.en).digest("hex")};
 import { BASE, call, newPhone, register, web, webLogin, localDb, Suite, sleep } from "./lib.mjs";
 
 const S = new Suite("functional");
@@ -18,7 +20,9 @@ const owner = newPhone();
 let r = await register(owner);
 S.check("auth", "R1", "family code registers the first phone", r.status === 200 && /^per_/.test(r.json?.personId), r.text);
 r = await call(owner, "GET", "/v1/me");
-S.check("auth", "R1b", "first account is the owner (isAdmin)", r.status === 200 && r.json.isAdmin === true, r.text);
+S.check("auth", "R1b", "first public account does not become owner", r.status === 200 && r.json.isAdmin === false, r.text);
+run("UPDATE persons SET is_admin = 1 WHERE id = ?", owner.pid); // explicit local fixture provisioning
+await call(owner, "POST", "/v1/accept", notice);
 S.check("privacy", "P1", "/v1/me never returns an email", r.json && r.json.email === null, r.text);
 const ownerPid = owner.pid;
 r = await register(owner);
@@ -36,6 +40,7 @@ S.check("auth", "R4", "register with a public key the signer does not own -> 401
 }
 const alice = newPhone(); await register(alice);
 const bob = newPhone(); await register(bob);
+await call(bob, "POST", "/v1/accept", notice);
 r = await call(alice, "GET", "/v1/me");
 S.check("auth", "R5", "second account is not the owner", r.status === 200 && r.json.isAdmin === false, r.text);
 
@@ -85,11 +90,11 @@ S.check("robustness", "A11", "unknown signed path -> 404", r.status === 404, r.t
 // ---------------------------------------------------------------- terms acceptance
 r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "13" });
 S.check("terms", "T1", "old terms version -> 400 bad_version", r.status === 400 && r.json?.code === "bad_version", r.text);
-r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "15", lang: "en-GB-very-long-language", textSha256: "a".repeat(200), appVersion: "0.1.200", phone: "X".repeat(500) });
+r = await call(alice, "POST", "/v1/accept", { ...notice, appVersion: "0.1.200", phone: "X".repeat(500) });
 S.check("terms", "T2", "current terms accepted", r.status === 200, r.text);
 {
   const [row] = sql("SELECT length(phone) AS lp, length(text_sha256) AS lt, lang, email FROM acceptances WHERE person_id = ?", alice.pid);
-  S.check("terms", "T3", "acceptance fields are truncated (phone 80, sha 64, lang 8) and email is NULL", row && row.lp === 80 && row.lt === 64 && row.lang.length === 8 && row.email === null, JSON.stringify(row));
+  S.check("terms", "T3", "acceptance fields are truncated (phone 80, sha 64, canonical language) and email is NULL", row && row.lp === 80 && row.lt === 64 && row.lang === "en" && row.email === null, JSON.stringify(row));
 }
 r = await call(alice, "GET", "/v1/me");
 S.check("terms", "T4", "/v1/me disclaimerOk after acceptance", r.json?.disclaimerOk === true, r.text);
@@ -188,7 +193,7 @@ const sAlice = mkScan(alice.pid);
 r = await call(bob, "POST", "/v1/bp/confirm", { scanId: sAlice });
 S.check("security", "C1", "Bob cannot confirm Alice's scan (IDOR) -> 404", r.status === 404, r.text);
 const confirms = await Promise.all(Array.from({ length: 10 }, () => call(alice, "POST", "/v1/bp/confirm", { scanId: sAlice })));
-const ok = confirms.filter((c) => c.status === 200).length, dup = confirms.filter((c) => c.status === 409).length;
+const ok = confirms.filter((c) => c.status === 200).length, dup = confirms.filter((c) => c.status === 409 || (c.status === 401 && c.json?.code === "replay")).length;
 S.check("concurrency", "C2", "10 parallel confirms of one scan -> exactly one reading", ok === 1 && dup === 9 && sql("SELECT COUNT(*) n FROM measurements WHERE scan_id = ?", sAlice)[0].n === 1, `ok=${ok} dup=${dup}`);
 r = await call(alice, "POST", "/v1/bp/confirm", { scanId: mkScan(alice.pid, false) });
 S.check("scan", "C3", "unreadable scan cannot be saved -> 400 scan_invalid", r.status === 400 && r.json?.code === "scan_invalid", r.text);
@@ -263,7 +268,7 @@ await call(owner, "POST", "/v1/admin/app-min-version", { minVersion: 0 });
 // ---------------------------------------------------------------- subscription gate
 run("INSERT INTO settings (key, value) VALUES ('subscription_on', '1') ON CONFLICT (key) DO UPDATE SET value = excluded.value");
 r = await call(alice, "GET", "/v1/bp");
-S.check("subscription", "B1", "subscription on, none bought -> /v1/bp 402 sub_expired", r.status === 402 && r.json?.code === "sub_expired", r.text);
+S.check("subscription", "B1", "subscription expired: own readings remain available", r.status === 200, r.text);
 r = await call(alice, "GET", "/v1/me");
 S.check("subscription", "B2", "/v1/me still answers, sub.required and not active", r.status === 200 && r.json.sub.required === true && r.json.sub.active === false, r.text);
 r = await call(owner, "GET", "/v1/bp");
@@ -304,7 +309,7 @@ S.check("security", "W9", "forged cookie -> 401", r.status === 401, r.text);
 r = await web("GET", "/my/api/data?days=30", { cookie: sessA.cookie });
 S.check("web", "W10", "data: at most 7 days even when 30 are asked", r.status === 200 && r.json.to - r.json.from <= 7 * DAY, r.text.slice(0, 200));
 S.check("security", "W11", "data only holds the caller's readings", r.json.items.every((i) => i.sys !== 140), JSON.stringify(r.json.items).slice(0, 200));
-r = await web("GET", "/my/api/data?module=labs", { cookie: sessA.cookie });
+r = await web("GET", "/my/api/data?module=unknown", { cookie: sessA.cookie });
 S.check("web", "W12", "unknown module -> 404", r.status === 404, r.text);
 r = await web("GET", "/my/api/me", { cookie: sessA.cookie });
 S.check("web", "W13", "/my/api/me for a non-owner: isOwner false", r.status === 200 && r.json.isOwner === false, r.text);
@@ -343,7 +348,7 @@ S.check("share", "SH9", "withdrawn link -> 404", r.status === 404, r.text);
   r = await web("GET", "/s/" + s3 + "/data");
   S.check("subscription", "SH11", "doctor link stops while the subscription has run out (as /my/api/data does)", r.status !== 200, `status ${r.status}: link keeps serving readings`);
   r = await web("GET", "/my/api/data", { cookie: sessA.cookie });
-  S.check("subscription", "SH12", "web data -> 402 when the subscription has run out", r.status === 402, r.text);
+  S.check("subscription", "SH12", "web data remains accessible after subscription expiry", r.status === 200, r.text);
   run("UPDATE settings SET value = '0' WHERE key = 'subscription_on'");
 }
 
@@ -351,13 +356,13 @@ S.check("share", "SH9", "withdrawn link -> 404", r.status === 404, r.text);
 r = await web("POST", "/my/api/log", { cookie: sessA.cookie, body: { code: "script", place: "app.js:123 SYS 142/95", message: "value 142/95 failed" }, origin: BASE });
 {
   const [row] = sql("SELECT place, message FROM error_log WHERE source = 'web' ORDER BY last_at DESC LIMIT 1");
-  S.check("privacy", "E1", "error log message has digits removed", row && !/\d/.test(row.message), JSON.stringify(row));
+  S.check("privacy", "E1", "error log never stores free text", row && row.message === null, JSON.stringify(row));
   S.check("privacy", "E2", "error log place has digits removed too (reading values could be sent there)", row && !/\d/.test(row.place), JSON.stringify(row));
 }
 r = await call(alice, "POST", "/v1/log", { code: "crash:IllegalStateException", place: "Report.kt:123", message: "SYS 150 DIA 99" });
 {
   const [row] = sql("SELECT code, message, person_id FROM error_log WHERE source = 'app' ORDER BY last_at DESC LIMIT 1");
-  S.check("errorlog", "E3", "app log stored, digits removed from message", r.status === 200 && row && !/\d/.test(row.message) && row.person_id === alice.pid, JSON.stringify(row));
+  S.check("errorlog", "E3", "app log stores code without free text", r.status === 200 && row && row.message === null && row.person_id === alice.pid, JSON.stringify(row));
 }
 {
   const before = sql("SELECT COUNT(*) n FROM error_log")[0].n;
@@ -432,7 +437,7 @@ S.check("account", "X4", "browser sessions end with the phone sign-out", r.statu
 r = await call(owner, "DELETE", "/v1/me");
 S.check("account", "X5", "the owner cannot delete their account -> 403", r.status === 403, r.text);
 const carol = newPhone(); await register(carol);
-await call(carol, "POST", "/v1/accept", { doc: "disclaimer", version: "15" });
+await call(carol, "POST", "/v1/accept", notice);
 await voice(carol, { sis: 118, dia: 76, pul: 60, spokenAt: now() });
 const sessC = await webLogin(carol);
 const shareC = (await web("POST", "/my/api/share", { cookie: sessC.cookie, body: {}, origin: BASE })).json.url.split("/s/")[1];

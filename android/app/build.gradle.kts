@@ -22,33 +22,27 @@ android {
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
     }
 
-    // Fixed signing key: every new version installs over the previous one without losing anything.
-    // The key comes from the GitHub secrets (ANDROID_KEYSTORE_*, decoded by the workflow into HINT_KEYSTORE_FILE);
-    // until the owner adds them, the old key in the repository is used.
+    // Release signing is supplied only through CI secrets. Debug uses Android's separate debug key.
     val ksFile = System.getenv("HINT_KEYSTORE_FILE").orEmpty()
+    val releaseRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+    if (releaseRequested) {
+        require(ksFile.isNotBlank() && file(ksFile).exists()) { "Release signing key is required; no repository fallback" }
+        require(!System.getenv("ANDROID_KEYSTORE_PASSWORD").isNullOrBlank() && !System.getenv("ANDROID_KEY_PASSWORD").isNullOrBlank()) { "Release signing passwords are required" }
+    }
     signingConfigs {
-        create("family") {
-            if (ksFile.isNotBlank() && file(ksFile).exists()) {
+        create("releasePrivate") {
+            if (ksFile.isNotBlank()) {
                 storeFile = file(ksFile)
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS").orEmpty().ifBlank { "hint365" }
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-            } else {
-                storeFile = file("personalhealthy.keystore")
-                storePassword = "battito-family"
-                keyAlias = "battito"
-                keyPassword = "battito-family"
             }
         }
     }
-
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("family")
-        }
-        getByName("debug") {
-            signingConfig = signingConfigs.getByName("family")
+            signingConfig = signingConfigs.getByName("releasePrivate")
         }
     }
 
@@ -76,6 +70,10 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+    // Bundled recognizer: no document upload and no runtime model download.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
