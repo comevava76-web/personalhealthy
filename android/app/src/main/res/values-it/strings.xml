@@ -384,7 +384,7 @@
     <string name="labs_import">Importa referto</string>
     <string name="labs_working">Lettura sul telefono…</string>
     <string name="labs_privacy">Il documento viene elaborato su questo telefono. Solo i risultati confermati e la data vengono sincronizzati con il tuo account. Non serve una chiave Anthropic.</string>
-    <string name="labs_no_results">Nessuna riga di analisi supportata trovata. Prova un documento più leggibile.</string>
+    <string name="labs_no_results">L’app non è riuscita a estrarre risultati supportati da questo documento. Il formato o i nomi delle analisi potrebbero non essere ancora supportati.</string>
     <string name="labs_failed">Impossibile leggere il documento. Usa un PDF non protetto (massimo 15 pagine) o un’immagine leggibile, fino a 20 MB.</string>
     <string name="labs_network">Impossibile caricare lo storico. Controlla la connessione e riprova.</string>
     <string name="labs_review">Controlla i risultati estratti</string>
@@ -436,4 +436,21 @@
     <string name="lab_name_vitamin_d">Vitamina D</string>
     <string name="lab_name_b12">Vitamina B12</string>
 <string name="disc_health_consent">Acconsento esplicitamente alla conservazione dei risultati sanitari confermati con il mio account, come descritto sopra.</string>
-<string name="labs_retry_scan">Ripeti foto</string><string name="sub_data_access">Vedi e scarica i miei dati</string></resources>
+<string name="labs_retry_scan">Ripeti foto</string><string name="sub_data_access">Vedi e scarica i miei dati</string>    <string name="lab_name_rdw">RDW</string>
+    <string name="lab_name_rdw_sd">RDW-SD</string>
+    <string name="lab_name_mpv">MPV</string>
+    <string name="lab_name_psa">PSA</string>
+    <string name="lab_name_neutrophils">Neutrofili</string>
+    <string name="lab_name_neutrophils_pct">Neutrofili (%)</string>
+    <string name="lab_name_lymphocytes">Linfociti</string>
+    <string name="lab_name_lymphocytes_pct">Linfociti (%)</string>
+    <string name="lab_name_monocytes">Monociti</string>
+    <string name="lab_name_monocytes_pct">Monociti (%)</string>
+    <string name="lab_name_eosinophils">Eosinofili</string>
+    <string name="lab_name_eosinophils_pct">Eosinofili (%)</string>
+    <string name="lab_name_basophils">Basofili</string>
+    <string name="lab_name_basophils_pct">Basofili (%)</string>
+    <string name="labs_format_unsupported">Formato non supportato oppure documento protetto. Usa un PDF non protetto o un’immagine JPEG, PNG o WebP. HEIC/HEIF richiede il supporto del telefono.</string>
+    <string name="lab_name_urine_culture">Urinocoltura</string>
+    <string name="labs_date_outside">La data letta nel referto è fuori dalla finestra attuale dello storico di 365 giorni. Controlla la data originale; non sostituirla con una data recente per salvare un referto più vecchio.</string>
+</resources>

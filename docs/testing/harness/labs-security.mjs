@@ -14,6 +14,12 @@ assert.equal((await call(owner,'POST','/v1/labs',input)).status,403,'current not
 assert.equal((await call(owner,'POST','/v1/accept',{doc:'disclaimer',version:NOTICE_VERSION,lang:'en',healthConsent:true,textSha256:'0'.repeat(64)})).status,400);
 for (const phone of [owner,other]) assert.equal((await call(phone,'POST','/v1/accept',{doc:'disclaimer',version:NOTICE_VERSION,lang:'en',healthConsent:true,textSha256:crypto.createHash('sha256').update(NOTICE_TEXT.en).digest('hex')})).status,200);
 assert.equal(validateLabImport({...input,patient:'Synthetic Person'}),null);
+for (const value of ['NEGATIVA','POSITIVA','negative','positive','negativ','positiv','négative','positif']) {
+  assert.ok(validateLabImport({...input, items:[{code:'urine_culture',value,unit:'',reference:''}]}));
+}
+assert.equal(validateLabImport({...input,items:[{code:'urine_culture',value:'NEGATIVA Jane Doe',unit:'',reference:''}]}),null);
+assert.equal(validateLabImport({...input,items:[{code:'urine_culture',value:'NEGATIVA',unit:'mg/dL',reference:''}]}),null);
+
 assert.equal(validateLabImport({...input,items:[{...input.items[0],code:'Jane Doe'}]}),null);
 assert.equal((await call(owner,'POST','/v1/labs',{...input,text:'Synthetic Patient'})).status,400);
 assert.equal((await call(owner,'POST','/v1/labs',input)).status,200);

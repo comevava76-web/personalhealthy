@@ -1,0 +1,11 @@
+# Laboratory document parsing correction — 2026-09-30
+
+Digital reports previously lost rows with parenthesized acronyms, specimen prefixes, long test labels and unsupported numeric tests. PDFBox text extraction was readable; the row parser discarded the results. The empty-state message incorrectly blamed document readability.
+
+The numeric catalog now has 50 codes, including RDW, RDW-SD, MPV, PSA and separate percentage/absolute differential counts. Matching stays anchored to supported names; values must precede recognized units. Prefixed units and numeric “Range previsto” references are normalized. Unknown and duplicate ambiguous results are omitted for review. Original numeric precision and units are preserved.
+
+PDF text is read locally; scanned pages and images use bundled ML Kit. Explicit report dates are extracted locally and prefilled for review. Birth dates and ambiguous report dates are never used. Photo EXIF rotation/mirroring is honored. The picker accepts PDF, JPEG, PNG, WebP and HEIC/HEIF; HEIC decoding depends on the Android device. TIFF, Office documents, encrypted PDFs and invalid images are unsupported. No source file, full extracted text or patient heading is uploaded. Only user-confirmed structured values sync.
+
+Local verification: nine Kotlin parser regressions and 26 numeric rows and the qualitative urine-culture result extracted from the user-provided two-page digital PDF using PDFBox 2.0.27 with positional sorting. The real source was inspected locally and is not committed. Synthetic regression data uses different values and no identity information. Qualitative results retain their original spelling; supported statuses include positive/negative, present/absent, reactive/non-reactive, detected/not detected and indeterminate in IT/EN/DE/FR. They are shown in dated history/PDF but excluded from numeric plots. Free narrative is not accepted as a result. The supplied report is older than the 365-day import window: extraction is possible, saving it with its original date is outside the current policy. Never relabel an old report with a recent date.
+
+Limitations: this is a bounded numeric parser, not universal medical-document understanding. Real photo OCR and update installation need verification on the user's phone. No on-device generative model or cloud AI has been introduced.

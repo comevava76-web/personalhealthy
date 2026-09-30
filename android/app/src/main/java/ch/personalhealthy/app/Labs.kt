@@ -3,6 +3,8 @@ package ch.personalhealthy.app
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -45,13 +47,14 @@ import kotlin.coroutines.resumeWithException
 // The allowlist prevents patient headings or arbitrary OCR text being sent as a test name.
 data class LabDefinition(val code: String, val name: String, val aliases: List<String>)
 val labDefinitions = listOf(
+    LabDefinition("urine_culture", "Urinocoltura", listOf("urinocoltura", "urine culture", "urinkultur", "culture urinaire", "ecbu")),
     LabDefinition("wbc", "Globuli bianchi", listOf("globuli bianchi", "leucociti", "wbc", "white blood cells", "white blood cells", "globuli bianchi", "leukozyten", "leucocytes")),
     LabDefinition("rbc", "Globuli rossi", listOf("globuli rossi", "eritrociti", "rbc", "red blood cells", "globuli rossi", "erythrozyten", "hématies")),
     LabDefinition("hgb", "Emoglobina", listOf("emoglobina", "hemoglobin", "hgb", "hb", "hemoglobin", "emoglobina", "hämoglobin", "hémoglobine")),
     LabDefinition("hct", "Ematocrito", listOf("ematocrito", "hematocrit", "hct", "hematocrit", "ematocrito", "hämatokrit", "hématocrite")),
     LabDefinition("plt", "Piastrine", listOf("piastrine", "platelets", "plt", "platelets", "piastrine", "thrombozyten", "plaquettes")),
-    LabDefinition("mcv", "MCV", listOf("mcv", "mcv", "mcv", "mcv", "vgm")), LabDefinition("mch", "MCH", listOf("mch", "mch", "mch", "mch", "tcmh")),
-    LabDefinition("mchc", "MCHC", listOf("mchc", "mchc", "mchc", "mchc", "ccmh")),
+    LabDefinition("mcv", "MCV", listOf("volume corpuscolare medio", "mcv", "mcv", "mcv", "mcv", "vgm")), LabDefinition("mch", "MCH", listOf("contenuto medio hgb", "mch", "mch", "mch", "mch", "tcmh")),
+    LabDefinition("mchc", "MCHC", listOf("concentrazione media hgb", "mchc", "mchc", "mchc", "mchc", "ccmh")),
     LabDefinition("glucose", "Glucosio", listOf("glucosio", "glicemia", "glucose", "glucose", "glucosio", "glukose", "glucose")),
     LabDefinition("creatinine", "Creatinina", listOf("creatinina", "creatinine", "creatinine", "creatinina", "kreatinin", "créatinine")),
     LabDefinition("urea", "Urea", listOf("urea", "azotemia", "urea", "urea", "harnstoff", "urée")),
@@ -75,8 +78,22 @@ val labDefinitions = listOf(
     LabDefinition("potassium", "Potassio", listOf("potassio", "potassium", "potassium", "potassio", "kalium", "potassium")),
     LabDefinition("calcium", "Calcio", listOf("calcio", "calcium", "calcium", "calcio", "kalzium", "calcium")),
     LabDefinition("hba1c", "HbA1c", listOf("hba1c", "emoglobina glicata", "hba1c", "hba1c", "hba1c", "hba1c")),
-    LabDefinition("vitamin_d", "Vitamina D", listOf("vitamina d", "vitamin d", "25-oh vitamina d", "vitamin d", "vitamina d", "vitamin d", "vitamine d")),
-    LabDefinition("b12", "Vitamina B12", listOf("vitamina b12", "vitamin b12", "vitamin b12", "vitamina b12", "vitamin b12", "vitamine b12"))
+    LabDefinition("vitamin_d", "Vitamina D", listOf("25-idrossi vitamina d", "25 hydroxy vitamin d", "25-hydroxy vitamin d", "vitamina d", "vitamin d", "25-oh vitamina d", "vitamin d", "vitamina d", "vitamin d", "vitamine d")),
+    LabDefinition("b12", "Vitamina B12", listOf("vitamina b12", "vitamin b12", "vitamin b12", "vitamina b12", "vitamin b12", "vitamine b12")),
+    LabDefinition("rdw", "RDW", listOf("distribuzione vol. eritrocitario", "rdw")),
+    LabDefinition("rdw_sd", "RDW-SD", listOf("distribuzione vol. eritrocitario (rdw-sd)", "rdw-sd")),
+    LabDefinition("mpv", "MPV", listOf("mpv", "mean platelet volume")),
+    LabDefinition("psa", "PSA", listOf("antigene prostatico specifico", "prostate specific antigen", "prostate-specific antigen", "psa")),
+    LabDefinition("neutrophils", "Neutrofili", listOf("granulociti neutrofili", "neutrofili", "neutrophils", "neutrophile", "neutrophiles")),
+    LabDefinition("neutrophils_pct", "Neutrofili (%)", listOf()),
+    LabDefinition("lymphocytes", "Linfociti", listOf("linfociti assoluti", "linfociti", "lymphocytes", "lymphozyten")),
+    LabDefinition("lymphocytes_pct", "Linfociti (%)", listOf()),
+    LabDefinition("monocytes", "Monociti", listOf("monociti", "monocytes", "monozyten")),
+    LabDefinition("monocytes_pct", "Monociti (%)", listOf()),
+    LabDefinition("eosinophils", "Eosinofili", listOf("granulociti eosinofili", "eosinofili", "eosinophils", "eosinophile", "éosinophiles")),
+    LabDefinition("eosinophils_pct", "Eosinofili (%)", listOf()),
+    LabDefinition("basophils", "Basofili", listOf("granulociti basofili", "basofili", "basophils", "basophile", "basophiles")),
+    LabDefinition("basophils_pct", "Basofili (%)", listOf())
 )
 data class LabValue(val code: String, val value: String, val unit: String, val reference: String) {
     fun json() = JSONObject().put("code", code).put("value", value).put("unit", unit).put("reference", reference)
@@ -116,6 +133,21 @@ data class LabValue(val code: String, val value: String, val unit: String, val r
         "hba1c" -> t(R.string.lab_name_hba1c)
         "vitamin_d" -> t(R.string.lab_name_vitamin_d)
         "b12" -> t(R.string.lab_name_b12)
+        "rdw" -> t(R.string.lab_name_rdw)
+        "rdw_sd" -> t(R.string.lab_name_rdw_sd)
+        "mpv" -> t(R.string.lab_name_mpv)
+        "psa" -> t(R.string.lab_name_psa)
+        "neutrophils" -> t(R.string.lab_name_neutrophils)
+        "neutrophils_pct" -> t(R.string.lab_name_neutrophils_pct)
+        "lymphocytes" -> t(R.string.lab_name_lymphocytes)
+        "lymphocytes_pct" -> t(R.string.lab_name_lymphocytes_pct)
+        "monocytes" -> t(R.string.lab_name_monocytes)
+        "monocytes_pct" -> t(R.string.lab_name_monocytes_pct)
+        "eosinophils" -> t(R.string.lab_name_eosinophils)
+        "eosinophils_pct" -> t(R.string.lab_name_eosinophils_pct)
+        "basophils" -> t(R.string.lab_name_basophils)
+        "basophils_pct" -> t(R.string.lab_name_basophils_pct)
+        "urine_culture" -> t(R.string.lab_name_urine_culture)
         else -> error("unknown_lab")
     }
 }
@@ -123,23 +155,56 @@ data class LabReport(val id: String, val t: Long, val values: List<LabValue>)
 private val labNumber = Regex("[<>≤≥]?\\s*-?\\d{1,9}(?:[.,]\\d{1,8})?")
 private val labUnit = Regex("(?:10\\^[369]|10\\^12)/(?:L|[µμu]L)|(?:[µμu]?mol|mmol|nmol|pmol|mIU|[µμu]IU|IU|U|ng|pg|[µμu]g|mg|g)/(?:dL|mL|L)|mmol/mol|fL|pg|%", RegexOption.IGNORE_CASE)
 private fun normalizeUnit(s: String): String = s.replace('μ', 'µ').replace("uL", "µL").replace("ug", "µg").replace("umol", "µmol").replace("uIU", "µIU")
+private val labAliases = labDefinitions.flatMap { d -> d.aliases.distinct().map { d to it } }.sortedByDescending { it.second.length }
+private val differentialCodes = setOf("neutrophils", "lymphocytes", "monocytes", "eosinophils", "basophils")
+private val labQualitative = Regex("(?:negative|positive|negativo|negativa|positivo|positiva|negativ|positiv|négatif|négative|positif|positive|absent|present|assente|presente|abwesend|vorhanden|absente|présent|présente|indeterminate|indeterminato|indeterminata|unbestimmt|indéterminé|indéterminée|non reactive|non reattivo|non reattiva|non réactif|non réactive|nicht reaktiv|reactive|reattivo|reattiva|reaktiv|réactif|réactive|not detected|non rilevato|non rilevata|nicht nachgewiesen|non détecté|non détectée|detected|rilevato|rilevata|nachgewiesen|détecté|détectée)", RegexOption.IGNORE_CASE)
 fun parseLabLines(text: String): List<LabValue> {
-    return text.lineSequence().mapNotNull { line ->
-        // Match only rows that START with a recognized test, not an arbitrary heading containing a name.
-        val pair = labDefinitions.flatMap { d -> d.aliases.map { d to it } }.sortedByDescending { it.second.length }
-            .firstOrNull { (_, a) -> Regex("^\\s*" + Regex.escape(a) + "(?=\\s|[:(]|$)", RegexOption.IGNORE_CASE).containsMatchIn(line) } ?: return@mapNotNull null
-        val rest = line.trimStart().substring(pair.second.length).trimStart(' ', ':', '\t')
-        val value = labNumber.find(rest)?.takeIf { it.range.first <= 4 } ?: return@mapNotNull null
-        val tail = rest.substring(value.range.last + 1)
-        val unit = labUnit.find(tail) ?: return@mapNotNull null // Do not guess missing units or column order.
-        val refText = tail.substring(unit.range.last + 1).trim().trimStart('*', ' ')
+    return text.lineSequence().mapNotNull { raw ->
+        val line = raw.replace('\u00a0', ' ').replace('−', '-').trimStart()
+            .replace(Regex("^(?:Sg|S|P|B)-\\s*", RegexOption.IGNORE_CASE), "")
+        // A recognized name must start the row. Never scan arbitrary headings for a test name.
+        val pair = labAliases.firstOrNull { (_, alias) ->
+            Regex("^" + Regex.escape(alias) + "(?=\\s|[:(]|$)", RegexOption.IGNORE_CASE).containsMatchIn(line)
+        } ?: return@mapNotNull null
+        var rest = line.substring(pair.second.length).trimStart(' ', ':', '\t')
+        val suffix = Regex("^\\(([A-Za-z0-9% -]{1,16})\\)\\s*").find(rest)
+        if (suffix != null) {
+            val acronym = suffix.groupValues[1]
+            if (pair.first.aliases.none { it.equals(acronym, ignoreCase = true) } && !(pair.first.code == "plt" && acronym.equals("plts", ignoreCase = true))) return@mapNotNull null
+            rest = rest.substring(suffix.range.last + 1)
+        }
+        val qualitative = labQualitative.matchEntire(rest.trim())
+        if (qualitative != null) return@mapNotNull LabValue(pair.first.code, qualitative.value, "", "")
+        // Anchor the result before its unit: digits inside labels/units must never become values.
+        val value = labNumber.find(rest)?.takeIf { it.range.first == 0 } ?: return@mapNotNull null
+        val tail = rest.substring(value.range.last + 1).trimStart().trimStart('*', ' ')
+        val unit = labUnit.find(tail.replace(Regex("^[x×]\\s*(?=10)"), ""))?.takeIf { it.range.first == 0 } ?: return@mapNotNull null
+        val unitTail = tail.replace(Regex("^[x×]\\s*(?=10)"), "")
+        val refText = unitTail.substring(unit.range.last + 1).trim().trimStart('*', ' ')
+            .replace(Regex("^(?:Range previsto|Reference range|Referenzbereich|Valeurs de référence)\\s*:\\s*", RegexOption.IGNORE_CASE), "")
         val ref = Regex("^(?:[<>≤≥]\\s*\\d+(?:[.,]\\d+)?|\\d+(?:[.,]\\d+)?\\s*[-–]\\s*\\d+(?:[.,]\\d+)?)").find(refText)?.value ?: ""
         val normalized = normalizeUnit(unit.value)
         val canonical = listOf("%", "g/dL", "g/L", "mg/dL", "mg/L", "mmol/L", "µmol/L", "U/L", "IU/L", "mIU/L", "µIU/mL", "ng/mL", "pg/mL", "µg/dL", "µg/L", "fL", "pg", "10^9/L", "10^12/L", "10^3/µL", "10^6/µL", "mmol/mol", "pmol/L", "nmol/L").firstOrNull { it.equals(normalized, ignoreCase = true) } ?: return@mapNotNull null
-        LabValue(pair.first.code, value.value.trim(), canonical, ref)
+        val code = if (pair.first.code in differentialCodes && canonical == "%") pair.first.code + "_pct" else pair.first.code
+        if (pair.first.code in differentialCodes && canonical !in listOf("%", "10^9/L", "10^3/µL")) return@mapNotNull null
+        LabValue(code, value.value.trim(), canonical, ref)
     }.toList().groupBy { it.code }.filterValues { it.size == 1 }.values.map { it.single() }
 }
 
+data class LabDraft(val values: List<LabValue>, val date: LocalDate?)
+fun parseLabReportDate(text: String): LocalDate? {
+    // Only an explicit report-date label; never dates of birth, requests or disclaimer notices.
+    val pattern = Regex("(?:referto\\s+del|report\\s+date|date\\s+of\\s+report|befunddatum|date\\s+du\\s+(?:compte[- ]rendu|rapport))\\s*:?\\s*(\\d{1,4}[-/.]\\d{1,2}[-/.]\\d{1,4})", RegexOption.IGNORE_CASE)
+    val dates = pattern.findAll(text).mapNotNull { match ->
+        val parts = match.groupValues[1].split('-', '/', '.')
+        runCatching {
+            if (parts[0].length == 4) LocalDate.of(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+            else if (parts[2].length == 4) LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
+            else null
+        }.getOrNull()
+    }.distinct().toList()
+    return dates.singleOrNull()
+}
 object LabDocuments {
     private suspend fun recognize(bitmap: Bitmap): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -162,7 +227,7 @@ object LabDocuments {
             }
         } finally { recognizer.close() }
     }
-    suspend fun extract(ctx: Context, uri: Uri): List<LabValue> = withContext(Dispatchers.IO) {
+    suspend fun extract(ctx: Context, uri: Uri): LabDraft = withContext(Dispatchers.IO) {
         // A private, short-lived file is needed by PdfRenderer. Never keep source filenames or URI permissions.
         val file = File.createTempFile("lab-", ".bin", ctx.cacheDir)
         try {
@@ -197,9 +262,23 @@ object LabDocuments {
                 var sample = 1
                 while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 3000) sample *= 2
                 val bitmap = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: error("document_unsupported")
-                try { recognize(bitmap) } finally { bitmap.recycle() }
+                // Honor camera EXIF orientation, including mirrored photos.
+                val orientation = runCatching { ExifInterface(file).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+                val matrix = Matrix().apply {
+                    when (orientation) {
+                        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f, 1f)
+                        ExifInterface.ORIENTATION_ROTATE_180 -> setRotate(180f)
+                        ExifInterface.ORIENTATION_FLIP_VERTICAL -> setScale(1f, -1f)
+                        ExifInterface.ORIENTATION_TRANSPOSE -> { setRotate(90f); postScale(-1f, 1f) }
+                        ExifInterface.ORIENTATION_ROTATE_90 -> setRotate(90f)
+                        ExifInterface.ORIENTATION_TRANSVERSE -> { setRotate(-90f); postScale(-1f, 1f) }
+                        ExifInterface.ORIENTATION_ROTATE_270 -> setRotate(-90f)
+                    }
+                }
+                val oriented = if (matrix.isIdentity) bitmap else Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                try { recognize(oriented) } finally { if (oriented !== bitmap) oriented.recycle(); bitmap.recycle() }
             }
-            parseLabLines(text) // Raw text and patient headings never leave this function.
+            LabDraft(parseLabLines(text), parseLabReportDate(text)) // Raw text and patient headings never leave this function.
         } finally { file.delete() }
     }
 }
@@ -232,8 +311,13 @@ fun LabsScreen(pid: String) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             busy = true; draft = emptyList(); checked = false; message = null; date = ""; importId = UUID.randomUUID().toString()
-            try { draft = LabDocuments.extract(ctx, uri); if (draft.isEmpty()) message = t(R.string.labs_no_results) }
-            catch (_: Exception) { message = t(R.string.labs_failed) } finally { busy = false }
+            try {
+                val extracted = LabDocuments.extract(ctx, uri)
+                draft = extracted.values; date = extracted.date?.toString().orEmpty()
+                if (draft.isEmpty()) message = t(R.string.labs_no_results)
+                else if (extracted.date?.let { it.isBefore(LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(364)) || it.isAfter(LocalDate.now(ZoneId.of("Europe/Zurich"))) } == true) message = t(R.string.labs_date_outside)
+            }
+            catch (e: Exception) { message = t(if (e.message == "document_unsupported") R.string.labs_format_unsupported else R.string.labs_failed) } finally { busy = false }
         }
     }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -242,7 +326,7 @@ fun LabsScreen(pid: String) {
             Panel {
                 Text(t(R.string.labs_intro), color = C.Muted, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
-                BigButton(t(if (busy) R.string.labs_working else R.string.labs_import), enabled = !busy) { picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }
+                BigButton(t(if (busy) R.string.labs_working else R.string.labs_import), enabled = !busy) { picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif")) }
                 Text(t(R.string.labs_privacy), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
             }
             message?.let { Text(it, color = C.Ink, fontSize = 14.sp) }

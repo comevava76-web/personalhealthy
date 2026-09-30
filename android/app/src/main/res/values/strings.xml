@@ -386,7 +386,7 @@
     <string name="labs_import">Import lab report</string>
     <string name="labs_working">Reading on this phone…</string>
     <string name="labs_privacy">The document is processed on this phone. Only confirmed results and the date are synchronized with your account. No Anthropic key is needed.</string>
-    <string name="labs_no_results">No supported result rows were found. Try a clearer document.</string>
+    <string name="labs_no_results">The app could not extract supported results from this document. Its layout or test names may not yet be supported.</string>
     <string name="labs_failed">Cannot read this document. Use an unencrypted PDF (up to 15 pages) or a clear image, maximum 20 MB.</string>
     <string name="labs_network">Cannot load the history. Check your connection and try again.</string>
     <string name="labs_review">Check the extracted results</string>
@@ -438,4 +438,21 @@
     <string name="lab_name_vitamin_d">Vitamin D</string>
     <string name="lab_name_b12">Vitamin B12</string>
 <string name="disc_health_consent">I explicitly consent to storing my confirmed health results with my account as described above.</string>
-<string name="labs_retry_scan">Retake photo</string><string name="sub_data_access">View and download my data</string></resources>
+<string name="labs_retry_scan">Retake photo</string><string name="sub_data_access">View and download my data</string>    <string name="lab_name_rdw">RDW</string>
+    <string name="lab_name_rdw_sd">RDW-SD</string>
+    <string name="lab_name_mpv">MPV</string>
+    <string name="lab_name_psa">PSA</string>
+    <string name="lab_name_neutrophils">Neutrophils</string>
+    <string name="lab_name_neutrophils_pct">Neutrophils (%)</string>
+    <string name="lab_name_lymphocytes">Lymphocytes</string>
+    <string name="lab_name_lymphocytes_pct">Lymphocytes (%)</string>
+    <string name="lab_name_monocytes">Monocytes</string>
+    <string name="lab_name_monocytes_pct">Monocytes (%)</string>
+    <string name="lab_name_eosinophils">Eosinophils</string>
+    <string name="lab_name_eosinophils_pct">Eosinophils (%)</string>
+    <string name="lab_name_basophils">Basophils</string>
+    <string name="lab_name_basophils_pct">Basophils (%)</string>
+    <string name="labs_format_unsupported">This file format is unsupported or the document is encrypted. Use an unencrypted PDF, JPEG, PNG or WebP image. HEIC/HEIF requires support on this phone.</string>
+    <string name="lab_name_urine_culture">Urine culture</string>
+    <string name="labs_date_outside">The extracted report date is outside the current 365-day history window. Check the original date; do not replace it with a recent date to save an older report.</string>
+</resources>
