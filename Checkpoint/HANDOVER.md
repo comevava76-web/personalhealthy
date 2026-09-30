@@ -1,12 +1,30 @@
-# HINT 365 — shared checkpoint, 29–30 September 2026
+# HINT 365 — shared handover
 
-Last updated: 2026-09-30, Europe/Zurich. Maintainer of this entry: Codex.
+Last updated: 2026-09-30, Europe/Zurich. Last editor: Codex / OpenAI.
 
-## Read this first
+Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
-This is the shared handover for Claude Code and Codex. The user may alternate between both tools. Read this checkpoint, current `main`, and `CLAUDE.md` before making changes. Update this file after completing work; record what actually shipped, evidence, remaining limitations and the next requested action. Do not describe a proposed feature as implemented.
+## Start here — shared working protocol
 
-**Current instruction: tracking only. No application changes are authorized in this turn.** The user rejected the current lab-import preview flow and described the replacement below. That replacement has NOT been implemented. This checkpoint is the only deliverable of the current turn.
+This is the single living handover. Read it at the start of every session, including when returning with the same tool the next day. Git stores earlier versions; do not create one file per tool or per session.
+
+Before work:
+1. Read this file first for project context and the latest user decisions.
+2. Inspect/fetch current Git without discarding local changes. Check the base commit, branch and work already in progress.
+3. Read `AGENTS.md`, `CLAUDE.md` and relevant component instructions; compare the requested task with the pending work below.
+4. Follow the latest user instruction. Pending ideas are not evidence that implementation was authorized.
+
+Before ending a work session:
+1. Refresh the current-state sections below: shipped version, actual changes, open issues, user decisions and the concrete next step.
+2. Append a concise entry to the session log at the bottom. Include date/time/timezone, developer/tool, request, changes, base/head or PR/commit references, validation and limits, deployment/release status and remaining work.
+3. Commit the handover with the related change. If nothing shipped or work is blocked, record that explicitly; never label a proposal as completed.
+4. Tell the user what was committed and where the next developer should resume.
+
+Keep current state concise and replace superseded statements there. Append to the session log; do not rewrite earlier factual entries to conceal history. Link details in PRs/test documents rather than copying raw logs. Do not store secrets or patient data.
+
+When developers work concurrently, use separate branches/worktrees and avoid overlapping scope unless agreed. Re-read the latest shared handover before merging, reconcile both state and log, and preserve every developer's entry. A worktree note is not a global task lock.
+
+**Latest authorized action: establish this shared handover and repository instructions only. No application changes are part of this action.** The user rejected the current lab-import preview flow and described the replacement below. That replacement has NOT been implemented. Wait for a subsequent instruction to implement it; do not restart it merely because the handover is being maintained.
 
 ## Published baseline
 
@@ -89,7 +107,7 @@ The user explicitly requested:
 5. If extraction is not sufficiently reliable, save nothing. No guesses, invented dates/ranges or partial writes presented as a complete import. An uncertain batch must fail clearly.
 6. Codex/Claude Code must provide a technical recommendation about OCR versus AI; the user supplies the product intent and expects the developer to choose/evaluate the technology.
 7. Maintain a shared Markdown tracking file under **`Checkpoint/` on Git** so either developer can pick up the work.
-8. **For this turn: only create tracking; make no app/backend/UI changes.** Do not start implementing items 1–6 without a subsequent instruction to proceed.
+8. **Latest action: maintain the shared handover and its repository instructions only; make no app/backend/UI changes.** Implementation of items 1–6 remains pending a subsequent instruction to proceed.
 
 A later implementation must align consent wording/flags with an automatic validated batch: the current endpoint requires `confirmed:true`, originally meaning explicit user review. Do not simply spoof that flag or remove validation. Ensure atomic storage, stable batch IDs, retry safety and no partial writes. Track processing locally and report errors without documents, names or values in logs. The user must not supply an Anthropic/OpenAI API key to enable this feature.
 
@@ -116,4 +134,35 @@ Primary files: `android/app/src/main/java/ch/personalhealthy/app/Labs.kt`; `andr
 
 Read `docs/testing/labs-security-review-2026-09-30.md` and `docs/testing/lab-document-parsing-2026-09-30.md` with the historical-status caveat above. Read `CLAUDE.md` for project conventions, then honor the latest user instruction if it differs. Do not rely on another tool's transient workspace, cached APK or previous authentication state: fetch current Git and verify grants.
 
-For every future checkpoint update record: developer/tool, date, base/head SHA, request, implemented changes, tests and their limits, PR/release/deployment links, and the next action. Append completion evidence and refresh the current-state sections. Never store credentials, signing-key files, tokens, real patient reports or patient identifiers in `Checkpoint/`.
+For every future checkpoint update record: developer/tool, date, base/head SHA, request, implemented changes, tests and their limits, PR/release/deployment links, and the next action. Append completion evidence to the session log and refresh the current-state sections. Never store credentials, signing-key files, tokens, real patient reports or patient identifiers in `Checkpoint/`.
+
+
+## Session log — append only
+
+### 2026-09-29–30 — Codex / OpenAI — feature and release work
+
+- Request: take over the existing project, add local lab import/history and localization, harden security, preserve APK update compatibility and publish.
+- Completed: PR #104; APK/server 0.1.99; large-APK hosting/deployment correction. Relevant application commits and validation are recorded above.
+- Limits: no universal report extraction, phone-photo accuracy benchmark, complete new-certificate Google recovery test or Play/iOS launch.
+- Next action at that time: investigate the user's readable PDF that produced no supported rows.
+
+### 2026-09-30 — Codex / OpenAI — readable report correction and release 100
+
+- Base: `b4643a672bdf4fa63b6b164210abe0fd2048fa9e`. Completed application head: `43a5fd307367f4d3b2bb35ff74dc4c3dc5c6b6ad`, PR #105.
+- Completed: expanded labels/catalog, qualitative statuses, explicit report-date extraction, camera orientation and image-format handling; docs regenerated. APK 0.1.100 and backend published.
+- Validation: 9 Kotlin regressions; local real digital-PDF extraction of 27 results, date and 21 references; PR checks and main release gates passed; signing lineage/digest verified. Evidence/limits above.
+- User feedback: app imports, but per-row preview and manual date selection are rejected. User wants an automatic reliable batch and dashboard, with no save when uncertain. This redesign has not shipped.
+
+### 2026-09-30 21:26–21:33 Europe/Zurich — Codex / OpenAI — initial tracking
+
+- Request: stop app changes; create a shared checkpoint for switching developers.
+- Completed: `Checkpoint/2026-09-30-HINT365.md`, documentation-only commit `441cb83398bee9c5d994828c2c88d7bb10207593`.
+- Validation: remote file content matched the authored brief. No app changes, build or deployment.
+- Next step: adopt one canonical living file and repository-wide reading/updating instructions.
+
+### 2026-09-30 21:35 Europe/Zurich — Codex / OpenAI — canonical handover protocol
+
+- Request: make the shared handover the first project-context document to read for Codex/ChatGPT, Claude Code, Kimi and future developers; require updating and committing before handoff.
+- Completed in this documentation commit: moved the dated brief to `Checkpoint/HANDOVER.md`; added the startup/closing protocol and append-only session log; added root `AGENTS.md`; linked the protocol first in `CLAUDE.md` and `README.md`. The former path is removed; its history remains in Git.
+- Validation: reviewed the document migration and repository pointers; only documentation/instruction files changed. No application build, APK or deployment triggered.
+- Next action: read this handover and the next user instruction. Automatic lab batch redesign remains pending; do not claim it is implemented.

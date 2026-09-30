@@ -1,5 +1,11 @@
 # HINT · regole per chi lavora su questo repository
 
+## Shared handover — mandatory first read for every session
+
+Read **[Checkpoint/HANDOVER.md](Checkpoint/HANDOVER.md)** first for project context, then follow **[AGENTS.md](AGENTS.md)** and the project rules below. This applies to Claude Code, Codex/ChatGPT, Kimi and all developers, including the same tool returning later.
+
+Before closing a session, refresh the handover's current state, append a dated entry identifying the developer/tool and its work, tests, commits/releases, limits and next step, and commit it with the related changes. Keep one living `HANDOVER.md`; use Git for history. Never mark pending work as completed or store secrets/patient data there. The user explicitly chose `Checkpoint/` for this shared handover.
+
 - **Documentazione sempre aggiornata, e sempre solo in inglese.** `docs/architecture/architecture.html` (pagina 1 funzionale, pagina 2 tecnologie)
   (pagina 3: flusso a runtime e CI/CD) va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
   `node docs/architecture/render.cjs` e si committano HTML, PDF e anteprime insieme alla modifica.

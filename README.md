@@ -1,5 +1,9 @@
 # PersonalHealthy
 
+## Developer entry point
+
+Before work, read **[Checkpoint/HANDOVER.md](Checkpoint/HANDOVER.md)** for the current project state and **[AGENTS.md](AGENTS.md)** for the shared handoff protocol. Every developer updates and commits the same handover before closing a session. The overview below contains historical setup information; use the handover for current implementation and release status.
+
 A personal health archive. First module: **HealthyInstantTracker**, the Android app for a blood-pressure diary.
 
 HealthyInstantTracker lets you photograph your blood-pressure monitor, reads the values automatically and prepares the report for your doctor.
