@@ -40,6 +40,8 @@ jobs:
           pair docs/guide-it.html docs/HINT-Guida-IT.pdf
           pair docs/guide-en.html docs/HINT-Guide-EN.pdf
           exit $fail
+      - name: The terms shown in the app are the server's text (same version, same fingerprint)
+        run: node --experimental-strip-types worker/scripts/sync-notice.mjs "$PWD/worker/src/notices.ts" android/app/src/main/res check
       - name: Every app text exists in Italian, German and French
         # Long legal texts may stay in English (Android falls back to it): list them in ALLOWED.
         run: |

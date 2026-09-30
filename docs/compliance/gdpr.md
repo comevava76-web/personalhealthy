@@ -65,6 +65,7 @@ every user accepts again at the next opening. Still open: G1, G5, G7, G9, G10, G
 | Processing | Purpose | Data subjects | Data | Recipients | Retention | Legal basis |
 |---|---|---|---|---|---|---|
 | Blood-pressure diary | keep, chart and share one's own readings | app users (18+) | SYS, DIA, PUL, date/time, moment, source | Cloudflare (processor) | 365 days | explicit consent, Art. 9(2)(a) |
+| Lab results | keep one's own lab history, one table across laboratories | app users (18+) | report date; test code or name as printed, value, unit and reference as printed; HMAC fingerprint of the file. **Not**: the document, its text, name, surname, date of birth or any other identifier (the document stays at rest only on the phone; in transit only these fields over HTTPS/TLS, requests signed by the phone key) | Cloudflare (processor) | until the user deletes them (a date, all, a report, the account): the purpose is the complete history, the user controls it (Art. 5(1)(e)); never deleted automatically | explicit consent, Art. 9(2)(a) |
 | Reading a photo of the display | turn a photo into three numbers | users with AI features on | photo (discarded), numbers | Anthropic, with the user's key | photo not kept | explicit consent |
 | Account and sign-in | find the diary again, secure access | users | HMAC of Google id, phone public key, consent time | Google (sign-in) | while the account exists | contract, Art. 6(1)(b) |
 | Doctor links and web sessions | show the report to the doctor chosen by the user | users, doctors | token fingerprint, period | the doctor | 7 days | consent / contract |
@@ -78,4 +79,10 @@ every user accepts again at the next opening. Still open: G1, G5, G7, G9, G10, G
 - **Medical devices (EU MDR / Swiss MedDO):** software that only records, stores and displays values without
   interpreting them is generally not a medical device (MDCG 2019-11). This is why the rules forbid diagnosis,
   judgement and "good/bad" colours: keep it that way. *Legal review* before adding any interpretation.
+- **Lab table, out-of-range marks (01.10.2026, asked by Human):** a lab result outside the reference interval printed on
+  the same report is shown in orange with ↑/↓. It repeats a comparison the report itself already makes (no threshold of
+  ours, no diagnosis, no advice, and the terms say so). Keep it a plain comparison with the printed reference; *legal
+  review* before the Play Store launch.
+- **Pseudonymized, not anonymous:** lab results carry no name, but they are linked to the account (and through the
+  Google HMAC to a person): they remain personal health data. Documents and texts must say "pseudonymized", never "anonymous".
 - **Google Play:** the Data safety form and the Health apps declaration must match this document.

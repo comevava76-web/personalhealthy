@@ -476,10 +476,16 @@ S.check("security", "HD3", "/my/ sends Strict-Transport-Security / nosniff", !!h
   run("INSERT INTO error_log (day, source, code, place, app_version, count, first_at, last_at) VALUES ('2000-01-01', 'server', 'qa_old', 'x', '', 1, ?, ?)", t - 91 * DAY, t - 91 * DAY);
   run("UPDATE persons SET email = 'someone@example.invalid' WHERE id = ?", dave.pid);
   run("UPDATE acceptances SET email = 'someone@example.invalid' WHERE person_id = ?", owner.pid);
+  // lab results: kept until the person deletes them, whatever the report or upload date
+  const lab = db.prepare("INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at) VALUES (?, ?, 'lab', ?, 'Europe/Zurich', 'lab', '[]', 'local-import', ?)");
+  lab.run("lab_qaoldreport", dave.pid, Math.round(t - 900 * DAY), Math.round(t - 10 * DAY));
+  lab.run("lab_qaoldupload", dave.pid, Math.round(t - 400 * DAY), Math.round(t - 366 * DAY));
   const accBefore = sql("SELECT COUNT(*) n FROM acceptances")[0].n;
   r = await web("GET", "/__scheduled?cron=17+3+*+*+*");
   await sleep(500);
-  const left = sql("SELECT id FROM measurements WHERE person_id = ? ORDER BY id", dave.pid).map((x) => x.id);
+  const left = sql("SELECT id FROM measurements WHERE person_id = ? AND kind = 'bp' ORDER BY id", dave.pid).map((x) => x.id);
+  const labsLeft = sql("SELECT id FROM measurements WHERE person_id = ? AND kind = 'lab' ORDER BY id", dave.pid).map((x) => x.id);
+  S.check("retention", "PU6", "lab results are never deleted by the nightly job, whatever their dates", labsLeft.join(",") === "lab_qaoldreport,lab_qaoldupload", labsLeft.join(","));
   S.check("retention", "PU1", "purge deletes readings older than 365 days, keeps 364.9 / 300 / 1 days", r.status === 200 && left.join(",") === "bp_qaage2,bp_qaage3,bp_qaage4", left.join(","));
   S.check("retention", "PU2", "purge deletes old scans, expired codes and sessions, error log > 90 days",
     sql("SELECT (SELECT COUNT(*) FROM scans WHERE id='scn_qaold') + (SELECT COUNT(*) FROM web_codes WHERE code_hash='qa-old-code') + (SELECT COUNT(*) FROM web_sessions WHERE id_hash='qa-old-sess') + (SELECT COUNT(*) FROM error_log WHERE code='qa_old') n")[0].n === 0, "");

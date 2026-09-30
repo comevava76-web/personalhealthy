@@ -8,7 +8,17 @@ import { NOTICE_TEXT, NOTICE_VERSION } from '../../../worker/src/notices.ts';
 const {chromium}=createRequire(import.meta.url)('playwright');
 const phone=newPhone(); assert.equal((await register(phone)).status,200);
 assert.equal((await call(phone,'POST','/v1/accept',{doc:'disclaimer',version:NOTICE_VERSION,lang:'en',healthConsent:true,textSha256:crypto.createHash('sha256').update(NOTICE_TEXT.en).digest('hex')})).status,200);
-for (let d=0;d<3;d++) assert.equal((await call(phone,'POST','/v1/labs',{id:crypto.randomUUID(),takenAt:Date.now()-(d+1)*30*864e5,confirmed:true,items:[{code:'wbc',value:(6.4+d*.2).toFixed(1),unit:'10^9/L',reference:'4-10'}]})).status,200);
+// Three synthetic reports with different tests: the table grows to the union, a missing test shows N/A.
+const zurichDay = (daysAgo) => { const d = new Date(Date.now() - daysAgo * 864e5); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - 2 * 3600e3; };
+const reports = [
+ [700, [{code:'wbc',value:'6.4',unit:'10^9/L',reference:'4-10'},{code:'hgb',value:'141',unit:'g/L',reference:'130 - 170'}]],
+ [60, [{code:'wbc',value:'6.6',unit:'10^9/L',reference:'4-10'},{code:'hgb',value:'128',unit:'g/L',reference:'130 - 170'},{code:'plt',value:'450',unit:'10^9/L',reference:'130 - 400'},{code:'',name:'FIBRINOGÈNO',value:'3,1',unit:'g/L',reference:'2,0 - 4,0'}]],
+ [30, [{code:'wbc',value:'6.8',unit:'10^9/L',reference:'4-10'},{code:'',name:'Fibrinogeno',value:'310',unit:'mg/dL',reference:'200 - 400'},{code:'',name:'INR',value:'1,02',unit:'',reference:'0,80 - 1,20'},{code:'urine_culture',value:'NEGATIVA',unit:'',reference:''}]],
+];
+for (const [ago, items] of reports) {
+ const r = await call(phone,'POST','/v1/labs',{id:crypto.randomUUID(),takenAt:zurichDay(ago),auto:true,fileHash:crypto.randomBytes(32).toString('hex'),items});
+ assert.equal(r.status,200,r.text);
+}
 const browser=await chromium.launch({executablePath:process.env.HINT_CHROMIUM});
 const out=process.env.HINT_SHOTS || '/tmp/hint-lab-shots';fs.mkdirSync(out,{recursive:true});
 const labels={it:['Referti','Globuli bianchi'],en:['Lab results','White blood cells'],de:['Laborbefunde','Leukozyten'],fr:['Analyses','Leucocytes']};
@@ -24,8 +34,14 @@ try {
   assert.ok(await page.locator('main').innerText().then(s=>s.includes(analyte)));
   assert.equal(await page.locator('#btn-csv').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'mobile width');
-  assert.equal(await page.locator('main tbody tr').count(),3);
-  assert.equal(await page.locator('main polyline').count(),1);
+  assert.equal(await page.locator('main tbody tr').count(),6,'one row per test ever measured');
+  assert.equal(await page.locator('main thead th.lab-day').count(),3,'one column per report date');
+  assert.equal(await page.locator('main td.na').count(),8,'another laboratory’s name and unit for the same test stay on one row; a test missing on a date is not available');
+  assert.equal(await page.locator('main td.na').first().innerText(),'–','a missing value is a dash');
+  assert.ok(await page.locator('main').innerText().then(s=>s.includes('FIBRINOGÈNO') && s.includes('3,1 g/L') && s.includes('310 mg/dL') && s.includes('NEGATIVA')));
+  assert.equal(await page.locator('main polyline').count(),0,'no charts: the table only');
+  assert.equal(await page.locator('main td.out').count(),2,'results outside the printed reference');
+  assert.deepEqual(await page.locator('main td.out .arrow').allInnerTexts(),['↓','↑']);
   assert.deepEqual(errors,[]);
   if (lang==='en' && width===1280) {
    const waiting=page.waitForEvent('download');await page.locator('#btn-pdf').click();
@@ -33,7 +49,13 @@ try {
    assert.ok(fs.statSync(out+'/lab-results.pdf').size>1000);
   }
   await page.screenshot({path:`${out}/labs-${lang}-${width}.png`,fullPage:true});
+  if (lang==='fr' && width===1280) {   // the last view deletes the oldest column
+   page.once('dialog',d=>d.accept());
+   await page.locator('.lab-del').first().click();
+   await page.waitForFunction(()=>document.querySelectorAll('main thead th.lab-day').length===2);
+   assert.equal(await page.locator('main tbody tr').count(),6);
+  }
   await ctx.close();
  }
- console.log('PASS: 8 browser views, localized names, 3 dated results, trend, PDF and no CSV button');
+ console.log('PASS: 8 browser views, localized names, dynamic table (union of tests, dash when missing), old report date, custom tests, out-of-range arrows, no charts, PDF, column deletion, no CSV button');
 } finally {await browser.close()}

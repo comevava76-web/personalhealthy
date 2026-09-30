@@ -126,6 +126,7 @@ object C {
     val Sys = Color(0xFF8C7BF2)   // systolic, violet (no red anywhere: red would read as "a problem")
     val Dia = Color(0xFF1FA396)   // diastolic, teal
     val Pul = Color(0xFFC08A1E)   // pulse, amber
+    val Out = Color(0xFFF29A3F)   // a lab result outside the reference printed on its report (asked by Human), with ↑ or ↓
     val Alert = Color(0xFFF0A35E)   // errors and deleting: warm orange, not red
 }
 

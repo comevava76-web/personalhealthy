@@ -289,22 +289,70 @@
     draw(); redraws.push(draw);
   }
 
-  const LAB = {"it": {"title": "Referti", "note": "Documenti elaborati sul telefono. Qui trovi solo risultati confermati e sincronizzati. Nessuna interpretazione medica.", "empty": "Importa un referto dall’app per iniziare lo storico.", "date": "Data", "test": "Analisi", "value": "Valore", "unit": "Unità", "reference": "Riferimento", "trend": "Andamento", "period": "Ultimi 365 giorni", "share": "Condividi il PDF delle analisi. Il documento originale non è incluso."}, "en": {"title": "Lab results", "note": "Documents are processed on your phone. Only confirmed, synchronized results appear here. No medical interpretation.", "empty": "Import a lab report in the app to start your history.", "date": "Date", "test": "Test", "value": "Value", "unit": "Unit", "reference": "Reference", "trend": "Trend", "period": "Last 365 days", "share": "Share the lab results PDF. The original document is not included."}, "de": {"title": "Laborbefunde", "note": "Dokumente werden auf Ihrem Telefon verarbeitet. Hier erscheinen nur bestätigte, synchronisierte Ergebnisse. Keine medizinische Interpretation.", "empty": "Importieren Sie einen Laborbefund in der App, um den Verlauf zu starten.", "date": "Datum", "test": "Test", "value": "Wert", "unit": "Einheit", "reference": "Referenzbereich", "trend": "Verlauf", "period": "Letzte 365 Tage", "share": "PDF der Laborwerte teilen. Das Originaldokument ist nicht enthalten."}, "fr": {"title": "Analyses", "note": "Les documents sont traités sur votre téléphone. Seuls les résultats confirmés et synchronisés apparaissent ici. Aucune interprétation médicale.", "empty": "Importez un compte rendu dans l’application pour commencer votre historique.", "date": "Date", "test": "Analyse", "value": "Valeur", "unit": "Unité", "reference": "Référence", "trend": "Évolution", "period": "365 derniers jours", "share": "Partager le PDF des analyses. Le document original n’est pas inclus."}}[LG];
-  const labName = code => window.HintLabLabels[LG][code] || code;
+  const LAB = {
+    it: { title: "Referti", above: "sopra il riferimento", below: "sotto il riferimento", note: "Risultati letti sul telefono dai referti che hai caricato: una colonna per ogni data di referto, una riga per ogni esame. Un trattino: esame non presente in quel referto. In arancione con ↑ o ↓ un risultato fuori dal riferimento stampato sul referto. Nessuna interpretazione medica.", empty: "Importa un referto dall’app per iniziare lo storico.", test: "Esame", del: "Elimina", delQ: (d) => `Eliminare tutti i risultati del ${d}? Il referto potrà essere caricato di nuovo.`, period: "Restano finché li elimini", delAll: "Elimina tutti i referti", delAllQ: "Eliminare tutti i risultati dei referti? Non si possono recuperare.", share: "Condividi il PDF delle analisi. Il documento originale non è incluso.", ref: "rif." },
+    en: { title: "Lab results", above: "above the reference", below: "below the reference", note: "Results read on your phone from the reports you uploaded: one column per report date, one row per test. A dash: test not in that report. In orange with ↑ or ↓: a result outside the reference printed on the report. No medical interpretation.", empty: "Import a lab report in the app to start your history.", test: "Test", del: "Delete", delQ: (d) => `Delete all results of ${d}? The report can be imported again.`, period: "Kept until you delete them", delAll: "Delete all lab results", delAllQ: "Delete all lab results? They cannot be recovered.", share: "Share the lab results PDF. The original document is not included.", ref: "ref." },
+    de: { title: "Laborbefunde", above: "über der Referenz", below: "unter der Referenz", note: "Auf Ihrem Telefon aus den hochgeladenen Befunden gelesene Werte: eine Spalte pro Befunddatum, eine Zeile pro Test. Ein Strich: Test nicht in diesem Befund. Orange mit ↑ oder ↓: ein Wert außerhalb der auf dem Befund gedruckten Referenz. Keine medizinische Interpretation.", empty: "Importieren Sie einen Laborbefund in der App, um den Verlauf zu starten.", test: "Test", del: "Löschen", delQ: (d) => `Alle Werte vom ${d} löschen? Der Befund kann erneut importiert werden.`, period: "Gespeichert, bis Sie sie löschen", delAll: "Alle Laborwerte löschen", delAllQ: "Alle Laborwerte löschen? Sie können nicht wiederhergestellt werden.", share: "PDF der Laborwerte teilen. Das Originaldokument ist nicht enthalten.", ref: "Ref." },
+    fr: { title: "Analyses", above: "au-dessus de la référence", below: "en dessous de la référence", note: "Résultats lus sur votre téléphone à partir des comptes rendus importés : une colonne par date, une ligne par analyse. Un tiret : analyse absente de ce compte rendu. En orange avec ↑ ou ↓ : un résultat hors de la référence imprimée sur le compte rendu. Aucune interprétation médicale.", empty: "Importez un compte rendu dans l’application pour commencer votre historique.", test: "Analyse", del: "Supprimer", delQ: (d) => `Supprimer tous les résultats du ${d} ? Le compte rendu pourra être importé à nouveau.`, period: "Conservés jusqu’à ce que vous les supprimiez", delAll: "Supprimer toutes les analyses", delAllQ: "Supprimer tous les résultats d’analyses ? Ils ne pourront pas être récupérés.", share: "Partager le PDF des analyses. Le document original n’est pas inclus.", ref: "réf." },
+  }[LG];
+  const labLabel = x => x.code ? (window.HintLabLabels[LG][x.code] || x.name || x.code) : x.name;
+  // one row per test across laboratories: same key as the app and the server (worker/src/labs.ts)
+  const labKey = x => x.code || "n:" + String(x.name).normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim() + (x.unit === "%" ? "|%" : "");
   const htmlSafe = x => String(x ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function labRows(data) { return data.items.flatMap(report => report.items.map(x => ({ ...x, t: report.t }))); }
+  /**
+   * The table grows with the reports: one column per report date (oldest on the left, reports of the same day
+   * together), one row per test ever measured, in the order they first appear. A test missing on a date shows a dash.
+   */
+  function labMatrix(data) {
+    const days = [...new Set(data.items.map(r => r.t))].sort((a, b) => a - b);
+    const tests = new Map();
+    for (const x of labRows(data).sort((a, b) => a.t - b.t)) {
+      const k = labKey(x);
+      if (!tests.has(k)) tests.set(k, { label: labLabel(x), cells: new Map() });
+      tests.get(k).cells.set(x.t, x);
+    }
+    return { days, tests: [...tests.values()] };
+  }
+  /**
+   * Compared only with the reference printed next to it on the same report: 1 above, -1 below, 0 inside or not
+   * comparable (qualitative, "< x" results, other references). A comparison, not a diagnosis (same rule in the app).
+   */
+  function outOfRange(x) {
+    if (/^[<>≤≥]/.test(x.value.trim())) return 0;
+    const v = Number(x.value.trim().replace(',', '.')); if (!Number.isFinite(v) || x.value.trim() === '') return 0;
+    const r = x.reference.trim().replaceAll(',', '.').replace('–', '-');
+    let m = r.match(/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/);
+    if (m) return v < +m[1] ? -1 : v > +m[2] ? 1 : 0;
+    m = r.match(/^([<>≤≥])\s*(\d+(?:\.\d+)?)$/);
+    if (m) { const k = +m[2]; return { '<': v >= k ? 1 : 0, '≤': v > k ? 1 : 0, '>': v <= k ? -1 : 0, '≥': v < k ? -1 : 0 }[m[1]]; }
+    return 0;
+  }
   function renderLabs(main, data) {
-    const rows = labRows(data), groups = new Map();
-    for (const x of rows) { const key = x.code + ':' + x.unit; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(x); }
-    const charts = [...groups.values()].map(xs => {
-      const points = xs.filter(x => /^-?\d+(?:[.,]\d+)?$/.test(x.value)).map(x => ({ ...x, n: Number(x.value.replace(',', '.')) }));
-      if (points.length < 2) return '';
-      const lo = Math.min(...points.map(x=>x.n)), hi = Math.max(...points.map(x=>x.n));
-      const t0 = points[0].t, t1 = points[points.length - 1].t;
-      const coords = points.map(x => `${40 + 500 * (x.t-t0)/(t1-t0 || 1)},${150 - 110 * (x.n-lo)/(hi-lo || 1)}`);
-      return `<section class="card"><h2>${htmlSafe(labName(xs[0].code))} · ${htmlSafe(xs[0].unit)}</h2><p class="muted">${LAB.trend} · ${day(t0)} – ${day(t1)} · ${lo}–${hi}</p><svg viewBox="0 0 580 190" role="img" aria-label="${htmlSafe(labName(xs[0].code)+' '+LAB.trend)}"><polyline points="${coords.join(' ')}" fill="none" stroke="#8C7BF2" stroke-width="3"/>${points.map((p,i)=>`<circle cx="${coords[i].split(',')[0]}" cy="${coords[i].split(',')[1]}" r="4" fill="#8C7BF2"/>`).join('')}</svg></section>`;
-    }).join('');
-    main.innerHTML = `<div class="bar"><h1>${LAB.title}</h1><span>${LAB.period}</span></div><p class="note">${LAB.note}</p>${!rows.length ? `<section class="card"><p>${LAB.empty}</p></section>` : charts + `<section class="card"><div class="table-wrap"><table><thead><tr>${[LAB.date,LAB.test,LAB.value,LAB.unit,LAB.reference].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.slice().reverse().map(x=>`<tr><td>${day(x.t)}</td><td>${htmlSafe(labName(x.code))}</td><td>${htmlSafe(x.value)}</td><td>${htmlSafe(x.unit)}</td><td>${htmlSafe(x.reference)}</td></tr>`).join('')}</tbody></table></div></section>`}`;
+    const rows = labRows(data), { days, tests } = labMatrix(data);
+    const head = `<thead><tr><th class="lab-test" scope="col">${LAB.test}</th>${days.map(t => `<th scope="col" class="lab-day"><span>${day(t)}</span><button type="button" class="lab-del" data-t="${t}" aria-label="${LAB.del} ${day(t)}">${LAB.del}</button></th>`).join('')}</tr></thead>`;
+    // the unit sits with each value: laboratories may measure the same test in different units
+    const body = tests.map(r => `<tr><th scope="row" class="lab-test">${htmlSafe(r.label)}</th>${days.map(t => {
+      const x = r.cells.get(t);
+      if (!x) return `<td class="na" aria-label="—">–</td>`;
+      const o = outOfRange(x);
+      return `<td${o ? ` class="out" title="${o > 0 ? LAB.above : LAB.below}"` : ''}><b>${htmlSafe(x.value)}${x.unit ? `<span class="u"> ${htmlSafe(x.unit)}</span>` : ''}${o ? `<span class="arrow" aria-label="${o > 0 ? LAB.above : LAB.below}">${o > 0 ? '↑' : '↓'}</span>` : ''}</b>${x.reference ? `<small>${LAB.ref} ${htmlSafe(x.reference)}</small>` : ''}</td>`;
+    }).join('')}</tr>`).join('');
+    main.innerHTML = `<div class="bar"><h1>${LAB.title}</h1><span>${LAB.period}</span></div><p class="note">${LAB.note}</p>${!rows.length ? `<section class="card"><p>${LAB.empty}</p></section>` : `<section class="card"><div class="table-wrap lab-wrap"><table class="lab-matrix">${head}<tbody>${body}</tbody></table></div><p class="lab-foot"><button type="button" class="lab-del lab-del-all">${LAB.delAll}</button></p></section>`}`;
+    const all = main.querySelector(".lab-del-all");
+    if (all) all.onclick = async () => {
+      if (!confirm(LAB.delAllQ)) return;
+      all.disabled = true;
+      try { await api("/my/api/labs", { method: "DELETE", body: JSON.stringify({ all: true }) }); load(); }
+      catch (e) { all.disabled = false; if (e.status === 401) signedOut(); else message(T.err, ""); }
+    };
+    main.querySelectorAll(".lab-del[data-t]").forEach(b => b.onclick = async () => {
+      const t = Number(b.dataset.t);
+      if (!confirm(LAB.delQ(day(t)))) return;
+      b.disabled = true;
+      try { await api("/my/api/labs", { method: "DELETE", body: JSON.stringify({ t }) }); load(); }
+      catch (e) { b.disabled = false; if (e.status === 401) signedOut(); else message(T.err, ""); }
+    });
   }
 
   /* ---------- modules ---------- */
@@ -792,10 +840,35 @@
       const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
       doc.setFontSize(18); doc.text("HINT 365 · " + LAB.title, 40, 45);
       doc.setFontSize(10); doc.text(LAB.period, 40, 65); let y = 95;
-      for (const x of labRows(current.data)) {
-        const lines = doc.splitTextToSize(`${day(x.t)}   ${labName(x.code)}   ${x.value} ${x.unit.replaceAll('µ','u')}   [${x.reference.replaceAll('–','-')}]`, 515);
-        if (y + lines.length * 14 > 790) { doc.addPage(); y = 45; }
-        doc.text(lines, 40, y); y += lines.length * 14 + 10;
+      // the same table as on screen, five report dates per block so it fits an A4 page
+      const { days, tests } = labMatrix(current.data), safe = (v) => String(v).replaceAll('µ', 'u').replaceAll('–', '-').replaceAll('’', "'");
+      const W0 = 170, CW = 69;
+      for (let i = 0; i < days.length; i += 5) {
+        const cols = days.slice(i, i + 5);
+        if (y > 700) { doc.addPage(); y = 45; }
+        doc.setFont(undefined, "bold"); doc.text(LAB.test, 40, y); cols.forEach((t, j) => doc.text(day(t), 40 + W0 + j * CW, y)); doc.setFont(undefined, "normal");
+        y += 6; doc.line(40, y, 555, y); y += 14;
+        for (const r of tests) {
+          const name = doc.splitTextToSize(safe(r.label), W0 - 8);
+          const h = Math.max(name.length * 11, 22);
+          if (y + h > 800) { doc.addPage(); y = 45; }
+          doc.text(name, 40, y);
+          cols.forEach((t, j) => {
+            const x = r.cells.get(t);
+            const o = x ? outOfRange(x) : 0, cx = 40 + W0 + j * CW;
+            if (o) doc.setTextColor(214, 120, 30);
+            const shown = x ? safe(x.value + (x.unit ? " " + x.unit : "")) : "-";
+            doc.text(shown, cx + (x ? 0 : 20), y);
+            if (o) {   // ↑ or ↓ drawn as a small triangle (the PDF font has no arrows)
+              const w = doc.getTextWidth(shown) + 4; doc.setFillColor(214, 120, 30);
+              if (o > 0) doc.triangle(cx + w, y - 1, cx + w + 6, y - 1, cx + w + 3, y - 7, "F"); else doc.triangle(cx + w, y - 7, cx + w + 6, y - 7, cx + w + 3, y - 1, "F");
+              doc.setTextColor(0, 0, 0);
+            }
+            if (x?.reference) { doc.setFontSize(7); doc.text(safe(LAB.ref + " " + x.reference).slice(0, 22), 40 + W0 + j * CW, y + 9); doc.setFontSize(10); }
+          });
+          y += h + 4;
+        }
+        y += 16;
       }
       return { doc, name: "HINT-lab-results.pdf" };
     }

@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-09-30, Europe/Zurich. Last editor: Claude Code.
+Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code.
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -24,7 +24,7 @@ Keep current state concise and replace superseded statements there. Append to th
 
 When developers work concurrently, use separate branches/worktrees and avoid overlapping scope unless agreed. Re-read the latest shared handover before merging, reconcile both state and log, and preserve every developer's entry. A worktree note is not a global task lock.
 
-**Latest authorized action (Claude Code, daily error-log routine): fix the 0.1.100 crash `Core.kt:72` and keep crash types readable in the error log.** Before that (Codex): establish this shared handover and repository instructions only. The user rejected the current lab-import preview flow and described the replacement below. That replacement has NOT been implemented. Wait for a subsequent instruction to implement it; do not restart it merely because the handover is being maintained.
+**Latest authorized action (Claude Code, 30.09–01.10.2026): implement the automatic lab import, duplicate protection and the web table, as decided by the user in chat (see "Automatic lab import — implemented" below).** The security Fix activation is parked in the backlog (issue #107).
 
 ## Published baseline
 
@@ -101,7 +101,13 @@ Documentation was updated: architecture HTML/PDF/previews, IT/EN guides/PDFs, le
 - Play Store SDK/Billing/native 16 KB readiness and iOS are separate tasks. No legal/security certification is claimed.
 - Older test notes include historical “release blocked/not deployed” statements and a 35-test count. This checkpoint and the actual release/commits supersede those historical status statements.
 
-## Latest user direction — pending implementation
+## Automatic lab import — implemented 2026-10-01 (Claude Code), awaiting the user's phone test
+
+User decisions in chat: (1) local reading only, PDF and photos, no other file types; (2) every test saved, also outside the catalog, with its printed name; (3) no duplicates: file fingerprint, and the same test on the same report date is unique; (4) older reports saved with their printed date; lab results are never deleted automatically, only by the user (a date, all, a report, or the account); terms and privacy state at rest / in transit (HTTPS/TLS, signed requests) / on the server, pseudonymized not anonymous, phone under the user's responsibility; (7) one row per test across laboratories (catalog synonyms; normalized printed names), the unit with each value, no conversion; (5) web table: rows = tests (union of all reports), columns = report dates, a dash when missing, no charts, orange ↑/↓ when outside the reference printed on the same report, delete a whole date; (6) import in the background with visible stages (Processing → Scanning → Uploading → saved).
+
+Technical choice (the user accepted the recommendation): local PDF text + ML Kit OCR with a strict whole-document gate, no cloud AI. Details, tests and limits: `docs/testing/lab-import-automatic-2026-10-01.md`. Terms version 17. Remaining: measure the gate on the user's real reports and photos; if too many real reports are refused, consider AI extraction as a separate, explicitly authorized decision (document leaves the phone, consent, cost).
+
+## Previous user direction (Codex handover, now superseded by the section above)
 
 The user explicitly requested:
 
@@ -223,3 +229,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Validation: local functional and security suite all green; drawing re-rendered, `docs/check-layout.cjs` ok. Android compile and APK by CI (*Android build check*, *Build*).
 - Not touched: lab import redesign (still pending, not authorized), signing keys, database.
 - Next: owner tries the new APK and opens a lab report with percentage rows (neutrophils, lymphocytes…); owner decisions on #94 (AGP), #98 (Kotlin 2.4.20) and the Fix secrets.
+
+### 2026-10-01 Europe/Zurich — Claude Code — automatic lab import, duplicates, web table
+
+- Request (user, chat): focus on lab report upload, saving to the database and the web report; park the security Fix activation (issue #107). Decisions listed in "Automatic lab import — implemented".
+- Changed: `LabsParser.kt` (new, plain Kotlin), `Labs.kt` (background `LabImport`, stages, no preview), strings IT/EN/DE/FR, `worker/src/labs.ts` (auto imports, custom names, `saveLab`, `deleteLabs`, HMAC file key), `lab_files` table, no automatic purge of lab results, delete a date or all on the web, `/my/api/labs` DELETE, web matrix + PDF, terms v17 + privacy, `worker/scripts/sync-notice.mjs` (+ Docs check), architecture, guides, demo, CLAUDE.md rules.
+- Validation: 15 parser tests on a plain JVM; functional suite, `labs-security.mjs`, `labs-ui.mjs` (8 views) green locally; Android compile and APK by CI.
+- Not done / limits: no measurement on real reports or phone photos yet; no AI extraction.
+- Next: the user installs the new APK over the existing one, accepts terms v17, imports a real PDF and a photo, and checks the web table.

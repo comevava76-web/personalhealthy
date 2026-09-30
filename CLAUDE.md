@@ -16,7 +16,17 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Niente rosso**, in nessun grafico, pulsante o logo: SYS viola, DIA verde acqua, PUL ambra; nessun colore deve sembrare
   un giudizio (né problema né «bene»). Unica eccezione, chiesta da Human: lo stato complessivo della console Security
   (Secure verde, Vulnerable arancione, Vulnerable · High risk rosso); gli stati Open/Fixing/Fixed/Failed sempre in inglese.
-- **Conservazione**: misure al massimo 365 giorni (cancellazione automatica ogni notte); le accettazioni delle condizioni restano
+  Seconda eccezione, chiesta da Human: nella tabella dei referti un risultato fuori dal riferimento stampato sullo stesso
+  referto è arancione con ↑ o ↓ (solo confronto fra numeri, mai diagnosi).
+- **Referti**: PDF o foto letti solo sul telefono, in background con stati visibili (Elaborazione → Scansione → Caricamento →
+  salvato); si salva tutto o niente (una data certa, ogni riga compresa, anche esami fuori catalogo col nome stampato);
+  mai due volte lo stesso file (impronta HMAC in `lab_files`) né lo stesso esame nella stessa data; referti vecchi salvati con
+  la loro data; i risultati dei referti non si cancellano mai in automatico: restano finché l'utente li elimina (una data,
+  tutti, un referto nell'app o l'account). Il documento resta sul telefono, in transito solo data e valori come stampati
+  (mai nome o riferimenti alla persona), sul server solo quelli: va scritto così in condizioni e privacy. Sul web una tabella: righe = esami, colonne = date, trattino se manca,
+  nessun grafico; si elimina una data intera. Il testo delle condizioni nell'app si genera con `worker/scripts/sync-notice.mjs`.
+- **Conservazione**: misure della pressione al massimo 365 giorni (cancellazione automatica ogni notte); risultati dei referti
+  finché l'utente li elimina; le accettazioni delle condizioni restano
   come prova. Se cambia, aggiornare condizioni d'uso (nuova versione), privacy e documento.
 - **Nessuna email nel database**: dell'account Google si salva solo un'impronta HMAC (`googleId` in `worker/src/index.ts`);
   l'email resta sul telefono. Nessuna funzione deve reintrodurla.

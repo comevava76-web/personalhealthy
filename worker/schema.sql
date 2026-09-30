@@ -55,6 +55,16 @@ CREATE TABLE IF NOT EXISTS measurements (
 );
 CREATE INDEX IF NOT EXISTS idx_meas_person_kind_time ON measurements (person_id, kind, taken_at);
 
+-- Lab reports already imported: a keyed fingerprint (HMAC with the server secret) of each file, so the same document
+-- is never saved twice. Nothing in it identifies the document or the person outside this database.
+CREATE TABLE IF NOT EXISTS lab_files (
+  person_id      TEXT NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+  file_hash      TEXT NOT NULL,
+  measurement_id TEXT NOT NULL,              -- the report saved from this file
+  created_at     INTEGER NOT NULL,
+  PRIMARY KEY (person_id, file_hash)
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key    TEXT PRIMARY KEY,
   value  TEXT NOT NULL
