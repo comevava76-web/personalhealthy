@@ -1,0 +1,39 @@
+name: Rebuild laboratory change documents
+on:
+  push:
+    branches: [fix/lab-document-layout-verified]
+    paths:
+      - 'docs/architecture/architecture.html'
+      - 'docs/guide-*.html'
+      - '.github/workflows/rebuild-lab-docs.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install renderer
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1
+          npx playwright install --with-deps chromium
+      - name: Render and verify current documents
+        run: |
+          node docs/architecture/render.cjs
+          node docs/render-guides.cjs
+          node docs/check-layout.cjs docs/architecture/architecture.html docs/guide-it.html docs/guide-en.html
+      - name: Commit generated documents
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/architecture/HINT-Architecture.pdf docs/architecture/page-*.png docs/HINT-Guida-IT.pdf docs/HINT-Guide-EN.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m 'Regenerate laboratory import guides and architecture previews'
+            git push origin HEAD:${{ github.ref_name }}
+          fi

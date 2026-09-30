@@ -382,7 +382,7 @@
     <string name="labs_import">Laborbefund importieren</string>
     <string name="labs_working">Wird auf dem Telefon gelesen…</string>
     <string name="labs_privacy">Das Dokument wird auf diesem Telefon verarbeitet. Nur bestätigte Ergebnisse und das Datum werden mit Ihrem Konto synchronisiert. Kein Anthropic-Schlüssel erforderlich.</string>
-    <string name="labs_no_results">Keine unterstützten Ergebniszeilen gefunden. Bitte ein deutlicheres Dokument verwenden.</string>
+    <string name="labs_no_results">Die App konnte keine unterstützten Ergebnisse aus diesem Dokument extrahieren. Das Layout oder die Testnamen werden möglicherweise noch nicht unterstützt.</string>
     <string name="labs_failed">Dokument nicht lesbar. Unverschlüsseltes PDF (bis zu 15 Seiten) oder klares Bild verwenden, maximal 20 MB.</string>
     <string name="labs_network">Verlauf konnte nicht geladen werden. Verbindung prüfen und erneut versuchen.</string>
     <string name="labs_review">Extrahierte Ergebnisse prüfen</string>
@@ -434,4 +434,21 @@
     <string name="lab_name_vitamin_d">Vitamin D</string>
     <string name="lab_name_b12">Vitamin B12</string>
 <string name="disc_health_consent">Ich willige ausdrücklich in die oben beschriebene Speicherung bestätigter Gesundheitsdaten mit meinem Konto ein.</string>
-<string name="labs_retry_scan">Foto erneut aufnehmen</string><string name="sub_data_access">Meine Daten ansehen und herunterladen</string></resources>
+<string name="labs_retry_scan">Foto erneut aufnehmen</string><string name="sub_data_access">Meine Daten ansehen und herunterladen</string>    <string name="lab_name_rdw">RDW</string>
+    <string name="lab_name_rdw_sd">RDW-SD</string>
+    <string name="lab_name_mpv">MPV</string>
+    <string name="lab_name_psa">PSA</string>
+    <string name="lab_name_neutrophils">Neutrophile</string>
+    <string name="lab_name_neutrophils_pct">Neutrophile (%)</string>
+    <string name="lab_name_lymphocytes">Lymphozyten</string>
+    <string name="lab_name_lymphocytes_pct">Lymphozyten (%)</string>
+    <string name="lab_name_monocytes">Monozyten</string>
+    <string name="lab_name_monocytes_pct">Monozyten (%)</string>
+    <string name="lab_name_eosinophils">Eosinophile</string>
+    <string name="lab_name_eosinophils_pct">Eosinophile (%)</string>
+    <string name="lab_name_basophils">Basophile</string>
+    <string name="lab_name_basophils_pct">Basophile (%)</string>
+    <string name="labs_format_unsupported">Dieses Format wird nicht unterstützt oder das Dokument ist verschlüsselt. Verwenden Sie ein unverschlüsseltes PDF oder JPEG, PNG, WebP. HEIC/HEIF erfordert Unterstützung auf diesem Telefon.</string>
+    <string name="lab_name_urine_culture">Urinkultur</string>
+    <string name="labs_date_outside">Das erkannte Befunddatum liegt außerhalb des aktuellen 365-Tage-Zeitraums. Prüfen Sie das Originaldatum; ersetzen Sie es nicht durch ein neueres Datum, um einen älteren Befund zu speichern.</string>
+</resources>

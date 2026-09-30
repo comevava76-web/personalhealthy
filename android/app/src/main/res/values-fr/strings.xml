@@ -382,7 +382,7 @@
     <string name="labs_import">Importer un compte rendu</string>
     <string name="labs_working">Lecture sur le téléphone…</string>
     <string name="labs_privacy">Le document est traité sur ce téléphone. Seuls les résultats confirmés et la date sont synchronisés avec votre compte. Aucune clé Anthropic nécessaire.</string>
-    <string name="labs_no_results">Aucune ligne de résultats prise en charge trouvée. Essayez un document plus lisible.</string>
+    <string name="labs_no_results">L’application n’a pas pu extraire de résultats pris en charge de ce document. Sa mise en page ou les noms des analyses ne sont peut-être pas encore pris en charge.</string>
     <string name="labs_failed">Document illisible. Utilisez un PDF non protégé (15 pages maximum) ou une image nette, jusqu’à 20 Mo.</string>
     <string name="labs_network">Impossible de charger l’historique. Vérifiez la connexion et réessayez.</string>
     <string name="labs_review">Vérifiez les résultats extraits</string>
@@ -434,4 +434,21 @@
     <string name="lab_name_vitamin_d">Vitamine D</string>
     <string name="lab_name_b12">Vitamine B12</string>
 <string name="disc_health_consent">Je consens explicitement au stockage des résultats de santé confirmés avec mon compte, comme décrit ci-dessus.</string>
-<string name="labs_retry_scan">Reprendre la photo</string><string name="sub_data_access">Consulter et télécharger mes données</string></resources>
+<string name="labs_retry_scan">Reprendre la photo</string><string name="sub_data_access">Consulter et télécharger mes données</string>    <string name="lab_name_rdw">RDW</string>
+    <string name="lab_name_rdw_sd">RDW-SD</string>
+    <string name="lab_name_mpv">MPV</string>
+    <string name="lab_name_psa">PSA</string>
+    <string name="lab_name_neutrophils">Neutrophiles</string>
+    <string name="lab_name_neutrophils_pct">Neutrophiles (%)</string>
+    <string name="lab_name_lymphocytes">Lymphocytes</string>
+    <string name="lab_name_lymphocytes_pct">Lymphocytes (%)</string>
+    <string name="lab_name_monocytes">Monocytes</string>
+    <string name="lab_name_monocytes_pct">Monocytes (%)</string>
+    <string name="lab_name_eosinophils">Éosinophiles</string>
+    <string name="lab_name_eosinophils_pct">Éosinophiles (%)</string>
+    <string name="lab_name_basophils">Basophiles</string>
+    <string name="lab_name_basophils_pct">Basophiles (%)</string>
+    <string name="labs_format_unsupported">Ce format n’est pas pris en charge ou le document est chiffré. Utilisez un PDF non chiffré ou une image JPEG, PNG, WebP. HEIC/HEIF nécessite la prise en charge du téléphone.</string>
+    <string name="lab_name_urine_culture">Culture urinaire</string>
+    <string name="labs_date_outside">La date extraite est hors de la période actuelle de 365 jours. Vérifiez la date originale ; ne la remplacez pas par une date récente pour enregistrer un compte rendu plus ancien.</string>
+</resources>

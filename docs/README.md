@@ -50,3 +50,8 @@ for the human. Drawn on page 5 of the architecture document.
 - Dashboard demo images and PDF refreshed for the Share/PDF toolbar; public favicon added to eliminate a browser resource error.
 
 APK binaries are hosted in GitHub Releases: bundled local OCR exceeds the Cloudflare static-asset limit. `/download` and `/HINT.apk` redirect to the promoted version. `promote-built-apk.yml` supports retrying deployment with an already verified APK after database migration has completed.
+
+## 2026-09-30: laboratory document parsing correction
+
+- `testing/lab-document-parsing-2026-09-30.md`: digital PDF reproduction, test labels, numeric catalog and image-format limitations.
+- Source PDFs and patient data are never committed as test fixtures.
