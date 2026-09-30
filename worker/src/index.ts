@@ -764,6 +764,10 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
   if (req.method === "POST" && url.pathname === "/v1/accept") {
+    // an app with older terms cannot accept the current ones: it gets the "install the latest version" screen
+    // (app_disabled), not a generic error (problem P-003)
+    if (data.doc === "disclaimer" && Number(data.version) < Number(DISCLAIMER_VERSION))
+      return fail("This version of HINT 365 shows older terms: install the latest one.", 426, "app_disabled");
     if (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION || data.healthConsent !== true) return fail("Unknown notice version", 400, "bad_version");
     const lang = String(data.lang || "").toLowerCase();
     if (!NOTICE_TEXT[lang]) return fail("Unsupported notice language", 400, "bad_version");
