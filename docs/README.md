@@ -50,7 +50,7 @@ for the human. Drawn on page 5 of the architecture document.
 - `demo/labs-it-mobile.png`, `demo/labs-en-desktop.png`, `demo/lab-results.pdf`: localized synthetic lab history and export, regenerated before release.
 - Dashboard demo images and PDF refreshed for the Share/PDF toolbar; public favicon added to eliminate a browser resource error.
 
-APK binaries are hosted in GitHub Releases: bundled local OCR exceeds the Cloudflare static-asset limit. `/download` and `/HINT.apk` redirect to the promoted version. `promote-built-apk.yml` supports retrying deployment with an already verified APK after database migration has completed.
+APK binaries are kept in GitHub Releases. Because the repository is private, `/download` serves the APK from the Worker: the build splits it into parts under Cloudflare's 25 MiB file limit (`public/dl/`, never committed) and the Worker joins them; without the parts it falls back to the release. `promote-built-apk.yml` supports retrying deployment with an already verified APK after database migration has completed.
 
 ## 2026-09-30: laboratory document parsing correction
 

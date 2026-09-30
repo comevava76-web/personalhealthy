@@ -447,6 +447,34 @@ async function readDisplay(env: Env, apiKey: string, image: string, lang: string
  * kept until the person deletes them), and so are expired
  * web codes, sessions and share links. The record of accepted terms (acceptances) is kept, as proof.
  */
+/**
+ * The latest APK, straight from this server: no GitHub account needed (the repository is private). The APK is larger
+ * than Cloudflare's 25 MiB limit per static file, so the build splits it into parts (public/dl/, with a manifest) and
+ * this joins them into one download. Without the parts (local runs), the GitHub release as before.
+ */
+async function downloadApk(env: Env, url: URL): Promise<Response> {
+  const version = Number(env.APP_VERSION) || 98;
+  const man = await env.ASSETS.fetch(new Request(url.origin + "/dl/HINT.apk.json"));
+  const m: any = man.ok ? await man.json().catch(() => null) : null;
+  if (!m || !Number.isSafeInteger(m.parts) || m.parts < 1 || m.parts > 8 || !Number.isSafeInteger(m.size))
+    return new Response(null, { status: 302, headers: { Location: `https://github.com/comevava76-web/personalhealthy/releases/download/v0.1.${version}/HealthyInstantTracker-0.1.${version}.apk`, "Cache-Control": "no-store" } });
+  const { readable, writable } = new FixedLengthStream(m.size);
+  (async () => {
+    try {
+      for (let i = 0; i < m.parts; i++) {
+        const part = await env.ASSETS.fetch(new Request(`${url.origin}/dl/HINT.apk.part${String(i).padStart(2, "0")}`));
+        if (!part.ok || !part.body) throw new Error("apk part missing");
+        await part.body.pipeTo(writable, { preventClose: true });
+      }
+      await writable.close();
+    } catch (e) { await writable.abort(e); }
+  })();
+  return new Response(readable, { headers: {
+    "Content-Type": "application/vnd.android.package-archive",
+    "Content-Disposition": `attachment; filename="HINT365-0.1.${Number(m.version) || version}.apk"`,
+    "Cache-Control": "no-store", "X-Content-SHA256": String(m.sha256 || "").slice(0, 64) } });
+}
+
 export async function purgeOld(env: Env) {
   await anonymizeGoogle(env);
   const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
@@ -498,10 +526,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     if (req.method === "GET" && url.pathname === "/terms") return termsPage(url.searchParams.get("lang") || (req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase());
     // the easy address to share: always the latest app
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
-    if (req.method === "GET" && url.pathname === "/HINT.apk") {
-      const version = Number(env.APP_VERSION) || 98;
-      return new Response(null, { status: 302, headers: { Location: `https://github.com/comevava76-web/personalhealthy/releases/download/v0.1.${version}/HealthyInstantTracker-0.1.${version}.apk`, "Cache-Control": "no-store" } });
-    }
+    if (req.method === "GET" && url.pathname === "/HINT.apk") return downloadApk(env, url);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
       // asked by the app when it opens, before anything else: is this version still allowed?
