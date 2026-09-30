@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-09-30, Europe/Zurich. Last editor: Codex / OpenAI.
+Last updated: 2026-09-30, Europe/Zurich. Last editor: Claude Code.
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -24,7 +24,7 @@ Keep current state concise and replace superseded statements there. Append to th
 
 When developers work concurrently, use separate branches/worktrees and avoid overlapping scope unless agreed. Re-read the latest shared handover before merging, reconcile both state and log, and preserve every developer's entry. A worktree note is not a global task lock.
 
-**Latest authorized action: establish this shared handover and repository instructions only. No application changes are part of this action.** The user rejected the current lab-import preview flow and described the replacement below. That replacement has NOT been implemented. Wait for a subsequent instruction to implement it; do not restart it merely because the handover is being maintained.
+**Latest authorized action (Claude Code, daily error-log routine): fix the 0.1.100 crash `Core.kt:72` and keep crash types readable in the error log.** Before that (Codex): establish this shared handover and repository instructions only. The user rejected the current lab-import preview flow and described the replacement below. That replacement has NOT been implemented. Wait for a subsequent instruction to implement it; do not restart it merely because the handover is being maintained.
 
 ## Published baseline
 
@@ -82,6 +82,11 @@ Existing `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSW
 APKs are about 60 MB, exceeding Cloudflare's 25 MB static asset limit. GitHub Releases hosts APK/AAB; `/download` and `/HINT.apk` route to the promoted APK. Server/site/database remain Cloudflare. Build workflow publishes the binary before deployment and has idempotent release handling; `promote-built-apk.yml` can promote an existing verified build.
 
 Documentation was updated: architecture HTML/PDF/previews, IT/EN guides/PDFs, legal exports, synthetic dashboard demos and test notes. A favicon fixed the browser suite's only console 404. `rebuild-lab-docs.yml` was added to render/verify document artifacts through CI when the local Chromium runtime failed.
+
+## What Claude Code changed (2026-09-28–30)
+
+- **Crash fix after release 100**: `t()` in `Core.kt` formatted every text, so the new lab names with a literal "(%)" (`lab_name_*_pct`) threw `UnknownFormatConversionException` (error log: app 100, `Core.kt:72`, 2 events). It now formats only when arguments are passed. The server error log now keeps any `crash:<ExceptionClass>` code instead of hiding a new crash type as `unknown`.
+- **Security and vulnerabilities** (already on main before Codex's releases): nightly OSV.dev scan of the full Gradle tree (app and build tools kept apart), Semgrep and gitleaks, results in D1; Admin → Security console with overall status, Fix column and live Open/Fixing/Fixed/Failed states (`docs/security/`). Fix needs the owner's secrets `SECURITY_FIX_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` (not set yet). Latest scan: 0 advisories in the app; 58 in Android build tools (AGP 8.5.2, #94, owner decides); Kotlin build-cache advisory Low (#97).
 
 ## Evidence and remaining limitations
 
@@ -209,3 +214,12 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Completed: updated the shared current-state instructions with the detailed user feedback, real progress/completion semantics, failure/no-save requirement and the next developer's technical evaluation task.
 - Validation: documentation-only update; no extraction behavior, UI, database, APK or deployment changed. Existing tests are not evidence that the proposed automatic flow is implemented.
 - Next action: the developer engaged by the user should start from the priority section above. The implementation remains pending.
+
+### 2026-09-30 evening Europe/Zurich — Claude Code — daily error-log routine, crash fix
+
+- Request: read this handover after Codex's releases 99–100; daily routine (error log, security-test issues, Dependabot).
+- Found: new crash in app 100 at `Core.kt:72`, logged as code `unknown` because the server dropped the unlisted exception class.
+- Changed: `Core.kt` `t()` formats only with arguments; `worker/src/errors.ts` accepts `crash:<JavaClassName>`; security drawing foot note now records the key rotation of 30.09.
+- Validation: local functional and security suite all green; drawing re-rendered, `docs/check-layout.cjs` ok. Android compile and APK by CI (*Android build check*, *Build*).
+- Not touched: lab import redesign (still pending, not authorized), signing keys, database.
+- Next: owner tries the new APK and opens a lab report with percentage rows (neutrophils, lymphocytes…); owner decisions on #94 (AGP), #98 (Kotlin 2.4.20) and the Fix secrets.
