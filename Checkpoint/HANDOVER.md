@@ -111,6 +111,42 @@ The user explicitly requested:
 
 A later implementation must align consent wording/flags with an automatic validated batch: the current endpoint requires `confirmed:true`, originally meaning explicit user review. Do not simply spoof that flag or remove validation. Ensure atomic storage, stable batch IDs, retry safety and no partial writes. Track processing locally and report errors without documents, names or values in logs. The user must not supply an Anthropic/OpenAI API key to enable this feature.
 
+## Priority for the next session — user feedback, 2026-09-30 21:43 Europe/Zurich
+
+Handoff for the developer engaged next, including tomorrow (2026-10-01). **Record of requested work only: this flow is not implemented yet.**
+
+### Observed state and unresolved reliability
+
+The user reports that lab import now loads the document and reads some results. This is evidence of functioning import, not evidence that OCR is reliable across reports/photos. Assess completeness and extraction accuracy before enabling automatic persistence. The verified digital-PDF example above must not be presented as a general OCR accuracy validation.
+
+### Required interaction after document selection
+
+- Do not display extracted values, a long scrolling preview, per-row edit fields, confirmation checkboxes or a date picker on the import screen.
+- Scanning, extraction and uploading the structured batch must run automatically after the user selects the document.
+- The date must be the date actually printed on the report and read reliably. No manual date entry/change and no substitution with today's date, date of birth, file date or request date.
+- If the date or extraction is uncertain, ambiguous or incomplete, fail the batch clearly and save nothing. Do not compensate for uncertainty by handing an editing form to the user.
+- Preserve numeric and qualitative results, units and supplied reference intervals. Do not silently drop unsupported rows and then present a complete-success message.
+
+### Progress and completion presentation
+
+Show a compact, pleasant status area with localized text advancing with the real work, for example:
+
+1. “Elaborazione in corso…” — opening/preparing the local document.
+2. “Scansione in corso…” — reading the document and extracting results.
+3. “Caricamento dati…” — saving the validated structured batch.
+4. “Dati caricati” — only after the backend acknowledges successful persistence.
+5. “Dati disponibili nello storico” — provide access to the report dashboard, where the results can actually be browsed.
+
+The user requested paced transitions rather than a static screen or a wall of values, mentioning short pauses. Short minimum display times/animations may smooth transitions, but must not block processing, fabricate progress percentages, or show scanning/saving/completion just because a fixed sleep elapsed. A failure must replace the progress state with a clear failure state, never a success state. Completion means an atomically saved, retry-safe batch, not merely successful text recognition.
+
+Keep report dates, references and textual results available in history/dashboard. Source-document processing remains on the phone; the authorized structured results are persisted in the account database. Preserve IT/EN/DE/FR localization and update-over-existing-APK compatibility.
+
+### Technical decision required before implementation
+
+The developer must assess whether the local PDF/OCR pipeline can satisfy this unattended flow. The user expects a recommendation, not to choose the technology unaided. If the current pipeline cannot meet the reliability/completeness gate, evaluate a semantic/multimodal AI approach against representative labeled documents. Do not equate an OCR recognition score or an AI's claimed confidence with trustworthy field association. No AI implementation or document transfer to a cloud provider is authorized by this documentation update; the existing local-processing constraint still applies.
+
+Next concrete task, when the user authorizes implementation: validate extraction/date/row coverage on varied digital PDFs, scans and photos; select the extraction strategy; then replace the import preview with the automatic batch state machine, atomic save and report-dashboard navigation. Reconcile the old-report/365-day issue without changing the printed report date.
+
 ## Technical assessment for the next developer
 
 Recommendation: **do not convert the current regex/catalog parser directly into automatic saving.** Its success on one PDF is insufficient for the proposed unattended flow.
@@ -166,3 +202,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Completed in this documentation commit: moved the dated brief to `Checkpoint/HANDOVER.md`; added the startup/closing protocol and append-only session log; added root `AGENTS.md`; linked the protocol first in `CLAUDE.md` and `README.md`. The former path is removed; its history remains in Git.
 - Validation: reviewed the document migration and repository pointers; only documentation/instruction files changed. No application build, APK or deployment triggered.
 - Next action: read this handover and the next user instruction. Automatic lab batch redesign remains pending; do not claim it is implemented.
+
+### 2026-09-30 21:43 Europe/Zurich — Codex / OpenAI — refined import UX handoff
+
+- Request: record that import reads some results but OCR reliability remains unverified; require a trustworthy report date and a fully automatic batch, with staged progress instead of values/date editing on the upload screen.
+- Completed: updated the shared current-state instructions with the detailed user feedback, real progress/completion semantics, failure/no-save requirement and the next developer's technical evaluation task.
+- Validation: documentation-only update; no extraction behavior, UI, database, APK or deployment changed. Existing tests are not evidence that the proposed automatic flow is implemented.
+- Next action: the developer engaged by the user should start from the priority section above. The implementation remains pending.
