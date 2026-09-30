@@ -68,8 +68,11 @@ fun englishText(ctx: Context, id: Int, vararg args: Any): String {
     return ctx.createConfigurationContext(conf).resources.getString(id, *args)
 }
 
-/** Translated text (English, Italian, German or French, following the phone). */
-fun t(id: Int, vararg args: Any): String = Txt.res?.getString(id, *args) ?: ""
+/**
+ * Translated text (English, Italian, German or French, following the phone). Formatted only when there are
+ * arguments: a plain text may contain a "%" of its own, such as "Neutrophils (%)" (error log 2026-09-30, Core.kt:72).
+ */
+fun t(id: Int, vararg args: Any): String = Txt.res?.let { if (args.isEmpty()) it.getString(id) else it.getString(id, *args) } ?: ""
 
 /** The moment of the day in the tables, short to save space: before 12:00 AM, after PM. */
 fun ampm(p: String): String = if (p == "morning") "AM" else "PM"
