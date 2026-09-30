@@ -7,7 +7,7 @@ import { NOTICE_TEXT } from "./notices";
 import { validateLabImport, loadLabs, saveLab, deleteLabs, labFileKey } from "./labs";
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
-import { logError } from "./errors";
+import { logError, countEvent } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
@@ -460,6 +460,7 @@ export async function purgeOld(env: Env) {
     env.DB.prepare("DELETE FROM web_sessions WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM web_shares WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM error_log WHERE last_at < ?1").bind(now - 90 * 864e5),
+    env.DB.prepare("DELETE FROM event_log WHERE last_at < ?1").bind(now - 90 * 864e5),
     env.DB.prepare("DELETE FROM seen_sigs WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1").bind(now - 2 * 864e5),
   ]);
@@ -481,9 +482,9 @@ const AUTHENTICATED = new WeakSet<Request>();
 const ROUTES = new Set([
   "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout", "/v1/credit", "/v1/admin/credit", "/v1/credit/history",
   "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription", "/v1/key", "/v1/key/check",
-  "/v1/bp/scan", "/v1/bp/confirm", "/v1/bp/voice", "/v1/bp", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
+  "/v1/bp/scan", "/v1/bp/confirm", "/v1/bp/voice", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
   "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
-  "/my/api/admin/app-min-version", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
+  "/my/api/admin/app-min-version", "/my/api/admin/observability", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
 ]);
 const routeName = (method: string, path: string) => (ROUTES.has(path) ? method + " " + path : "unknown");
 
@@ -786,8 +787,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
   if (url.pathname === "/v1/labs" && req.method === "POST") {
     if (await tooMany(q, "labs:" + pid, 30, DAY)) return fail("Too many imports", 429, "too_many");
-    const lab = validateLabImport(data);
-    if (!lab) return fail("Check the lab results and date", 400, "lab_invalid");
+    const lab = validateLabImport(data), ver = req.headers.get("X-App-Version");
+    if (!lab) { await countEvent(q, "lab_invalid", "POST /v1/labs", ver); return fail("Check the lab results and date", 400, "lab_invalid"); }
     const id = "lab_" + lab.id;
     const [existing] = await q("SELECT person_id, data, taken_at FROM measurements WHERE id = ?1", [id]);
     if (existing) {   // the same import sent again (a retry): the same answer, nothing saved twice
@@ -796,12 +797,14 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     }
     const fileKey = lab.fileHash ? await labFileKey(env.KEY_ENCRYPTION_KEY, pid, lab.fileHash) : null;
     const r = await saveLab(env.DB, q, pid, lab, fileKey, TZ, localStamp);
+    await countEvent(q, r.status === "saved" ? "lab_saved" : r.status === "conflict" ? "lab_conflict_values" : "lab_duplicate_" + r.reason, "POST /v1/labs", ver);
     if (r.status === "conflict") return fail("This report has different results from those already saved for the same day", 409, "lab_conflict_values");
     if (r.status === "duplicate") return json({ ok: true, id: r.id, duplicate: r.reason });
     return json({ ok: true, id: r.id, saved: r.saved, known: r.known });
   }
   if (url.pathname.startsWith("/v1/labs/") && req.method === "DELETE") {
     await deleteLabs(env.DB, pid, { id: url.pathname.split('/').pop() || "" });
+    await countEvent(q, "lab_deleted_report", "DELETE /v1/labs", req.headers.get("X-App-Version"));
     return json({ ok: true });
   }
 

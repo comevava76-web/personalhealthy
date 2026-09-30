@@ -179,6 +179,19 @@ CREATE TABLE IF NOT EXISTS error_log (
 CREATE INDEX IF NOT EXISTS idx_meas_taken ON measurements (taken_at);
 CREATE INDEX IF NOT EXISTS idx_error_last ON error_log (last_at);
 
+-- What happens (not only what fails): lab import outcomes per day, outcome, place and app version. Codes only,
+-- never a value, a report date or a person. 90 days. Admin → Observability.
+CREATE TABLE IF NOT EXISTS event_log (
+  day          TEXT NOT NULL,
+  code         TEXT NOT NULL,                -- lab_saved, lab_duplicate_file, lab_conflict_values, …
+  place        TEXT NOT NULL,                -- "POST /v1/labs", "web"
+  app_version  TEXT NOT NULL DEFAULT '',
+  count        INTEGER NOT NULL DEFAULT 1,
+  first_at     INTEGER NOT NULL,
+  last_at      INTEGER NOT NULL,
+  PRIMARY KEY (day, code, place, app_version)
+);
+
 -- Signed calls already used (test report F-04): a copy of a call sent again is refused. Kept 10 minutes.
 CREATE TABLE IF NOT EXISTS seen_sigs (
   sig_hash    TEXT PRIMARY KEY,              -- SHA-256 of the signature

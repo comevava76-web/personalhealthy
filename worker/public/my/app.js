@@ -619,6 +619,15 @@
     vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
     vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
     secT: "Sicurezza e vulnerabilità", secOpen: "Apri la console",
+    obT: "Observability", obOpen: "Apri Observability", obSub: "Vulnerabilità, compliance UE e Svizzera, problemi incontrati dagli utenti e come sono stati risolti, esiti dei caricamenti. Solo codici e conteggi: nessun valore, nessun nome.",
+    obSum: (c, o, p) => `Compliance ${c.ok}/${c.all} · ${o} vulnerabilità aperte · ${p} problemi aperti`,
+    obVul: "Vulnerabilità aperte", obVulU: "librerie, codice, segreti", obCmp: "Compliance", obCmpU: (p, o) => `${p} parziali · ${o} aperti`, obPrb: "Problemi aperti", obPrbU: "errori reali, ultimi 90 giorni", obImp: "Referti caricati", obImpU: (f) => `ultimi 30 giorni · ${f} non salvati`,
+    obCmpT: "Compliance UE e Svizzera (GDPR, LPD)", obCmpN: (d) => `Autovalutazione dello sviluppatore, non parere legale · rivista il ${d} · fonte docs/compliance/gdpr.md`,
+    obCmpCols: ["", "Ambito", "Requisito", "Norma", "Stato", "Evidenza · prossimo passo"],
+    obPrbT: "Problemi e risoluzioni", obPrbN: "Dal registro errori (90 giorni) e dal registro dei problemi su git: causa, correzione e pull request.",
+    obPrbCols: ["Problema", "Dove", "Versioni", "Volte", "Ultima", "Stato", "Causa · correzione"],
+    obEvT: "Caricamento referti · ultimi 30 giorni", obEvN: "Esiti contati dal server e motivi dei rifiuti sul telefono. Solo codici.",
+    obEvCols: ["Esito", "Volte", "Versioni", "Ultimo"], obSecOpen: "Console di sicurezza →", obNew: "nuovo, da analizzare",
     secSum: (s) => `${s.vulnerable} librerie vulnerabili su ${s.libraries ?? "?"} · ${s.code} nel nostro codice · ${s.secrets} segreti`,
     secNone: "Nessuna scansione ancora: la prima gira stanotte alle 06:10.", secAt: (d) => `Ultima scansione: ${d}`,
     back: "← Admin", conT: "Console di sicurezza",
@@ -643,6 +652,15 @@
     vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
     vAskOn: "Every installed version works again. Confirm?",
     secT: "Security and vulnerabilities", secOpen: "Open the console",
+    obT: "Observability", obOpen: "Open Observability", obSub: "Vulnerabilities, EU and Swiss compliance, problems users met and how they were solved, import outcomes. Codes and counts only: no value, no name.",
+    obSum: (c, o, p) => `Compliance ${c.ok}/${c.all} · ${o} open vulnerabilities · ${p} open problems`,
+    obVul: "Open vulnerabilities", obVulU: "libraries, code, secrets", obCmp: "Compliance", obCmpU: (p, o) => `${p} partial · ${o} open`, obPrb: "Open problems", obPrbU: "real errors, last 90 days", obImp: "Reports imported", obImpU: (f) => `last 30 days · ${f} not saved`,
+    obCmpT: "EU and Swiss compliance (GDPR, FADP)", obCmpN: (d) => `Developer's self-assessment, not legal advice · reviewed ${d} · source docs/compliance/gdpr.md`,
+    obCmpCols: ["", "Area", "Requirement", "Law", "Status", "Evidence · next step"],
+    obPrbT: "Problems and resolutions", obPrbN: "From the error log (90 days) and the problem registry in git: cause, fix and pull request.",
+    obPrbCols: ["Problem", "Where", "Versions", "Times", "Last", "Status", "Cause · fix"],
+    obEvT: "Lab report import · last 30 days", obEvN: "Outcomes counted by the server and reasons for refusals on the phone. Codes only.",
+    obEvCols: ["Outcome", "Times", "Versions", "Last"], obSecOpen: "Security console →", obNew: "new, to analyse",
     secSum: (s) => `${s.vulnerable} vulnerable libraries out of ${s.libraries ?? "?"} · ${s.code} in our code · ${s.secrets} secrets`,
     secNone: "No scan yet: the first runs tonight at 06:10.", secAt: (d) => `Last scan: ${d}`,
     back: "← Admin", conT: "Security console",
@@ -683,6 +701,10 @@
         <div class="meter" role="img" aria-label="${pcText}"><i style="width:${Math.max(pc, 0.6)}%"></i></div>
         <p class="muted small">${AD.stNote(pcText)}</p>
       </div>
+      <div class="card sec"><div class="card-h"><h2>${AD.obT}</h2></div>
+        <p class="muted small">${AD.obSub}</p>
+        <div class="send" style="margin:8px 0 6px"><button class="btn" type="button" id="adm-obs">${AD.obOpen}</button></div>
+      </div>
       <div class="card sec"><div class="card-h"><h2>${AD.secT}</h2></div>
         <p>${d.security ? AD.secSum(d.security) : AD.secNone}</p>
         ${d.security ? `<p class="muted small">${AD.secAt(day(d.security.at) + " " + time(d.security.at))}</p>` : ""}
@@ -704,6 +726,58 @@
     const off = $("adm-off"); if (off) off.onclick = () => setMin(v.newest, AD.vAskOff(ver(v.newest)));
     const on = $("adm-on"); if (on) on.onclick = () => setMin(0, AD.vAskOn);
     $("adm-sec").onclick = loadSecurity;
+    $("adm-obs").onclick = loadObservability;
+  }
+
+  /* ---------- Observability (owner only): vulnerabilities, compliance, problems and how they were solved, import
+     outcomes. Everything is a code or a count: never a value, a report or a person. ---------- */
+  const OB_STATE = { compliant: ["ok", "Compliant"], partial: ["warn", "Partial"], open: ["open", "Open"],
+    fixed: ["ok", "Fixed"], fixing: ["fixing", "Fixing"], no_action: ["muted", "No action"], new: ["open", "Open"] };
+  const obChip = (s) => { const [c, l] = OB_STATE[s] || OB_STATE.open; return `<span class="ob s-${c}">${l}</span>`; };
+  async function loadObservability() {
+    main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
+    let d;
+    try { d = await api("/my/api/admin/observability"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
+    const ctl = d.compliance.controls, cnt = (s) => ctl.filter((c) => c.status === s).length;
+    const openVul = d.openFindings.reduce((a, b) => a + b.n, 0);
+    const probs = d.errors.filter((e) => !e.problem || ["open", "fixing"].includes(e.problem.status));
+    const ev = Object.fromEntries(d.events.map((e) => [e.code, e]));
+    const saved = ev.lab_saved?.n || 0;
+    const refused = d.errors.filter((e) => /^lab_/.test(e.code) && e.last_at > Date.now() - 30 * 864e5).reduce((a, b) => a + b.n, 0) + (ev.lab_conflict_values?.n || 0) + (ev.lab_invalid?.n || 0);
+    const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
+    const link = (u, label) => (u && /^https:\/\//.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(label)}</a>` : "");
+    const gh = (path) => `https://github.com/comevava76-web/personalhealthy/blob/main/${path}`;
+    main.innerHTML = `
+      <div class="bar"><button class="btn ghost" type="button" id="ob-back">${AD.back}</button><h1>${AD.obT}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
+      <p class="note">${AD.obSub}</p>
+      <section class="tiles adm four">
+        ${tile(AD.obVul, openVul, AD.obVulU)}
+        ${tile(AD.obCmp, `${cnt("compliant")}/${ctl.length}`, AD.obCmpU(cnt("partial"), cnt("open")))}
+        ${tile(AD.obPrb, probs.length, AD.obPrbU)}
+        ${tile(AD.obImp, saved, AD.obImpU(refused))}
+      </section>
+      <p style="margin:4px 0 14px"><a href="#" id="ob-sec">${AD.obSecOpen}</a></p>
+      <div class="card"><div class="card-h"><h2>${AD.obCmpT}</h2></div><p class="muted small">${AD.obCmpN(esc(d.compliance.reviewed))}</p>
+        <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obCmpCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+        ${ctl.map((c) => `<tr><td class="muted small">${esc(c.id)}</td><td>${esc(c.area)}</td><td>${esc(c.requirement)}</td><td class="small">${esc(c.law)}</td><td>${obChip(c.status)}</td>
+          <td class="small">${esc(c.evidence)}${c.next ? `<br><b>→</b> ${esc(c.next)}` : ""} ${link(gh(c.doc), "doc")}</td></tr>`).join("")}
+        </tbody></table></div></div>
+      <div class="card"><div class="card-h"><h2>${AD.obPrbT}</h2></div><p class="muted small">${AD.obPrbN}</p>
+        <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obPrbCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+        ${d.errors.map((e) => { const p = e.problem; return `<tr><td>${p ? `<b>${esc(p.id)}</b> ${esc(p.title)}` : `<code>${esc(e.code)}</code> <span class="muted small">${AD.obNew}</span>`}</td>
+          <td class="small"><code>${esc(e.place)}</code> · ${esc(e.source)}</td><td class="small">${esc(e.versions || "")}</td><td>${e.n}</td><td class="small">${day(e.last_at)}</td>
+          <td>${obChip(p ? p.status : "new")}</td><td class="small">${p ? `${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}${p.fixedIn ? ` · ${esc(p.fixedIn)}` : ""}` : "—"}</td></tr>`; }).join("") || `<tr><td colspan="7">${AD.none}</td></tr>`}
+        ${d.problems.filter((p) => !d.errors.some((e) => e.problem && e.problem.id === p.id)).map((p) => `<tr class="old"><td><b>${esc(p.id)}</b> ${esc(p.title)}</td><td class="small">${esc(p.match?.place || p.match?.code || "")}</td>
+          <td class="small">${esc(p.versions || "")}</td><td>—</td><td class="small">${esc(p.found)}</td><td>${obChip(p.status)}</td><td class="small">${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}</td></tr>`).join("")}
+        </tbody></table></div></div>
+      <div class="card"><div class="card-h"><h2>${AD.obEvT}</h2></div><p class="muted small">${AD.obEvN}</p>
+        <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obEvCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+        ${[...d.events.map((e) => ({ code: e.code, n: e.n, versions: e.versions, last_at: e.last_at })),
+           ...d.errors.filter((e) => /^lab_|^import_failed$/.test(e.code)).map((e) => ({ code: e.code + " (" + e.source + ")", n: e.n, versions: e.versions, last_at: e.last_at }))]
+          .map((e) => `<tr><td><code>${esc(e.code)}</code></td><td>${e.n}</td><td class="small">${esc(e.versions || "")}</td><td class="small">${day(e.last_at)}</td></tr>`).join("") || `<tr><td colspan="4">${AD.none}</td></tr>`}
+        </tbody></table></div></div>`;
+    $("ob-back").onclick = loadAdmin;
+    $("ob-sec").onclick = (e) => { e.preventDefault(); loadSecurity(); };
   }
 
   /* ---------- the Security console (owner only): results of the nightly scans, written by CI into D1 ---------- */

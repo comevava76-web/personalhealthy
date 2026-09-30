@@ -21,8 +21,8 @@ const PLACES = new Set(["unknown", "app.js", "Report/PDF", "Report/Excel", "Labs
 const cleanPlace = (v: unknown) => {
   const s = String(v ?? "");
   if (PLACES.has(s)) return s;
-  if (/^(MainActivity|Core|Report|Labs|Billing|Google|Friends|Listen|Reminders)\.kt:\d{1,6}$/.test(s) || /^(app|report)\.js:\d{1,6}$/.test(s)) return s;
-  if (/^(GET|POST|DELETE) \/(v1|my\/api)\/(me|accept|web\/code|signout|credit|admin\/(credit|settings|subscription|invites|app-min-version|overview|security(?:\/(fix|status))?)|key(?:\/check)?|bp(?:\/(voice|scan|confirm))?|labs|sub\/verify|log|data|share|shares)$/.test(s)) return s;
+  if (/^(MainActivity|Core|Report|Labs|LabsParser|Billing|Google|Friends|Listen|Reminders)\.kt:\d{1,6}$/.test(s) || /^(app|report)\.js:\d{1,6}$/.test(s)) return s;
+  if (/^(GET|POST|DELETE) \/(v1|my\/api)\/(me|accept|web\/code|signout|credit|admin\/(credit|settings|subscription|invites|app-min-version|overview|observability|security(?:\/(fix|status))?)|key(?:\/check)?|bp(?:\/(voice|scan|confirm))?|labs|sub\/verify|log|data|share|shares)$/.test(s)) return s;
   return "unknown";
 };
 const cleanVersion = (v: unknown) => (/^\d{1,4}(\.\d{1,4}){0,3}$/.test(String(v ?? "")) ? String(v) : "");
@@ -46,5 +46,24 @@ export async function logError(q: Q, e: ErrorEntry): Promise<void> {
     );
   } catch (err) {
     console.error("error log failed");   // logging must never break a request
+  }
+}
+
+/**
+ * What happens, not only what fails: outcomes of the lab import (saved, already imported, conflict, refused…),
+ * counted per day, outcome, place and app version. Codes only: never a value, a name, a date of the report or a person.
+ * Kept 90 days, like the error log; shown to the owner in Admin → Observability.
+ */
+export const EVENTS = new Set(["lab_saved", "lab_duplicate_file", "lab_duplicate_values", "lab_conflict_values", "lab_invalid", "lab_deleted_day", "lab_deleted_all", "lab_deleted_report"]);
+export async function countEvent(q: Q, code: string, place: string, appVersion?: unknown): Promise<void> {
+  if (!EVENTS.has(code)) return;
+  try {
+    const now = Date.now();
+    await q(
+      `INSERT INTO event_log (day, code, place, app_version, count, first_at, last_at) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5)
+       ON CONFLICT (day, code, place, app_version) DO UPDATE SET count = count + 1, last_at = excluded.last_at`,
+      [zurichDay(now), code, place.slice(0, 40), cleanVersion(appVersion), now]);
+  } catch {
+    console.error("event log failed");   // counting must never break a request
   }
 }

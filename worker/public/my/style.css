@@ -244,3 +244,13 @@ td.pick .st { margin-left: 8px; }
 .lab-foot { margin: 10px 0 2px; text-align: right; }
 .lab-matrix td .u { font-weight: 400; color: var(--muted); font-size: 11px; }
 .lab-matrix td.out .u { color: #F29A3F; }
+
+/* Observability: statuses always in English, colours as in the Security console (the only exception to "no red" is there) */
+.ob { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; border: 1px solid var(--line); }
+.ob.s-ok { background: rgba(30,154,91,.18); color: #7FD9A8; border-color: rgba(30,154,91,.45); }
+.ob.s-warn { background: rgba(224,138,46,.16); color: #F2B26B; border-color: rgba(224,138,46,.45); }
+.ob.s-open { background: rgba(140,123,242,.16); color: #C9BEFF; border-color: rgba(140,123,242,.45); }
+.ob.s-fixing { background: rgba(31,163,150,.16); color: #7FD9CF; border-color: rgba(31,163,150,.45); }
+.ob.s-muted { color: var(--muted); }
+.ob-t td { vertical-align: top; }
+.ob-t tr.old td { opacity: .75; }

@@ -1,0 +1,7 @@
+{
+  "note": "Problems met by users (error log) and how they were solved. Updated by the developer with each fix, in the same pull request. Statuses: open, fixing, fixed, no_action. 'match' links a registry entry to the error log (code, and place when given).",
+  "problems": [
+    { "id": "P-001", "found": "2026-09-30", "title": "App closed when showing lab test names with \"(%)\"", "match": { "code": "unknown", "place": "Core.kt:72" }, "versions": "0.1.100", "status": "fixed", "cause": "t() always formatted the text, so the literal % in \"Neutrophils (%)\" threw UnknownFormatConversionException", "fix": "Format only when arguments are passed; the server keeps crash:<ExceptionClass> instead of \"unknown\"", "pr": "https://github.com/comevava76-web/personalhealthy/pull/106", "fixedIn": "0.1.101" },
+    { "id": "P-002", "found": "2026-09-27", "title": "Expired session asked to sign in again", "match": { "code": "no_session" }, "versions": "0.1.9x", "status": "no_action", "cause": "Expected behaviour after the session expired; not repeated", "fix": "None needed", "pr": "https://github.com/comevava76-web/personalhealthy/issues/87", "fixedIn": "" }
+  ]
+}
