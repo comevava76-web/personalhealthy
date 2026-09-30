@@ -115,7 +115,7 @@
         <li><b>Signs in with Google</b> once, through OAuth 2.0 / OpenID Connect (a signed ID token, never the password), and gives privacy consent.</li>
         <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (pseudonymous account code, phone, versions, text fingerprint, date).</li>
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
-        <li><b>Imports lab reports</b>: PDF text or local photo OCR; 50 numeric/qualitative tests, camera rotation handled; confirm fields/date before sync.</li>
+        <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
         <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (AI features).</li>
         <li><b>Looks back</b>: last reading, the week, the Report with charts and tiles.</li>
         <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
@@ -291,7 +291,7 @@
         <tr><td>Guides, documents</td><td>HTML → PDF (Playwright)</td><td><code>docs/</code></td></tr>
       </table>
       <h2>Database tables</h2>
-      <p><code>persons</code> accounts (pseudonymous account code, Google fingerprint, no email; subscription <code>sub_*</code>) · <code>measurements</code> pressure + lab results · <code>scans</code> photo readings · <code>ledger</code> credit and costs · <code>person_keys</code> encrypted Anthropic keys · <code>acceptances</code> accepted terms (versioned evidence) · <code>web_*</code> web access and doctor links · <code>settings</code>, <code>invites</code> · <code>error_log</code> · <code>seen_sigs</code>, <code>rate_limits</code> protection counters; <code>security_snapshot_findings</code> completed scan snapshots.</p>
+      <p><code>persons</code> accounts (pseudonymous account code, Google fingerprint, no email; subscription <code>sub_*</code>) · <code>measurements</code> pressure + lab results · <code>lab_files</code> keyed file fingerprints (no duplicates) · <code>scans</code> photo readings · <code>ledger</code> credit and costs · <code>person_keys</code> encrypted Anthropic keys · <code>acceptances</code> accepted terms (versioned evidence) · <code>web_*</code> web access and doctor links · <code>settings</code>, <code>invites</code> · <code>error_log</code> · <code>seen_sigs</code>, <code>rate_limits</code> protection counters; <code>security_snapshot_findings</code> completed scan snapshots.</p>
     </div>
     <div>
       <h2>Security and data</h2>
@@ -304,7 +304,7 @@
         <li><b>Owner's area</b> (web, owner only): totals only (users, AI on/off, readings by voice/Scan, AI spent, errors), D1 size vs the 500 MB free limit. Never values, codes or names.</li>
         <li><b>Subscription</b> (ready, off until Google Play): Play Billing, checked with the Play Developer API.</li>
                 <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an acceptance register.</li>
-        <li><b>Personal data</b>: no name, no email (Google account only as HMAC-SHA256); codes, cookies, links only as SHA-256; Anthropic keys AES-GCM; documents read on-device; only confirmed lab fields sync. Source files never uploaded. Cloudflare D1 is EU-bound.</li>
+        <li><b>Personal data</b>: no name, no email (Google account only as HMAC-SHA256); codes, cookies, links only as SHA-256; Anthropic keys AES-GCM; documents read on-device; only lab results and a keyed file fingerprint sync. Source files never uploaded. Cloudflare D1 is EU-bound.</li>
       </ul>
       <h2>Releasing a version</h2>
       <ol>
@@ -532,7 +532,8 @@
     <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
     <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
     <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>Web → Admin: totals, D1 size, version switch-off</td><td>counts only</td></tr>
-    <tr><td>12</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
+    <tr><td>12</td><td><b>Import a lab report</b></td><td>user</td><td>Lab results → PDF or photo → Processing → Scanning → Uploading → saved; in the background, all or nothing; same file or same test and day never twice; web table: one column per date, ↑↓ orange outside the printed reference, delete a date</td><td>measurements, lab_files</td></tr>
+    <tr><td>13</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, lab results never (only the user deletes them), expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
   </table>
 
   <h2>Who can do what</h2>

@@ -223,3 +223,24 @@ td.pick .st { margin-left: 8px; }
 /* Lab history keeps numeric columns readable without widening the phone page. */
 .table-wrap { max-width: 100%; overflow-x: auto; }
 #main .card svg[viewBox="0 0 580 190"] { width: 100%; height: auto; display: block; }
+
+/* Lab results: one column per report date, one row per test; compact so many dates fit, the test names stay in view */
+.lab-matrix { width: auto; font-size: 13px; }
+.lab-matrix td:not(.lab-test) { min-width: 92px; }
+.lab-matrix th, .lab-matrix td { vertical-align: top; white-space: nowrap; padding: 5px 8px; line-height: 1.25; }
+.lab-matrix .lab-test { position: sticky; left: 0; background: var(--panel); z-index: 1; white-space: normal; min-width: 120px; max-width: 38vw;
+  color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 12.5px; border-right: 1px solid var(--line); }
+.lab-matrix thead th { font-size: 11px; }
+.lab-matrix thead .lab-test { color: var(--muted); text-transform: uppercase; }
+.lab-matrix small { display: block; color: var(--muted); font-size: 10px; font-weight: 400; margin-top: 1px; }
+.lab-matrix td b { font-weight: 600; }
+.lab-matrix td.na { color: var(--muted); text-align: center; }
+.lab-matrix td.out b { color: #F29A3F; }
+.lab-matrix td.out .arrow { margin-left: 3px; }
+.lab-day span { display: block; color: var(--ink); }
+.lab-del { margin-top: 3px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 7px; font-size: 10.5px;
+  padding: 1px 7px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+.lab-del:hover { color: var(--ink); border-color: var(--muted); }
+.lab-foot { margin: 10px 0 2px; text-align: right; }
+.lab-matrix td .u { font-weight: 400; color: var(--muted); font-size: 11px; }
+.lab-matrix td.out .u { color: #F29A3F; }

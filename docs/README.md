@@ -55,3 +55,9 @@ APK binaries are hosted in GitHub Releases: bundled local OCR exceeds the Cloudf
 
 - `testing/lab-document-parsing-2026-09-30.md`: digital PDF reproduction, test labels, numeric catalog and image-format limitations.
 - Source PDFs and patient data are never committed as test fixtures.
+
+## 2026-10-01: automatic lab report import
+
+- `testing/lab-import-automatic-2026-10-01.md`: decisions, reading rules, duplicates, retention from upload, web table, tests and limits.
+- Terms version 17; `worker/scripts/sync-notice.mjs` keeps the app's terms text identical to the server's (checked by *Docs check*).
+- `demo/labs-it-mobile.png`, `demo/labs-en-desktop.png`, `demo/lab-results.pdf`: synthetic lab table and PDF.

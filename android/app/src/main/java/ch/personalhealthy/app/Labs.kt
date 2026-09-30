@@ -11,10 +11,6 @@ import android.os.ParcelFileDescriptor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -44,60 +40,8 @@ import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-// The allowlist prevents patient headings or arbitrary OCR text being sent as a test name.
-data class LabDefinition(val code: String, val name: String, val aliases: List<String>)
-val labDefinitions = listOf(
-    LabDefinition("urine_culture", "Urinocoltura", listOf("urinocoltura", "urine culture", "urinkultur", "culture urinaire", "ecbu")),
-    LabDefinition("wbc", "Globuli bianchi", listOf("globuli bianchi", "leucociti", "wbc", "white blood cells", "white blood cells", "globuli bianchi", "leukozyten", "leucocytes")),
-    LabDefinition("rbc", "Globuli rossi", listOf("globuli rossi", "eritrociti", "rbc", "red blood cells", "globuli rossi", "erythrozyten", "hématies")),
-    LabDefinition("hgb", "Emoglobina", listOf("emoglobina", "hemoglobin", "hgb", "hb", "hemoglobin", "emoglobina", "hämoglobin", "hémoglobine")),
-    LabDefinition("hct", "Ematocrito", listOf("ematocrito", "hematocrit", "hct", "hematocrit", "ematocrito", "hämatokrit", "hématocrite")),
-    LabDefinition("plt", "Piastrine", listOf("piastrine", "platelets", "plt", "platelets", "piastrine", "thrombozyten", "plaquettes")),
-    LabDefinition("mcv", "MCV", listOf("volume corpuscolare medio", "mcv", "mcv", "mcv", "mcv", "vgm")), LabDefinition("mch", "MCH", listOf("contenuto medio hgb", "mch", "mch", "mch", "mch", "tcmh")),
-    LabDefinition("mchc", "MCHC", listOf("concentrazione media hgb", "mchc", "mchc", "mchc", "mchc", "ccmh")),
-    LabDefinition("glucose", "Glucosio", listOf("glucosio", "glicemia", "glucose", "glucose", "glucosio", "glukose", "glucose")),
-    LabDefinition("creatinine", "Creatinina", listOf("creatinina", "creatinine", "creatinine", "creatinina", "kreatinin", "créatinine")),
-    LabDefinition("urea", "Urea", listOf("urea", "azotemia", "urea", "urea", "harnstoff", "urée")),
-    LabDefinition("uric", "Acido urico", listOf("acido urico", "uric acid", "uric acid", "acido urico", "harnsäure", "acide urique")),
-    LabDefinition("hdl", "Colesterolo HDL", listOf("colesterolo hdl", "hdl", "hdl cholesterol", "colesterolo hdl", "hdl-cholesterin", "cholestérol hdl")),
-    LabDefinition("ldl", "Colesterolo LDL", listOf("colesterolo ldl", "ldl", "ldl cholesterol", "colesterolo ldl", "ldl-cholesterin", "cholestérol ldl")),
-    LabDefinition("cholesterol", "Colesterolo totale", listOf("colesterolo totale", "total cholesterol", "total cholesterol", "colesterolo totale", "gesamtcholesterin", "cholestérol total")),
-    LabDefinition("triglycerides", "Trigliceridi", listOf("trigliceridi", "triglycerides", "triglycerides", "trigliceridi", "triglyzeride", "triglycérides")),
-    LabDefinition("ast", "AST", listOf("ast", "got", "ast", "ast", "ast", "asat")), LabDefinition("alt", "ALT", listOf("alt", "gpt", "alt", "alt", "alt", "alat")),
-    LabDefinition("ggt", "GGT", listOf("gamma gt", "gamma-gt", "ggt", "ggt", "ggt", "ggt", "ggt")),
-    LabDefinition("alp", "Fosfatasi alcalina", listOf("fosfatasi alcalina", "alkaline phosphatase", "alkaline phosphatase", "fosfatasi alcalina", "alkalische phosphatase", "phosphatase alcaline")),
-    LabDefinition("bilirubin", "Bilirubina totale", listOf("bilirubina totale", "total bilirubin", "total bilirubin", "bilirubina totale", "gesamtbilirubin", "bilirubine totale")),
-    LabDefinition("lipase", "Lipasi", listOf("lipasi", "lipase", "lipase", "lipasi", "lipase", "lipase")),
-    LabDefinition("amylase", "Amilasi", listOf("amilasi", "amylase", "amylase", "amilasi", "amylase", "amylase")),
-    LabDefinition("tsh", "TSH", listOf("tsh", "tsh", "tsh", "tsh", "tsh")), LabDefinition("ft3", "FT3", listOf("ft3", "ft3", "ft3", "ft3", "ft3")),
-    LabDefinition("ft4", "FT4", listOf("ft4", "ft4", "ft4", "ft4", "ft4")),
-    LabDefinition("ferritin", "Ferritina", listOf("ferritina", "ferritin", "ferritin", "ferritina", "ferritin", "ferritine")),
-    LabDefinition("iron", "Ferro", listOf("ferro", "sideremia", "iron", "iron", "ferro", "eisen", "fer")),
-    LabDefinition("crp", "Proteina C reattiva", listOf("proteina c reattiva", "c-reactive protein", "crp", "c-reactive protein", "proteina c reattiva", "c-reaktives protein", "protéine c réactive")),
-    LabDefinition("sodium", "Sodio", listOf("sodio", "sodium", "sodium", "sodio", "natrium", "sodium")),
-    LabDefinition("potassium", "Potassio", listOf("potassio", "potassium", "potassium", "potassio", "kalium", "potassium")),
-    LabDefinition("calcium", "Calcio", listOf("calcio", "calcium", "calcium", "calcio", "kalzium", "calcium")),
-    LabDefinition("hba1c", "HbA1c", listOf("hba1c", "emoglobina glicata", "hba1c", "hba1c", "hba1c", "hba1c")),
-    LabDefinition("vitamin_d", "Vitamina D", listOf("25-idrossi vitamina d", "25 hydroxy vitamin d", "25-hydroxy vitamin d", "vitamina d", "vitamin d", "25-oh vitamina d", "vitamin d", "vitamina d", "vitamin d", "vitamine d")),
-    LabDefinition("b12", "Vitamina B12", listOf("vitamina b12", "vitamin b12", "vitamin b12", "vitamina b12", "vitamin b12", "vitamine b12")),
-    LabDefinition("rdw", "RDW", listOf("distribuzione vol. eritrocitario", "rdw")),
-    LabDefinition("rdw_sd", "RDW-SD", listOf("distribuzione vol. eritrocitario (rdw-sd)", "rdw-sd")),
-    LabDefinition("mpv", "MPV", listOf("mpv", "mean platelet volume")),
-    LabDefinition("psa", "PSA", listOf("antigene prostatico specifico", "prostate specific antigen", "prostate-specific antigen", "psa")),
-    LabDefinition("neutrophils", "Neutrofili", listOf("granulociti neutrofili", "neutrofili", "neutrophils", "neutrophile", "neutrophiles")),
-    LabDefinition("neutrophils_pct", "Neutrofili (%)", listOf()),
-    LabDefinition("lymphocytes", "Linfociti", listOf("linfociti assoluti", "linfociti", "lymphocytes", "lymphozyten")),
-    LabDefinition("lymphocytes_pct", "Linfociti (%)", listOf()),
-    LabDefinition("monocytes", "Monociti", listOf("monociti", "monocytes", "monozyten")),
-    LabDefinition("monocytes_pct", "Monociti (%)", listOf()),
-    LabDefinition("eosinophils", "Eosinofili", listOf("granulociti eosinofili", "eosinofili", "eosinophils", "eosinophile", "éosinophiles")),
-    LabDefinition("eosinophils_pct", "Eosinofili (%)", listOf()),
-    LabDefinition("basophils", "Basofili", listOf("granulociti basofili", "basofili", "basophils", "basophile", "basophiles")),
-    LabDefinition("basophils_pct", "Basofili (%)", listOf())
-)
-data class LabValue(val code: String, val value: String, val unit: String, val reference: String) {
-    fun json() = JSONObject().put("code", code).put("value", value).put("unit", unit).put("reference", reference)
-    val name: String get() = when (code) {
+/** The test name in the phone's language (catalog), or as printed on the report. */
+val LabValue.name: String get() = if (code.isEmpty()) label else when (code) {
         "wbc" -> t(R.string.lab_name_wbc)
         "rbc" -> t(R.string.lab_name_rbc)
         "hgb" -> t(R.string.lab_name_hgb)
@@ -150,61 +94,8 @@ data class LabValue(val code: String, val value: String, val unit: String, val r
         "urine_culture" -> t(R.string.lab_name_urine_culture)
         else -> error("unknown_lab")
     }
-}
-data class LabReport(val id: String, val t: Long, val values: List<LabValue>)
-private val labNumber = Regex("[<>≤≥]?\\s*-?\\d{1,9}(?:[.,]\\d{1,8})?")
-private val labUnit = Regex("(?:10\\^[369]|10\\^12)/(?:L|[µμu]L)|(?:[µμu]?mol|mmol|nmol|pmol|mIU|[µμu]IU|IU|U|ng|pg|[µμu]g|mg|g)/(?:dL|mL|L)|mmol/mol|fL|pg|%", RegexOption.IGNORE_CASE)
-private fun normalizeUnit(s: String): String = s.replace('μ', 'µ').replace("uL", "µL").replace("ug", "µg").replace("umol", "µmol").replace("uIU", "µIU")
-private val labAliases = labDefinitions.flatMap { d -> d.aliases.distinct().map { d to it } }.sortedByDescending { it.second.length }
-private val differentialCodes = setOf("neutrophils", "lymphocytes", "monocytes", "eosinophils", "basophils")
-private val labQualitative = Regex("(?:negative|positive|negativo|negativa|positivo|positiva|negativ|positiv|négatif|négative|positif|positive|absent|present|assente|presente|abwesend|vorhanden|absente|présent|présente|indeterminate|indeterminato|indeterminata|unbestimmt|indéterminé|indéterminée|non reactive|non reattivo|non reattiva|non réactif|non réactive|nicht reaktiv|reactive|reattivo|reattiva|reaktiv|réactif|réactive|not detected|non rilevato|non rilevata|nicht nachgewiesen|non détecté|non détectée|detected|rilevato|rilevata|nachgewiesen|détecté|détectée)", RegexOption.IGNORE_CASE)
-fun parseLabLines(text: String): List<LabValue> {
-    return text.lineSequence().mapNotNull { raw ->
-        val line = raw.replace('\u00a0', ' ').replace('−', '-').trimStart()
-            .replace(Regex("^(?:Sg|S|P|B)-\\s*", RegexOption.IGNORE_CASE), "")
-        // A recognized name must start the row. Never scan arbitrary headings for a test name.
-        val pair = labAliases.firstOrNull { (_, alias) ->
-            Regex("^" + Regex.escape(alias) + "(?=\\s|[:(]|$)", RegexOption.IGNORE_CASE).containsMatchIn(line)
-        } ?: return@mapNotNull null
-        var rest = line.substring(pair.second.length).trimStart(' ', ':', '\t')
-        val suffix = Regex("^\\(([A-Za-z0-9% -]{1,16})\\)\\s*").find(rest)
-        if (suffix != null) {
-            val acronym = suffix.groupValues[1]
-            if (pair.first.aliases.none { it.equals(acronym, ignoreCase = true) } && !(pair.first.code == "plt" && acronym.equals("plts", ignoreCase = true))) return@mapNotNull null
-            rest = rest.substring(suffix.range.last + 1)
-        }
-        val qualitative = labQualitative.matchEntire(rest.trim())
-        if (qualitative != null) return@mapNotNull LabValue(pair.first.code, qualitative.value, "", "")
-        // Anchor the result before its unit: digits inside labels/units must never become values.
-        val value = labNumber.find(rest)?.takeIf { it.range.first == 0 } ?: return@mapNotNull null
-        val tail = rest.substring(value.range.last + 1).trimStart().trimStart('*', ' ')
-        val unit = labUnit.find(tail.replace(Regex("^[x×]\\s*(?=10)"), ""))?.takeIf { it.range.first == 0 } ?: return@mapNotNull null
-        val unitTail = tail.replace(Regex("^[x×]\\s*(?=10)"), "")
-        val refText = unitTail.substring(unit.range.last + 1).trim().trimStart('*', ' ')
-            .replace(Regex("^(?:Range previsto|Reference range|Referenzbereich|Valeurs de référence)\\s*:\\s*", RegexOption.IGNORE_CASE), "")
-        val ref = Regex("^(?:[<>≤≥]\\s*\\d+(?:[.,]\\d+)?|\\d+(?:[.,]\\d+)?\\s*[-–]\\s*\\d+(?:[.,]\\d+)?)").find(refText)?.value ?: ""
-        val normalized = normalizeUnit(unit.value)
-        val canonical = listOf("%", "g/dL", "g/L", "mg/dL", "mg/L", "mmol/L", "µmol/L", "U/L", "IU/L", "mIU/L", "µIU/mL", "ng/mL", "pg/mL", "µg/dL", "µg/L", "fL", "pg", "10^9/L", "10^12/L", "10^3/µL", "10^6/µL", "mmol/mol", "pmol/L", "nmol/L").firstOrNull { it.equals(normalized, ignoreCase = true) } ?: return@mapNotNull null
-        val code = if (pair.first.code in differentialCodes && canonical == "%") pair.first.code + "_pct" else pair.first.code
-        if (pair.first.code in differentialCodes && canonical !in listOf("%", "10^9/L", "10^3/µL")) return@mapNotNull null
-        LabValue(code, value.value.trim(), canonical, ref)
-    }.toList().groupBy { it.code }.filterValues { it.size == 1 }.values.map { it.single() }
-}
 
-data class LabDraft(val values: List<LabValue>, val date: LocalDate?)
-fun parseLabReportDate(text: String): LocalDate? {
-    // Only an explicit report-date label; never dates of birth, requests or disclaimer notices.
-    val pattern = Regex("(?:referto\\s+del|report\\s+date|date\\s+of\\s+report|befunddatum|date\\s+du\\s+(?:compte[- ]rendu|rapport))\\s*:?\\s*(\\d{1,4}[-/.]\\d{1,2}[-/.]\\d{1,4})", RegexOption.IGNORE_CASE)
-    val dates = pattern.findAll(text).mapNotNull { match ->
-        val parts = match.groupValues[1].split('-', '/', '.')
-        runCatching {
-            if (parts[0].length == 4) LocalDate.of(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
-            else if (parts[2].length == 4) LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
-            else null
-        }.getOrNull()
-    }.distinct().toList()
-    return dates.singleOrNull()
-}
+data class LabReport(val id: String, val t: Long, val values: List<LabValue>)
 object LabDocuments {
     private suspend fun recognize(bitmap: Bitmap): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -227,59 +118,64 @@ object LabDocuments {
             }
         } finally { recognizer.close() }
     }
-    suspend fun extract(ctx: Context, uri: Uri): LabDraft = withContext(Dispatchers.IO) {
-        // A private, short-lived file is needed by PdfRenderer. Never keep source filenames or URI permissions.
+    /** Stage 1: a private, short-lived copy (PdfRenderer needs a file) and the file's SHA-256, to recognize it again. */
+    suspend fun copy(ctx: Context, uri: Uri): Pair<File, String> = withContext(Dispatchers.IO) {
+        // Never keep source filenames or URI permissions.
         val file = File.createTempFile("lab-", ".bin", ctx.cacheDir)
         try {
+            val sha = java.security.MessageDigest.getInstance("SHA-256")
             ctx.contentResolver.openInputStream(uri)?.use { input -> file.outputStream().use { out ->
                 val buf = ByteArray(8192); var total = 0
                 while (true) { val n = input.read(buf); if (n < 0) break; total += n
-                    require(total <= 20 * 1024 * 1024) { "document_too_large" }; out.write(buf, 0, n) }
+                    require(total <= 20 * 1024 * 1024) { "document_too_large" }; out.write(buf, 0, n); sha.update(buf, 0, n) }
             } } ?: error("document_unavailable")
-            val pdf = file.inputStream().use { ByteArray(5).also { b -> it.read(b) }.toString(Charsets.US_ASCII) } == "%PDF-"
-            val text = if (pdf) {
-                PDFBoxResourceLoader.init(ctx)
-                val pages = PDDocument.load(file).use { doc ->
-                    require(!doc.isEncrypted && doc.numberOfPages in 1..15) { "document_unsupported" }
-                    (1..doc.numberOfPages).map { i -> PDFTextStripper().apply { sortByPosition = true; startPage = i; endPage = i }.getText(doc) }
-                }
-                // Fall back page by page so hybrid PDFs are not silently truncated.
-                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd -> PdfRenderer(fd).use { renderer ->
-                    pages.mapIndexed { i, embedded ->
-                        coroutineContext.ensureActive()
-                        if (parseLabLines(embedded).isNotEmpty()) embedded else renderer.openPage(i).use { page ->
-                            val scale = minOf(2.5f, 2400f / maxOf(page.width, page.height))
-                            val bitmap = Bitmap.createBitmap((page.width * scale).toInt().coerceAtLeast(1), (page.height * scale).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
-                            try { bitmap.eraseColor(android.graphics.Color.WHITE); page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY); recognize(bitmap) }
-                            finally { bitmap.recycle() }
-                        }
-                    }.joinToString("\n")
-                } }
-            } else {
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeFile(file.path, bounds)
-                require(bounds.outWidth > 0 && bounds.outHeight > 0) { "document_unsupported" }
-                var sample = 1
-                while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 3000) sample *= 2
-                val bitmap = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: error("document_unsupported")
-                // Honor camera EXIF orientation, including mirrored photos.
-                val orientation = runCatching { ExifInterface(file).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
-                val matrix = Matrix().apply {
-                    when (orientation) {
-                        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f, 1f)
-                        ExifInterface.ORIENTATION_ROTATE_180 -> setRotate(180f)
-                        ExifInterface.ORIENTATION_FLIP_VERTICAL -> setScale(1f, -1f)
-                        ExifInterface.ORIENTATION_TRANSPOSE -> { setRotate(90f); postScale(-1f, 1f) }
-                        ExifInterface.ORIENTATION_ROTATE_90 -> setRotate(90f)
-                        ExifInterface.ORIENTATION_TRANSVERSE -> { setRotate(-90f); postScale(-1f, 1f) }
-                        ExifInterface.ORIENTATION_ROTATE_270 -> setRotate(-90f)
-                    }
-                }
-                val oriented = if (matrix.isIdentity) bitmap else Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-                try { recognize(oriented) } finally { if (oriented !== bitmap) oriented.recycle(); bitmap.recycle() }
+            file to sha.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) { file.delete(); throw e }
+    }
+    /** Stage 2: the text of the document, read on this phone (embedded PDF text, or OCR for scans and photos). */
+    suspend fun text(ctx: Context, file: File): String = withContext(Dispatchers.IO) {
+        val pdf = file.inputStream().use { ByteArray(5).also { b -> it.read(b) }.toString(Charsets.US_ASCII) } == "%PDF-"
+        if (pdf) {
+            PDFBoxResourceLoader.init(ctx)
+            val pages = PDDocument.load(file).use { doc ->
+                require(!doc.isEncrypted && doc.numberOfPages in 1..15) { "document_unsupported" }
+                (1..doc.numberOfPages).map { i -> PDFTextStripper().apply { sortByPosition = true; startPage = i; endPage = i }.getText(doc) }
             }
-            LabDraft(parseLabLines(text), parseLabReportDate(text)) // Raw text and patient headings never leave this function.
-        } finally { file.delete() }
+            // Fall back page by page so hybrid PDFs are not silently truncated.
+            ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd -> PdfRenderer(fd).use { renderer ->
+                pages.mapIndexed { i, embedded ->
+                    coroutineContext.ensureActive()
+                    if (parseLabLines(embedded).isNotEmpty()) embedded else renderer.openPage(i).use { page ->
+                        val scale = minOf(2.5f, 2400f / maxOf(page.width, page.height))
+                        val bitmap = Bitmap.createBitmap((page.width * scale).toInt().coerceAtLeast(1), (page.height * scale).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+                        try { bitmap.eraseColor(android.graphics.Color.WHITE); page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY); recognize(bitmap) }
+                        finally { bitmap.recycle() }
+                    }
+                }.joinToString("\n")
+            } }
+        } else {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.path, bounds)
+            require(bounds.outWidth > 0 && bounds.outHeight > 0) { "document_unsupported" }
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 3000) sample *= 2
+            val bitmap = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: error("document_unsupported")
+            // Honor camera EXIF orientation, including mirrored photos.
+            val orientation = runCatching { ExifInterface(file).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+            val matrix = Matrix().apply {
+                when (orientation) {
+                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f, 1f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> setRotate(180f)
+                    ExifInterface.ORIENTATION_FLIP_VERTICAL -> setScale(1f, -1f)
+                    ExifInterface.ORIENTATION_TRANSPOSE -> { setRotate(90f); postScale(-1f, 1f) }
+                    ExifInterface.ORIENTATION_ROTATE_90 -> setRotate(90f)
+                    ExifInterface.ORIENTATION_TRANSVERSE -> { setRotate(-90f); postScale(-1f, 1f) }
+                    ExifInterface.ORIENTATION_ROTATE_270 -> setRotate(-90f)
+                }
+            }
+            val oriented = if (matrix.isIdentity) bitmap else Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            try { recognize(oriented) } finally { if (oriented !== bitmap) oriented.recycle(); bitmap.recycle() }
+        }
     }
 }
 object LabsRepo {
@@ -287,117 +183,163 @@ object LabsRepo {
         val rows = Api.call("GET", "/v1/labs", null, pid).getJSONArray("items")
         return (0 until rows.length()).map { i -> val r = rows.getJSONObject(i); val xs = r.getJSONArray("items")
             LabReport(r.getString("id"), r.getLong("t"), (0 until xs.length()).map { j -> val x = xs.getJSONObject(j)
-                LabValue(x.getString("code"), x.getString("value"), x.getString("unit"), x.getString("reference")) }) }
+                LabValue(x.getString("code"), x.getString("value"), x.getString("unit"), x.getString("reference"), if (x.getString("code").isEmpty()) x.optString("name") else "") }) }
     }
-    suspend fun save(pid: String, id: String, date: LocalDate, values: List<LabValue>) {
+    /** The whole report in one request: the server saves all of it or nothing, and recognizes the same file or day. */
+    suspend fun save(pid: String, id: String, date: LocalDate, values: List<LabValue>, fileHash: String): JSONObject {
         val t = date.atStartOfDay(ZoneId.of("Europe/Zurich")).toInstant().toEpochMilli()
-        Api.call("POST", "/v1/labs", JSONObject().put("id", id).put("takenAt", t).put("confirmed", true).put("items", JSONArray(values.map { it.json() })), pid)
+        return Api.call("POST", "/v1/labs", JSONObject().put("id", id).put("takenAt", t).put("auto", true).put("fileHash", fileHash)
+            .put("items", JSONArray(values.map { it.json() })), pid)
     }
     suspend fun delete(pid: String, id: String) { Api.call("DELETE", "/v1/labs/$id", null, pid) }
+}
+
+/**
+ * The import runs in the background, outside the screen: leaving the tab does not stop it, and the status is there
+ * when you come back. Each stage is shown when the work really reaches it, and stays at least a moment on screen so
+ * the progress can be followed. Done only after the server confirmed the save; any doubt ends in Failed, nothing saved.
+ */
+object LabImport {
+    enum class Stage { IDLE, READING, SCANNING, UPLOADING, DONE, FAILED }
+    data class Status(val stage: Stage = Stage.IDLE, val text: String = "")
+    val status = kotlinx.coroutines.flow.MutableStateFlow(Status())
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
+    private var job: kotlinx.coroutines.Job? = null
+    private var shownAt = 0L
+    val busy: Boolean get() = job?.isActive == true
+    private val zurich = ZoneId.of("Europe/Zurich")
+    private fun day(d: LocalDate) = d.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+
+    private suspend fun show(stage: Stage, text: String) {
+        val wait = 900L - (System.currentTimeMillis() - shownAt)
+        if (status.value.stage in listOf(Stage.READING, Stage.SCANNING, Stage.UPLOADING) && wait > 0) kotlinx.coroutines.delay(wait)
+        status.value = Status(stage, text); shownAt = System.currentTimeMillis()
+    }
+    private suspend fun fail(code: String, text: String) {
+        ErrorReport.send(code, "Labs/Import", "")    // the reason only: never a value, a name or the document
+        show(Stage.FAILED, text)
+    }
+
+    fun start(ctx: Context, pid: String, uri: Uri, onSaved: () -> Unit) {
+        if (busy) return
+        val app = ctx.applicationContext
+        shownAt = 0L
+        job = scope.launch {
+            var file: File? = null
+            try {
+                show(Stage.READING, t(R.string.labs_step_read))
+                val (f, sha) = LabDocuments.copy(app, uri); file = f
+                show(Stage.SCANNING, t(R.string.labs_step_scan))
+                val read = readLabText(LabDocuments.text(app, f), LocalDate.now(zurich))
+                f.delete(); file = null
+                if (read is LabRead.Failed) {
+                    fail("lab_" + read.reason, when (read.reason) {
+                        "unreadable_rows" -> t(R.string.labs_fail_unreadable, read.count)
+                        "no_date", "ambiguous_date" -> t(R.string.labs_fail_date)
+                        "future_date" -> t(R.string.labs_fail_future)
+                        "duplicate_tests" -> t(R.string.labs_fail_duplicate_tests)
+                        else -> t(R.string.labs_no_results)
+                    }); return@launch
+                }
+                read as LabRead.Ok
+                show(Stage.UPLOADING, t(R.string.labs_step_upload))
+                val r = LabsRepo.save(pid, UUID.randomUUID().toString(), read.date, read.values, sha)
+                if (r.has("duplicate")) show(Stage.DONE, t(R.string.labs_duplicate, day(read.date)))
+                else {
+                    val known = r.optInt("known", 0)
+                    show(Stage.DONE, t(R.string.labs_done, day(read.date), r.optInt("saved", read.values.size)) + if (known > 0) " " + t(R.string.labs_done_known, known) else "")
+                }
+                onSaved()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e
+            } catch (e: ApiException) {
+                show(Stage.FAILED, if (e.code == "lab_conflict_values") t(R.string.labs_fail_conflict) else e.message ?: t(R.string.labs_network))
+            } catch (e: Exception) {
+                val unsupported = e.message == "document_unsupported"
+                fail(if (unsupported) "lab_unsupported" else "import_failed", t(if (unsupported) R.string.labs_format_unsupported else if (e is java.io.IOException) R.string.labs_network else R.string.labs_failed))
+            } finally { file?.delete() }
+        }
+    }
+    fun clear() { if (!busy) status.value = Status() }
 }
 
 @Composable
 fun LabsScreen(pid: String) {
     val ctx = LocalContext.current; val scope = rememberCoroutineScope()
     var reports by remember(pid) { mutableStateOf<List<LabReport>>(emptyList()) }
-    var draft by remember(pid) { mutableStateOf<List<LabValue>>(emptyList()) }
-    var date by remember(pid) { mutableStateOf("") }
-    var importId by remember(pid) { mutableStateOf(UUID.randomUUID().toString()) }
-    var busy by remember(pid) { mutableStateOf(false) }
     var message by remember(pid) { mutableStateOf<String?>(null) }
-    var checked by remember(pid) { mutableStateOf(false) }
+    var open by remember(pid) { mutableStateOf<String?>(null) }
+    val status by LabImport.status.collectAsState()
     suspend fun refresh() { reports = LabsRepo.list(pid) }
     LaunchedEffect(pid) { try { refresh() } catch (_: Exception) { message = t(R.string.labs_network) } }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) scope.launch {
-            busy = true; draft = emptyList(); checked = false; message = null; date = ""; importId = UUID.randomUUID().toString()
-            try {
-                val extracted = LabDocuments.extract(ctx, uri)
-                draft = extracted.values; date = extracted.date?.toString().orEmpty()
-                if (draft.isEmpty()) message = t(R.string.labs_no_results)
-                else if (extracted.date?.let { it.isBefore(LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(364)) || it.isAfter(LocalDate.now(ZoneId.of("Europe/Zurich"))) } == true) message = t(R.string.labs_date_outside)
-            }
-            catch (e: Exception) { message = t(if (e.message == "document_unsupported") R.string.labs_format_unsupported else R.string.labs_failed) } finally { busy = false }
-        }
+        if (uri != null) LabImport.start(ctx, pid, uri) { scope.launch { try { refresh() } catch (_: Exception) { } } }
     }
+    val working = status.stage in listOf(LabImport.Stage.READING, LabImport.Stage.SCANNING, LabImport.Stage.UPLOADING)
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             Text(t(R.string.tab_labs), color = C.Ink, fontSize = 24.sp, modifier = Modifier.padding(top = 20.dp))
             Panel {
                 Text(t(R.string.labs_intro), color = C.Muted, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
-                BigButton(t(if (busy) R.string.labs_working else R.string.labs_import), enabled = !busy) { picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif")) }
-                Text(t(R.string.labs_privacy), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
+                // PDF and photos only; any other kind of file cannot be picked
+                BigButton(t(R.string.labs_import), enabled = !working) { LabImport.clear(); picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif")) }
+                Text(t(R.string.labs_privacy), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
             }
+            if (status.stage != LabImport.Stage.IDLE) ImportProgress(status)
             message?.let { Text(it, color = C.Ink, fontSize = 14.sp) }
         }
-        if (draft.isNotEmpty()) {
-            item {
-                Text(t(R.string.labs_review), color = C.Ink, fontSize = 18.sp)
-                Text(t(R.string.labs_partial), color = C.Muted, fontSize = 14.sp)
-                BigButton(if (date.isEmpty()) t(R.string.labs_date) else date, color = C.Surface2, textColor = C.Ink, enabled = !busy) {
-                    val initial = runCatching { LocalDate.parse(date) }.getOrElse { LocalDate.now(ZoneId.of("Europe/Zurich")) }
-                    android.app.DatePickerDialog(ctx, { _, y, m, d -> date = LocalDate.of(y, m + 1, d).toString(); checked = false }, initial.year, initial.monthValue - 1, initial.dayOfMonth).apply {
-                        datePicker.maxDate = System.currentTimeMillis()
-                        datePicker.minDate = System.currentTimeMillis() - 364L * 86400000L
-                    }.show()
-                }
-            }
-            items(draft, key = { it.code }) { value ->
-                Panel {
-                    Text(value.name, color = C.Ink, fontSize = 18.sp)
-                    OutlinedTextField(value.value, { next -> draft = draft.map { if (it.code == value.code) it.copy(value = next) else it }; checked = false }, label = { Text(t(R.string.labs_value)) }, singleLine = true)
-                    OutlinedTextField(value.unit, { next -> draft = draft.map { if (it.code == value.code) it.copy(unit = next) else it }; checked = false }, label = { Text(t(R.string.labs_unit)) }, singleLine = true)
-                    OutlinedTextField(value.reference, { next -> draft = draft.map { if (it.code == value.code) it.copy(reference = next) else it }; checked = false }, label = { Text(t(R.string.labs_reference)) }, singleLine = true)
-                    TextButton(onClick = { draft = draft.filter { it.code != value.code }; checked = false }) { Text(t(R.string.delete)) }
-                }
-            }
-            item {
-                Row { Checkbox(checked, { checked = it }); Text(t(R.string.labs_confirm), color = C.Ink, fontSize = 14.sp) }
-                BigButton(t(R.string.labs_save), enabled = checked && !busy) {
-                    scope.launch { busy = true
-                        try { val d = LocalDate.parse(date); require(!d.isAfter(LocalDate.now(ZoneId.of("Europe/Zurich"))) && d.isAfter(LocalDate.now(ZoneId.of("Europe/Zurich")).minusDays(365)))
-                            LabsRepo.save(pid, importId, d, draft); draft = emptyList(); checked = false; message = t(R.string.labs_saved); refresh()
-                        } catch (_: Exception) { message = t(R.string.labs_check) } finally { busy = false }
-                    }
-                }
-                TextButton(onClick = { draft = emptyList(); checked = false }) { Text(t(R.string.cancel)) }
-            }
-        }
         item {
-            Text(t(R.string.labs_history, reports.size), color = C.Ink, fontSize = 18.sp)
-            if (reports.isEmpty()) Panel { Text(t(R.string.labs_empty), color = C.Muted, fontSize = 14.sp) }
-        }
-        // A dated series per test and unit. Different units are never combined into a trend.
-        val series = reports.flatMap { r -> r.values.map { (it.code to it.unit) to (r.t to it) } }.groupBy({ it.first }, { it.second })
-        items(series.entries.toList(), key = { it.key.first + ":" + it.key.second }) { entry ->
-            Panel {
-                Text(entry.value.first().second.name + " · " + entry.key.second, color = C.Ink, fontSize = 18.sp)
-                LabTrend(entry.value)
-                entry.value.sortedByDescending { it.first }.take(8).forEach { (t0, v) ->
-                    Text(java.time.Instant.ofEpochMilli(t0).atZone(ZoneId.of("Europe/Zurich")).toLocalDate().toString() + "   " + v.value + "   [" + v.reference + "]", color = C.Ink, fontSize = 14.sp)
-                }
-            }
+            Text(t(R.string.labs_history, reports.size), color = C.Ink, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
+            Panel { Text(if (reports.isEmpty()) t(R.string.labs_empty) else t(R.string.labs_web_hint), color = C.Muted, fontSize = 14.sp) }
         }
         items(reports.sortedByDescending { it.t }, key = { it.id }) { report ->
-            TextButton(onClick = { scope.launch { try { LabsRepo.delete(pid, report.id); refresh() } catch (_: Exception) { message = t(R.string.labs_network) } } }) {
-                Text(t(R.string.labs_delete, java.time.Instant.ofEpochMilli(report.t).atZone(ZoneId.of("Europe/Zurich")).toLocalDate().toString()))
+            val date = java.time.Instant.ofEpochMilli(report.t).atZone(ZoneId.of("Europe/Zurich")).toLocalDate().format(fmt)
+            Panel {
+                TextButton(onClick = { open = if (open == report.id) null else report.id }, contentPadding = PaddingValues(0.dp)) {
+                    Text(t(R.string.labs_report_row, date, report.values.size), color = C.Ink, fontSize = 16.sp)
+                }
+                if (open == report.id) {
+                    report.values.forEach { v ->
+                        val out = v.outOfRange()
+                        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                            Text(v.name + if (v.unit.isNotEmpty()) " · " + v.unit else "", color = C.Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                            Text(v.value + when (out) { 1 -> " ↑"; -1 -> " ↓"; else -> "" } + if (v.reference.isNotEmpty()) "   (" + v.reference + ")" else "",
+                                color = if (out != 0) C.Out else C.Ink, fontSize = 13.sp)
+                        }
+                    }
+                    TextButton(onClick = { scope.launch { try { LabsRepo.delete(pid, report.id); refresh() } catch (_: Exception) { message = t(R.string.labs_network) } } }) {
+                        Text(t(R.string.labs_delete, date), color = C.Muted)
+                    }
+                }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
+/** Three steps with the current one turning, then the outcome. Never a red: a failure is said in words. */
 @Composable
-private fun LabTrend(values: List<Pair<Long, LabValue>>) {
-    val points = values.mapNotNull { (t0, v) -> v.value.replace(',', '.').toDoubleOrNull()?.let { t0 to it } }.sortedBy { it.first }
-    if (points.size < 2) return
-    val lo = points.minOf { it.second }; val hi = points.maxOf { it.second }; val range = (hi - lo).takeIf { it > 0 } ?: 1.0
-    Canvas(Modifier.fillMaxWidth().height(120.dp).padding(vertical = 12.dp)) {
-        val t0 = points.first().first; val span = (points.last().first - t0).coerceAtLeast(1)
-        val coords = points.map { (t, n) -> Offset(8f + (size.width - 16f) * ((t - t0).toFloat() / span), size.height - 8f - (size.height - 16f) * ((n - lo) / range).toFloat()) }
-        val path = Path().apply { coords.forEachIndexed { i, p -> if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y) } }
-        drawPath(path, C.Sys, style = Stroke(width = 3f))
-        coords.forEach { drawCircle(C.Sys, 5f, it) }
+private fun ImportProgress(status: LabImport.Status) {
+    val order = listOf(LabImport.Stage.READING, LabImport.Stage.SCANNING, LabImport.Stage.UPLOADING)
+    val labels = listOf(t(R.string.labs_short_read), t(R.string.labs_short_scan), t(R.string.labs_short_upload))
+    val at = order.indexOf(status.stage).let { if (status.stage == LabImport.Stage.DONE) 3 else it }
+    Panel {
+        if (status.stage != LabImport.Stage.FAILED) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            labels.forEachIndexed { i, label ->
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    Box(Modifier.size(28.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        when {
+                            i < at -> Text("✓", color = C.Dia, fontSize = 20.sp)
+                            i == at -> CircularProgressIndicator(Modifier.size(24.dp), color = C.Sys, strokeWidth = 3.dp)
+                            else -> Text("•", color = C.Muted, fontSize = 20.sp)
+                        }
+                    }
+                    Text(label, color = if (i <= at) C.Ink else C.Muted, fontSize = 12.sp)
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(status.text, color = C.Ink, fontSize = 15.sp)
     }
 }

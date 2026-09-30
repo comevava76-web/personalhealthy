@@ -13,7 +13,7 @@
 // Modules: each part of the dashboard (blood pressure today, lab results later) is one entry of MODULES.
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
-import { loadLabs } from "./labs";
+import { loadLabs, deleteLabs } from "./labs";
 import { logError } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 
@@ -280,6 +280,16 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     const to = Date.now();
     const from = periodStart(to, days);
     return json({ shared: false, from, to, items: await mod.load(q, pid, from, to) });
+  }
+  // deletes a column of the lab table (every report of that day) or all lab results, with the file fingerprints,
+  // so a report can be imported again. Nothing else deletes lab results except the account deletion.
+  if (p === "/my/api/labs" && req.method === "DELETE") {
+    let b: any = {};
+    try { b = await req.json(); } catch {}
+    if (b.all === true) { await deleteLabs(env.DB, pid, { all: true }); return json({ ok: true }); }
+    if (!Number.isSafeInteger(b.t)) return fail("Which day?", 400, "invalid");
+    await deleteLabs(env.DB, pid, { takenAt: b.t });
+    return json({ ok: true });
   }
   // a read-only link for the doctor: the chosen period, as it is now, valid for a few days
   if (p === "/my/api/share" && req.method === "POST") {

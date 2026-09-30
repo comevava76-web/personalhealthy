@@ -4,7 +4,7 @@
 // change q() and a few SQL expressions; the rest of the code stays the same.
 
 import { NOTICE_TEXT } from "./notices";
-import { validateLabImport, loadLabs } from "./labs";
+import { validateLabImport, loadLabs, saveLab, deleteLabs, labFileKey } from "./labs";
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
 import { logError } from "./errors";
@@ -277,7 +277,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "16";
+const DISCLAIMER_VERSION = "17";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -443,7 +443,8 @@ async function readDisplay(env: Env, apiKey: string, image: string, lang: string
 }
 
 /**
- * Every day (cron in wrangler.toml): readings and photo readings older than 365 days are deleted, and so are expired
+ * Every day (cron in wrangler.toml): readings and photo readings older than 365 days are deleted (lab results are
+ * kept until the person deletes them), and so are expired
  * web codes, sessions and share links. The record of accepted terms (acceptances) is kept, as proof.
  */
 export async function purgeOld(env: Env) {
@@ -452,7 +453,8 @@ export async function purgeOld(env: Env) {
   await fillLocalDates(q);
   const now = Date.now(), yearAgo = now - 365 * 864e5;
   await env.DB.batch([
-    env.DB.prepare("DELETE FROM measurements WHERE taken_at < ?1").bind(yearAgo),
+    // lab results are never deleted here: they stay until the person deletes them (a date, a report or the account)
+    env.DB.prepare("DELETE FROM measurements WHERE kind != 'lab' AND taken_at < ?1").bind(yearAgo),
     env.DB.prepare("DELETE FROM scans WHERE created_at < ?1").bind(yearAgo),
     env.DB.prepare("DELETE FROM web_codes WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM web_sessions WHERE expires_at < ?1").bind(now),
@@ -780,7 +782,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   if (url.pathname === "/v1/labs" && req.method === "GET") {
-    return json({ items: await loadLabs(q, pid, Date.now() - 365 * 864e5, Date.now()) });
+    return json({ items: await loadLabs(q, pid) });
   }
   if (url.pathname === "/v1/labs" && req.method === "POST") {
     if (await tooMany(q, "labs:" + pid, 30, DAY)) return fail("Too many imports", 429, "too_many");
@@ -788,18 +790,18 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (!lab) return fail("Check the lab results and date", 400, "lab_invalid");
     const id = "lab_" + lab.id;
     const [existing] = await q("SELECT person_id, data, taken_at FROM measurements WHERE id = ?1", [id]);
-    if (existing) {
-      if (existing.person_id !== pid || existing.data !== JSON.stringify(lab.items) || Number(existing.taken_at) !== lab.takenAt)
-        return fail("Import identifier already used", 409, "lab_conflict");
+    if (existing) {   // the same import sent again (a retry): the same answer, nothing saved twice
+      if (existing.person_id !== pid || Number(existing.taken_at) !== lab.takenAt) return fail("Import identifier already used", 409, "lab_conflict");
       return json({ ok: true, id });
     }
-    const now = Date.now();
-    await q("INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at, taken_at_local, created_at_local) VALUES (?1, ?2, 'lab', ?3, ?4, 'lab', ?5, 'local-import', ?6, ?7, ?8)",
-      [id, pid, lab.takenAt, TZ, JSON.stringify(lab.items), now, localStamp(lab.takenAt), localStamp(now)]);
-    return json({ ok: true, id });
+    const fileKey = lab.fileHash ? await labFileKey(env.KEY_ENCRYPTION_KEY, pid, lab.fileHash) : null;
+    const r = await saveLab(env.DB, q, pid, lab, fileKey, TZ, localStamp);
+    if (r.status === "conflict") return fail("This report has different results from those already saved for the same day", 409, "lab_conflict_values");
+    if (r.status === "duplicate") return json({ ok: true, id: r.id, duplicate: r.reason });
+    return json({ ok: true, id: r.id, saved: r.saved, known: r.known });
   }
   if (url.pathname.startsWith("/v1/labs/") && req.method === "DELETE") {
-    await q("DELETE FROM measurements WHERE id = ?1 AND person_id = ?2 AND kind = 'lab'", [url.pathname.split('/').pop(), pid]);
+    await deleteLabs(env.DB, pid, { id: url.pathname.split('/').pop() || "" });
     return json({ ok: true });
   }
 
@@ -820,6 +822,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     if (person.is_admin) return fail("The app manager cannot delete their account", 403, "admin_delete");
     await endWebAccess(q, pid, true);
     await env.DB.batch([
+      env.DB.prepare("DELETE FROM lab_files WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM measurements WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM scans WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM person_keys WHERE person_id = ?1").bind(pid),
