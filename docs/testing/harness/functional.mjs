@@ -388,6 +388,14 @@ r = await web("GET", "/my/api/admin/security", { cookie: sessO.cookie });
 S.check("admin", "W17b", "owner opens the Security console", r.status === 200 && Array.isArray(r.json.items), r.text.slice(0, 200));
 r = await web("GET", "/my/api/admin/security", { cookie: sessA.cookie });
 S.check("security", "W17c", "a non-owner cannot open the Security console -> 403", r.status === 403, r.text.slice(0, 200));
+// Observability: compliance controls, problems with their resolutions, import outcomes; owner only, codes and counts only
+r = await web("GET", "/my/api/admin/observability", { cookie: sessO.cookie });
+S.check("admin", "OB1", "owner opens Observability: compliance controls, problem registry, errors and events",
+  r.status === 200 && r.json.compliance?.controls?.length >= 15 && Array.isArray(r.json.problems) && Array.isArray(r.json.errors) && Array.isArray(r.json.events), r.text.slice(0, 200));
+S.check("privacy", "OB2", "Observability carries no reading, report value or person id",
+  r.status === 200 && !/"(sis|dia|pul|value|reference|person_id|personId|name)"\s*:/.test(JSON.stringify({ errors: r.json.errors, events: r.json.events })), "");
+r = await web("GET", "/my/api/admin/observability", { cookie: sessA.cookie });
+S.check("security", "OB3", "a non-owner cannot open Observability -> 403", r.status === 403, r.text.slice(0, 200));
 // Security console "Fix": off without the GitHub token; progress only with the request's own key (Open → Fixing → Fixed | Failed)
 r = await web("POST", "/my/api/admin/security/fix", { cookie: sessO.cookie, body: { items: [] }, origin: BASE });
 S.check("security", "FX1", "Fix without the server's GitHub token -> 503 fix_not_configured", r.status === 503 && r.json?.code === "fix_not_configured", r.text);

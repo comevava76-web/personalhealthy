@@ -237,3 +237,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Validation: 15 parser tests on a plain JVM; functional suite, `labs-security.mjs`, `labs-ui.mjs` (8 views) green locally; Android compile and APK by CI.
 - Not done / limits: no measurement on real reports or phone photos yet; no AI extraction.
 - Next: the user installs the new APK over the existing one, accepts terms v17, imports a real PDF and a photo, and checks the web table.
+
+### 2026-10-01 Europe/Zurich — Claude Code — Observability page and tracing
+
+- Request (user, chat): trace everything that happens in the lab import so failures can be analysed; the nightly routine fixes sure bugs without asking; an Admin (web) Observability page with vulnerabilities, EU/Swiss compliance and problems with their resolutions.
+- Changed: `event_log` table and `countEvent` (lab import outcomes and deletions, codes only, 90 days); `/my/api/admin/observability`; registries `worker/src/ops/compliance.json` (19 controls) and `worker/src/ops/problems.json` (P-001 crash fixed in 0.1.101, P-002 no action); Admin → Observability page; `docs/operations/observability.md`; CLAUDE.md rule; nightly routine prompt updated.
+- Validation: functional suite 172 checks (OB1–OB3 new), `labs-security.mjs` (every outcome counted, codes only), browser view at 1280 and 390 px without errors.
+- Next: the user tests 0.1.102 (lab import) and then the app reorganisation discussion.

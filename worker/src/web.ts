@@ -14,7 +14,9 @@
 // A new module = one entry here and one in public/my/app.js; routes, sign-in and sharing stay the same.
 
 import { loadLabs, deleteLabs } from "./labs";
-import { logError } from "./errors";
+import { logError, countEvent } from "./errors";
+import COMPLIANCE from "./ops/compliance.json";
+import PROBLEMS from "./ops/problems.json";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
@@ -188,6 +190,26 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   if (p.startsWith("/my/api/admin/")) {
     if (!isOwner) return fail("Only the app owner", 403, "admin_only");
     if (p === "/my/api/admin/overview" && req.method === "GET") return json(await adminOverview(env, q));
+    // Observability: vulnerabilities (summary), EU/Swiss compliance controls, problems met by users and how they were
+    // solved, and what happens in the lab import. Codes and counts only: never a value, a report or a person.
+    if (p === "/my/api/admin/observability" && req.method === "GET") {
+      const since = Date.now() - 90 * 864e5;
+      const errors = await q(`SELECT source, code, place, SUM(count) n, MIN(first_at) first_at, MAX(last_at) last_at, GROUP_CONCAT(DISTINCT app_version) versions
+        FROM error_log WHERE last_at >= ?1 GROUP BY source, code, place ORDER BY last_at DESC LIMIT 200`, [since]);
+      const events = await q(`SELECT code, SUM(count) n, MAX(last_at) last_at, GROUP_CONCAT(DISTINCT app_version) versions
+        FROM event_log WHERE last_at >= ?1 GROUP BY code ORDER BY n DESC`, [Date.now() - 30 * 864e5]);
+      const reg = (PROBLEMS as any).problems as any[];
+      const matchOf = (e: any) => reg.find((r) => r.match && r.match.code === e.code && (!r.match.place || r.match.place === e.place));
+      const live = errors.map((e: any) => { const r = matchOf(e); return { ...e, n: Number(e.n), problem: r ? { id: r.id, status: r.status, title: r.title, cause: r.cause, fix: r.fix, pr: r.pr, fixedIn: r.fixedIn } : null }; });
+      const [row] = await q("SELECT value FROM settings WHERE key = 'security_scan'");
+      let scan: any = null;
+      try { scan = row ? JSON.parse(String(row.value)) : null; } catch {}
+      const vulns = await q(`SELECT COALESCE(NULLIF(f.rating, ''), f.severity) risk, COUNT(*) n FROM security_findings f
+        LEFT JOIN security_fixes x ON x.kind = f.kind AND x.ref = f.ref AND x.name = f.name AND x.location = f.location
+        WHERE COALESCE(x.status, 'open') != 'fixed' GROUP BY risk`);
+      return json({ at: Date.now(), security: scan, openFindings: vulns.map((v: any) => ({ risk: v.risk, n: Number(v.n) })),
+        compliance: COMPLIANCE, problems: reg, errors: live, events: events.map((e: any) => ({ ...e, n: Number(e.n) })) });
+    }
     // The Security console: the results of the last nightly scan (libraries, our code, secrets), written by CI
     if (p === "/my/api/admin/security" && req.method === "GET") {
       const [row] = await q("SELECT value FROM settings WHERE key = 'security_scan'");
@@ -286,9 +308,10 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   if (p === "/my/api/labs" && req.method === "DELETE") {
     let b: any = {};
     try { b = await req.json(); } catch {}
-    if (b.all === true) { await deleteLabs(env.DB, pid, { all: true }); return json({ ok: true }); }
+    if (b.all === true) { await deleteLabs(env.DB, pid, { all: true }); await countEvent(q, "lab_deleted_all", "web"); return json({ ok: true }); }
     if (!Number.isSafeInteger(b.t)) return fail("Which day?", 400, "invalid");
     await deleteLabs(env.DB, pid, { takenAt: b.t });
+    await countEvent(q, "lab_deleted_day", "web");
     return json({ ok: true });
   }
   // a read-only link for the doctor: the chosen period, as it is now, valid for a few days
