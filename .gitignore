@@ -14,3 +14,4 @@ qa-results/
 # Signing material is supplied by private CI secrets only.
 *.keystore
 *.jks
+worker/public/dl/

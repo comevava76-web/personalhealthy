@@ -148,6 +148,13 @@ jobs:
           # Promote the tested server and the APK from this same revision together.
           # Bundled OCR makes the APK larger than Cloudflare's 25 MiB asset limit.
           rm -f public/HINT.apk
+          # the APK is also served by the Worker at /download (no GitHub login): split under the 25 MiB file limit,
+          # joined again by downloadApk() in src/index.ts
+          rm -rf public/dl && mkdir -p public/dl
+          APK=$(ls ../apk/HealthyInstantTracker-*.apk | head -1)
+          split -b 20M -d -a 2 "$APK" public/dl/HINT.apk.part
+          jq -n --argjson v ${{ github.run_number }} --argjson s "$(stat -c %s "$APK")" --arg h "$(sha256sum "$APK" | cut -c1-64)" \
+            --argjson p "$(ls public/dl/HINT.apk.part* | wc -l)" '{version:$v, size:$s, sha256:$h, parts:$p}' > public/dl/HINT.apk.json
           TAG="v0.1.${{ github.run_number }}"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" ../apk/HealthyInstantTracker-*.apk ../apk/HINT365-*.aab --clobber --repo "${{ github.repository }}"

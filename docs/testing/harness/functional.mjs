@@ -89,7 +89,9 @@ S.check("robustness", "A11", "unknown signed path -> 404", r.status === 404, r.t
 
 // ---------------------------------------------------------------- terms acceptance
 r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "13" });
-S.check("terms", "T1", "old terms version -> 400 bad_version", r.status === 400 && r.json?.code === "bad_version", r.text);
+S.check("terms", "T1", "older terms version -> 426 app_disabled (the old app shows 'install the latest version')", r.status === 426 && r.json?.code === "app_disabled", r.text);
+r = await call(alice, "POST", "/v1/accept", { doc: "disclaimer", version: "999" });
+S.check("terms", "T1b", "unknown terms version -> 400 bad_version", r.status === 400 && r.json?.code === "bad_version", r.text);
 r = await call(alice, "POST", "/v1/accept", { ...notice, appVersion: "0.1.200", phone: "X".repeat(500) });
 S.check("terms", "T2", "current terms accepted", r.status === 200, r.text);
 {
