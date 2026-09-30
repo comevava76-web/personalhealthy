@@ -39,7 +39,12 @@ jobs:
           pair docs/architecture/architecture.html docs/architecture/HINT-Architecture.pdf
           pair docs/guide-it.html docs/HINT-Guida-IT.pdf
           pair docs/guide-en.html docs/HINT-Guide-EN.pdf
+          pair docs/compliance/dossier.html docs/compliance/HINT365-Compliance.pdf
           exit $fail
+      - name: The compliance dossier matches the controls and the terms (Admin → Observability links into it)
+        run: |
+          node --experimental-strip-types worker/scripts/compliance-dossier.mjs check
+          cmp docs/compliance/HINT365-Compliance.pdf worker/public/my/HINT365-Compliance.pdf
       - name: The terms shown in the app are the server's text (same version, same fingerprint)
         run: node --experimental-strip-types worker/scripts/sync-notice.mjs "$PWD/worker/src/notices.ts" android/app/src/main/res check
       - name: Every app text exists in Italian, German and French

@@ -254,3 +254,17 @@ td.pick .st { margin-left: 8px; }
 .ob.s-muted { color: var(--muted); }
 .ob-t td { vertical-align: top; }
 .ob-t tr.old td { opacity: .75; }
+.tiles.adm.ob-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ob-tab { text-align: left; cursor: pointer; font: inherit; color: inherit; display: block; }
+.ob-tab .l, .ob-tab .v, .ob-tab .w { display: block; }
+.ob-tab[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); background: var(--panel2); }
+.ob-tab:hover { border-color: var(--muted); }
+@media (max-width: 640px) { .tiles.adm.ob-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .tiles.adm.ob-tabs .ob-tab { padding: 8px; } .ob-tab .w { display: none; } .ob-tab .l { font-size: 10px; } .ob-tab .v { font-size: 22px; } }
+/* Observability tabs: green when nothing is open, orange when something is (the tab colour says it, the number says how much) */
+.ob-tab.t-ok { background: rgba(30,154,91,.14); border-color: rgba(30,154,91,.5); }
+.ob-tab.t-ok .v { color: #7FD9A8; }
+.ob-tab.t-warn { background: rgba(224,138,46,.14); border-color: rgba(224,138,46,.55); }
+.ob-tab.t-warn .v { color: #F2B26B; }
+.ob-tab.t-ok[aria-selected="true"] { background: rgba(30,154,91,.26); box-shadow: inset 0 -4px 0 #1E9A5B; }
+.ob-tab.t-warn[aria-selected="true"] { background: rgba(224,138,46,.26); box-shadow: inset 0 -4px 0 #E08A2E; }
+@media (max-width: 700px) { table.list.ob-t td { display: block; text-align: left; } table.list.ob-t td::before { display: block; margin-bottom: 1px; } table.list.ob-t td[data-l=""]::before { display: none; } }

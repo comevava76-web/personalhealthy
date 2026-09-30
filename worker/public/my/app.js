@@ -627,7 +627,7 @@
     obPrbT: "Problemi e risoluzioni", obPrbN: "Dal registro errori (90 giorni) e dal registro dei problemi su git: causa, correzione e pull request.",
     obPrbCols: ["Problema", "Dove", "Versioni", "Volte", "Ultima", "Stato", "Causa · correzione"],
     obEvT: "Caricamento referti · ultimi 30 giorni", obEvN: "Esiti contati dal server e motivi dei rifiuti sul telefono. Solo codici.",
-    obEvCols: ["Esito", "Volte", "Versioni", "Ultimo"], obSecOpen: "Console di sicurezza →", obNew: "nuovo, da analizzare",
+    obEvCols: ["Esito", "Volte", "Versioni", "Ultimo"], obSecOpen: "Console di sicurezza →", selAll: "Seleziona tutte", selNone: "Deseleziona tutte", obProof: "Dossier PDF, paragrafo", obNew: "nuovo, da analizzare",
     secSum: (s) => `${s.vulnerable} librerie vulnerabili su ${s.libraries ?? "?"} · ${s.code} nel nostro codice · ${s.secrets} segreti`,
     secNone: "Nessuna scansione ancora: la prima gira stanotte alle 06:10.", secAt: (d) => `Ultima scansione: ${d}`,
     back: "← Admin", conT: "Console di sicurezza",
@@ -660,7 +660,7 @@
     obPrbT: "Problems and resolutions", obPrbN: "From the error log (90 days) and the problem registry in git: cause, fix and pull request.",
     obPrbCols: ["Problem", "Where", "Versions", "Times", "Last", "Status", "Cause · fix"],
     obEvT: "Lab report import · last 30 days", obEvN: "Outcomes counted by the server and reasons for refusals on the phone. Codes only.",
-    obEvCols: ["Outcome", "Times", "Versions", "Last"], obSecOpen: "Security console →", obNew: "new, to analyse",
+    obEvCols: ["Outcome", "Times", "Versions", "Last"], obSecOpen: "Security console →", selAll: "Select all", selNone: "Select none", obProof: "PDF dossier, section", obNew: "new, to analyse",
     secSum: (s) => `${s.vulnerable} vulnerable libraries out of ${s.libraries ?? "?"} · ${s.code} in our code · ${s.secrets} secrets`,
     secNone: "No scan yet: the first runs tonight at 06:10.", secAt: (d) => `Last scan: ${d}`,
     back: "← Admin", conT: "Security console",
@@ -725,8 +725,8 @@
     };
     const off = $("adm-off"); if (off) off.onclick = () => setMin(v.newest, AD.vAskOff(ver(v.newest)));
     const on = $("adm-on"); if (on) on.onclick = () => setMin(0, AD.vAskOn);
-    $("adm-sec").onclick = loadSecurity;
-    $("adm-obs").onclick = loadObservability;
+    $("adm-sec").onclick = () => loadObservability("vulns");
+    $("adm-obs").onclick = () => loadObservability();
   }
 
   /* ---------- Observability (owner only): vulnerabilities, compliance, problems and how they were solved, import
@@ -734,35 +734,39 @@
   const OB_STATE = { compliant: ["ok", "Compliant"], partial: ["warn", "Partial"], open: ["open", "Open"],
     fixed: ["ok", "Fixed"], fixing: ["fixing", "Fixing"], no_action: ["muted", "No action"], new: ["open", "Open"] };
   const obChip = (s) => { const [c, l] = OB_STATE[s] || OB_STATE.open; return `<span class="ob s-${c}">${l}</span>`; };
-  async function loadObservability() {
+  // three tabs, each with its number: open problems (first), compliance, vulnerabilities (with Fix)
+  async function loadObservability(tab = "problems") {
     main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
     let d;
     try { d = await api("/my/api/admin/observability"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
     const ctl = d.compliance.controls, cnt = (s) => ctl.filter((c) => c.status === s).length;
     const openVul = d.openFindings.reduce((a, b) => a + b.n, 0);
     const probs = d.errors.filter((e) => !e.problem || ["open", "fixing"].includes(e.problem.status));
-    const ev = Object.fromEntries(d.events.map((e) => [e.code, e]));
-    const saved = ev.lab_saved?.n || 0;
-    const refused = d.errors.filter((e) => /^lab_/.test(e.code) && e.last_at > Date.now() - 30 * 864e5).reduce((a, b) => a + b.n, 0) + (ev.lab_conflict_values?.n || 0) + (ev.lab_invalid?.n || 0);
-    const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
     const link = (u, label) => (u && /^https:\/\//.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(label)}</a>` : "");
-    const gh = (path) => `https://github.com/comevava76-web/personalhealthy/blob/main/${path}`;
+    // green when nothing is open; orange when something is: an open problem, an open vulnerability, or a compliance
+    // control with no cover at all ("Open"; "Partial" alone stays green)
+    const tabs = [["problems", AD.obPrb, probs.length, AD.obPrbU, probs.length > 0], ["compliance", AD.obCmp, `${cnt("compliant")}/${ctl.length}`, AD.obCmpU(cnt("partial"), cnt("open")), cnt("open") > 0],
+      ["vulns", AD.obVul, openVul, AD.obVulU, openVul > 0]];
     main.innerHTML = `
       <div class="bar"><button class="btn ghost" type="button" id="ob-back">${AD.back}</button><h1>${AD.obT}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
       <p class="note">${AD.obSub}</p>
-      <section class="tiles adm four">
-        ${tile(AD.obVul, openVul, AD.obVulU)}
-        ${tile(AD.obCmp, `${cnt("compliant")}/${ctl.length}`, AD.obCmpU(cnt("partial"), cnt("open")))}
-        ${tile(AD.obPrb, probs.length, AD.obPrbU)}
-        ${tile(AD.obImp, saved, AD.obImpU(refused))}
-      </section>
-      <p style="margin:4px 0 14px"><a href="#" id="ob-sec">${AD.obSecOpen}</a></p>
-      <div class="card"><div class="card-h"><h2>${AD.obCmpT}</h2></div><p class="muted small">${AD.obCmpN(esc(d.compliance.reviewed))}</p>
-        <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obCmpCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-        ${ctl.map((c) => `<tr><td class="muted small">${esc(c.id)}</td><td>${esc(c.area)}</td><td>${esc(c.requirement)}</td><td class="small">${esc(c.law)}</td><td>${obChip(c.status)}</td>
-          <td class="small">${esc(c.evidence)}${c.next ? `<br><b>→</b> ${esc(c.next)}` : ""} ${link(gh(c.doc), "doc")}</td></tr>`).join("")}
-        </tbody></table></div></div>
-      <div class="card"><div class="card-h"><h2>${AD.obPrbT}</h2></div><p class="muted small">${AD.obPrbN}</p>
+      <div class="tiles adm ob-tabs" role="tablist">${tabs.map(([id, l, v, w, warn]) => `<button type="button" role="tab" class="tile ob-tab ${warn ? "t-warn" : "t-ok"}" data-tab="${id}" aria-selected="${id === tab}">
+        <span class="l">${l}</span><span class="v">${v}</span><span class="w">${w}</span></button>`).join("")}</div>
+      <div id="ob-body" role="tabpanel"></div>`;
+    const body = $("ob-body");
+    const show = (id) => {
+      clearTimeout(secTimer);
+      main.querySelectorAll(".ob-tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
+      if (id === "vulns") return loadSecurity(body);
+      if (id === "compliance") {
+        body.innerHTML = `<div class="card"><div class="card-h"><h2>${AD.obCmpT}</h2></div><p class="muted small">${AD.obCmpN(esc(d.compliance.reviewed))}</p>
+          <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obCmpCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
+          ${ctl.map((c) => `<tr><td class="muted small">${esc(c.id)}</td><td>${esc(c.area)}</td><td>${esc(c.requirement)}</td><td class="small">${esc(c.law)}</td><td>${obChip(c.status)}</td>
+            <td class="small">${esc(c.evidence)}${c.next ? `<br><b>→</b> ${esc(c.next)}` : ""}<br><a href="${esc(d.compliance.dossier)}#${esc(c.id)}" target="_blank" rel="noopener">${AD.obProof} ${esc(c.id)} →</a></td></tr>`).join("")}
+          </tbody></table></div></div>`;
+        return;
+      }
+      body.innerHTML = `<div class="card"><div class="card-h"><h2>${AD.obPrbT}</h2></div><p class="muted small">${AD.obPrbN}</p>
         <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obPrbCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
         ${d.errors.map((e) => { const p = e.problem; return `<tr><td>${p ? `<b>${esc(p.id)}</b> ${esc(p.title)}` : `<code>${esc(e.code)}</code> <span class="muted small">${AD.obNew}</span>`}</td>
           <td class="small"><code>${esc(e.place)}</code> · ${esc(e.source)}</td><td class="small">${esc(e.versions || "")}</td><td>${e.n}</td><td class="small">${day(e.last_at)}</td>
@@ -770,19 +774,28 @@
         ${d.problems.filter((p) => !d.errors.some((e) => e.problem && e.problem.id === p.id)).map((p) => `<tr class="old"><td><b>${esc(p.id)}</b> ${esc(p.title)}</td><td class="small">${esc(p.match?.place || p.match?.code || "")}</td>
           <td class="small">${esc(p.versions || "")}</td><td>—</td><td class="small">${esc(p.found)}</td><td>${obChip(p.status)}</td><td class="small">${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}</td></tr>`).join("")}
         </tbody></table></div></div>
-      <div class="card"><div class="card-h"><h2>${AD.obEvT}</h2></div><p class="muted small">${AD.obEvN}</p>
+        <div class="card"><div class="card-h"><h2>${AD.obEvT}</h2></div><p class="muted small">${AD.obEvN}</p>
         <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obEvCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
         ${[...d.events.map((e) => ({ code: e.code, n: e.n, versions: e.versions, last_at: e.last_at })),
            ...d.errors.filter((e) => /^lab_|^import_failed$/.test(e.code)).map((e) => ({ code: e.code + " (" + e.source + ")", n: e.n, versions: e.versions, last_at: e.last_at }))]
           .map((e) => `<tr><td><code>${esc(e.code)}</code></td><td>${e.n}</td><td class="small">${esc(e.versions || "")}</td><td class="small">${day(e.last_at)}</td></tr>`).join("") || `<tr><td colspan="4">${AD.none}</td></tr>`}
         </tbody></table></div></div>`;
-    $("ob-back").onclick = loadAdmin;
-    $("ob-sec").onclick = (e) => { e.preventDefault(); loadSecurity(); };
+    };
+    // on a phone each row becomes a card: every cell carries the name of its column
+    const label = () => body.querySelectorAll("table.ob-t").forEach((t) => {
+      const hs = [...t.querySelectorAll("thead th")].map((h) => h.textContent);
+      t.querySelectorAll("tbody tr").forEach((r) => [...r.children].forEach((td, i) => (td.dataset.l = hs[i] || "")));
+    });
+    main.querySelectorAll(".ob-tab").forEach((b) => (b.onclick = () => { show(b.dataset.tab); label(); }));
+    $("ob-back").onclick = () => { clearTimeout(secTimer); loadAdmin(); };
+    show(tab); label();
   }
 
   /* ---------- the Security console (owner only): results of the nightly scans, written by CI into D1 ---------- */
-  async function loadSecurity() {
-    main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
+  // host: the Vulnerabilities tab of Observability; without it, the console fills the page with its own back button
+  async function loadSecurity(host) {
+    const root = host || main;
+    root.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
     let d;
     try { d = await api("/my/api/admin/security"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
     const s = d.scan, items = d.items || [];
@@ -811,8 +824,8 @@
     const otherRows = (arr) => arr.map((x) => `<tr>${pick(x)}<td data-l="${C[0]}"><code>${esc(x.ref)}</code></td><td data-l="${C[1]}" class="muted small">${esc(x.location || x.name)}</td>
       <td data-l="${C[2]}">${risk(x)}</td><td data-l="${C[3]}">${link(x.source_url, AD.line)}</td><td data-l="${C[4]}">${link(x.plan_url, AD.plan)}</td></tr>`).join("");
     const table = (cols, rows, kind) => rows ? `<div class="tbl"><table class="list" data-kind="${kind}">${head(cols, kind)}<tbody>${rows}</tbody></table></div>` : `<p class="muted">${AD.none}</p>`;
-    main.innerHTML = `
-      <div class="bar"><button class="btn ghost small" type="button" id="sec-back">${AD.back}</button><h1>${AD.conT}</h1></div>
+    root.innerHTML = `<span id="sec-live" hidden></span>
+      ${host ? "" : `<div class="bar"><button class="btn ghost small" type="button" id="sec-back">${AD.back}</button><h1>${AD.conT}</h1></div>`}
       <p class="note">${AD.conSub}${s ? ` ${AD.secAt(day(s.at) + " " + time(s.at))}${s.runUrl ? " · " + link(s.runUrl, AD.run) : ""}` : ""}</p>
       ${s ? `<div id="sec-overall">${s.complete === true && Date.now() - s.at < 48 * 3600e3 ? overall(items) : `<p class="note">Scan incomplete or stale — last findings retained</p>`}</div>` : ""}
       ${s ? `<section class="tiles adm four">
@@ -825,16 +838,23 @@
       <div class="card"><div class="card-h"><h2>${AD.codeT}</h2></div>${table(C, otherRows(code), "code")}</div>
       <div class="card"><div class="card-h"><h2>${AD.secsT}</h2></div>${table(C, otherRows(secs), "secret")}</div>
       ${items.length ? `<div class="fixbar"><p class="muted small" id="fx-msg" role="status">${AD.fixHint}</p>
-        <button class="btn" type="button" id="fx-go" disabled>${AD.fixBtn(0)}</button></div>` : ""}`;
-    const boxes = () => [...main.querySelectorAll("input.fx")];
+        <button class="btn ghost" type="button" id="fx-every">${AD.selAll}</button><button class="btn" type="button" id="fx-go" disabled>${AD.fixBtn(0)}</button></div>` : ""}`;
+    const boxes = () => [...root.querySelectorAll("input.fx")];
     const count = () => {
       const n = boxes().filter((b) => b.checked).length, go = $("fx-go");
       if (go) { go.disabled = !n; go.textContent = AD.fixBtn(n); }
     };
-    main.querySelectorAll("input.fx").forEach((b) => (b.onchange = count));
-    main.querySelectorAll("input.fx-all").forEach((a) => (a.onchange = () => {
+    root.querySelectorAll("input.fx").forEach((b) => (b.onchange = count));
+    root.querySelectorAll("input.fx-all").forEach((a) => (a.onchange = () => {
       a.closest("table").querySelectorAll("input.fx").forEach((b) => (b.checked = a.checked)); count();
     }));
+    // select every open finding at once (on a phone the table headers, with their boxes, are hidden)
+    const every = $("fx-every");
+    if (every) every.onclick = () => {
+      const free = boxes().filter((b) => !b.disabled), on = free.some((b) => !b.checked);
+      free.forEach((b) => (b.checked = on)); root.querySelectorAll("input.fx-all").forEach((a) => (a.checked = on));
+      every.textContent = on ? AD.selNone : AD.selAll; count();
+    };
     const go = $("fx-go");
     if (go) go.onclick = async () => {
       const chosen = boxes().filter((b) => b.checked).map((b) => ({ kind: b.dataset.k, ref: b.dataset.r, name: b.dataset.n, location: b.dataset.l }));
@@ -853,7 +873,7 @@
         count();
       }
     };
-    $("sec-back").onclick = () => { clearTimeout(secTimer); loadAdmin(); };
+    if (!host) $("sec-back").onclick = () => { clearTimeout(secTimer); loadAdmin(); };
     watch();
   }
   let secTimer = 0, secItems = [], secScan = null;
@@ -877,16 +897,16 @@
   }
   function watch() {
     clearTimeout(secTimer);
-    const busy = () => !!main.querySelector(".st .s-fixing");
+    const busy = () => !!document.querySelector(".st .s-fixing");
     if (!busy()) return;
     secTimer = setTimeout(async function tick() {
-      if (!document.getElementById("sec-back")) return;           // the console was left
+      if (!document.getElementById("sec-live")) return;           // the console was left
       if (document.hidden) { secTimer = setTimeout(tick, 8000); return; }
       try {
         const d = await api("/my/api/admin/security/status");
         for (const x of d.items || []) {
           const k = [x.kind, x.ref, x.name, x.location || ""].join("|");
-          const cell = [...main.querySelectorAll(".st")].find((c) => c.dataset.key === k);
+          const cell = [...document.querySelectorAll(".st")].find((c) => c.dataset.key === k);
           if (!cell) continue;
           const html = secState(x.status, x.detail_url || x.issue_url, x.note);
           if (cell.innerHTML !== html) cell.innerHTML = html;
