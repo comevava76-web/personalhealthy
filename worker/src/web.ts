@@ -69,7 +69,6 @@ interface Module {
   load(q: Q, pid: string, from: number, to: number): Promise<unknown[]>;
 }
 const MODULES: Record<string, Module> = {
-  labs: { load: loadLabs },
   bp: {
     async load(q, pid, from, to) {
       const rows = await q(
@@ -82,6 +81,7 @@ const MODULES: Record<string, Module> = {
       });
     },
   },
+  labs: { load: loadLabs },
 };
 
 /* ---------- step 1, from the app (already signed by the phone): a one-time code ---------- */

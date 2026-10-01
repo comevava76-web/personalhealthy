@@ -20,8 +20,9 @@ Mancano gli screenshot dell'app Android: vanno fatti sul telefono con dati di pr
 2. Schermata Pressione (ultima misura, settimana)
 3. Registra a voce: ascolto e conferma dei valori
 4. Scan (funzionalità AI attive): foto del display e valori letti
-5. Report: 7 giorni, grafico, riquadri, PDF ed Excel
-6. Report → Web Dashboard (si apre il browser già collegato)
+5. Pressione, in fondo: Invia PDF, Invia Excel, Web Dashboard
+6. Icona Dashboard nella barra in basso → Web Dashboard sulla scheda Pressione (si apre il browser già collegato)
+6b. Referti: Importa referto, barra di avanzamento, storico dei caricamenti per giorno
 7. Admin: crediti, chiave, identità, «Esci da questo telefono»
 
 Storia suggerita per l'animazione: misuro (voce o foto) → vedo i numeri → apro Web Dashboard → mando il link al medico →

@@ -19,6 +19,7 @@
   /* ---------- words ---------- */
   const T = {
    it: {
+    st: { avg: "Media del periodo", pul: "PUL medio", m: "Media mattina", e: "Media sera", hiS: "SYS più alta", hiD: "DIA più alta", lo: "Valore più basso", pr: "PUL, min–max", nIn: (n, d) => `${n} misure in ${d} giorni`, perMin: "al minuto" },
     share: "Condividi", pdf: "Scarica PDF", csv: "Excel",
     bp: "Pressione", labs: "Analisi",
     range: { 7: "7 giorni" },
@@ -32,7 +33,7 @@
     list: "Tutte le misure", cols: ["Data", "Ora", "AM/PM", "SYS", "DIA", "PUL", "Fonte"],
     per: { morning: "Mattina", afternoon: "Pomeriggio", evening: "Sera" }, src: { photo: "Foto", voice: "Voce" },
     none: "Nessuna misura in questo periodo", noneMoment: "Nessuna misura in questo momento della giornata",
-    signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT 365 vai su Report e tocca «Web Dashboard». Il browser si apre già collegato al tuo account.",
+    signinT: "Apri Web Dashboard dall'app", signinP: "Per entrare senza password: nell'app HINT 365 tocca «Dashboard» nella barra in basso. Il browser si apre già collegato al tuo account.",
     ckT: "Cookie", ckP: "La Web Dashboard usa un solo cookie tecnico, <b>hint_s</b>, che ti tiene collegato per 7 giorni dopo averla aperta dall'app. Contiene solo un codice casuale, è di prima parte e non è leggibile dagli script (HttpOnly, Secure, SameSite=Strict). Nessun cookie di profilazione, di statistica, di pubblicità o di terze parti. La tua scelta resta salvata in questo browser. Dettagli nell'<a href=\"/privacy#cookie\">informativa privacy</a>.",
     ckYes: "Accetto", ckNo: "Rifiuto", ckIsOn: "Adesso: hai accettato il cookie tecnico.", ckIsOff: "Adesso: il cookie tecnico non è salvato.",
     ckShared: "Questa pagina di sola lettura non usa cookie e non salva nulla nel browser.", ckNoT: "Senza cookie non posso tenerti collegato", ckNoP: "Il cookie tecnico serve solo a tenerti collegato alla Web Dashboard. Senza di esso puoi continuare a usare l'app. Se cambi idea, riapri Web Dashboard dall'app e tocca «Accetto».", ckAgain: "Rivedi la scelta",
@@ -50,6 +51,7 @@
     chartAria: (k, a, b) => `${k}, medie giornaliere dal ${a} al ${b}`,
    },
    en: {
+    st: { avg: "Period average", pul: "Average PUL", m: "Morning average", e: "Evening average", hiS: "Highest SYS", hiD: "Highest DIA", lo: "Lowest value", pr: "PUL, min–max", nIn: (n, d) => `${n} readings on ${d} days`, perMin: "per minute" },
     share: "Share", pdf: "Download PDF", csv: "Excel",
     bp: "Blood pressure", labs: "Lab results",
     range: { 7: "7 days" },
@@ -63,7 +65,7 @@
     list: "All readings", cols: ["Date", "Time", "AM/PM", "SYS", "DIA", "PUL", "Source"],
     per: { morning: "Morning", afternoon: "Afternoon", evening: "Evening" }, src: { photo: "Photo", voice: "Voice" },
     none: "No readings in this period", noneMoment: "No readings at this time of day",
-    signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT 365 app go to Report and tap “Web Dashboard”. The browser opens already signed in to your account.",
+    signinT: "Open Web Dashboard from the app", signinP: "To come in without a password: in the HINT 365 app tap “Dashboard” in the bar at the bottom. The browser opens already signed in to your account.",
     ckT: "Cookies", ckP: "The Web Dashboard uses a single technical cookie, <b>hint_s</b>, which keeps you signed in for 7 days after you open it from the app. It holds only a random code, is first-party and cannot be read by scripts (HttpOnly, Secure, SameSite=Strict). No profiling, statistics, advertising or third-party cookies. Your choice is saved in this browser. Details in the <a href=\"/privacy#cookie\">privacy policy</a>.",
     ckYes: "Accept", ckNo: "Decline", ckIsOn: "Now: you have accepted the technical cookie.", ckIsOff: "Now: the technical cookie is not saved.",
     ckShared: "This read-only page uses no cookies and saves nothing in the browser.", ckNoT: "Without the cookie I cannot keep you signed in", ckNoP: "The technical cookie only keeps you signed in to the Web Dashboard. Without it you can keep using the app. If you change your mind, open Web Dashboard again from the app and tap “Accept”.", ckAgain: "Review the choice",
@@ -81,6 +83,7 @@
     chartAria: (k, a, b) => `${k}, daily averages from ${a} to ${b}`,
    },
    de: {
+    st: { avg: "Mittel des Zeitraums", pul: "PUL-Mittel", m: "Mittel morgens", e: "Mittel abends", hiS: "Höchster SYS", hiD: "Höchster DIA", lo: "Tiefster Wert", pr: "PUL, min–max", nIn: (n, d) => `${n} Messungen an ${d} Tagen`, perMin: "pro Minute" },
     share: "Teilen", pdf: "PDF herunterladen", csv: "Excel",
     bp: "Blutdruck", labs: "Laborwerte",
     range: { 7: "7 Tage" },
@@ -94,7 +97,7 @@
     list: "Alle Messungen", cols: ["Datum", "Zeit", "AM/PM", "SYS", "DIA", "PUL", "Quelle"],
     per: { morning: "Morgen", afternoon: "Nachmittag", evening: "Abend" }, src: { photo: "Foto", voice: "Stimme" },
     none: "Keine Messungen in diesem Zeitraum", noneMoment: "Keine Messungen zu dieser Tageszeit",
-    signinT: "Web Dashboard aus der App öffnen", signinP: "Ohne Passwort hinein: In der App HINT 365 auf Bericht gehen und «Web Dashboard» tippen. Der Browser öffnet sich bereits mit Ihrem Konto verbunden.",
+    signinT: "Web Dashboard aus der App öffnen", signinP: "Ohne Passwort hinein: In der App HINT 365 unten in der Leiste «Dashboard» tippen. Der Browser öffnet sich bereits mit Ihrem Konto verbunden.",
     ckT: "Cookies", ckP: "Das Web Dashboard verwendet ein einziges technisches Cookie, <b>hint_s</b>, das Sie nach dem Öffnen aus der App 7 Tage angemeldet hält. Es enthält nur einen Zufallscode, ist ein Erstanbieter-Cookie und für Skripte nicht lesbar (HttpOnly, Secure, SameSite=Strict). Keine Cookies für Profile, Statistik, Werbung oder Dritte. Ihre Wahl bleibt in diesem Browser gespeichert. Details in der <a href=\"/privacy#cookie\">Datenschutzerklärung</a>.",
     ckYes: "Akzeptieren", ckNo: "Ablehnen", ckIsOn: "Jetzt: Sie haben das technische Cookie akzeptiert.", ckIsOff: "Jetzt: Das technische Cookie ist nicht gespeichert.",
     ckShared: "Diese Nur-Lese-Seite verwendet keine Cookies und speichert nichts im Browser.", ckNoT: "Ohne Cookie kann ich Sie nicht angemeldet halten", ckNoP: "Das technische Cookie dient nur dazu, Sie im Web Dashboard angemeldet zu halten. Ohne es können Sie die App weiter verwenden. Wenn Sie es sich anders überlegen, öffnen Sie das Web Dashboard erneut aus der App und tippen Sie «Akzeptieren».", ckAgain: "Wahl ändern",
@@ -111,6 +114,7 @@
     chartAria: (k, a, b) => `${k}, Tagesmittel vom ${a} bis ${b}`,
    },
    fr: {
+    st: { avg: "Moyenne de la période", pul: "PUL moyen", m: "Moyenne du matin", e: "Moyenne du soir", hiS: "SYS la plus haute", hiD: "DIA la plus haute", lo: "Valeur la plus basse", pr: "PUL, min–max", nIn: (n, d) => `${n} mesures sur ${d} jours`, perMin: "par minute" },
     share: "Partager", pdf: "Télécharger PDF", csv: "Excel",
     bp: "Tension", labs: "Analyses",
     range: { 7: "7 jours" },
@@ -124,7 +128,7 @@
     list: "Toutes les mesures", cols: ["Date", "Heure", "AM/PM", "SYS", "DIA", "PUL", "Source"],
     per: { morning: "Matin", afternoon: "Après-midi", evening: "Soir" }, src: { photo: "Photo", voice: "Voix" },
     none: "Aucune mesure sur cette période", noneMoment: "Aucune mesure à ce moment de la journée",
-    signinT: "Ouvrez le Web Dashboard depuis l'app", signinP: "Pour entrer sans mot de passe : dans l'app HINT 365, allez dans Rapport et touchez « Web Dashboard ». Le navigateur s'ouvre déjà connecté à votre compte.",
+    signinT: "Ouvrez le Web Dashboard depuis l'app", signinP: "Pour entrer sans mot de passe : dans l'app HINT 365, touchez « Dashboard » dans la barre du bas. Le navigateur s'ouvre déjà connecté à votre compte.",
     ckT: "Cookies", ckP: "Le Web Dashboard utilise un seul cookie technique, <b>hint_s</b>, qui vous garde connecté 7 jours après l'avoir ouvert depuis l'app. Il ne contient qu'un code aléatoire, est interne et illisible par les scripts (HttpOnly, Secure, SameSite=Strict). Aucun cookie de profilage, de statistiques, de publicité ou de tiers. Votre choix reste enregistré dans ce navigateur. Détails dans la <a href=\"/privacy#cookie\">politique de confidentialité</a>.",
     ckYes: "J'accepte", ckNo: "Je refuse", ckIsOn: "Actuellement : vous avez accepté le cookie technique.", ckIsOff: "Actuellement : le cookie technique n'est pas enregistré.",
     ckShared: "Cette page en lecture seule n'utilise pas de cookies et n'enregistre rien dans le navigateur.", ckNoT: "Sans cookie, je ne peux pas vous garder connecté", ckNoP: "Le cookie technique sert seulement à vous garder connecté au Web Dashboard. Sans lui, vous pouvez continuer à utiliser l'app. Si vous changez d'avis, rouvrez le Web Dashboard depuis l'app et touchez « J'accepte ».", ckAgain: "Revoir le choix",
@@ -363,10 +367,6 @@
       render(main, data, ctx) {
         const items = data.items;
         const n = items.length;
-        const dayCount = new Set(items.map((r) => day(r.t))).size;
-        const spanDays = Math.round((midnight(data.to) - midnight(data.from)) / 864e5) + 1;
-        const avg = (k) => { const v = items.map((r) => r[k]).filter((x) => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
-        const last = items[n - 1];
         const per = `${fRange.formatRange(data.from, data.to)} · ${T.dailyAvg}`;   // e.g. "21–27 set · media di ogni giorno"
         main.innerHTML = `
           ${ctx.banner || ""}
@@ -375,31 +375,16 @@
             <span class="grow"></span>${ctx.pills || ""}
           </div>
           ${n ? `
-          <section class="kpis">
-            <div class="kpi"><div class="l">${T.last}</div>
-              <div class="v"><span class="sys">${last.sys}</span><span class="u">/</span><span class="dia">${last.dia}</span>${last.pul != null ? `<span class="u"> · </span><span class="pul">${last.pul}</span>` : ""}</div>
-              <div class="u">${day(last.t)} · ${time(last.t)}</div></div>
-            <div class="kpi"><div class="l">${T.avgBp}</div><div class="v"><span class="sys">${avg("sys")}</span><span class="u">/</span><span class="dia">${avg("dia")}</span></div><div class="u">mmHg</div></div>
-            <div class="kpi"><div class="l">${T.avgPul}</div><div class="v"><span class="pul">${avg("pul") ?? "–"}</span></div><div class="u">bpm</div></div>
-            <div class="kpi"><div class="l">${T.count}</div><div class="v">${n}</div><div class="u">${T.days(dayCount, spanDays)}</div></div>
-          </section>
           <p class="note">ⓘ ${T.chartsNote}</p>
           <section class="card"><div class="card-h"><h2>${T.whole}</h2><span class="sub">${per}</span><div class="legend" id="lg-all"></div></div><div class="chart" id="ch-all"></div></section>
-          <div class="two">
-            <section class="card"><div class="card-h"><h2>${T.morning}</h2><span class="sub">${T.morningSub} · ${per}</span><div class="legend" id="lg-m"></div></div><div class="chart small" id="ch-m"></div></section>
-            <section class="card"><div class="card-h"><h2>${T.evening}</h2><span class="sub">${T.eveningSub} · ${per}</span><div class="legend" id="lg-e"></div></div><div class="chart small" id="ch-e"></div></section>
-          </div>
+          <section class="tiles stats">${stats(items)}</section>
           <section class="card"><div class="bal" id="bal"></div></section>
           <section class="card"><div class="card-h"><h2>${T.pulse}</h2><span class="sub">${per}</span><div class="legend" id="lg-p"></div></div><div class="chart small" id="ch-p"></div></section>
-          <div class="card-h" style="margin-top:6px"><h2>${T.values}</h2></div>
-          <section class="tiles">${tiles(items)}</section>
           <section class="card"><details${ctx.shared ? " open" : ""}><summary>${T.list} (${n})</summary>${table(items)}</details></section>
           ` : `<div class="card"><div class="empty" style="height:200px">${T.none}</div></div>`}`;
         ctx.bindPills && ctx.bindPills();
         if (!n) return;
         lineChart($("ch-all"), $("lg-all"), items, ["sys", "dia"], data);
-        lineChart($("ch-m"), $("lg-m"), items.filter((r) => r.period === "morning"), ["sys", "dia"], data);
-        lineChart($("ch-e"), $("lg-e"), items.filter((r) => r.period === "evening"), ["sys", "dia"], data);
         lineChart($("ch-p"), $("lg-p"), items, ["pul"], data);
         drawBalance($("bal"), items);
       },
@@ -412,21 +397,27 @@
     // labs: { title: () => T.labs, render(main, data, ctx) {...}, csv(items) {...} }   ← the lab results module goes here
   };
 
-  // nine boxes: highest, lowest (with day and time) and average of SYS, DIA and PUL
-  function tiles(items) {
-    const out = [];
-    const unit = (k) => (k === "pul" ? "bpm" : "mmHg");
-    for (const row of ["hi", "lo", "mean"]) for (const k of ["sys", "dia", "pul"]) {
-      const l = items.filter((r) => r[k] != null);
-      let v = "–", w = "";
-      if (l.length && row === "mean") { v = Math.round(l.reduce((a, r) => a + r[k], 0) / l.length); w = T.meanOf(l.length); }
-      else if (l.length) {
-        const r = l.reduce((a, b) => (row === "hi" ? (b[k] > a[k] ? b : a) : (b[k] < a[k] ? b : a)));
-        v = r[k]; w = `${day(r.t)} · ${time(r.t)}` + (k === "pul" ? "" : ` · ${r.sys}/${r.dia}`);
-      }
-      out.push(`<div class="tile" style="--c:${COL[k]}"><div class="l">${k.toUpperCase()} ${T[row]}</div><div class="v">${v}<small>${unit(k)}</small></div><div class="w">${w}</div></div>`);
-    }
-    return out.join("");
+  // the eight boxes of the Report in the app (stats() in Core.kt), in pairs: averages, morning and evening, peaks, pulse
+  function stats(items) {
+    const mean = (l, k) => { const v = l.map((r) => r[k]).filter((x) => x != null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+    const bp = (l) => (l.length ? `${mean(l, "sys")}/${mean(l, "dia")}` : "–");
+    const by = (k, hi) => items.reduce((a, b) => (a == null || (hi ? b[k] > a[k] : b[k] < a[k]) ? b : a), null);
+    const at = (r) => (r ? `${day(r.t)} · ${time(r.t)}` : "");
+    const pair = (r) => (r ? `${r.sys}/${r.dia}` : "–");
+    const m = items.filter((r) => r.period === "morning"), e = items.filter((r) => r.period === "evening");
+    const puls = items.map((r) => r.pul).filter((x) => x != null);
+    const box = (c, l, v, u, w) => `<div class="tile" style="--c:${c}"><div class="l">${l}</div><div class="v">${v}${u ? `<small>${u}</small>` : ""}</div><div class="w">${w}</div></div>`;
+    const hiS = by("sys", true), hiD = by("dia", true), lo = by("sys", false);
+    return [
+      box("var(--line)", T.st.avg, bp(items), "mmHg", T.st.nIn(items.length, new Set(items.map((r) => day(r.t))).size)),
+      box(COL.pul, T.st.pul, mean(items, "pul") ?? "–", "bpm", T.st.perMin),
+      box("var(--line)", "☀ " + T.st.m, bp(m), m.length ? "mmHg" : "", T.nOf(m.length)),
+      box("var(--line)", "☾ " + T.st.e, bp(e), e.length ? "mmHg" : "", T.nOf(e.length)),
+      box(COL.sys, T.st.hiS, pair(hiS), "mmHg", at(hiS)),
+      box(COL.dia, T.st.hiD, pair(hiD), "mmHg", at(hiD)),
+      box("var(--line)", T.st.lo, pair(lo), "mmHg", at(lo)),
+      box(COL.pul, T.st.pr, puls.length ? `${Math.min(...puls)}–${Math.max(...puls)}` : "–", "bpm", T.st.perMin),
+    ].join("");
   }
   function table(items) {
     let lastDay = "";
@@ -582,25 +573,34 @@
     // step 3 of the sign-in from the app: the one-time code in the #part becomes a cookie, then disappears from the address.
     // The cookie is set only after it has been accepted.
     const m = location.hash.match(/c=([A-Za-z0-9_-]+)/);
+    // "&admin": opened from the owner's button in the app. The owner's area is not a tab of the dashboard.
+    const wantAdmin = /(?:^#|&)admin\b/.test(location.hash);
+    const home = wantAdmin ? "/my/#admin" : "/my/";
     if (!(await cookiesOk())) { if (m) history.replaceState(null, "", "/my/"); return cookiesRefused(); }
     if (m) {
-      history.replaceState(null, "", "/my/");
+      history.replaceState(null, "", home);
       try { await api("/my/session", { method: "POST", body: JSON.stringify({ code: m[1] }) }); } catch (e) { /* expired: fall through to the cookie, if any */ }
     }
     let me;
     try { me = await api("/my/api/me"); } catch (e) { return signedOut(); }
     $("actions").hidden = false;
-    $("modules").innerHTML = me.modules.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("")
-      // the owner's area: only the owner gets this tab, and the server answers it only for the owner
-      + (me.isOwner ? `<button type="button" data-m="admin">${AD.tab}</button>` : "");
+    // blood pressure first: the dashboard always opens on it, then the lab results
+    const order = ["bp", "labs"].filter((id) => me.modules.includes(id)).concat(me.modules.filter((id) => id !== "bp" && id !== "labs"));
+    $("modules").innerHTML = order.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("");
     $("modules").onclick = (e) => {
-      const id = e.target.dataset.m; if (!id || (!MODULES[id] && id !== "admin")) return;
+      const id = e.target.dataset.m; if (!id || !MODULES[id]) return;
       [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id));
-      if (id === "admin") { $("actions").hidden = true; return loadAdmin(); }
+      if (location.hash) history.replaceState(null, "", "/my/");
       $("actions").hidden = false; current.module = id; load();
     };
     $("btn-pdf").onclick = printReport;
     setupShare();
+    // the owner's area: only from the owner's button in the app; the server answers it only for the owner
+    if (wantAdmin && me.isOwner) {
+      [...$("modules").children].forEach((b) => b.classList.remove("on"));
+      $("actions").hidden = true;
+      return loadAdmin();
+    }
     load();
   }
 

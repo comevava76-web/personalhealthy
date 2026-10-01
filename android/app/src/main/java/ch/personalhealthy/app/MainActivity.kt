@@ -270,11 +270,13 @@ const val RECHARGE_URL = "https://console.anthropic.com/settings/billing"
  * Tabs of the bottom bar, in order. A future module (for example "analyses" for uploading
  * blood tests) is added here with its label, plus one branch in App() that shows its screen.
  */
-enum class Tab(val key: String, val label: Int) {
-    BP("bp", R.string.tab_bp),
-    LABS("labs", R.string.tab_labs),
-    REPORT("report", R.string.tab_report),
-    CREDIT("credit", R.string.tab_credit),
+enum class Tab(val key: String, val label: Int, val icon: Int, val web: Boolean = false, val ownerOnly: Boolean = false) {
+    BP("bp", R.string.tab_bp, R.drawable.ic_tab_bp),
+    LABS("labs", R.string.tab_labs, R.drawable.ic_tab_labs),
+    // these two are not screens of the app: they open the Web Dashboard in the browser, already signed in
+    WEB("web", R.string.tab_web, R.drawable.ic_tab_web, web = true),
+    OWNER("owner", R.string.tab_owner, R.drawable.ic_tab_owner, web = true, ownerOnly = true),
+    CREDIT("credit", R.string.tab_credit, R.drawable.ic_tab_settings),
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -644,18 +646,21 @@ fun App() {
                         pull.endRefresh()
                     }
                 }
+                // the web dashboard, opened in the browser already signed in: offered at the end of both tabs
+                val openWeb: (String) -> Unit = { target ->
+                    personId?.let { pid ->
+                        scope.launch {
+                            try {
+                                val url = Repo.webDashUrl(pid) + target
+                                ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                            } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                        }
+                    }
+                }
+                val openDash = { openWeb("") }
                 Box(Modifier.weight(1f).nestedScroll(pull.nestedScrollConnection)) {
                     when (tab) {
-                        Tab.LABS.key -> personId?.let { LabsScreen(it) }
-                        Tab.REPORT.key -> ReportScreen(readings, onTerms = { screen = "terms" }, onDash = {
-                            val pid = personId ?: return@ReportScreen
-                            scope.launch {
-                                try {
-                                    val url = Repo.webDashUrl(pid)
-                                    ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-                                } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                            }
-                        })
+                        Tab.LABS.key -> personId?.let { LabsScreen(it, onDash = openDash) }
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
                             me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
@@ -702,6 +707,7 @@ fun App() {
                             // the photo reading is the only paid part: without a key, say so and offer the free voice
                             onMeasure = { if (me?.selfPays == true && me?.hasKey == false) scanNeedsKey = true else openCamera() },
                             onVoice = { openVoice() },
+                            onDash = openDash,
                         )
                     }
                     androidx.compose.material3.pulltorefresh.PullToRefreshContainer(
@@ -709,7 +715,13 @@ fun App() {
                         containerColor = C.Surface2, contentColor = C.Sys
                     )
                 }
-                BottomBar(tab) { tab = it }
+                BottomBar(tab, owner = me?.isAdmin == true) { key ->
+                    when (key) {
+                        Tab.WEB.key -> openDash()
+                        Tab.OWNER.key -> openWeb("&admin")    // the owner's area of the Web Dashboard
+                        else -> tab = key
+                    }
+                }
             }
         }
     }
@@ -796,21 +808,32 @@ fun App() {
     )
 }
 
+/** A clear icon and its name in small letters under it. The web ones carry a small arrow: they open the browser. */
 @Composable
-fun BottomBar(tab: String, onSelect: (String) -> Unit) {
+fun BottomBar(tab: String, owner: Boolean, onSelect: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().background(C.Surface)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(C.Line))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
-            Tab.entries.forEach { item ->
+        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp)) {
+            Tab.entries.filter { owner || !it.ownerOnly }.forEach { item ->
                 val sel = item.key == tab
                 Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).clickable { onSelect(item.key) }.padding(vertical = 8.dp),
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable { onSelect(item.key) }.padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(Modifier.width(28.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (sel) C.Sys else Color.Transparent))
-                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        Modifier.width(58.dp).height(34.dp).clip(RoundedCornerShape(17.dp))
+                            .background(if (sel) C.Sys.copy(alpha = 0.22f) else Color.Transparent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(painterResource(item.icon), contentDescription = null,
+                            tint = if (sel) C.Sys else C.Ink.copy(alpha = 0.85f), modifier = Modifier.size(27.dp))
+                        if (item.web) Text("↗", color = C.Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.TopEnd).padding(end = 5.dp))
+                    }
+                    Spacer(Modifier.height(3.dp))
                     Text(
-                        t(item.label), color = if (sel) C.Ink else C.Muted, fontSize = 13.sp, maxLines = 1,
+                        t(item.label), color = if (sel) C.Ink else C.Muted, fontSize = 11.sp, maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
@@ -1202,8 +1225,9 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit, onTerms: () -> Unit
+    onMeasure: () -> Unit, onVoice: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
 ) {
+    val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null, premium = me != null && me.selfPays && me.hasKey)
 
@@ -1232,6 +1256,22 @@ fun HomeScreen(
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
+
+        // the 7-day report to send, and the web dashboard: bigger charts, and a link to send to the doctor
+        val per = periodInfo(readings, 7)
+        Spacer(Modifier.height(8.dp))
+        if (readings.isNotEmpty() && !per.ok) Text(t(R.string.report_not_yet, 7, per.missing), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+        Row {
+            BigButton(t(R.string.send_pdf), enabled = per.ok, modifier = Modifier.weight(1f)) {
+                try { shareFile(ctx, buildPdf(ctx, readings, 7), "application/pdf") } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
+            }
+            Spacer(Modifier.width(10.dp))
+            BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok, modifier = Modifier.weight(1f)) {
+                try { shareFile(ctx, buildCsv(ctx, readings, 7), "text/csv") } catch (e: Exception) { ErrorReport.report("Report/Excel", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
+            }
+        }
+        GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
+        Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Colophon(onTerms)
     }
@@ -1654,82 +1694,6 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
         Text(value, color = color, fontSize = 38.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center)
     }
 }
-
-/* ---------------- Report ---------------- */
-
-@Composable
-fun ReportScreen(readings: List<Reading>, onTerms: () -> Unit, onDash: () -> Unit) {
-    val ctx = LocalContext.current
-    var n by rememberSaveable { mutableIntStateOf(7) }
-    val infos = listOf(7).associateWith { periodInfo(readings, it) }
-    val per = infos.getValue(n)
-    val st = stats(per.list)
-
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header(t(R.string.report_title), t(R.string.report_sub))
-        // the web dashboard, opened in the browser already signed in: bigger charts, and a link to send to the doctor
-        GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
-        Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
-
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(4.dp)) {
-            listOf(7).forEach { d ->
-                val info = infos.getValue(d)
-                val sel = d == n
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(if (sel) C.Surface2 else Color.Transparent)
-                        .clickable(enabled = info.ok || sel) { n = d }.padding(vertical = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(t(R.string.n_days, d), color = if (info.ok || sel) C.Ink else C.Muted.copy(alpha = 0.5f), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    Text(if (info.ok) t(R.string.ready) else t(R.string.missing_days_short, info.missing), color = C.Muted, fontSize = 11.sp)
-                }
-            }
-        }
-
-        if (per.list.isEmpty()) {
-            Panel { Text(t(R.string.report_empty), color = C.Muted) }
-            return@Column
-        }
-
-        Panel {
-            Text(t(R.string.range_fmt, Z.short(per.start), Z.long(per.end)), color = C.Muted, fontSize = 13.sp)
-            Spacer(Modifier.height(8.dp))
-            // blood pressure only: the pulse is never drawn on the same chart
-            BpChart(per.list, per.start, n, Modifier.fillMaxWidth().height(260.dp), pulse = false)
-            Legend(pulse = false)
-        }
-        // boxes in pairs of the same height, dates written short so they fit on one line
-        fun shortWhen(r: Reading) = "${Z.dmy(Z.date(r.takenAt))}, ${Z.time(r.takenAt)}"
-        val puls = per.list.mapNotNull { it.pul }
-        StatRow {
-            StatBox(t(R.string.period_avg), "${st.sis}/${st.dia}", t(R.string.n_in_days, st.n, st.days), modifier = Modifier.weight(1f).fillMaxHeight())
-            StatBox(t(R.string.avg_pulse), st.pul?.toString() ?: "—", t(R.string.per_minute), modifier = Modifier.weight(1f).fillMaxHeight())
-        }
-        StatRow {
-            StatBox(t(R.string.avg_day), if (st.mN > 0) "${st.mS}/${st.mD}" else "—", t(R.string.n_readings, st.mN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "morning")
-            StatBox(t(R.string.avg_evening_label), if (st.eN > 0) "${st.eS}/${st.eD}" else "—", t(R.string.n_readings, st.eN), modifier = Modifier.weight(1f).fillMaxHeight(), period = "evening")
-        }
-        StatRow {
-            StatBox(t(R.string.peak_sys), st.maxS?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxS?.let { shortWhen(it) }, C.Sys, Modifier.weight(1f).fillMaxHeight())
-            StatBox(t(R.string.max_dia), st.maxD?.let { "${it.sis}/${it.dia}" } ?: "—", st.maxD?.let { shortWhen(it) }, C.Dia, Modifier.weight(1f).fillMaxHeight())
-        }
-        StatRow {
-            StatBox(t(R.string.lowest), st.minS?.let { "${it.sis}/${it.dia}" } ?: "—", st.minS?.let { shortWhen(it) }, modifier = Modifier.weight(1f).fillMaxHeight())
-            StatBox(t(R.string.pulse_range), if (puls.isEmpty()) "—" else "${puls.min()}–${puls.max()}", t(R.string.per_minute), C.Pul, Modifier.weight(1f).fillMaxHeight())
-        }
-
-        Spacer(Modifier.height(8.dp))
-        if (!per.ok) Text(t(R.string.report_not_yet, n, per.missing), color = C.Muted, fontSize = 14.sp)
-        BigButton(t(R.string.send_pdf), enabled = per.ok) {
-            try { shareFile(ctx, buildPdf(ctx, readings, n), "application/pdf") } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
-        }
-        BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok) {
-            try { shareFile(ctx, buildCsv(ctx, readings, n), "text/csv") } catch (e: Exception) { ErrorReport.report("Report/Excel", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
-        }
-        Colophon(onTerms)
-    }
-}
-
 
 /* ---------------- Credit tab ---------------- */
 
