@@ -273,7 +273,6 @@ enum class Tab(val key: String, val label: Int, val icon: Int, val web: Boolean 
     BP("bp", R.string.tab_bp, R.drawable.ic_tab_bp),
     LABS("labs", R.string.tab_labs, R.drawable.ic_tab_labs),
     // these two are not screens of the app: they open the Web Dashboard in the browser, already signed in
-    WEB("web", R.string.tab_web, R.drawable.ic_tab_web, web = true),
     // "Gestore": the person's own account (Google, readings, sign out, delete, costs, terms)
     CREDIT("credit", R.string.tab_credit, R.drawable.ic_tab_settings),
     // "Admin": the owner's console on the web (totals only), last
@@ -600,6 +599,10 @@ fun App() {
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
                             me = me, readingsCount = readings.size,
+                            // how many lab reports are saved: asked when the tab opens
+                            labsCount = androidx.compose.runtime.produceState<Int?>(null, personId) {
+                                value = try { personId?.let { LabsRepo.list(it).size } } catch (_: Exception) { null }
+                            }.value,
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
                             onSignOut = {
@@ -641,7 +644,6 @@ fun App() {
                 }
                 BottomBar(tab, owner = me?.isAdmin == true) { key ->
                     when (key) {
-                        Tab.WEB.key -> openDash()
                         Tab.OWNER.key -> openWeb("&admin")    // the owner's area of the Web Dashboard
                         else -> tab = key
                     }
@@ -1129,7 +1131,6 @@ fun HomeScreen(
             try { downloadPdf(ctx, buildPdf(ctx, readings, 7)) } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
         GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
-        Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))
 
         Colophon(onTerms)
     }
@@ -1536,7 +1537,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 
 @Composable
 fun CreditScreen(
-    me: Me?, readingsCount: Int,
+    me: Me?, readingsCount: Int, labsCount: Int?,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
     onTerms: () -> Unit
 ) {
@@ -1549,9 +1550,12 @@ fun CreditScreen(
             return@Column
         }
 
-        // Readings database: every reading, to delete a wrong one or all of them
+        // what is saved: readings (to delete a wrong one or all of them) and lab reports
         SectionTitle(t(R.string.section_db))
-        Panel { Text(t(R.string.db_count, readingsCount), color = C.Ink, fontSize = 14.sp) }
+        Panel {
+            Text(t(R.string.db_count, readingsCount), color = C.Ink, fontSize = 14.sp)
+            Text(if (labsCount == null) "…" else t(R.string.db_labs_count, labsCount), color = C.Ink, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+        }
         BigButton(t(R.string.manage_readings), onClick = onManageReadings)
 
         // Identity: the Google account, who can join, and deleting it all
@@ -1578,10 +1582,6 @@ fun CreditScreen(
                 Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
             }
         }
-
-        // What costs what, and who is paid
-        SectionTitle(t(R.string.section_costs))
-        CostsTable()
 
         // Subscription (only once it is switched on, for a paying person): until when it is paid, and where to cancel.
         // The owner's controls (subscription, app versions) live in the web dashboard's Admin area, not in the app.

@@ -49,7 +49,7 @@
     <string name="no_readings_text">Miss deinen Blutdruck und fotografiere die Anzeige: Die App liest die Werte.</string>
     <string name="last_fmt">Letzte: %s</string>
     <string name="measure">Messung scannen</string>
-    <string name="record_short">Messung erfassen</string>
+    <string name="record_short">Sprache</string>
     <string name="scan_short">Scan</string>
     <string name="scan_cost_note">Das Scannen eines Fotos nutzt kostenpflichtiges, optionales KI-Guthaben (etwa einen halben Cent pro Foto). Alles andere, Stimme inklusive, ist kostenlos.</string>
     <string name="scan_needs_key_title">Scannen ist optional</string>
@@ -169,7 +169,7 @@
     <string name="tab_credit">Verwalten</string>
     <string name="section_credits">Guthaben</string>
     <string name="section_token">KI-Funktionen</string>
-    <string name="section_db">Messungsdatenbank</string>
+    <string name="section_db">Ihre Daten</string>
     <string name="section_identity">Identität</string>
     <string name="db_count">%1$d Messungen gespeichert</string>
     <string name="token_own_set">Dein Anthropic-Schlüssel ist verschlüsselt gespeichert. Nur deine Fotos nutzen ihn.</string>
@@ -385,7 +385,7 @@
     <string name="labs_failed">Dokument nicht lesbar. Unverschlüsseltes PDF (bis zu 15 Seiten) oder klares Bild verwenden, maximal 20 MB.</string>
     <string name="labs_network">Verlauf konnte nicht geladen werden. Verbindung prüfen und erneut versuchen.</string>
     <string name="labs_history">Verlauf · %1$d Befunde</string>
-    <string name="labs_empty">Die hochgeladenen Befunde erscheinen hier, nach Tag gruppiert, mit dem Ergebnis jedes Uploads.</string>
+    <string name="labs_empty">Die gespeicherten Befunde erscheinen hier, nach Tag des Hochladens gruppiert.</string>
     <string name="labs_delete">Befund vom %1$s löschen</string>
     <string name="lab_name_wbc">Leukozyten</string>
     <string name="lab_name_rbc">Erythrozyten</string>
@@ -455,7 +455,6 @@
     <string name="labs_fail_conflict">Für dieselben Tests und dasselbe Datum sind bereits andere Werte gespeichert: Es wurde nichts gespeichert. Löschen Sie dieses Datum zuerst im Web Dashboard, wenn Sie es ersetzen möchten.</string>
     <string name="labs_web_hint">Das Ergebnis jedes Uploads, Tag für Tag. Die Werte selbst sind im Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d Werte</string>
-    <string name="tab_web">Berichte</string>
     <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Uploads</string>
     <string name="labs_today">Heute</string>
@@ -493,4 +492,5 @@
     <string name="photo_check">Prüfen Sie: Sind das die Zahlen auf dem Display? Nur dann speichern.</string>
     <string name="photo_save">Ja, sie stimmen: speichern</string>
     <string name="photo_wrong">Die Zahlen sind falsch: Foto neu aufnehmen</string>
+    <string name="db_labs_count">%1$d Befunde hochgeladen</string>
 </resources>

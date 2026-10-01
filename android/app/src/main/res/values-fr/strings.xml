@@ -49,7 +49,7 @@
     <string name="no_readings_text">Mesurez votre tension et photographiez l\'écran : l\'app lit les valeurs.</string>
     <string name="last_fmt">Dernière : %s</string>
     <string name="measure">Scanner la mesure</string>
-    <string name="record_short">Enregistrer une mesure</string>
+    <string name="record_short">Voix</string>
     <string name="scan_short">Scan</string>
     <string name="scan_cost_note">Scanner une photo utilise du crédit IA payant et facultatif (environ un demi-centime par photo). Tout le reste, voix comprise, est gratuit.</string>
     <string name="scan_needs_key_title">Le scan est facultatif</string>
@@ -169,7 +169,7 @@
     <string name="tab_credit">Gérer</string>
     <string name="section_credits">Crédits</string>
     <string name="section_token">Fonctions IA</string>
-    <string name="section_db">Base des mesures</string>
+    <string name="section_db">Vos données</string>
     <string name="section_identity">Identité</string>
     <string name="db_count">%1$d mesures enregistrées</string>
     <string name="token_own_set">Votre clé Anthropic est enregistrée, chiffrée. Seules vos photos l\'utilisent.</string>
@@ -385,7 +385,7 @@
     <string name="labs_failed">Document illisible. Utilisez un PDF non protégé (15 pages maximum) ou une image nette, jusqu’à 20 Mo.</string>
     <string name="labs_network">Impossible de charger l’historique. Vérifiez la connexion et réessayez.</string>
     <string name="labs_history">Historique · %1$d comptes rendus</string>
-    <string name="labs_empty">Les comptes rendus importés apparaîtront ici, groupés par jour, avec le résultat de chaque import.</string>
+    <string name="labs_empty">Les comptes rendus enregistrés apparaîtront ici, groupés par jour d’import.</string>
     <string name="labs_delete">Supprimer le compte rendu du %1$s</string>
     <string name="lab_name_wbc">Leucocytes</string>
     <string name="lab_name_rbc">Hématies</string>
@@ -455,7 +455,6 @@
     <string name="labs_fail_conflict">Des résultats différents sont déjà enregistrés pour les mêmes analyses et la même date : rien n’a été enregistré. Supprimez d’abord cette date dans le Web Dashboard pour la remplacer.</string>
     <string name="labs_web_hint">Le résultat de chaque import, jour par jour. Les résultats eux-mêmes sont dans le Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d résultats</string>
-    <string name="tab_web">Rapports</string>
     <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Imports</string>
     <string name="labs_today">Aujourd’hui</string>
@@ -493,4 +492,5 @@
     <string name="photo_check">Vérifiez : sont-ce les chiffres de l\'écran ? Enregistrez seulement si oui.</string>
     <string name="photo_save">Oui, ils sont justes : enregistrer</string>
     <string name="photo_wrong">Les chiffres sont faux : reprendre la photo</string>
+    <string name="db_labs_count">%1$d comptes rendus importés</string>
 </resources>

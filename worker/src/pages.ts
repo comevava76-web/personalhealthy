@@ -22,6 +22,11 @@ const style = `
   .muted { color:var(--muted); font-size:14px; }
   .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
   hr { border:0; border-top:1px solid #2A3F66; margin:36px 0; }
+  .foot { margin-top:40px; padding-top:18px; border-top:1px solid #2A3F66; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
+  .foot b { color:var(--ink, #EAF0FA); letter-spacing:.06em; }
+  .foot nav { display:flex; flex-wrap:wrap; justify-content:center; gap:2px 18px; margin-top:8px; }
+  .foot nav a { color:var(--muted); text-decoration:none; padding:8px 2px; }
+  .foot nav a:hover { color:var(--accent); }
 `;
 const logo = `<svg viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
   <stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs>
@@ -39,8 +44,9 @@ function page(title: string, body: string): Response {
   const html = `<!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${style}</style></head>
 <body><main><header>${logo}<div><h1>HINT 365</h1><p>HealthyInstantTracker</p></div></header>${body}
-<footer class="muted"><hr>HINT 365 · HealthyInstantTracker · © ${copyrightYears()} · Tutti i diritti riservati · All rights reserved<br>
-<a href="/">Home</a> · <a href="/terms">Condizioni d'uso · Terms of use</a> · <a href="/privacy">Privacy</a></footer></main></body></html>`;
+<footer class="foot"><div><b>HINT 365</b> · HealthyInstantTracker</div>
+<div>© ${copyrightYears()} · Tutti i diritti riservati · All rights reserved</div>
+<nav><a href="/">Home</a><a href="/terms">Condizioni d'uso · Terms of use</a><a href="/privacy">Privacy</a></nav></footer></main></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600" } });
 }
 
