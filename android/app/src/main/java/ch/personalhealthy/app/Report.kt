@@ -583,13 +583,28 @@ fun downloadPdf(ctx: Context, file: File) {
  * Opens an address in a web browser, never in another app that claims the link (a download manager, for example,
  * would save the page instead of showing it).
  */
+/**
+ * Opens a web address in the phone's browser, never in another app that registered for links of this site (that
+ * downloaded a file instead, P-005). The browser is chosen by asking which apps open any web address: the
+ * phone's default one when it is a browser, otherwise Chrome or the first browser found. The address itself is
+ * always passed to the browser (in 0.1.111 a "browser selector" opened the browser's start page without it, P-006).
+ */
 fun openInBrowser(ctx: Context, url: String) {
     val view = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
-    try {
-        ctx.startActivity(Intent(view).apply { selector = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER) })
-    } catch (_: android.content.ActivityNotFoundException) {
-        ctx.startActivity(view)
+    if (ctx !is android.app.Activity) view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val pkg = try {
+        val pm = ctx.packageManager
+        val anyPage = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
+        val browsers = pm.queryIntentActivities(anyPage, 0).map { it.activityInfo.packageName }.distinct()
+        val def = pm.resolveActivity(anyPage, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+        def?.takeIf { it in browsers } ?: browsers.firstOrNull { it == "com.android.chrome" } ?: browsers.firstOrNull()
+    } catch (e: Exception) { ErrorReport.report("Web/browser", e); null }
+    if (pkg != null) {
+        try { ctx.startActivity(Intent(view).setPackage(pkg)); return }
+        catch (e: android.content.ActivityNotFoundException) { ErrorReport.report("Web/browser", e) }
     }
+    try { ctx.startActivity(view) }
+    catch (e: android.content.ActivityNotFoundException) { ErrorReport.send("no_browser", "Web/browser", ""); throw e }
 }
 
 fun shareFile(ctx: Context, file: File, mime: String) {

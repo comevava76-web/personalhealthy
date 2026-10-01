@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (AI Scan removed, terms v19).
+Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (0.1.112: dashboard links open in the browser again, P-006; Scan without AI in progress).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -270,5 +270,14 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 ### 2026-10-01 Europe/Zurich — Claude Code — PDF download, "full reports", browser fix
 
 - Request (user, chat, after 0.1.110): keep a camera Scan of the monitor but without AI, accurate, tested on at least 400 photos, saying "photo not clear, retake" (design pending: questions asked in chat); remove Excel from the app, only "Download PDF"; rename the dashboard button "Go to your full reports"; the bottom Dashboard icon downloaded something instead of opening the dashboard.
-- Changed: Blood pressure tab — one "Download PDF" button (MediaStore Downloads, then opens the viewer; Android 9 and older: share sheet), Excel removed from the app; "Go to your full reports" button; bottom icon renamed Reports; every dashboard link opens through a browser selector (`openInBrowser`), problem P-005; guides, architecture, web sign-in text.
+- Changed: Blood pressure tab — one "Download PDF" button (MediaStore Downloads, then opens the viewer; Android 9 and older: share sheet), Excel removed from the app; "Go to your full reports" button; bottom icon renamed Reports; every dashboard link opens in the browser (`openInBrowser`), problem P-005 (the 0.1.111 selector dropped the address: fixed in 0.1.112, P-006); guides, architecture, web sign-in text.
 - Next: the on-device, AI-free monitor reader, after the user's answers on the photo test set.
+
+### 2026-10-01 — Claude Code — 0.1.112: dashboard links fixed (P-006); Scan without AI in progress
+
+- Request: in 0.1.111 the Reports and Owner icons and «Vai ai tuoi report completi» opened nothing useful.
+- Cause: the P-005 fix started the browser with a selector intent (`makeMainSelectorActivity`), which opens the browser's start page and drops the address.
+- Change: `openInBrowser` (Report.kt) sends the address to the browser itself (default browser, else Chrome, else the first one; manifest `<queries>` for browsers); failures go to the error log as `Web/browser`. `problems.json` P-006.
+- Scan without AI, work in progress, NOT in main: `MonitorReader.kt` and `MonitorReaderTest.kt` are in commit `5f8713e` (PR #121 history; taken out before merge because the Android unit-test classpath has no java.awt, which the photo generator needs: it must move to a plain JVM test module). Status: 0 wrong values; 171 of 262 easy generated photos read (aim 90%); 0 of 6 real photos read. Next: real photos of the owner's monitor (Paramed Expert-X) with their values, then camera flow, confirm screen, POST /v1/bp/photo, terms v20.
+- Validation: no local Android SDK; compile and unit tests run in CI.
+
