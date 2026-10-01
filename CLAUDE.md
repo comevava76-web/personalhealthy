@@ -52,7 +52,8 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
-  il deploy e manda l'APK in chat.
+  il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
+  https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
   stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`). Il workflow *Docs check* lo verifica.
