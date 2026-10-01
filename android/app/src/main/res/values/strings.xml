@@ -50,7 +50,7 @@
     <string name="no_readings_text">Measure your blood pressure and photograph the display: the app reads the numbers.</string>
     <string name="last_fmt">Last: %s</string>
     <string name="measure">Scan reading</string>
-    <string name="record_short">Record a reading</string>
+    <string name="record_short">Voice</string>
     <string name="scan_short">Scan</string>
     <string name="scan_cost_note">Scanning a photo uses paid, optional AI credit (about half a cent per photo). Everything else, voice included, is free.</string>
     <string name="scan_needs_key_title">Scanning is optional</string>
@@ -171,7 +171,7 @@
     <string name="tab_credit">Manage</string>
     <string name="section_credits">Credits</string>
     <string name="section_token">AI features</string>
-    <string name="section_db">Readings database</string>
+    <string name="section_db">Your data</string>
     <string name="section_identity">Identity</string>
     <string name="db_count">%1$d readings saved</string>
     <string name="token_own_set">Your Anthropic key is saved, encrypted. Only your photos use it.</string>
@@ -389,7 +389,7 @@
     <string name="labs_failed">Cannot read this document. Use an unencrypted PDF (up to 15 pages) or a clear image, maximum 20 MB.</string>
     <string name="labs_network">Cannot load the history. Check your connection and try again.</string>
     <string name="labs_history">History · %1$d reports</string>
-    <string name="labs_empty">The reports you upload will appear here, grouped by day, with the outcome of each upload.</string>
+    <string name="labs_empty">Saved reports appear here, grouped by the day they were uploaded.</string>
     <string name="labs_delete">Delete report dated %1$s</string>
     <string name="lab_name_wbc">White blood cells</string>
     <string name="lab_name_rbc">Red blood cells</string>
@@ -459,7 +459,6 @@
     <string name="labs_fail_conflict">Results for the same tests and the same date are already saved with different values: nothing was saved. Delete that date on the Web Dashboard first if you want to replace it.</string>
     <string name="labs_web_hint">The outcome of each upload, by day. The results themselves are in the Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d results</string>
-    <string name="tab_web">Reports</string>
     <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Uploads</string>
     <string name="labs_today">Today</string>
@@ -497,4 +496,5 @@
     <string name="photo_check">Check: are these the numbers on the display? Save only if they are.</string>
     <string name="photo_save">Yes, they are correct: save</string>
     <string name="photo_wrong">The numbers are wrong: retake the photo</string>
+    <string name="db_labs_count">%1$d lab reports uploaded</string>
 </resources>

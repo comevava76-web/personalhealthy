@@ -294,3 +294,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Request (Human): the owner's web button is now **Admin** (last in the bar); the in-app account tab (Google, readings, sign out, delete account, costs, terms) is now **Gestore** (EN Manage, DE Verwalten, FR Gérer); the web Admin console hides the Blood pressure / Lab results tabs: numbers only.
 - Files: MainActivity.kt (Tab order), strings ×4, worker/public/my/app.js, guides IT/EN, architecture page 6, CLAUDE.md.
 - Also (Human): opened from the app with `&bp` or `&labs`, the dashboard shows only that page (module tabs hidden).
+
+### 2026-10-01 — Claude Code — app simplified (no Report menu), Admin console with four numbers, colophon; test lab reports
+
+- Requests (Human): app button «Voce» (was «Registra una misura»), no browser explanation text, no Report menu (the full reports open from the button at the end of Pressione and Referti); Referti history shows saved reports only (refused/duplicate uploads stay in `error_log`/`event_log`); Gestore without costs, with counts of readings and lab reports and the Google identity; web colophon redone (also /, /terms, /privacy); Admin console: four numbers only (open vulnerabilities in app code vs Android/iOS libraries, open defects, compliance not fully covered), the Observability button with a halo, the version block; the Security card removed; Observability problems tab shows open defects only.
+- Server: `/my/api/admin/observability` adds `openByPlace` (code vs mobile).
+- Test data in production, asked by Human on his own test account (owner): six fake lab reports with ids `lab_demo-1`…`lab_demo-6` (lab_demo-6 dated 20.11.2023 inserted last, to show the date order). Delete them with `DELETE FROM measurements WHERE id LIKE 'lab_demo-%'` when no longer needed.
+- Docs: guides IT/EN, architecture, CLAUDE.md, docs/legal, demo screenshots (test data).
+

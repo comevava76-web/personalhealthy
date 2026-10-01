@@ -29,6 +29,11 @@ button, select, input { font: inherit; }
 .btn.ghost { background: none; color: var(--muted); }
 .btn.wa { background: #1FA855; border-color: #1FA855; color: #fff; }
 .btn.small { padding: 6px 10px; font-size: 13px; }
+/* the way to the console: violet with a soft halo that breathes */
+.btn.glow { background: linear-gradient(135deg, #8C7BF2, #6D5BD0); border-color: #8C7BF2; color: #fff; font-weight: 600; padding: 12px 20px;
+  box-shadow: 0 0 18px rgba(140,123,242,.55), 0 0 2px rgba(255,255,255,.4) inset; animation: halo 2.6s ease-in-out infinite; }
+@keyframes halo { 0%, 100% { box-shadow: 0 0 14px rgba(140,123,242,.45); } 50% { box-shadow: 0 0 28px rgba(140,123,242,.8); } }
+@media (prefers-reduced-motion: reduce) { .btn.glow { animation: none; } }
 
 main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 8px; }
 .loading { display: grid; place-items: center; height: 50vh; }
@@ -86,8 +91,14 @@ details summary { cursor: pointer; font-weight: 600; padding: 4px 0 10px; }
 .center { max-width: 520px; margin: 12vh auto; text-align: center; }
 .center h1 { font-weight: 600; }
 
-.foot { max-width: 1280px; margin: 0 auto; padding: 8px 24px 32px; color: var(--muted); font-size: 12px; }
-.foot p { margin: 6px 0; }
+/* colophon: a hairline, the note, the brand and year on one line, the links as a row of their own */
+.foot { max-width: 1280px; margin: 24px auto 0; padding: 18px 24px 32px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line, #22304D); text-align: center; }
+.foot p { margin: 0 0 10px; }
+.foot-line { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+.foot-brand b { color: var(--ink, #E6ECF8); font-weight: 600; letter-spacing: .06em; }
+.foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 8px; }
+.foot-links a { color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; }
+.foot-links a:hover { color: var(--ink, #E6ECF8); border-bottom-color: currentColor; }
 
 dialog { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: var(--ink); padding: 0; width: min(520px, 94vw); }
 dialog::backdrop { background: rgba(0,0,0,.55); }
@@ -173,7 +184,7 @@ b.you { color: var(--accent); font-size: 11px; text-transform: uppercase; letter
 .send.two-way .btn { padding: 12px; font-size: 15px; }
 .ck-state { font-weight: 600; color: var(--ink); }
 /* phone: footer links easy to tap; the readings table drops two columns instead of scrolling sideways (F-17) */
-.foot a { display: inline-block; padding: 12px 4px; }
+.foot-links a { display: inline-block; padding: 10px 4px; }
 @media (max-width: 480px) {
   table.readings th:nth-child(3), table.readings td:nth-child(3),
   table.readings th:nth-child(7), table.readings td:nth-child(7) { display: none; }
@@ -261,7 +272,10 @@ td.pick .st { margin-left: 8px; }
 .ob-tab:hover { border-color: var(--muted); }
 @media (max-width: 640px) { .tiles.adm.ob-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .tiles.adm.ob-tabs .ob-tab { padding: 8px; } .ob-tab .w { display: none; } .ob-tab .l { font-size: 10px; } .ob-tab .v { font-size: 22px; } }
 /* Observability tabs: green when nothing is open, orange when something is (the tab colour says it, the number says how much) */
-.ob-tab.t-ok { background: rgba(30,154,91,.14); border-color: rgba(30,154,91,.5); }
+.ob-tab.t-ok, .adm .tile.t-ok { background: rgba(30,154,91,.14); border-color: rgba(30,154,91,.5); }
+.adm .tile.t-ok .v { color: #7FD9A8; }
+.adm .tile.t-warn { background: rgba(224,138,46,.14); border-color: rgba(224,138,46,.55); }
+.adm .tile.t-warn .v { color: #F2B26B; }
 .ob-tab.t-ok .v { color: #7FD9A8; }
 .ob-tab.t-warn { background: rgba(224,138,46,.14); border-color: rgba(224,138,46,.55); }
 .ob-tab.t-warn .v { color: #F2B26B; }

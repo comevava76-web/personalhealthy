@@ -102,23 +102,6 @@ val LabValue.name: String get() = if (code.isEmpty()) label else when (code) {
 /** t: the date printed on the report; at: when it was uploaded. */
 data class LabReport(val id: String, val t: Long, val values: List<LabValue>, val at: Long = t)
 
-/**
- * The uploads that saved nothing (already imported, unreadable, wrong format…), kept on this phone only: the outcome
- * and the report date, never a value, a name or the document. Saved reports come from the server, with their upload time.
- */
-object LabLog {
-    data class Entry(val at: Long, val day: Long?, val outcome: String)
-    private const val KEY = "lab_log"
-    private fun prefs(ctx: Context) = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)   // keep: existing storage name
-    fun list(ctx: Context): List<Entry> = runCatching {
-        val a = JSONArray(prefs(ctx).getString(KEY, "[]"))
-        (0 until a.length()).map { i -> val o = a.getJSONObject(i); Entry(o.getLong("at"), if (o.has("day")) o.getLong("day") else null, o.getString("o")) }
-    }.getOrDefault(emptyList())
-    fun add(ctx: Context, outcome: String, date: LocalDate?) {
-        val all = (list(ctx) + Entry(System.currentTimeMillis(), date?.toEpochDay(), outcome)).takeLast(60)
-        prefs(ctx).edit().putString(KEY, JSONArray(all.map { e -> JSONObject().put("at", e.at).put("o", e.outcome).also { o -> e.day?.let { o.put("day", it) } } }).toString()).apply()
-    }
-}
 object LabDocuments {
     private suspend fun recognize(bitmap: Bitmap): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -242,15 +225,16 @@ object LabImport {
         val step = working.indexOf(stage).let { if (it >= 0) it else status.value.step }
         val next = Status(stage, text, step)
         status.value = next; shownAt = System.currentTimeMillis()
-        // the outcome stays a few seconds, then the progress card goes away; the upload history keeps the outcome
+        // the outcome stays a few seconds, then the progress card goes away
         if (stage == Stage.DONE || stage == Stage.FAILED) scope.launch {
             kotlinx.coroutines.delay(if (stage == Stage.DONE) 3500L else 6000L)
             status.compareAndSet(next, Status())
         }
     }
     private suspend fun fail(ctx: Context, code: String, outcome: String, date: LocalDate?, text: String, report: Boolean = true) {
-        if (report) ErrorReport.send(code, "Labs/Import", "")    // the reason only: never a value, a name or the document
-        LabLog.add(ctx, outcome, date)
+        // in the application logs only (the reason, never a value, a name or the document); the server counts the
+        // duplicates and conflicts itself. The history in the app shows saved reports only.
+        if (report) ErrorReport.send(code, "Labs/Import", "")
         show(Stage.FAILED, text)
     }
 
@@ -288,7 +272,6 @@ object LabImport {
                 val r = LabsRepo.save(pid, UUID.randomUUID().toString(), read.date, read.values, sha)
                 if (r.has("duplicate")) {
                     // not an error: the same file, or the same results of that day, are already in the history
-                    LabLog.add(app, "duplicate", read.date)
                     show(Stage.DONE, t(R.string.labs_duplicate, day(read.date)))
                 } else {
                     val known = r.optInt("known", 0)
@@ -309,7 +292,7 @@ object LabImport {
     fun clear() { if (!busy) status.value = Status() }
 }
 
-/** One line of the upload history: a report saved on the server, or an upload that saved nothing (kept on the phone). */
+/** One line of the upload history: a report saved on the server. */
 private data class Upload(val at: Long, val date: LocalDate?, val outcome: String, val count: Int = 0, val id: String? = null)
 
 @Composable
@@ -327,11 +310,9 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
     val working = status.stage in listOf(LabImport.Stage.READING, LabImport.Stage.SCANNING, LabImport.Stage.UPLOADING)
     val zurich = ZoneId.of("Europe/Zurich")
     val fmt = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    // read again after each outcome: the uploads that saved nothing are written on the phone when they end
-    val log = remember(status.stage, reports) { LabLog.list(ctx) }
-    val uploads = remember(log, reports) {
-        (reports.map { Upload(it.at, java.time.Instant.ofEpochMilli(it.t).atZone(zurich).toLocalDate(), "saved", it.values.size, it.id) } +
-            log.map { Upload(it.at, it.day?.let(LocalDate::ofEpochDay), it.outcome) }).sortedByDescending { it.at }
+    // the history: the reports saved, by upload day (a refused or duplicate upload is only in the application logs)
+    val uploads = remember(reports) {
+        reports.map { Upload(it.at, java.time.Instant.ofEpochMilli(it.t).atZone(zurich).toLocalDate(), "saved", it.values.size, it.id) }.sortedByDescending { it.at }
     }
     val byDay = uploads.groupBy { java.time.Instant.ofEpochMilli(it.at).atZone(zurich).toLocalDate() }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -356,7 +337,7 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
             message?.let { Panel { Text(it, color = C.Alert, fontSize = 14.sp) } }
             Text(t(R.string.labs_uploads), color = C.Ink, fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 14.dp, start = 4.dp))
-            Text(if (uploads.isEmpty()) t(R.string.labs_empty) else t(R.string.labs_web_hint), color = C.Muted, fontSize = 13.sp,
+            if (uploads.isEmpty()) Text(t(R.string.labs_empty), color = C.Muted, fontSize = 13.sp,
                 modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp))
         }
         byDay.forEach { (d, list) ->
@@ -374,7 +355,7 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
         item {
             Spacer(Modifier.height(6.dp))
             GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
-            Text(t(R.string.labs_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 24.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
     // deleting a saved report: always asked first; the file can then be imported again

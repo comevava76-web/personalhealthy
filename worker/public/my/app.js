@@ -624,6 +624,8 @@
     vAskOff: (v) => `Tutte le app precedenti alla ${v} smettono subito di funzionare, su ogni telefono, finché non si installa l'ultima. I dati restano. Confermi?`,
     vAskOn: "Tutte le versioni installate tornano a funzionare. Confermi?",
     secT: "Sicurezza e vulnerabilità", secOpen: "Apri la console",
+    kVc: "Vulnerabilità · codice app", kVcU: "server, web, segreti", kVm: "Vulnerabilità · Android / iOS", kVmU: "librerie dell'app sul telefono",
+    kDf: "Difetti aperti", kDfU: "problemi reali ancora da chiudere", kCm: "Compliance non coperta", kCmU: (p, o) => `${p} parziali · ${o} aperti`, obGo: "Apri Observability →",
     obT: "Observability", obOpen: "Apri Observability", obSub: "Vulnerabilità, compliance UE e Svizzera, problemi incontrati dagli utenti e come sono stati risolti, esiti dei caricamenti. Solo codici e conteggi: nessun valore, nessun nome.",
     obSum: (c, o, p) => `Compliance ${c.ok}/${c.all} · ${o} vulnerabilità aperte · ${p} problemi aperti`,
     obVul: "Vulnerabilità aperte", obVulU: "librerie, codice, segreti", obCmp: "Compliance", obCmpU: (p, o) => `${p} parziali · ${o} aperti`, obPrb: "Problemi aperti", obPrbU: "errori reali, ultimi 90 giorni", obImp: "Referti caricati", obImpU: (f) => `ultimi 30 giorni · ${f} non salvati`,
@@ -657,6 +659,8 @@
     vAskOff: (v) => `Every app older than ${v} stops working at once, on every phone, until the latest is installed. The data stay. Confirm?`,
     vAskOn: "Every installed version works again. Confirm?",
     secT: "Security and vulnerabilities", secOpen: "Open the console",
+    kVc: "Vulnerabilities · app code", kVcU: "server, web, secrets", kVm: "Vulnerabilities · Android / iOS", kVmU: "libraries of the phone app",
+    kDf: "Open defects", kDfU: "real problems still to close", kCm: "Compliance not covered", kCmU: (p, o) => `${p} partial · ${o} open`, obGo: "Open Observability →",
     obT: "Observability", obOpen: "Open Observability", obSub: "Vulnerabilities, EU and Swiss compliance, problems users met and how they were solved, import outcomes. Codes and counts only: no value, no name.",
     obSum: (c, o, p) => `Compliance ${c.ok}/${c.all} · ${o} open vulnerabilities · ${p} open problems`,
     obVul: "Open vulnerabilities", obVulU: "libraries, code, secrets", obCmp: "Compliance", obCmpU: (p, o) => `${p} partial · ${o} open`, obPrb: "Open problems", obPrbU: "real errors, last 90 days", obImp: "Reports imported", obImpU: (f) => `last 30 days · ${f} not saved`,
@@ -684,34 +688,26 @@
   const ver = (n) => "0.1." + n;
   async function loadAdmin() {
     main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
-    let d;
-    try { d = await api("/my/api/admin/overview"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
-    const t = d.totals, st = d.storage, v = d.versions;
-    const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
-    const pc = st.freeLimitBytes ? Math.min(100, (st.dbBytes / st.freeLimitBytes) * 100) : 0;
-    const pcText = pc.toLocaleString(LOCALE, { maximumFractionDigits: pc < 1 ? 2 : 1 }) + " %";
+    let d, o;
+    try { [d, o] = await Promise.all([api("/my/api/admin/overview"), api("/my/api/admin/observability")]); }
+    catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
+    const v = d.versions;
+    // four numbers only: open vulnerabilities (the app's own code, the phone app's libraries), open defects, compliance
+    // controls not fully covered; orange when something is open
+    const ctl = o.compliance.controls, cnt = (st) => ctl.filter((c) => c.status === st).length;
+    const defects = openDefects(o).length;
+    const tile = (l, val, w, warn) => `<div class="tile ${warn ? "t-warn" : "t-ok"}"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
     main.innerHTML = `
-      <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
-      <p class="note">${AD.sub}</p>
+      <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(o.at)}</span></div>
       <section class="tiles adm four">
-        ${tile(AD.users, t.users, AD.usersU)}
-        ${tile(AD.rd, t.readings, AD.split(t.voice, t.photo))}
-        ${tile(AD.labs, t.labReports, AD.labsU)}
-        ${tile(AD.errs, t.errors, AD.errsU)}
+        ${tile(AD.kVc, o.openByPlace.code, AD.kVcU, o.openByPlace.code > 0)}
+        ${tile(AD.kVm, o.openByPlace.mobile, AD.kVmU, o.openByPlace.mobile > 0)}
+        ${tile(AD.kDf, defects, AD.kDfU, defects > 0)}
+        ${tile(AD.kCm, cnt("partial") + cnt("open"), AD.kCmU(cnt("partial"), cnt("open")), cnt("open") > 0)}
       </section>
-      <div class="card space">
-        <div class="space-h"><span class="l">${AD.stT}</span><span class="v">${AD.stOf(mb(st.dbBytes), mb(st.freeLimitBytes))}</span></div>
-        <div class="meter" role="img" aria-label="${pcText}"><i style="width:${Math.max(pc, 0.6)}%"></i></div>
-        <p class="muted small">${AD.stNote(pcText)}</p>
-      </div>
       <div class="card sec"><div class="card-h"><h2>${AD.obT}</h2></div>
         <p class="muted small">${AD.obSub}</p>
-        <div class="send" style="margin:8px 0 6px"><button class="btn" type="button" id="adm-obs">${AD.obOpen}</button></div>
-      </div>
-      <div class="card sec"><div class="card-h"><h2>${AD.secT}</h2></div>
-        <p>${d.security ? AD.secSum(d.security) : AD.secNone}</p>
-        ${d.security ? `<p class="muted small">${AD.secAt(day(d.security.at) + " " + time(d.security.at))}</p>` : ""}
-        <div class="send" style="margin:8px 0 6px"><button class="btn" type="button" id="adm-sec">${AD.secOpen}</button></div>
+        <div class="send" style="margin:12px 0 6px"><button class="btn glow" type="button" id="adm-obs">${AD.obGo}</button></div>
       </div>
       <div class="card"><div class="card-h"><h2>${AD.vT}</h2></div>
         <p>${v.newest ? AD.vNew(ver(v.newest)) : ""}</p>
@@ -728,7 +724,6 @@
     };
     const off = $("adm-off"); if (off) off.onclick = () => setMin(v.newest, AD.vAskOff(ver(v.newest)));
     const on = $("adm-on"); if (on) on.onclick = () => setMin(0, AD.vAskOn);
-    $("adm-sec").onclick = () => loadObservability("vulns");
     $("adm-obs").onclick = () => loadObservability();
   }
 
@@ -738,13 +733,21 @@
     fixed: ["ok", "Fixed"], fixing: ["fixing", "Fixing"], no_action: ["muted", "No action"], new: ["open", "Open"] };
   const obChip = (s) => { const [c, l] = OB_STATE[s] || OB_STATE.open; return `<span class="ob s-${c}">${l}</span>`; };
   // three tabs, each with its number: open problems (first), compliance, vulnerabilities (with Fix)
+  // defects still open: errors with no registry entry yet or one still open/fixing, and registry problems open/fixing
+  function openDefects(d) {
+    const open = (st) => ["open", "fixing"].includes(st);
+    const live = d.errors.filter((e) => !e.problem || open(e.problem.status));
+    const reg = d.problems.filter((p) => open(p.status) && !d.errors.some((e) => e.problem && e.problem.id === p.id));
+    return [...live, ...reg.map((p) => ({ registryOnly: p }))];
+  }
+
   async function loadObservability(tab = "problems") {
     main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
     let d;
     try { d = await api("/my/api/admin/observability"); } catch (e) { if (e.status === 401) return signedOut(); return message(T.err, ""); }
     const ctl = d.compliance.controls, cnt = (s) => ctl.filter((c) => c.status === s).length;
     const openVul = d.openFindings.reduce((a, b) => a + b.n, 0);
-    const probs = d.errors.filter((e) => !e.problem || ["open", "fixing"].includes(e.problem.status));
+    const probs = openDefects(d);
     const link = (u, label) => (u && /^https:\/\//.test(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(label)}</a>` : "");
     // green when nothing is open; orange when something is: an open problem, an open vulnerability, or a compliance
     // control with no cover at all ("Open"; "Partial" alone stays green)
@@ -771,10 +774,10 @@
       }
       body.innerHTML = `<div class="card"><div class="card-h"><h2>${AD.obPrbT}</h2></div><p class="muted small">${AD.obPrbN}</p>
         <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obPrbCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-        ${d.errors.map((e) => { const p = e.problem; return `<tr><td>${p ? `<b>${esc(p.id)}</b> ${esc(p.title)}` : `<code>${esc(e.code)}</code> <span class="muted small">${AD.obNew}</span>`}</td>
+        ${probs.filter((e) => !e.registryOnly).map((e) => { const p = e.problem; return `<tr><td>${p ? `<b>${esc(p.id)}</b> ${esc(p.title)}` : `<code>${esc(e.code)}</code> <span class="muted small">${AD.obNew}</span>`}</td>
           <td class="small"><code>${esc(e.place)}</code> · ${esc(e.source)}</td><td class="small">${esc(e.versions || "")}</td><td>${e.n}</td><td class="small">${day(e.last_at)}</td>
           <td>${obChip(p ? p.status : "new")}</td><td class="small">${p ? `${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}${p.fixedIn ? ` · ${esc(p.fixedIn)}` : ""}` : "—"}</td></tr>`; }).join("") || `<tr><td colspan="7">${AD.none}</td></tr>`}
-        ${d.problems.filter((p) => !d.errors.some((e) => e.problem && e.problem.id === p.id)).map((p) => `<tr class="old"><td><b>${esc(p.id)}</b> ${esc(p.title)}</td><td class="small">${esc(p.match?.place || p.match?.code || "")}</td>
+        ${probs.filter((e) => e.registryOnly).map((e) => e.registryOnly).map((p) => `<tr class="old"><td><b>${esc(p.id)}</b> ${esc(p.title)}</td><td class="small">${esc(p.match?.place || p.match?.code || "")}</td>
           <td class="small">${esc(p.versions || "")}</td><td>—</td><td class="small">${esc(p.found)}</td><td>${obChip(p.status)}</td><td class="small">${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}</td></tr>`).join("")}
         </tbody></table></div></div>
         <div class="card"><div class="card-h"><h2>${AD.obEvT}</h2></div><p class="muted small">${AD.obEvN}</p>

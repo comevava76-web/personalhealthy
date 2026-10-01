@@ -207,7 +207,13 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       const vulns = await q(`SELECT COALESCE(NULLIF(f.rating, ''), f.severity) risk, COUNT(*) n FROM security_findings f
         LEFT JOIN security_fixes x ON x.kind = f.kind AND x.ref = f.ref AND x.name = f.name AND x.location = f.location
         WHERE COALESCE(x.status, 'open') != 'fixed' GROUP BY risk`);
+      // the same open findings by where they are: the Android app's libraries, or the app's own code (server, web, secrets)
+      const where = await q(`SELECT CASE WHEN f.kind = 'library' AND f.location = 'android' THEN 'mobile' ELSE 'code' END place, COUNT(*) n
+        FROM security_findings f LEFT JOIN security_fixes x ON x.kind = f.kind AND x.ref = f.ref AND x.name = f.name AND x.location = f.location
+        WHERE COALESCE(x.status, 'open') != 'fixed' GROUP BY place`);
+      const by = (k: string) => Number(where.find((w: any) => w.place === k)?.n || 0);
       return json({ at: Date.now(), security: scan, openFindings: vulns.map((v: any) => ({ risk: v.risk, n: Number(v.n) })),
+        openByPlace: { code: by("code"), mobile: by("mobile") },
         compliance: COMPLIANCE, problems: reg, errors: live, events: events.map((e: any) => ({ ...e, n: Number(e.n) })) });
     }
     // The Security console: the results of the last nightly scan (libraries, our code, secrets), written by CI

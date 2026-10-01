@@ -49,7 +49,7 @@
     <string name="no_readings_text">Misura la pressione e fotografa il display: i numeri li legge l\'app.</string>
     <string name="last_fmt">Ultima: %s</string>
     <string name="measure">Scansiona misura</string>
-    <string name="record_short">Registra una misura</string>
+    <string name="record_short">Voce</string>
     <string name="scan_short">Scan</string>
     <string name="scan_cost_note">La scansione della foto usa crediti AI a pagamento e facoltativi (circa mezzo centesimo a foto). Tutto il resto, voce compresa, è gratis.</string>
     <string name="scan_needs_key_title">La scansione è facoltativa</string>
@@ -169,7 +169,7 @@
     <string name="tab_credit">Gestore</string>
     <string name="section_credits">Crediti</string>
     <string name="section_token">Funzionalità AI</string>
-    <string name="section_db">Database misure</string>
+    <string name="section_db">I tuoi dati</string>
     <string name="section_identity">Identity</string>
     <string name="db_count">%1$d misure salvate</string>
     <string name="token_own_set">La tua chiave Anthropic è salvata, cifrata. La usano solo le tue foto.</string>
@@ -387,7 +387,7 @@
     <string name="labs_failed">Impossibile leggere il documento. Usa un PDF non protetto (massimo 15 pagine) o un’immagine leggibile, fino a 20 MB.</string>
     <string name="labs_network">Impossibile caricare lo storico. Controlla la connessione e riprova.</string>
     <string name="labs_history">Storico · %1$d referti</string>
-    <string name="labs_empty">I referti che carichi compariranno qui, raggruppati per giorno, con l’esito di ogni caricamento.</string>
+    <string name="labs_empty">I referti salvati compariranno qui, raggruppati per giorno di caricamento.</string>
     <string name="labs_delete">Elimina referto del %1$s</string>
     <string name="lab_name_wbc">Globuli bianchi</string>
     <string name="lab_name_rbc">Globuli rossi</string>
@@ -457,7 +457,6 @@
     <string name="labs_fail_conflict">Per gli stessi esami e la stessa data ci sono già risultati diversi: non è stato salvato nulla. Se vuoi sostituirli, elimina prima quella data nella Web Dashboard.</string>
     <string name="labs_web_hint">L’esito di ogni caricamento, giorno per giorno. I risultati sono nella Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d risultati</string>
-    <string name="tab_web">Report</string>
     <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Caricamenti</string>
     <string name="labs_today">Oggi</string>
@@ -495,4 +494,5 @@
     <string name="photo_check">Controlla: sono i numeri del display? Salva solo se sì.</string>
     <string name="photo_save">Sì, sono giusti: salva</string>
     <string name="photo_wrong">I numeri sono sbagliati: rifai la foto</string>
+    <string name="db_labs_count">%1$d referti caricati</string>
 </resources>
