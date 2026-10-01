@@ -193,6 +193,13 @@ jobs:
           if [ -z "$URL" ]; then URL="${{ vars.BATTITO_API_URL }}"; fi
           if [ -z "$URL" ]; then echo "Server address not found"; exit 1; fi
           curl -sf "$URL/v1/health" && echo " <- server reachable"
+          # the phone link must deliver exactly this APK (joined from public/dl by the Worker), without GitHub login
+          sleep 5
+          curl -sfL -A "Mozilla/5.0 (Linux; Android 14)" -D dl.headers -o dl.apk "$URL/download" || { cat dl.headers; echo "/download failed"; exit 1; }
+          WANT=$(sha256sum "$APK" | cut -c1-64); GOT=$(sha256sum dl.apk | cut -c1-64)
+          grep -i '^content-type\|^content-length\|^content-disposition' dl.headers
+          [ "$WANT" = "$GOT" ] && echo "/download serves this APK ($(stat -c %s dl.apk) bytes, SHA-256 $GOT)" || { echo "/download differs: $GOT vs $WANT"; exit 1; }
+          rm -f dl.apk dl.headers
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
   apk:
