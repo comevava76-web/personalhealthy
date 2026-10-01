@@ -170,7 +170,7 @@
     <string name="section_credits">Crédits</string>
     <string name="section_token">Fonctions IA</string>
     <string name="section_db">Vos données</string>
-    <string name="section_identity">Identité</string>
+    <string name="section_identity">Compte</string>
     <string name="db_count">%1$d mesures enregistrées</string>
     <string name="token_own_set">Votre clé Anthropic est enregistrée, chiffrée. Seules vos photos l\'utilisent.</string>
     <string name="token_owner_admin">Les lectures utilisent la clé Anthropic définie sur le serveur (le secret ANTHROPIC_API_KEY sur GitHub).</string>
@@ -494,7 +494,13 @@
     <string name="photo_wrong">Les chiffres sont faux : reprendre la photo</string>
     <string name="db_labs_count">%1$d comptes rendus importés</string>
     <string name="section_theme">Apparence</string>
-    <string name="theme_auto">Comme le téléphone</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
+    <string name="stat_readings">mesures enregistrées</string>
+    <string name="stat_labs">comptes rendus</string>
+    <string name="account_google">Compte Google</string>
+    <string name="account_short">Avec ce compte, vous retrouvez le journal sur un nouveau téléphone.</string>
+    <string name="account_delete_short">Supprimer mon compte</string>
+    <string name="manage_readings_sub">Supprimer une mesure erronée ou toutes</string>
+    <string name="share_app_sub">Envoyer le lien de téléchargement</string>
 </resources>

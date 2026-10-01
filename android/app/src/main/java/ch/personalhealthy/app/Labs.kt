@@ -12,6 +12,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
@@ -301,6 +303,7 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
     var reports by remember(pid) { mutableStateOf<List<LabReport>>(emptyList()) }
     var message by remember(pid) { mutableStateOf<String?>(null) }
     var ask by remember(pid) { mutableStateOf<Upload?>(null) }
+    var open by remember(pid) { mutableStateOf(false) }   // the saved reports: closed under their number until tapped
     val status by LabImport.status.collectAsState()
     suspend fun refresh() { reports = LabsRepo.list(pid); message = null }
     LaunchedEffect(pid) { try { refresh() } catch (_: Exception) { message = t(R.string.labs_network) } }
@@ -339,8 +342,22 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
                 modifier = Modifier.padding(top = 14.dp, start = 4.dp))
             if (uploads.isEmpty()) Text(t(R.string.labs_empty), color = C.Muted, fontSize = 13.sp,
                 modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp))
+            // one line with the number of saved reports; a tap opens the list (and closes it again)
+            if (uploads.isNotEmpty()) Row(
+                Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(22.dp)).background(C.Surface)
+                    .border(1.dp, C.Line, RoundedCornerShape(22.dp)).clickable { open = !open }.padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(38.dp).clip(androidx.compose.foundation.shape.CircleShape).background(C.Dia.copy(alpha = 0.16f)),
+                    contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text("${uploads.size}", color = C.Dia, fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(t(R.string.db_labs_count, uploads.size), color = C.Ink, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Text(if (open) "⌃" else "⌄", color = C.Muted, fontSize = 20.sp)
+            }
         }
-        byDay.forEach { (d, list) ->
+        if (open) byDay.forEach { (d, list) ->
             item(key = "d" + d.toEpochDay()) {
                 Panel {
                     Text(if (d == LocalDate.now(zurich)) t(R.string.labs_today) + " · " + d.format(fmt) else d.format(fmt),

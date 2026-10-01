@@ -170,7 +170,7 @@
     <string name="section_credits">Crediti</string>
     <string name="section_token">Funzionalità AI</string>
     <string name="section_db">I tuoi dati</string>
-    <string name="section_identity">Identity</string>
+    <string name="section_identity">Account</string>
     <string name="db_count">%1$d misure salvate</string>
     <string name="token_own_set">La tua chiave Anthropic è salvata, cifrata. La usano solo le tue foto.</string>
     <string name="token_owner_admin">Le letture usano la chiave Anthropic impostata sul server (il secret ANTHROPIC_API_KEY su GitHub).</string>
@@ -496,7 +496,13 @@
     <string name="photo_wrong">I numeri sono sbagliati: rifai la foto</string>
     <string name="db_labs_count">%1$d referti caricati</string>
     <string name="section_theme">Aspetto</string>
-    <string name="theme_auto">Come il telefono</string>
     <string name="theme_light">Chiaro</string>
     <string name="theme_dark">Scuro</string>
+    <string name="stat_readings">misure salvate</string>
+    <string name="stat_labs">referti caricati</string>
+    <string name="account_google">Account Google</string>
+    <string name="account_short">Con questo account ritrovi il diario su un nuovo telefono.</string>
+    <string name="account_delete_short">Elimina il mio account</string>
+    <string name="manage_readings_sub">Elimina una misura sbagliata o tutte</string>
+    <string name="share_app_sub">Invia il link per scaricarla</string>
 </resources>

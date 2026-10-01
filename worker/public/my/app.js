@@ -6,14 +6,12 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  // light or dark: what the app says ("&light" / "&dark" in the link it opens), otherwise the device's setting.
+  // light or dark: what the app says ("&light" / "&dark" in the link it opens), otherwise dark.
   // Kept only in the address, never stored in the browser.
   const themeAsked = (location.hash.match(/(?:^#|&)(light|dark)\b/) || [])[1] || "";
-  const themeNow = () => themeAsked || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  // dark unless light is asked (the app passes the theme chosen in Gestore)
+  const themeNow = () => themeAsked || "dark";
   document.documentElement.dataset.theme = themeNow();
-  matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => {
-    document.documentElement.dataset.theme = themeNow(); (window.__hintRedraw || []).forEach((f) => f());
-  });
   // the page speaks the browser's language: Italian, German, French, otherwise English
   const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
   const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";

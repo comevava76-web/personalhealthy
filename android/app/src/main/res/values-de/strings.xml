@@ -170,7 +170,7 @@
     <string name="section_credits">Guthaben</string>
     <string name="section_token">KI-Funktionen</string>
     <string name="section_db">Ihre Daten</string>
-    <string name="section_identity">Identität</string>
+    <string name="section_identity">Konto</string>
     <string name="db_count">%1$d Messungen gespeichert</string>
     <string name="token_own_set">Dein Anthropic-Schlüssel ist verschlüsselt gespeichert. Nur deine Fotos nutzen ihn.</string>
     <string name="token_owner_admin">Die Messungen nutzen den auf dem Server hinterlegten Anthropic-Schlüssel (das Secret ANTHROPIC_API_KEY auf GitHub).</string>
@@ -494,7 +494,13 @@
     <string name="photo_wrong">Die Zahlen sind falsch: Foto neu aufnehmen</string>
     <string name="db_labs_count">%1$d Befunde hochgeladen</string>
     <string name="section_theme">Darstellung</string>
-    <string name="theme_auto">Wie das Telefon</string>
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
+    <string name="stat_readings">gespeicherte Messungen</string>
+    <string name="stat_labs">Laborbefunde</string>
+    <string name="account_google">Google-Konto</string>
+    <string name="account_short">Mit diesem Konto finden Sie das Tagebuch auf einem neuen Telefon wieder.</string>
+    <string name="account_delete_short">Mein Konto löschen</string>
+    <string name="manage_readings_sub">Eine falsche Messung oder alle löschen</string>
+    <string name="share_app_sub">Den Download-Link senden</string>
 </resources>

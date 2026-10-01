@@ -140,9 +140,10 @@ object C {
 }
 
 /** The theme chosen in Gestore: "auto" (as the phone), "light" or "dark"; kept on this phone only. */
+/** Dark unless the person chose light in Gestore («Aspetto»); kept on the phone. */
 object ThemeChoice {
-    var value by mutableStateOf("auto")
-    fun load(ctx: Context) { value = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("theme", "auto") ?: "auto" }
+    var value by mutableStateOf("dark")
+    fun load(ctx: Context) { value = if (ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("theme", "dark") == "light") "light" else "dark" }
     fun set(ctx: Context, v: String) { value = v; ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putString("theme", v).apply() }
 }
 
@@ -241,8 +242,7 @@ class MainActivity : FragmentActivity() {
         Reminders.schedule(this)
         ThemeChoice.load(this)
         setContent {
-            val phoneDark = androidx.compose.foundation.isSystemInDarkTheme()
-            C.light = when (ThemeChoice.value) { "light" -> true; "dark" -> false; else -> !phoneDark }
+            C.light = ThemeChoice.value == "light"
             // the phone's bars take the background of the theme, with dark icons on the light one
             androidx.compose.runtime.SideEffect {
                 window.statusBarColor = C.Bg.toArgb(); window.navigationBarColor = C.Bg.toArgb()
@@ -1566,6 +1566,38 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 
 /* ---------------- Credit tab ---------------- */
 
+/** A large number and what it counts, on a light tint of its colour (Gestore). */
+@Composable
+private fun CountTile(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(color.copy(alpha = 0.12f)).padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Text(value, color = color, fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = C.Muted, fontSize = 13.sp)
+    }
+}
+
+/** One line of a settings card: icon, title, an optional short note, and an arrow when it opens something. */
+@Composable
+private fun SettingRow(icon: Int, title: String, sub: String? = null, color: Color = C.Ink, chevron: Boolean = true, onClick: (() -> Unit)? = null) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background((if (color == C.Ink) C.Sys else color).copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            Icon(painterResource(icon), contentDescription = null, tint = if (color == C.Ink) C.Sys else color, modifier = Modifier.size(19.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = color, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            if (sub != null) Text(sub, color = C.Muted, fontSize = 12.5.sp, lineHeight = 16.sp)
+        }
+        if (onClick != null && chevron) Text("›", color = C.Muted, fontSize = 22.sp, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@Composable
+private fun RowDivider() = Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).height(1.dp).background(C.Line))
+
 @Composable
 fun CreditScreen(
     me: Me?, readingsCount: Int, labsCount: Int?,
@@ -1581,55 +1613,55 @@ fun CreditScreen(
             return@Column
         }
 
-        // what is saved: readings (to delete a wrong one or all of them) and lab reports
+        // what is saved: two numbers, then the way to the readings (to delete a wrong one or all of them)
         SectionTitle(t(R.string.section_db))
         Panel {
-            Text(t(R.string.db_count, readingsCount), color = C.Ink, fontSize = 14.sp)
-            Text(if (labsCount == null) "…" else t(R.string.db_labs_count, labsCount), color = C.Ink, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                CountTile("$readingsCount", t(R.string.stat_readings), C.Sys, Modifier.weight(1f))
+                Spacer(Modifier.width(10.dp))
+                CountTile(labsCount?.toString() ?: "…", t(R.string.stat_labs), C.Dia, Modifier.weight(1f))
+            }
+            RowDivider()
+            SettingRow(R.drawable.ic_list, t(R.string.manage_readings), t(R.string.manage_readings_sub), onClick = onManageReadings)
         }
-        BigButton(t(R.string.manage_readings), onClick = onManageReadings)
 
-        // Identity: the Google account, who can join, and deleting it all
-        // light or dark: as the phone, or always one of the two (the Web Dashboard opens in the same one)
+        // dark (the default) or light; the Web Dashboard opens in the same one
         SectionTitle(t(R.string.section_theme))
         val themeCtx = LocalContext.current
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            listOf("auto" to R.string.theme_auto, "light" to R.string.theme_light, "dark" to R.string.theme_dark).forEachIndexed { i, (key, label) ->
-                if (i > 0) Spacer(Modifier.width(8.dp))
+        Row(Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp)).background(C.Surface)
+            .border(1.dp, C.Line, RoundedCornerShape(18.dp)).padding(5.dp)) {
+            listOf(Triple("dark", R.string.theme_dark, R.drawable.ic_moon), Triple("light", R.string.theme_light, R.drawable.ic_sun)).forEach { (key, label, icon) ->
                 val on = ThemeChoice.value == key
-                Box(
-                    Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(14.dp))
-                        .background(if (on) C.Sys else C.Surface2)
+                Row(
+                    Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp))
+                        .background(if (on) C.Sys else Color.Transparent)
                         .clickable { ThemeChoice.set(themeCtx, key) },
-                    contentAlignment = Alignment.Center
+                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                        maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Icon(painterResource(icon), contentDescription = null, tint = if (on) Color.White else C.Muted, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
         }
 
+        // the account: Google, leaving this phone, deleting it all
         SectionTitle(t(R.string.section_identity))
-        if (me.hasGoogle) {
-            Panel {
+        Panel {
+            if (me.hasGoogle) {
                 // the email is kept only on this phone; the server keeps just an encrypted fingerprint of the Google account
                 val localEmail = LocalContext.current.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("googleEmail", null)
-                Text(localEmail ?: "Google", color = C.Ink, fontSize = 15.sp)
-                Text(t(R.string.account_linked), color = C.Muted, fontSize = 13.sp)
+                SettingRow(R.drawable.ic_person, localEmail ?: t(R.string.account_google), t(R.string.account_short), chevron = false)
+                // leave this phone: only with Google linked, otherwise there would be no way back in
+                RowDivider()
+                SettingRow(R.drawable.ic_logout, t(R.string.sign_out)) { signOutAsk = true }
+            } else {
+                SettingRow(R.drawable.ic_person, t(R.string.account_google), t(R.string.account_not_linked), chevron = false)
+                if (me.googleOn) { RowDivider(); SettingRow(R.drawable.ic_person, t(R.string.google_link), onClick = onLinkGoogle) }
             }
-        } else if (me.googleOn) {
-            Panel { Text(t(R.string.account_not_linked), color = C.Ink, fontSize = 14.sp) }
-            BigButton(t(R.string.google_link), onClick = onLinkGoogle)
-        }
-        // leave this phone: only with Google linked, otherwise there would be no way back in
-        if (me.hasGoogle) {
-            TextButton(onClick = { signOutAsk = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.sign_out), color = C.Muted, fontSize = 13.sp)
-            }
-        }
-        if (!me.isAdmin) {
-            TextButton(onClick = { deleteStep = 1 }, modifier = Modifier.fillMaxWidth()) {
-                Text(t(R.string.account_delete), color = C.Alert, fontSize = 13.sp)
+            if (!me.isAdmin) {
+                RowDivider()
+                SettingRow(R.drawable.ic_delete, t(R.string.account_delete_short), color = C.Alert) { deleteStep = 1 }
             }
         }
 
@@ -1646,10 +1678,10 @@ fun CreditScreen(
                 try { subCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { }
             }
         }
-        // the download link, for anyone who wants the app, at the bottom: with Sign in with Google they set it up on their own
+        // the download link, for anyone who wants the app: with Sign in with Google they set it up on their own
         val shareCtx = LocalContext.current
-        Spacer(Modifier.height(12.dp))
-        BigButton(t(R.string.share_app)) { shareApp(shareCtx) }
+        Spacer(Modifier.height(10.dp))
+        Panel { SettingRow(R.drawable.ic_share, t(R.string.share_app), t(R.string.share_app_sub), color = C.Sys) { shareApp(shareCtx) } }
         Colophon(onTerms)
     }
     if (signOutAsk) AlertDialog(
