@@ -244,3 +244,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Changed: `event_log` table and `countEvent` (lab import outcomes and deletions, codes only, 90 days); `/my/api/admin/observability`; registries `worker/src/ops/compliance.json` (19 controls) and `worker/src/ops/problems.json` (P-001 crash fixed in 0.1.101, P-002 no action); Admin → Observability page; `docs/operations/observability.md`; CLAUDE.md rule; nightly routine prompt updated.
 - Validation: functional suite 172 checks (OB1–OB3 new), `labs-security.mjs` (every outcome counted, codes only), browser view at 1280 and 390 px without errors.
 - Next: the user tests 0.1.102 (lab import) and then the app reorganisation discussion.
+
+### 2026-10-01 06:48 Europe/Zurich — Claude Code — nightly routine
+
+- Error log (last 24 h): only known problems from app 0.1.100 before the fixes (P-001 crash, P-003 terms after v17); no lab import yet (event_log empty).
+- Found: the scheduled *Security tests* run of 30.09 failed at "Resolve the Android dependency tree": the release-signing guard matched `--configuration releaseRuntimeClasspath`. Fixed (P-004): the guard applies only to tasks that build a release package; checked with a unit test of the rule; `assembleRelease bundleRelease` in *Build* still require the key.
+- Next: the user installs 0.1.104 from /download (served by the Worker since PR #110) and tries a lab import.
+
