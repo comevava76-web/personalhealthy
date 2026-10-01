@@ -168,7 +168,7 @@
     <string name="err_generic">Something went wrong. Try again.</string>
     <string name="tab_bp">Blood pressure</string>
     <string name="tab_report">Report</string>
-    <string name="tab_credit">Admin</string>
+    <string name="tab_credit">Manage</string>
     <string name="section_credits">Credits</string>
     <string name="section_token">AI features</string>
     <string name="section_db">Readings database</string>
@@ -460,7 +460,7 @@
     <string name="labs_web_hint">The outcome of each upload, by day. The results themselves are in the Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d results</string>
     <string name="tab_web">Reports</string>
-    <string name="tab_owner">Owner</string>
+    <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Uploads</string>
     <string name="labs_today">Today</string>
     <string name="labs_upload_report">Report of %1$s</string>

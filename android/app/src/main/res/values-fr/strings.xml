@@ -166,7 +166,7 @@
     <string name="err_generic">Un problème est survenu. Réessayez.</string>
     <string name="tab_bp">Tension</string>
     <string name="tab_report">Rapport</string>
-    <string name="tab_credit">Admin</string>
+    <string name="tab_credit">Gérer</string>
     <string name="section_credits">Crédits</string>
     <string name="section_token">Fonctions IA</string>
     <string name="section_db">Base des mesures</string>
@@ -456,7 +456,7 @@
     <string name="labs_web_hint">Le résultat de chaque import, jour par jour. Les résultats eux-mêmes sont dans le Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d résultats</string>
     <string name="tab_web">Rapports</string>
-    <string name="tab_owner">Gérant</string>
+    <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Imports</string>
     <string name="labs_today">Aujourd’hui</string>
     <string name="labs_upload_report">Compte rendu du %1$s</string>

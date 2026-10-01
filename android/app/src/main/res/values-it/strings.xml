@@ -166,7 +166,7 @@
     <string name="err_generic">Qualcosa non ha funzionato. Riprova.</string>
     <string name="tab_bp">Pressione</string>
     <string name="tab_report">Report</string>
-    <string name="tab_credit">Admin</string>
+    <string name="tab_credit">Gestore</string>
     <string name="section_credits">Crediti</string>
     <string name="section_token">Funzionalità AI</string>
     <string name="section_db">Database misure</string>
@@ -458,7 +458,7 @@
     <string name="labs_web_hint">L’esito di ogni caricamento, giorno per giorno. I risultati sono nella Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d risultati</string>
     <string name="tab_web">Report</string>
-    <string name="tab_owner">Gestore</string>
+    <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Caricamenti</string>
     <string name="labs_today">Oggi</string>
     <string name="labs_upload_report">Referto del %1$s</string>

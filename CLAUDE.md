@@ -51,9 +51,9 @@ Before closing a session, refresh the handover's current state, append a dated e
   dopo la conferma della persona; la foto non esce mai dal telefono e si cancella. Se non è sicura non indovina: dice il
   motivo e chiede di rifare la foto. Il test di 400 foto generate gira nella CI: **mai un valore sbagliato** (0 WRONG);
   ogni modifica al lettore deve mantenerlo. Al server solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti (`bp_photo_*`).
-- **Link alla Web Dashboard dall'app**: si apre nella scheda da cui si parte (`&bp`, `&labs`, `&admin`).
+- **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la scheda **Admin** (solo totali: utenti, misure, referti, errori; spazio D1, blocco versioni), aperta dall'icona Gestore nell'app:
+  nella Web Dashboard la console **Admin** (solo totali: utenti, misure, referti, errori; spazio D1, blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.

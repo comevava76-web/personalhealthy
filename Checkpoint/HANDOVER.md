@@ -289,3 +289,8 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Dashboard: the app adds `&bp` / `&labs` (`&admin` for the owner) and `app.js` opens that tab.
 - Terms v20 (IT/EN/DE/FR, synced to the app), privacy/home, compliance.json + dossier + gdpr.md (record of processing), guides IT/EN, architecture pages 1, 2, 6, CLAUDE.md rule.
 
+### 2026-10-01 — Claude Code — names in the bottom bar; Admin console without module tabs
+
+- Request (Human): the owner's web button is now **Admin** (last in the bar); the in-app account tab (Google, readings, sign out, delete account, costs, terms) is now **Gestore** (EN Manage, DE Verwalten, FR Gérer); the web Admin console hides the Blood pressure / Lab results tabs: numbers only.
+- Files: MainActivity.kt (Tab order), strings ×4, worker/public/my/app.js, guides IT/EN, architecture page 6, CLAUDE.md.
+- Also (Human): opened from the app with `&bp` or `&labs`, the dashboard shows only that page (module tabs hidden).
