@@ -325,3 +325,8 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Web: the dashboard opens dark unless the app passes `&light` (no device fallback any more).
 - Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by the APK job in CI (no Android SDK in this session).
 - Next: after the release, a UI/graphics review of the app code (asked by Human); then stop for now.
+
+### 2026-10-02 — Claude Code — 0.1.117 online; UI review; Observability without the lab-import table
+
+- 0.1.117 (PR #127) is online. A UI/graphics review of the app code was done (read only) and its findings were given to Human in chat; none applied yet, Human decides which. Main ones: SYS/DIA/PUL labels missing in the readings list, low contrast of small teal/amber numbers in the light theme and of white on violet buttons in the dark theme, DE/FR button labels cut, «Durchschnitt» cut.
+- Human asked to remove «Caricamento referti · ultimi 30 giorni» from the web Observability page: removed (the server still counts the outcomes in `event_log`; they stay in the log). CLAUDE.md and architecture row 11 updated.
