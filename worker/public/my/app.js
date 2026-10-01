@@ -6,6 +6,14 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
+  // light or dark: what the app says ("&light" / "&dark" in the link it opens), otherwise the device's setting.
+  // Kept only in the address, never stored in the browser.
+  const themeAsked = (location.hash.match(/(?:^#|&)(light|dark)\b/) || [])[1] || "";
+  const themeNow = () => themeAsked || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  document.documentElement.dataset.theme = themeNow();
+  matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => {
+    document.documentElement.dataset.theme = themeNow(); (window.__hintRedraw || []).forEach((f) => f());
+  });
   // the page speaks the browser's language: Italian, German, French, otherwise English
   const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
   const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";
@@ -186,11 +194,13 @@
   // The week has 7 places, one per day; each day is one dot, the average of that day's readings, with its value
   // written next to it. Under the chart only the day of the month; above it the period. Touching a day shows its
   // date, its averages and how many readings they come from.
-  const COL = { sys: "#8C7BF2", dia: "#1FA396", pul: "#C08A1E" };   // no red: it would read as "a problem"
-  const TXT = { sys: "#B3A7FF", dia: "#5FD3C6", pul: "#F2C25A" };
+  // the theme's colours (style.css, the same as the app): read when drawing, so dark and light both follow
+  const cssv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const COL = new Proxy({}, { get: (_, k) => cssv("--" + k) });          // sys, dia, pul: no red, it would read as "a problem"
+  const TXT = new Proxy({}, { get: (_, k) => cssv("--" + k + "-t") });
   const NS = "http://www.w3.org/2000/svg";
   const fRange = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short" });
-  const redraws = [];
+  const redraws = []; window.__hintRedraw = redraws;
   let resizeTimer;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => redraws.forEach((f) => f()), 150); });
 
@@ -235,7 +245,7 @@
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot", role: "img",
         "aria-label": T.chartAria(keys.map((k) => k.toUpperCase()).join(" / "), date(range.from), date(range.to)) });
       for (let v = lo; v <= hi; v += 10) {
-        svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: "#1F2E50", "stroke-width": 1 });
+        svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: cssv("--grid"), "stroke-width": 1 });
         svgEl(svg, "text", { x: R + 8, y: Y(v) + 4, class: "ax" }, v);
       }
       // under each place, only the day of the month
@@ -244,7 +254,7 @@
       for (const k of [...keys].reverse()) {
         const p = slots.map((sl, i) => (sl.v[k] != null ? { x: X(i), y: Y(sl.v[k]), v: sl.v[k], k } : null)).filter(Boolean);
         if (p.length > 1) svgEl(svg, "path", { d: "M" + p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" L"), fill: "none", stroke: COL[k], "stroke-width": 2.4, "stroke-linejoin": "round", "stroke-linecap": "round" });
-        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 5, fill: COL[k], stroke: "#101C35", "stroke-width": 2 });
+        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 5, fill: COL[k], stroke: cssv("--panel"), "stroke-width": 2 });
         dots.push(...p);
       }
       // the value of each day next to its dot: SYS and PUL above, DIA below (the other side if taken)
@@ -261,7 +271,7 @@
         }
       }
       // touching a day: its date, its averages and how many readings they come from
-      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 10, y2: B, stroke: "#8C9BBA", "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
+      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 10, y2: B, stroke: cssv("--muted"), "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
       const ring = keys.map((k) => svgEl(svg, "circle", { r: 8, fill: "none", stroke: COL[k], "stroke-width": 2, visibility: "hidden" }));
       const pick = (ev) => {
         const rect = svg.getBoundingClientRect();
@@ -281,14 +291,14 @@
     redraws.push(draw);
   }
 
-  // the morning / evening balance, the same drawing as in the PDF (report.js), in the dark colours
-  const DARK_BAL = { ink: "#EAF0FA", muted: "#8C9BBA", beam: "#6F7FA3", panel: "#1C2B4F", sys: "#B3A7FF", dia: "#5FD3C6", scale: 1.5 };
+  // the morning / evening balance, the same drawing as in the PDF (report.js), in the colours of the theme
+  const balTheme = () => ({ ink: cssv("--ink"), muted: cssv("--muted"), beam: cssv("--day"), panel: cssv("--panel2"), sys: cssv("--sys-t"), dia: cssv("--dia-t"), scale: 1.5 });
   function drawBalance(el, items) {
     const draw = () => {
       el.innerHTML = "";
       const W = el.clientWidth, H = 214;
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
-      window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, DARK_BAL);
+      window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, balTheme());
     };
     draw(); redraws.push(draw);
   }
@@ -577,7 +587,8 @@
     const wantAdmin = /(?:^#|&)admin\b/.test(location.hash);
     // "&labs" / "&bp": the tab to open on, from where the person was in the app (blood pressure if not said)
     const wantMod = (location.hash.match(/(?:^#|&)(bp|labs)\b/) || [])[1];
-    const home = wantAdmin ? "/my/#admin" : wantMod ? "/my/#" + wantMod : "/my/";
+    const tail = themeAsked ? "&" + themeAsked : "";
+    const home = wantAdmin ? "/my/#admin" + tail : wantMod ? "/my/#" + wantMod + tail : themeAsked ? "/my/#" + themeAsked : "/my/";
     if (!(await cookiesOk())) { if (m) history.replaceState(null, "", "/my/"); return cookiesRefused(); }
     if (m) {
       history.replaceState(null, "", home);
@@ -594,7 +605,7 @@
     $("modules").onclick = (e) => {
       const id = e.target.dataset.m; if (!id || !MODULES[id]) return;
       [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id));
-      if (location.hash) history.replaceState(null, "", "/my/");
+      if (location.hash) history.replaceState(null, "", themeAsked ? "/my/#" + themeAsked : "/my/");
       $("actions").hidden = false; current.module = id; load();
     };
     $("btn-pdf").onclick = printReport;

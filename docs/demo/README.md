@@ -11,6 +11,8 @@ Screenshot da usare per l'animazione che mostra come funziona l'app. Sono fatti 
 | `web-04-dashboard-telefono.png` | Web Dashboard sul telefono, prima schermata |
 | `web-05-dashboard-telefono-intera.png` | Web Dashboard sul telefono, pagina intera |
 | `web-06-vista-del-medico.png` | Cosa vede il medico aprendo il link |
+| `web-07-tema-chiaro.png` | Web Dashboard nel tema chiaro (computer), stessi colori dell'app |
+| `labs-it-mobile-light.png` | Tabella dei referti nel tema chiaro, sul telefono |
 | `report-dal-web.pdf` | Il PDF A4 dalla dashboard (stesso modello del PDF dell'app) |
 
 Mancano gli screenshot dell'app Android: vanno fatti sul telefono con dati di prova

@@ -1,6 +1,7 @@
 package ch.personalhealthy.app
 
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -21,12 +22,12 @@ import kotlin.math.sign
 
 class ChartPal(val bg: Int, val grid: Int, val text: Int, val outline: Int)
 
-// Line colours, the same in the app and in the PDF
-val SYS_COLOR = 0xFF8C7BF2.toInt()    // systolic, violet
-val DIA_COLOR = 0xFF1FA396.toInt()    // diastolic, teal
-val PUL_COLOR = 0xFFC08A1E.toInt()    // pulse, amber
+// Line colours on screen: those of the theme (object C), dark or light (the PDF has its own, P_* below)
+val SYS_COLOR: Int get() = C.Sys.toArgb()    // systolic, violet
+val DIA_COLOR: Int get() = C.Dia.toArgb()    // diastolic, teal
+val PUL_COLOR: Int get() = C.Pul.toArgb()    // pulse, amber
 
-val SCREEN_PAL = ChartPal(bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(), outline = 0)
+val SCREEN_PAL: ChartPal get() = ChartPal(bg = C.Surface.toArgb(), grid = C.Ink.copy(alpha = 0.08f).toArgb(), text = C.Muted.toArgb(), outline = 0)
 
 /** One point per day: the averages of that day's readings. */
 class DayPoint(val day: LocalDate, val sis: Int, val dia: Int, val pul: Int?)

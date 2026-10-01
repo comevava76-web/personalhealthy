@@ -1,9 +1,11 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>HINT 365</title><style>
-  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; }
+  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; --rule:#2A3F66; color-scheme:dark; }
+  /* the device's light setting: the same light colours as the app and the Web Dashboard */
+  @media (prefers-color-scheme: light) { :root { --bg:#F4F6FB; --panel:#FFFFFF; --ink:#13223F; --muted:#5B6B88; --accent:#6D5BD0; --rule:#D9E0EA; color-scheme:light; } }
   * { box-sizing:border-box; }
   table.costs { width:100%; border-collapse:collapse; margin:8px 0 14px; font-size:14px; }
-  table.costs th, table.costs td { text-align:left; vertical-align:top; padding:8px; border-bottom:1px solid #2A3F66; }
+  table.costs th, table.costs td { text-align:left; vertical-align:top; padding:8px; border-bottom:1px solid var(--rule); }
   table.costs th { color:var(--muted); font-weight:600; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
   main { max-width:760px; margin:0 auto; padding:32px 20px 56px; }
@@ -18,8 +20,8 @@
   .box { background:var(--panel); border-radius:14px; padding:4px 20px 16px; margin-top:18px; }
   .muted { color:var(--muted); font-size:14px; }
   .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; padding:14px 22px; border-radius:14px; }
-  hr { border:0; border-top:1px solid #2A3F66; margin:36px 0; }
-  .foot { margin-top:40px; padding-top:18px; border-top:1px solid #2A3F66; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
+  hr { border:0; border-top:1px solid var(--rule); margin:36px 0; }
+  .foot { margin-top:40px; padding-top:18px; border-top:1px solid var(--rule); text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
   .foot b { color:var(--ink, #EAF0FA); letter-spacing:.06em; }
   .foot nav { display:flex; flex-wrap:wrap; justify-content:center; gap:2px 18px; margin-top:8px; }
   .foot nav a { color:var(--muted); text-decoration:none; padding:8px 2px; }

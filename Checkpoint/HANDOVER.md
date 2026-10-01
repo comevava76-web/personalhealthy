@@ -302,3 +302,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Test data in production, asked by Human on his own test account (owner): six fake lab reports with ids `lab_demo-1`…`lab_demo-6` (lab_demo-6 dated 20.11.2023 inserted last, to show the date order). Delete them with `DELETE FROM measurements WHERE id LIKE 'lab_demo-%'` when no longer needed.
 - Docs: guides IT/EN, architecture, CLAUDE.md, docs/legal, demo screenshots (test data).
 
+### 2026-10-01 — Claude Code — light theme (app + web, one palette); listening doctor; button labels on one line
+
+- Requests (Human): a light theme with matching colours, the same tones in app and web; the voice button must not wrap; a friendly doctor with a stethoscope while the app listens.
+- App: `object C` returns dark or light values (`C.light`), `ThemeChoice` in Gestore («Aspetto»: as the phone / light / dark, kept on the phone), status and navigation bars follow; screen charts read the theme; `BigButton` labels on one line; `DoctorListening` (Listen.kt, drawn in Compose).
+- Web: style.css variables for both themes (dark values now identical to the app: bg #0F1D38, panel #172B50…), light via `&light`/`&dark` from the app or the device setting; charts read the CSS variables; public pages follow the device setting.
+- The 0.1.115 build (PR #124) is online.
+
