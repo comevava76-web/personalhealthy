@@ -172,7 +172,7 @@
     <string name="section_credits">Credits</string>
     <string name="section_token">AI features</string>
     <string name="section_db">Your data</string>
-    <string name="section_identity">Identity</string>
+    <string name="section_identity">Account</string>
     <string name="db_count">%1$d readings saved</string>
     <string name="token_own_set">Your Anthropic key is saved, encrypted. Only your photos use it.</string>
     <string name="token_owner_admin">The readings use the Anthropic key set on the server (the ANTHROPIC_API_KEY secret on GitHub).</string>
@@ -498,7 +498,13 @@
     <string name="photo_wrong">The numbers are wrong: retake the photo</string>
     <string name="db_labs_count">%1$d lab reports uploaded</string>
     <string name="section_theme">Appearance</string>
-    <string name="theme_auto">As the phone</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="stat_readings">readings saved</string>
+    <string name="stat_labs">lab reports</string>
+    <string name="account_google">Google account</string>
+    <string name="account_short">Your diary comes back on a new phone with this account.</string>
+    <string name="account_delete_short">Delete my account</string>
+    <string name="manage_readings_sub">Delete a wrong reading or all of them</string>
+    <string name="share_app_sub">Send the download link</string>
 </resources>

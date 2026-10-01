@@ -317,3 +317,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Lab results (`labsPdf` in `app.js`, web only): teal→indigo band, table with a gradient header row, alternate row tints, column lines, a frame per block, at most five dates per block split evenly; out-of-range values orange with a small triangle on a pale orange cell; footer with disclaimer and page numbers on every page.
 - Tests: both PDFs generated from a local Worker with test data only (`docs/demo/report-dal-web.pdf`, `docs/demo/lab-results.pdf`), checked page by page. The app's PDF is checked by the APK build in CI; Human checks it on the phone.
 - Next: Human checks the PDFs on the phone; MonitorReader still waits for real photos of the monitor.
+
+### 2026-10-02 — Claude Code — Gestore redone, dark theme by default, lab history collapsed
+
+- Requests (Human, on 0.1.116): the Gestore page looked rough («Come il tele…» cut, «Identity» in English, giant buttons); the default theme must be dark (light only if chosen); the list of uploaded lab reports must not push the Web Dashboard button down.
+- App: Gestore in tidy cards — two coloured counters (readings, lab reports) with «Gestisci misure» as a row; «Aspetto» as a two-way switch Scuro/Chiaro with icons (dark is the default, an old «as the phone» choice becomes dark); «Account» card with Google, sign out and delete account as rows; «Condividi l'app» as a row. New icons ic_list/ic_moon/ic_sun/ic_person/ic_logout/ic_delete/ic_share. Referti: the saved reports sit closed under one line with their number; a tap opens the list by day.
+- Web: the dashboard opens dark unless the app passes `&light` (no device fallback any more).
+- Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by the APK job in CI (no Android SDK in this session).
+- Next: after the release, a UI/graphics review of the app code (asked by Human); then stop for now.
