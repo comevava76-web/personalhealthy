@@ -46,6 +46,12 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Politica dei costi** (tabella in app, condizioni e home): solo l'app, 5 $/anno al proprietario via Google Play; nessun altro
   costo. **Niente AI**: la Scan con Anthropic è stata tolta (condizioni v19, decisione di Human); nessun dato va a fornitori di AI.
   Non reintrodurla senza una nuova decisione di Human (nuova versione delle condizioni, privacy, compliance).
+- **Scan della foto del misuratore, senza AI** (condizioni v20, chiesta da Human): la foto si legge solo sul telefono
+  (`MonitorReader` nel modulo `android/reader`, poi ML Kit incluso nell'app), si mostra con i numeri letti e si salva solo
+  dopo la conferma della persona; la foto non esce mai dal telefono e si cancella. Se non è sicura non indovina: dice il
+  motivo e chiede di rifare la foto. Il test di 400 foto generate gira nella CI: **mai un valore sbagliato** (0 WRONG);
+  ogni modifica al lettore deve mantenerlo. Al server solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti (`bp_photo_*`).
+- **Link alla Web Dashboard dall'app**: si apre nella scheda da cui si parte (`&bp`, `&labs`, `&admin`).
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
   nella Web Dashboard la scheda **Admin** (solo totali: utenti, misure, referti, errori; spazio D1, blocco versioni), aperta dall'icona Gestore nell'app:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.

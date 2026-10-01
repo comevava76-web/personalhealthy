@@ -133,6 +133,24 @@ r = await voice(alice, { sis: 120, dia: 80, pul: 70, spokenAt: now() + 2 * 60e3 
 S.check("voice", "V18", "said 2 minutes in the future -> 400 voice_time", r.status === 400 && r.json?.code === "voice_time", r.text);
 r = await voice(alice, { sis: 120, dia: 80, pul: 70 });
 S.check("voice", "V19", "spokenAt missing -> 400", r.status === 400, r.text);
+
+// ---------------------------------------------------------------- photo Scan (read on the phone): only the numbers arrive
+r = await call(alice, "POST", "/v1/bp/photo", { sis: 131, dia: 84, pul: 66, takenAt: now() });
+S.check("photo", "P1", "confirmed photo reading -> 200, source photo", r.status === 200 && r.json?.source === "photo" && r.json?.sis === 131, r.text);
+r = await call(alice, "GET", "/v1/bp?days=1");
+S.check("photo", "P2", "listed with source photo", (r.json?.items || []).some((x) => x.sis === 131 && x.source === "photo"), r.text);
+r = await call(alice, "POST", "/v1/bp/photo", { sis: 80, dia: 120, pul: 66, takenAt: now() });
+S.check("photo", "P3", "SYS < DIA -> 400 photo_invalid", r.status === 400 && r.json?.code === "photo_invalid", r.text);
+r = await call(alice, "POST", "/v1/bp/photo", { sis: 131, dia: 84, pul: 66, takenAt: now() - 16 * 60e3 });
+S.check("photo", "P4", "photo 16 minutes old -> 400 photo_time", r.status === 400 && r.json?.code === "photo_time", r.text);
+r = await call(alice, "POST", "/v1/bp/photo", { sis: 131, dia: 84, pul: 66, spokenAt: now() });
+S.check("photo", "P5", "takenAt missing -> 400", r.status === 400, r.text);
+r = await call(alice, "POST", "/v1/bp/photo/outcome", { code: "blurry" });
+S.check("photo", "P6", "retake reason counted -> 200", r.status === 200, r.text);
+r = await call(alice, "POST", "/v1/bp/photo/outcome", { code: "saved" });
+S.check("photo", "P7", "outcome 'saved' only from a real save -> 400", r.status === 400, r.text);
+r = await call(alice, "POST", "/v1/bp/photo/outcome", { code: "<script>" });
+S.check("photo", "P8", "unknown outcome -> 400", r.status === 400, r.text);
 r = await voice(alice, { sis: 120, dia: 80, pul: 70, spokenAt: now(), junk: "x".repeat(900_000), note: "\u202e\u0000😀" });
 S.check("voice", "V20", "~1 MB body with unicode/NUL junk fields is accepted without storing the junk", r.status === 200, r.text.slice(0, 200));
 if (r.status === 200) {

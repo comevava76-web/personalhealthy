@@ -114,7 +114,7 @@
         <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (pseudonymous account code, phone, versions, text fingerprint, date).</li>
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
         <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
-        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen). No AI: nothing goes to an AI provider (the photo Scan was removed, terms v19).</li>
+        <li><b>Records</b> a reading: by voice or with a photo of the monitor (Scan, read on the phone; <b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b> checked and confirmed on screen). No AI: nothing goes to an AI provider; the photo never leaves the phone (terms v20).</li>
         <li><b>Looks back</b>: last reading, the week; the Reports icon (“Go to your full reports”) opens the Web Dashboard in the browser (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
         <li><b>Shares</b>: the PDF downloaded on the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
@@ -134,7 +134,7 @@
         <li>Charts: 7 days, one dot per day = the mean of that day's readings (explained before the charts), value next to it, axis with day numbers only. Tables show AM/PM.</li>
         <li>The same A4 PDF from the app and from the web.</li>
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
-        <li>No AI provider: the photo Scan with Anthropic was removed (terms v19); keys, costs and AI readings are purged nightly.</li>
+        <li>No AI provider: the Anthropic Scan was removed (terms v19); the Scan of terms v20 reads the photo on the phone (MonitorReader, bundled ML Kit) and sends only the three confirmed numbers.</li>
         <li>Readings kept at most 365 days, deleted nightly; acceptances stay as proof.</li>
         <li>The app stays simple: the owner's controls are only in the web Admin area.</li>
       </ul>
@@ -148,7 +148,7 @@
   <div class="band">
     <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 6</div>
     <h1>Input: voice and lab reports</h1>
-    <p>How data enters HINT 365: blood pressure by voice, lab results from a report. Both are read on the phone; no AI provider is involved (the photo Scan with Anthropic was removed in terms v19).</p>
+    <p>How data enters HINT 365: blood pressure by voice or by a photo of the monitor (Scan), lab results from a report. All are read on the phone; no AI provider is involved (the Anthropic Scan was removed in terms v19; the Scan of terms v20 runs on the phone).</p>
   </div>
 
   <h2>From the user to the database <small>the input always starts on the user's side</small></h2>
@@ -211,11 +211,12 @@
     <tr><td><b>Checks</b></td><td>exactly 3 numbers; SYS 50–260, DIA 30–160, PUL 30–220; DIA below SYS; odd values listed; user confirms; ranges again on the server</td><td>one report date and every row understood, or nothing saved; server: schema, same file or same test and day never twice</td></tr>
     <tr><td><b>Typical errors</b></td><td>a misheard number, noise, numbers said in the wrong order</td><td>an unclear photo, two dates on the document, an encrypted PDF</td></tr>
     <tr><td><b>Limits</b></td><td>60 a day</td><td>PDF up to 15 pages, 20 MB</td></tr>
-    <tr><td><b>Stored as</b></td><td><code>measurements</code>, source <code>voice</code> (older readings may carry <code>photo</code>, from the removed Scan)</td><td><code>measurements</code>, kind <code>lab</code>; <code>lab_files</code> fingerprint</td></tr>
+    <tr><td><b>Stored as</b></td><td><code>measurements</code>, source <code>voice</code> or <code>photo</code> (Scan)</td><td><code>measurements</code>, kind <code>lab</code>; <code>lab_files</code> fingerprint</td></tr>
     <tr><td><b>Code</b></td><td><code>Listen.kt</code>, <code>Core.kt</code> (<code>parseSpoken</code>), <code>POST /v1/bp/voice</code></td><td><code>Labs.kt</code>, <code>LabsParser.kt</code>, <code>POST /v1/labs</code></td></tr>
   </table>
+  <p class="muted"><b>Scan (photo of the monitor)</b>: camera → <code>MonitorReader</code> (module <code>reader</code>: seven segments, several thresholds that must agree, never a guess; 400 generated photos in CI, 0 wrong values allowed) → if unsure, bundled ML Kit text recognition → the photo and the numbers on screen → the person confirms → <code>POST /v1/bp/photo</code> (3 numbers only); the photo is deleted. A retake reason or "numbers wrong" is counted in <code>event_log</code> (<code>bp_photo_*</code>, code only). Code: <code>MonitorScan.kt</code>.</p>
   <p class="muted">Neither way judges the values. Readings feed the charts, reports and the doctor's link; lab results feed the table in the Web Dashboard.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.110</span><span>2 / 6</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.113</span><span>2 / 6</span></div>
 </section>
 
 <!-- ======================= PAGE 3: TECHNOLOGY ======================= -->
@@ -517,7 +518,7 @@
     <tr><th>#</th><th>Flow</th><th>Who</th><th>Steps</th><th>Data</th></tr>
     <tr><td>1</td><td><b>Install, sign in</b></td><td>user</td><td><code>/download</code> → install → Sign in with Google (OAuth, ID token checked by the Worker) → phone key registered</td><td>persons (fingerprint only)</td></tr>
     <tr><td>2</td><td><b>Accept the terms</b></td><td>user</td><td>shown at first install, after every update and when the text changes → accept or the app closes</td><td>acceptances</td></tr>
-    <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record → say SYS, DIA, PUL → check → Save reading → <code>/v1/bp/voice</code></td><td>measurements</td></tr>
+    <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record → say SYS, DIA, PUL → check → Save reading → <code>/v1/bp/voice</code>; or Scan → photo read on the phone → check → Save → <code>/v1/bp/photo</code></td><td>measurements, event_log</td></tr>
     <tr><td>4</td><td><b>No AI</b></td><td>system</td><td>the Anthropic Scan was removed (terms v19): its calls answer 410 <code>ai_removed</code>; nightly purge empties the old keys, costs and readings</td><td>person_keys, ledger, scans (emptied)</td></tr>
     <tr><td>5</td><td><b>Screen lock</b></td><td>user</td><td>app lock: fingerprint, face or the phone's PIN; without any screen lock the app opens and shows a notice that leads to the settings (the user's responsibility)</td><td>none</td></tr>
     <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Reports icon → Web Dashboard (always opened in a browser), Blood pressure tab: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>

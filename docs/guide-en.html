@@ -25,7 +25,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 </style></head><body>
 
 <div class="cover"><div class="brand"><svg viewBox="0 0 108 108" width="46" height="46"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs><rect width="108" height="108" rx="24" fill="url(#g)"/><path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95" fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><div class="sub">HealthyInstantTracker</div></div></div>
-<h2>User guide</h2><p>The blood-pressure diary: record readings by voice, import lab reports, and prepare the report for the doctor.</p></div>
+<h2>User guide</h2><p>The blood-pressure diary: record readings by voice or with a photo of the monitor, import lab reports, and prepare the report for the doctor.</p></div>
 
 <h2>1. What HINT 365 is</h2>
 <p>HINT 365 is a <b>diary</b>: it records the values of your blood-pressure monitor, <span class="sys">SYS</span> (systolic), <span class="dia">DIA</span> (diastolic) and <span class="pul">PUL</span> (pulse), with date and time, and shows them in tables, charts and reports.</p>
@@ -35,7 +35,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <table><tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
 <tr><td>HINT 365: the app, charts, reports, Web Dashboard, keeping your readings</td><td class="free">Free today. Once it is on the Play Store: 5 $ a year, cancel any time</td><td>The owner of the app, through Google Play</td></tr>
 </table>
-<p>There are no other costs: voice recording and lab import are included, and nothing is paid to anyone else.</p>
+<p>There are no other costs: voice recording, Scan and lab import are included, and nothing is paid to anyone else.</p>
 
 <h2>3. Installing and updating</h2>
 <ol><li>On your Android phone open <b>https://personalhealthy-api.comevava76.workers.dev/download</b> and download <b>HINT.apk</b>.</li>
@@ -51,15 +51,20 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>The app stops by itself once it has heard three numbers and shows you the values.</li>
 <li>Check them and tap <b>Save reading</b>. Date and time are those of the moment you spoke.</li></ol>
 <p>The app refuses impossible values (for example DIA higher than SYS, a missing number) and marks unusual ones in orange, to check again.</p>
+<h3>📷 Scan</h3>
+<ol><li>Tap <b>Scan</b> and photograph the monitor's display: straight, close, without reflections, with <span class="sys">SYS</span>, <span class="dia">DIA</span> and <span class="pul">PUL</span> all visible.</li>
+<li>The phone reads the numbers by itself, without artificial intelligence, and shows you the photo with the three values.</li>
+<li>If they are the ones on the display tap <b>Yes, they are correct: save</b>. If they are wrong tap <b>The numbers are wrong: retake the photo</b>.</li></ol>
+<p>If the photo cannot be read with certainty (dark, blurred, a reflection, crooked) the app does not guess: it says why and asks you to take it again, or to say the values aloud. The photo stays on the phone, is never sent and is deleted at the end.</p>
 <h2>5. No artificial intelligence</h2>
-<p>HINT 365 no longer uses artificial intelligence and sends no data to any AI provider. The monitor <b>Scan</b> with Anthropic has been removed (terms of use version 19): readings are recorded by voice, free. If you had saved an Anthropic key, the server deletes it together with the costs and readings of that feature; if you wish, delete it from your Anthropic account too.</p>
+<p>HINT 365 no longer uses artificial intelligence and sends no data to any AI provider. The former <b>Scan</b> with Anthropic has been removed (terms of use version 19). Today's Scan (terms version 20) reads the photo on the phone, free, and only the three numbers you confirm reach the server. If you had saved an Anthropic key, the server deletes it together with the costs and readings of that feature; if you wish, delete it from your Anthropic account too.</p>
 
 <h2>6. The screens</h2>
 <p>At the bottom every tab has an icon and its name. Only the owner of the app also sees <b>Owner</b> (shield ↗), which opens the owner's area on the web.</p>
 <table><tr><th>Tab</th><th>What you find</th></tr>
-<tr><td><b>Blood pressure</b> (heart)</td><td>The <b>Record a reading</b> button, the last reading, the week (one mean per day) and the summary; at the bottom <b>Download PDF</b> (saved in Downloads and opened) and <b>Go to your full reports</b>.</td></tr>
+<tr><td><b>Blood pressure</b> (heart)</td><td>The <b>Record</b> (voice) and <b>Scan</b> (photo) buttons, the last reading, the week (one mean per day) and the summary; at the bottom <b>Download PDF</b> (saved in Downloads and opened) and <b>Go to your full reports</b>.</td></tr>
 <tr><td><b>Lab results</b> (sheet with a flask)</td><td><b>Import lab report</b>, the progress bar while it uploads and below it the <b>upload history</b>, day by day, with the outcome of each (saved, already imported, not saved and why). The results are in the Web Dashboard.</td></tr>
-<tr><td><b>Reports</b> (screen with a chart ↗)</td><td>Not a screen of the app: it opens the <b>full reports</b> (Web Dashboard) in the browser, on the Blood pressure tab. The last 7 days: chart with one dot per day (the mean of the day), means, morning and evening with the balance, extremes, pulse; in the tables the moment is <b>AM</b> (before 12:00) or <b>PM</b>. Then the Lab results tab.</td></tr>
+<tr><td><b>Reports</b> (screen with a chart ↗)</td><td>Not a screen of the app: it opens the <b>full reports</b> (Web Dashboard) in the browser, on the tab you start from: Lab results from Lab results, otherwise Blood pressure. The last 7 days: chart with one dot per day (the mean of the day), means, morning and evening with the balance, extremes, pulse; in the tables the moment is <b>AM</b> (before 12:00) or <b>PM</b>. Then the Lab results tab.</td></tr>
 <tr><td><b>Admin</b></td><td><b>Costs</b>, <b>Readings database</b> (delete one reading or all), <b>Identity</b> (Google account, sign out, delete the account) and, at the bottom, <b>Share the app</b>.</td></tr></table>
 
 <h2>7. Web Dashboard and the doctor</h2>
@@ -75,8 +80,9 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <p>Install HINT 365 on the new phone and tap <b>"Sign in with Google"</b> with the same account: you find all your readings. The old phone is signed out.</p>
 
 <h2>10. Your data</h2>
-<ul><li><b>What is saved:</b> your readings with date, time and source (voice, or photo for readings made with the former Scan); of your Google account only an encrypted fingerprint, <b>never the email</b>, which stays on your phone.</li>
+<ul><li><b>What is saved:</b> your readings with date, time and source (voice or photo of the monitor); of your Google account only an encrypted fingerprint, <b>never the email</b>, which stays on your phone.</li>
 <li><b>Voice:</b> speech is transcribed by the phone; only the three numbers reach the server.</li>
+<li><b>Scan:</b> the photo of the monitor is read on the phone and then deleted; only the three confirmed numbers reach the server.</li>
 <li><b>Where and for how long:</b> on <b>Cloudflare</b>, database in the <b>European Union</b>. Readings are kept for at most <b>365 days</b>: older ones are deleted every night. Export PDF or Excel to keep them longer.</li>
 <li><b>Who sees them:</b> only you, and the doctor with the link you send. The owner of the app sees only usage numbers tied to an anonymous code (when you joined, last opened, how many readings), never values or reports. Technical errors go into a short error log, without reading values, kept 90 days, to fix problems.</li>
 <li><b>Deletion:</b> in Admin you can delete one reading, all readings or the account. It is immediate and final; only the proof of the accepted terms remains.</li></ul>

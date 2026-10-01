@@ -7,7 +7,7 @@ import { NOTICE_TEXT } from "./notices";
 import { validateLabImport, loadLabs, saveLab, deleteLabs, labFileKey } from "./labs";
 import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
-import { logError, countEvent } from "./errors";
+import { logError, countEvent, EVENTS } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
 import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
@@ -218,7 +218,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "19";
+const DISCLAIMER_VERSION = "20";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -344,7 +344,7 @@ const AUTHENTICATED = new WeakSet<Request>();
 const ROUTES = new Set([
   "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout",
   "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription",
-  "/v1/bp/voice", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
+  "/v1/bp/voice", "/v1/bp/photo", "/v1/bp/photo/outcome", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
   "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
   "/my/api/admin/app-min-version", "/my/api/admin/observability", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
 ]);
@@ -555,7 +555,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
-  const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/labs", "/v1/web/code"].includes(url.pathname);
+  const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/bp/photo", "/v1/labs", "/v1/web/code"].includes(url.pathname);
   if (requiresNotice && !(await acceptedNotice(q, pid))) return fail("Accept the current terms first", 403, "notice_required");
 
   // no valid subscription: only the invitation to renew
@@ -729,27 +729,41 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // 2b) Values said aloud, after the person confirmed them on screen: marked 'voice' so reports can tell them
   // from photo readings. All three values are needed. Date and time: when they were said, accepted only
   // if that was in the last 15 minutes (not in the future). Same limits as a photo reading.
-  if (req.method === "POST" && url.pathname === "/v1/bp/voice") {
-    if (await tooMany(q, "voice:" + pid, 60, DAY)) return fail("Too many readings today: try again tomorrow", 429, "too_many");
+  // 2) A reading said aloud (voice) or read on the phone from a photo of the monitor (photo, no AI): only the three
+  // numbers arrive, after the person confirmed them; the photo never leaves the phone.
+  if (req.method === "POST" && (url.pathname === "/v1/bp/voice" || url.pathname === "/v1/bp/photo")) {
+    const source = url.pathname === "/v1/bp/photo" ? "photo" : "voice";
+    if (await tooMany(q, source + ":" + pid, 60, DAY)) return fail("Too many readings today: try again tomorrow", 429, "too_many");
     const num = (v: any, min: number, max: number) =>
       typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v) : null;
     const sis = num(data.sis, 50, 260), dia = num(data.dia, 30, 160);
     const pul = num(data.pul, 30, 220);
     if (sis == null || dia == null || pul == null || dia >= sis)
-      return fail("Values out of range", 400, "voice_invalid");
+      return fail("Values out of range", 400, source + "_invalid");
     const now = Date.now();
-    const spokenAt = Number(data.spokenAt);
+    const spokenAt = Number(source === "photo" ? data.takenAt : data.spokenAt);
     if (!Number.isFinite(spokenAt) || spokenAt > now + 60e3 || now - spokenAt > 15 * 60e3)
-      return fail("Too long since the values were said", 400, "voice_time");
+      return fail(source === "photo" ? "Too long since the photo was taken" : "Too long since the values were said", 400, source + "_time");
     const id = newId("bp_");
     const takenMs = Math.min(Math.round(spokenAt), now);
     const period = periodOf(takenMs);
     await q(
       "INSERT INTO measurements (id, person_id, kind, taken_at, tz, period, data, source, created_at, taken_at_local, created_at_local) " +
-      "VALUES (?1, ?2, 'bp', ?3, ?4, ?5, ?6, 'voice', ?7, ?8, ?9)",
-      [id, pid, takenMs, TZ, period, JSON.stringify({ sis, dia, pul }), now, localStamp(takenMs), localStamp(now)]
+      "VALUES (?1, ?2, 'bp', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+      [id, pid, takenMs, TZ, period, JSON.stringify({ sis, dia, pul }), source, now, localStamp(takenMs), localStamp(now)]
     );
-    return json({ id, takenAt: takenMs, period, sis, dia, pul, source: "voice" });
+    if (source === "photo") await countEvent(q, "bp_photo_saved", "POST /v1/bp/photo", req.headers.get("X-App-Version"));
+    return json({ id, takenAt: takenMs, period, sis, dia, pul, source });
+  }
+
+  // How a photo Scan ended on the phone when nothing was saved (retake and its reason, or "the numbers were wrong"):
+  // a code and a count only, to see how well the reading works. Never a value or a picture.
+  if (req.method === "POST" && url.pathname === "/v1/bp/photo/outcome") {
+    const code = "bp_photo_" + String(data.code || "");
+    if (!EVENTS.has(code) || code === "bp_photo_saved") return fail("Unknown outcome", 400, "bad_outcome");
+    if (await tooMany(q, "photo_outcome:" + pid, 200, DAY)) return json({ ok: true });
+    await countEvent(q, code, "app/Scan", req.headers.get("X-App-Version"));
+    return json({ ok: true });
   }
 
   // 3) List of measurements

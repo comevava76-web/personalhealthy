@@ -106,6 +106,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.compose.ui.graphics.asImageBitmap
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
@@ -283,7 +284,7 @@ fun App() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
-    // "tabs", or a full screen without the bottom bar: "voice", "listen", "all", "terms"
+    // "tabs", or a full screen without the bottom bar: "voice", "listen", "photo", "all", "terms"
     var screen by rememberSaveable { mutableStateOf("tabs") }
     var tab by rememberSaveable { mutableStateOf(Tab.BP.key) }
     val readings = remember { mutableStateListOf<Reading>() }
@@ -372,6 +373,47 @@ fun App() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // The photo Scan of the monitor, read on this phone (no AI): the photo stays here and is deleted at the end
+    val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
+    val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
+    var photo by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var photoRead by remember { mutableStateOf<MonitorScan.Result?>(null) }   // null while reading
+    var photoAt by rememberSaveable { mutableLongStateOf(0L) }
+    var photoSaving by remember { mutableStateOf(false) }
+    fun closePhoto() { photoFile.delete(); photo = null; photoRead = null; screen = "tabs" }
+    // how a Scan ended when nothing was saved: a code only, so the owner can see how well the reading works
+    fun photoOutcome(code: String) { val pid = personId ?: return; scope.launch { Repo.photoOutcome(pid, code) } }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (!ok) { if (screen == "photo") closePhoto(); return@rememberLauncherForActivityResult }
+        photoAt = System.currentTimeMillis()   // date and time: those of the shot
+        photo = null; photoRead = null; screen = "photo"
+        scope.launch {
+            try {
+                val b = MonitorScan.load(photoFile)
+                photo = b
+                val r = MonitorScan.read(b)
+                photoRead = r
+                if (r is MonitorScan.Result.Retake) photoOutcome(r.reason)
+            } catch (e: Exception) {
+                ErrorReport.report("Scan/read", e)
+                photoRead = MonitorScan.Result.Retake("not_found"); photoOutcome("not_found")
+            }
+        }
+    }
+    fun launchCamera() {
+        try { camera.launch(photoUri) }
+        catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.no_camera)) }
+        catch (e: SecurityException) { toast(ctx, t(R.string.camera_permission)) }
+    }
+    // the camera permission is declared (QR codes), so Android lets the app open the camera only once it is allowed
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) launchCamera() else toast(ctx, t(R.string.camera_permission))
+    }
+    fun openCamera() {
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera()
+        else cameraPermission.launch(Manifest.permission.CAMERA)
+    }
+
     // Values said aloud: the phone's speech recognition, then a confirmation before saving
     var voice by remember { mutableStateOf<Triple<Int, Int, Int?>?>(null) }
     var voiceAt by rememberSaveable { mutableLongStateOf(0L) }   // when the values were said
@@ -415,7 +457,7 @@ fun App() {
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     BackHandler(enabled = screen != "tabs" || tab != Tab.BP.key) {
-        if (screen != "tabs") screen = "tabs" else tab = Tab.BP.key
+        if (screen == "photo") closePhoto() else if (screen != "tabs") screen = "tabs" else tab = Tab.BP.key
     }
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
@@ -467,6 +509,26 @@ fun App() {
                 onResult = { onSpoken(it) },
                 onFail = { msg -> screen = "tabs"; voiceProblem = msg },
                 onCancel = { screen = "tabs" }
+            )
+            screen == "photo" -> PhotoScreen(
+                photo = photo, result = photoRead, takenAt = photoAt, saving = photoSaving,
+                onSave = { v ->
+                    val pid = personId ?: return@PhotoScreen
+                    photoSaving = true
+                    scope.launch {
+                        try {
+                            Repo.photo(pid, v.sys, v.dia, v.pul, photoAt)
+                            toast(ctx, t(R.string.saved))
+                            closePhoto(); tab = Tab.BP.key
+                            reload()
+                        } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
+                        finally { photoSaving = false }
+                    }
+                },
+                onWrong = { photoOutcome("wrong"); photoFile.delete(); openCamera() },
+                onRetake = { photoFile.delete(); openCamera() },
+                onVoice = { closePhoto(); openVoice() },
+                onCancel = { closePhoto() }
             )
             screen == "voice" && voice != null -> VoiceScreen(
                 values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
@@ -527,7 +589,9 @@ fun App() {
                         }
                     }
                 }
-                val openDash = { openWeb("") }
+                // the dashboard opens on the tab of where the person is: lab results from the lab results tab,
+                // blood pressure from anywhere else
+                val openDash = { openWeb(if (tab == Tab.LABS.key) "&labs" else "&bp") }
                 Box(Modifier.weight(1f).nestedScroll(pull.nestedScrollConnection)) {
                     when (tab) {
                         Tab.LABS.key -> personId?.let { LabsScreen(it, onDash = openDash) }
@@ -564,6 +628,7 @@ fun App() {
                             readings = readings, message = message, me = me,
                             onOpenCredit = { tab = Tab.CREDIT.key },
                             onVoice = { openVoice() },
+                            onScan = { openCamera() },
                             onDash = openDash,
                         )
                     }
@@ -1024,7 +1089,7 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit,
-    onVoice: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
+    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -1041,8 +1106,13 @@ fun HomeScreen(
         }
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
-        // one way to record a reading: say it aloud, free, read by the phone
-        BigButton(t(R.string.record_short), icon = R.drawable.ic_mic, onClick = onVoice)
+        // two ways to record a reading, side by side: say it aloud, or photograph the monitor. Both are read on this
+        // phone, without AI, and saved only after the person has checked the numbers.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BigButton(t(R.string.record_short), color = C.Surface2, textColor = C.Ink, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
+            Spacer(Modifier.width(10.dp))
+            BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
+        }
         Spacer(Modifier.height(6.dp))
 
         LastPanel(readings.lastOrNull())
@@ -1358,6 +1428,68 @@ private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() ->
 }
 
 /* ---------------- Photo reading ---------------- */
+
+/**
+ * The photo of the monitor and what the phone read in it. The numbers are saved only when the person says they are
+ * the ones on the display; if the phone is not sure, it says why and asks for a new photo.
+ */
+@Composable
+fun PhotoScreen(
+    photo: android.graphics.Bitmap?, result: MonitorScan.Result?, takenAt: Long, saving: Boolean,
+    onSave: (MonitorScan.Result.Values) -> Unit, onWrong: () -> Unit, onRetake: () -> Unit, onVoice: () -> Unit, onCancel: () -> Unit
+) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.new_reading), t(R.string.photo_sub), t(R.string.cancel), onCancel)
+        photo?.let {
+            androidx.compose.foundation.Image(
+                bitmap = it.asImageBitmap(), contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(16.dp)).background(C.Surface2)
+            )
+            Spacer(Modifier.height(10.dp))
+        }
+        when (result) {
+            null -> Panel {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(color = C.Sys, strokeWidth = 3.dp, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Text(t(R.string.reading_display), color = C.Ink, fontSize = 16.sp)
+                }
+            }
+            is MonitorScan.Result.Retake -> {
+                Panel {
+                    Text(t(R.string.photo_retake_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(t(when (result.reason) {
+                        "dark" -> R.string.photo_why_dark
+                        "glare" -> R.string.photo_why_glare
+                        "blurry" -> R.string.photo_why_blurry
+                        "implausible" -> R.string.photo_why_implausible
+                        "unclear" -> R.string.photo_why_unclear
+                        else -> R.string.photo_why_not_found
+                    }), color = C.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                }
+                BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
+                BigButton(t(R.string.photo_use_voice), color = C.Surface2, textColor = C.Ink, icon = R.drawable.ic_mic, onClick = onVoice)
+            }
+            is MonitorScan.Result.Values -> {
+                Panel {
+                    Row(Modifier.fillMaxWidth()) {
+                        ValueBox(t(R.string.legend_sys), "${result.sys}", C.Sys, Modifier.weight(1f))
+                        ValueBox(t(R.string.legend_dia), "${result.dia}", C.Dia, Modifier.weight(1f))
+                        ValueBox(t(R.string.label_pul), "${result.pul}", C.Pul, Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(Z.whenText(takenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(t(R.string.photo_when), color = C.Muted, fontSize = 13.sp)
+                }
+                Text(t(R.string.photo_check), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 6.dp))
+                BigButton(if (saving) t(R.string.saving) else t(R.string.photo_save), enabled = !saving) { onSave(result) }
+                BigButton(t(R.string.photo_wrong), color = C.Surface2, textColor = C.Ink, enabled = !saving, onClick = onWrong)
+            }
+        }
+    }
+}
 
 @Composable
 fun VoiceScreen(

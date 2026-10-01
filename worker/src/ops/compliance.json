@@ -96,7 +96,7 @@
    "requirement": "Transfers named, with safeguards",
    "law": "GDPR Art. 13(1)(f), 44–49 · FADP Art. 16",
    "status": "partial",
-   "evidence": "Only Google (sign-in, billing) outside the EU, named with DPF/SCC; no AI provider since terms v19 (Anthropic Scan removed, its keys, costs and readings deleted); lab documents are never transferred",
+   "evidence": "Only Google (sign-in, billing) outside the EU, named with DPF/SCC; no AI provider since terms v19 (Anthropic Scan removed, its keys, costs and readings deleted); the photo Scan of terms v20 is read on the phone (own digit reader, bundled ML Kit) and the photo is never transferred, only the three confirmed numbers; lab documents are never transferred",
    "next": "Legal review of the wording (G3)",
    "doc": "docs/compliance/gdpr.md",
    "declared": [

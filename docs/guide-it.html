@@ -25,7 +25,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 </style></head><body>
 
 <div class="cover"><div class="brand"><svg viewBox="0 0 108 108" width="46" height="46"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs><rect width="108" height="108" rx="24" fill="url(#g)"/><path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95" fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><div class="sub">HealthyInstantTracker</div></div></div>
-<h2>Guida all'uso</h2><p>Il diario della pressione: registri le misure a voce, importi i referti e prepari il report per il medico.</p></div>
+<h2>Guida all'uso</h2><p>Il diario della pressione: registri le misure a voce o con una foto del misuratore, importi i referti e prepari il report per il medico.</p></div>
 
 <h2>1. Cos'è HINT 365</h2>
 <p>HINT 365 è un <b>diario</b>: registra i valori del tuo misuratore di pressione, <span class="sys">SYS</span> (massima), <span class="dia">DIA</span> (minima) e <span class="pul">PUL</span> (pulsazioni), con data e ora, e li mostra in tabelle, grafici e report.</p>
@@ -35,7 +35,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <table><tr><th>Cosa</th><th>Costo</th><th>A chi va</th></tr>
 <tr><td>HINT 365: app, grafici, report, Web Dashboard, conservazione delle misure</td><td class="free">Oggi gratuita. Quando uscirà sul Play Store: 5 $ all'anno, disdici quando vuoi</td><td>Al proprietario dell'app, tramite Google Play</td></tr>
 </table>
-<p>Non ci sono altri costi: registrazione a voce e importazione dei referti sono comprese, e non si paga nient'altro a nessuno.</p>
+<p>Non ci sono altri costi: registrazione a voce, Scan e importazione dei referti sono comprese, e non si paga nient'altro a nessuno.</p>
 
 <h2>3. Installazione e aggiornamenti</h2>
 <ol><li>Sul telefono Android apri <b>https://personalhealthy-api.comevava76.workers.dev/download</b> e scarica <b>HINT.apk</b>.</li>
@@ -51,15 +51,20 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>L'app si ferma da sola quando ha sentito tre numeri e ti mostra i valori.</li>
 <li>Controlla e tocca <b>Salva misura</b>. Data e ora sono quelle del momento in cui hai parlato.</li></ol>
 <p>L'app rifiuta valori impossibili (per esempio DIA più alta di SYS, un numero mancante) e segnala in arancione quelli insoliti, da ricontrollare.</p>
+<h3>📷 Scan</h3>
+<ol><li>Tocca <b>Scan</b> e fotografa il display del misuratore: dritto, da vicino, senza riflessi, con <span class="sys">SYS</span>, <span class="dia">DIA</span> e <span class="pul">PUL</span> tutti visibili.</li>
+<li>Il telefono legge i numeri da solo, senza intelligenza artificiale, e ti mostra la foto con i tre valori.</li>
+<li>Se sono quelli del display tocca <b>Sì, sono giusti: salva</b>. Se sono sbagliati tocca <b>I numeri sono sbagliati: rifai la foto</b>.</li></ol>
+<p>Se la foto non si legge con certezza (scura, sfocata, con un riflesso, storta) l'app non indovina: ti dice il motivo e ti chiede di rifarla, oppure di dire i valori a voce. La foto resta sul telefono, non viene mai inviata e viene cancellata alla fine.</p>
 <h2>5. Niente intelligenza artificiale</h2>
-<p>HINT 365 non usa più l'intelligenza artificiale e non manda dati a fornitori di AI. La <b>Scan</b> del misuratore con Anthropic è stata tolta (condizioni d'uso versione 19): la misura si registra a voce, gratis. Se avevi salvato una chiave Anthropic, il server la cancella insieme ai costi e alle letture di quella funzione; se vuoi, cancellala anche dal tuo account su Anthropic.</p>
+<p>HINT 365 non usa più l'intelligenza artificiale e non manda dati a fornitori di AI. La vecchia <b>Scan</b> con Anthropic è stata tolta (condizioni d'uso versione 19). La Scan di oggi (condizioni versione 20) legge la foto sul telefono, gratis, e al server arrivano solo i tre numeri che confermi. Se avevi salvato una chiave Anthropic, il server la cancella insieme ai costi e alle letture di quella funzione; se vuoi, cancellala anche dal tuo account su Anthropic.</p>
 
 <h2>6. Le schermate</h2>
 <p>In basso ogni scheda ha un'icona e il suo nome. Solo il gestore dell'app vede anche <b>Gestore</b> (scudo ↗), che apre la sua area sul web.</p>
 <table><tr><th>Scheda</th><th>Cosa trovi</th></tr>
-<tr><td><b>Pressione</b> (cuore)</td><td>Il pulsante <b>Registra una misura</b>, l'ultima misura, la settimana (una media al giorno) e il riepilogo; in fondo <b>Scarica PDF</b> (va nella cartella Download e si apre) e <b>Vai ai tuoi report completi</b>.</td></tr>
+<tr><td><b>Pressione</b> (cuore)</td><td>I pulsanti <b>Registra</b> (voce) e <b>Scan</b> (foto), l'ultima misura, la settimana (una media al giorno) e il riepilogo; in fondo <b>Scarica PDF</b> (va nella cartella Download e si apre) e <b>Vai ai tuoi report completi</b>.</td></tr>
 <tr><td><b>Referti</b> (foglio con provetta)</td><td><b>Importa referto</b>, la barra di avanzamento durante il caricamento e sotto lo <b>storico dei caricamenti</b>, giorno per giorno, con l'esito di ciascuno (salvato, già importato, non salvato e perché). I risultati sono nella Web Dashboard.</td></tr>
-<tr><td><b>Report</b> (schermo con grafico ↗)</td><td>Non è una schermata dell'app: apre i <b>report completi</b> (Web Dashboard) nel browser, sulla scheda Pressione. Gli ultimi 7 giorni: grafico con un punto per giorno (la media del giorno), medie, mattina e sera con la bilancia, valori estremi, battiti; nelle tabelle il momento è <b>AM</b> (prima delle 12) o <b>PM</b>. Poi la scheda Referti.</td></tr>
+<tr><td><b>Report</b> (schermo con grafico ↗)</td><td>Non è una schermata dell'app: apre i <b>report completi</b> (Web Dashboard) nel browser, sulla scheda da cui parti: Referti se sei in Referti, altrimenti Pressione. Gli ultimi 7 giorni: grafico con un punto per giorno (la media del giorno), medie, mattina e sera con la bilancia, valori estremi, battiti; nelle tabelle il momento è <b>AM</b> (prima delle 12) o <b>PM</b>. Poi la scheda Referti.</td></tr>
 <tr><td><b>Admin</b></td><td><b>Costi</b>, <b>Database misure</b> (cancellare una misura o tutte), <b>Identity</b> (account Google, esci, elimina l'account) e in fondo <b>Condividi l'app</b>.</td></tr></table>
 
 <h2>7. Web Dashboard e medico</h2>
@@ -75,8 +80,9 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <p>Installa HINT 365 sul nuovo telefono e tocca <b>"Accedi con Google"</b> con lo stesso account: ritrovi tutte le misure. Il telefono vecchio viene scollegato.</p>
 
 <h2>10. I tuoi dati</h2>
-<ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce, o foto per le misure fatte con la vecchia Scan); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono.</li>
+<ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce o foto del misuratore); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono.</li>
 <li><b>Voce:</b> la voce viene trascritta dal telefono; al server arrivano solo i tre numeri.</li>
+<li><b>Scan:</b> la foto del misuratore viene letta sul telefono e poi cancellata; al server arrivano solo i tre numeri confermati.</li>
 <li><b>Dove e per quanto:</b> su <b>Cloudflare</b>, database nell'<b>Unione Europea</b>. Le misure si conservano al massimo <b>365 giorni</b>: quelle più vecchie vengono cancellate ogni notte. Esporta PDF o Excel se vuoi tenerle più a lungo.</li>
 <li><b>Chi li vede:</b> solo tu, e il medico con il link che gli mandi. Il proprietario dell'app vede solo numeri d'uso legati a un codice anonimo (iscrizione, ultimo accesso, quante misure), mai i valori o i report. Gli errori tecnici finiscono in un registro sintetico, senza valori delle misure, conservato 90 giorni, per correggere i problemi.</li>
 <li><b>Cancellazione:</b> in Admin puoi cancellare una misura, tutte le misure oppure l'account. È immediata e definitiva; resta solo la prova delle condizioni accettate.</li></ul>
