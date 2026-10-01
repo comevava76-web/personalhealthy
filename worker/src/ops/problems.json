@@ -89,6 +89,21 @@
    "fix": "openInBrowser now passes the address to the browser itself: the phone's default browser, else Chrome, else the first browser found (manifest <queries> lists browsers); failures go to the error log (Web/browser)",
    "pr": "",
    "fixedIn": "0.1.112"
+  },
+  {
+   "id": "P-007",
+   "found": "2026-10-01",
+   "title": "Release 0.1.118 stopped after a correct deploy: the /download check ran too early",
+   "match": {
+    "code": "ci_download_check",
+    "place": "CI/Build"
+   },
+   "versions": "0.1.118",
+   "status": "fixed",
+   "cause": "The build checks that /download serves the new APK 5 seconds after the deploy; the edge still served 0.1.117 for a few seconds, so the job failed and the release was not recorded",
+   "fix": "The check now tries again every 10 seconds for up to 2 minutes before failing",
+   "pr": "",
+   "fixedIn": "0.1.119"
   }
  ]
 }
