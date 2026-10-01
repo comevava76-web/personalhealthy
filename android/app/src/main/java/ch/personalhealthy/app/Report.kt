@@ -329,8 +329,8 @@ private fun pdfBalance(c: Canvas, x: Float, y: Float, w: Float, h: Float, list: 
     val lx = cx - half * kotlin.math.cos(a).toFloat(); val ly = py - half * kotlin.math.sin(a).toFloat()
     val rx = cx + half * kotlin.math.cos(a).toFloat(); val ry = py + half * kotlin.math.sin(a).toFloat()
     val soft = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; alpha = 140 }
-    c.drawPath(Path().apply { moveTo(cx - 16f, y + h - 16f); lineTo(cx + 16f, y + h - 16f); lineTo(cx, py + 4f); close() }, soft)
-    c.drawRoundRect(RectF(cx - 34f, y + h - 16f, cx + 34f, y + h - 13f), 1.5f, 1.5f, soft)
+    c.drawPath(Path().apply { moveTo(cx - 16f, y + h - 18f); lineTo(cx + 16f, y + h - 18f); lineTo(cx, py + 4f); close() }, soft)
+    c.drawRoundRect(RectF(cx - 34f, y + h - 18f, cx + 34f, y + h - 15f), 1.5f, 1.5f, soft)
     c.drawLine(lx, ly, rx, ry, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 3f; strokeCap = Paint.Cap.ROUND })
     c.drawCircle(cx, py, 4f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = P_INK })
     val thin = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 1f; style = Paint.Style.STROKE }

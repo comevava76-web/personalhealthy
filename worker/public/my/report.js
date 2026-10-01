@@ -330,9 +330,10 @@
     const a = (deg * Math.PI) / 180;
     const cx = x + w / 2, py = y + h * 0.56, half = Math.min(w * 0.3, 170);
     const Lx = cx - half * Math.cos(a), Ly = py - half * Math.sin(a), Rx = cx + half * Math.cos(a), Ry = py + half * Math.sin(a);
-    // stand and pivot
-    el(g, "path", { d: `M${cx - 16} ${y + h - 16} L${cx + 16} ${y + h - 16} L${cx} ${py + 4} Z`, fill: th.beam, opacity: 0.55 });
-    el(g, "rect", { x: cx - 34, y: y + h - 16, width: 68, height: 3, rx: 1.5, fill: th.beam, opacity: 0.55 });
+    // stand and pivot; the foot stays clear of the line written under it (larger on a screen)
+    const foot = y + h - 12 * K - 6;
+    el(g, "path", { d: `M${cx - 16} ${foot} L${cx + 16} ${foot} L${cx} ${py + 4} Z`, fill: th.beam, opacity: 0.55 });
+    el(g, "rect", { x: cx - 34, y: foot, width: 68, height: 3, rx: 1.5, fill: th.beam, opacity: 0.55 });
     // beam
     el(g, "line", { x1: Lx, y1: Ly, x2: Rx, y2: Ry, stroke: th.beam, "stroke-width": 3, "stroke-linecap": "round" });
     el(g, "circle", { cx, cy: py, r: 4, fill: th.ink });

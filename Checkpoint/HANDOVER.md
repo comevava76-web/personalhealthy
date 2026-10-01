@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code.
+Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (app reorganisation, terms v18).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -24,7 +24,7 @@ Keep current state concise and replace superseded statements there. Append to th
 
 When developers work concurrently, use separate branches/worktrees and avoid overlapping scope unless agreed. Re-read the latest shared handover before merging, reconcile both state and log, and preserve every developer's entry. A worktree note is not a global task lock.
 
-**Latest authorized action (Claude Code, 30.09–01.10.2026): implement the automatic lab import, duplicate protection and the web table, as decided by the user in chat (see "Automatic lab import — implemented" below).** The security Fix activation is parked in the backlog (issue #107).
+**Latest authorized action (Claude Code, 01.10.2026): app reorganisation decided by the user in chat — icon bottom bar (Blood pressure, Lab results, Dashboard ↗, Owner ↗ for the owner only, Admin), the Report tab replaced by the Dashboard icon, Lab results = import + progress bar + upload history by day, web dashboard Blood pressure first like the old app Report, owner area no longer a web tab, terms v18 (data of the account holder only).** Earlier: automatic lab import, duplicate protection and the web table. The security Fix activation is parked in the backlog (issue #107).
 
 ## Published baseline
 
@@ -251,3 +251,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Found: the scheduled *Security tests* run of 30.09 failed at "Resolve the Android dependency tree": the release-signing guard matched `--configuration releaseRuntimeClasspath`. Fixed (P-004): the guard applies only to tasks that build a release package; checked with a unit test of the rule; `assembleRelease bundleRelease` in *Build* still require the key.
 - Next: the user installs 0.1.104 from /download (served by the Worker since PR #110) and tries a lab import.
 
+
+### 2026-10-01 Europe/Zurich — Claude Code — app reorganisation, terms v18
+
+- Request (user, chat): Report tab becomes a button to the Web Dashboard (landing on Blood pressure, then Lab results); the web Blood pressure tab must show what the app Report showed (chart, eight tiles, morning/evening balance); no Admin tab on the web, the owner reaches it with a separate button in the app; Lab results in the app: import, a nicer progress bar, then an upload history grouped by day with the outcome only (no drill-down); icons in the bottom bar with a small name under each, clear for older people; terms: data must belong to the account holder, no pop-up.
+- Changed: `Tab` enum with icons (`ic_tab_*` vector drawables, duotone) and web entries (Dashboard, Owner = `#c=…&admin`); `HomeScreen` gets Send PDF / Send Excel / Web Dashboard at the bottom (nothing removed); `ReportScreen` removed; `Labs.kt`: `LabLog` (uploads that saved nothing, on the phone only: outcome code + report date, 60 entries), `ImportProgress` with a progress bar and three steps, auto-hide after the outcome, `UploadRow`, delete with confirmation; `/v1/labs` now returns `c` (upload time); web: modules ordered bp → labs, owner area only via `#admin`, eight tiles like the app, separate morning/evening charts and the nine-tile grid replaced; terms v18 (`NOTICE_VERSION`, `DISCLAIMER_VERSION` app and server) — one account = one person; guides IT/EN, architecture, privacy wording, demo screenshots.
+- Validation: functional suite (all groups pass), `labs-security.mjs`, `labs-ui.mjs`, local probe 17/17, layout check; web checked at 1280 and 390 px. The Android code is compiled only by CI (no SDK in the session).
+- User decisions after the PR went up: (1) remove the AI Scan entirely (button, Attiva AI, credit/key UI, stored keys, costs and AI readings; terms v19 without Anthropic) — to do in a separate PR after #116; (2) phone without screen lock: a non-blocking orange notice on Blood pressure that opens the security settings, responsibility stays with the user (done in #116).
+- Next: the user installs the new APK from /download, accepts terms v18 and tries the bottom bar and a lab import.

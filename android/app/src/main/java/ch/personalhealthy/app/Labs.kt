@@ -10,12 +10,16 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,7 +99,26 @@ val LabValue.name: String get() = if (code.isEmpty()) label else when (code) {
         else -> error("unknown_lab")
     }
 
-data class LabReport(val id: String, val t: Long, val values: List<LabValue>)
+/** t: the date printed on the report; at: when it was uploaded. */
+data class LabReport(val id: String, val t: Long, val values: List<LabValue>, val at: Long = t)
+
+/**
+ * The uploads that saved nothing (already imported, unreadable, wrong format…), kept on this phone only: the outcome
+ * and the report date, never a value, a name or the document. Saved reports come from the server, with their upload time.
+ */
+object LabLog {
+    data class Entry(val at: Long, val day: Long?, val outcome: String)
+    private const val KEY = "lab_log"
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)   // keep: existing storage name
+    fun list(ctx: Context): List<Entry> = runCatching {
+        val a = JSONArray(prefs(ctx).getString(KEY, "[]"))
+        (0 until a.length()).map { i -> val o = a.getJSONObject(i); Entry(o.getLong("at"), if (o.has("day")) o.getLong("day") else null, o.getString("o")) }
+    }.getOrDefault(emptyList())
+    fun add(ctx: Context, outcome: String, date: LocalDate?) {
+        val all = (list(ctx) + Entry(System.currentTimeMillis(), date?.toEpochDay(), outcome)).takeLast(60)
+        prefs(ctx).edit().putString(KEY, JSONArray(all.map { e -> JSONObject().put("at", e.at).put("o", e.outcome).also { o -> e.day?.let { o.put("day", it) } } }).toString()).apply()
+    }
+}
 object LabDocuments {
     private suspend fun recognize(bitmap: Bitmap): String {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -183,7 +206,8 @@ object LabsRepo {
         val rows = Api.call("GET", "/v1/labs", null, pid).getJSONArray("items")
         return (0 until rows.length()).map { i -> val r = rows.getJSONObject(i); val xs = r.getJSONArray("items")
             LabReport(r.getString("id"), r.getLong("t"), (0 until xs.length()).map { j -> val x = xs.getJSONObject(j)
-                LabValue(x.getString("code"), x.getString("value"), x.getString("unit"), x.getString("reference"), if (x.getString("code").isEmpty()) x.optString("name") else "") }) }
+                LabValue(x.getString("code"), x.getString("value"), x.getString("unit"), x.getString("reference"), if (x.getString("code").isEmpty()) x.optString("name") else "") },
+                r.optLong("c", r.getLong("t"))) }
     }
     /** The whole report in one request: the server saves all of it or nothing, and recognizes the same file or day. */
     suspend fun save(pid: String, id: String, date: LocalDate, values: List<LabValue>, fileHash: String): JSONObject {
@@ -201,7 +225,8 @@ object LabsRepo {
  */
 object LabImport {
     enum class Stage { IDLE, READING, SCANNING, UPLOADING, DONE, FAILED }
-    data class Status(val stage: Stage = Stage.IDLE, val text: String = "")
+    /** step: the stage reached (0 processing, 1 scanning, 2 uploading), kept on a failure to show where it stopped. */
+    data class Status(val stage: Stage = Stage.IDLE, val text: String = "", val step: Int = 0)
     val status = kotlinx.coroutines.flow.MutableStateFlow(Status())
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
     private var job: kotlinx.coroutines.Job? = null
@@ -209,14 +234,23 @@ object LabImport {
     val busy: Boolean get() = job?.isActive == true
     private val zurich = ZoneId.of("Europe/Zurich")
     private fun day(d: LocalDate) = d.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+    private val working = listOf(Stage.READING, Stage.SCANNING, Stage.UPLOADING)
 
     private suspend fun show(stage: Stage, text: String) {
         val wait = 900L - (System.currentTimeMillis() - shownAt)
-        if (status.value.stage in listOf(Stage.READING, Stage.SCANNING, Stage.UPLOADING) && wait > 0) kotlinx.coroutines.delay(wait)
-        status.value = Status(stage, text); shownAt = System.currentTimeMillis()
+        if (status.value.stage in working && wait > 0) kotlinx.coroutines.delay(wait)
+        val step = working.indexOf(stage).let { if (it >= 0) it else status.value.step }
+        val next = Status(stage, text, step)
+        status.value = next; shownAt = System.currentTimeMillis()
+        // the outcome stays a few seconds, then the progress card goes away; the upload history keeps the outcome
+        if (stage == Stage.DONE || stage == Stage.FAILED) scope.launch {
+            kotlinx.coroutines.delay(if (stage == Stage.DONE) 3500L else 6000L)
+            status.compareAndSet(next, Status())
+        }
     }
-    private suspend fun fail(code: String, text: String) {
-        ErrorReport.send(code, "Labs/Import", "")    // the reason only: never a value, a name or the document
+    private suspend fun fail(ctx: Context, code: String, outcome: String, date: LocalDate?, text: String, report: Boolean = true) {
+        if (report) ErrorReport.send(code, "Labs/Import", "")    // the reason only: never a value, a name or the document
+        LabLog.add(ctx, outcome, date)
         show(Stage.FAILED, text)
     }
 
@@ -226,6 +260,7 @@ object LabImport {
         shownAt = 0L
         job = scope.launch {
             var file: File? = null
+            var date: LocalDate? = null
             try {
                 show(Stage.READING, t(R.string.labs_step_read))
                 val (f, sha) = LabDocuments.copy(app, uri); file = f
@@ -233,7 +268,13 @@ object LabImport {
                 val read = readLabText(LabDocuments.text(app, f), LocalDate.now(zurich))
                 f.delete(); file = null
                 if (read is LabRead.Failed) {
-                    fail("lab_" + read.reason, when (read.reason) {
+                    val outcome = when (read.reason) {
+                        "unreadable_rows" -> "unreadable"
+                        "no_date", "ambiguous_date", "future_date" -> "date"
+                        "duplicate_tests" -> "duplicate_tests"
+                        else -> "no_results"
+                    }
+                    fail(app, "lab_" + read.reason, outcome, null, when (read.reason) {
                         "unreadable_rows" -> t(R.string.labs_fail_unreadable, read.count)
                         "no_date", "ambiguous_date" -> t(R.string.labs_fail_date)
                         "future_date" -> t(R.string.labs_fail_future)
@@ -242,104 +283,194 @@ object LabImport {
                     }); return@launch
                 }
                 read as LabRead.Ok
+                date = read.date
                 show(Stage.UPLOADING, t(R.string.labs_step_upload))
                 val r = LabsRepo.save(pid, UUID.randomUUID().toString(), read.date, read.values, sha)
-                if (r.has("duplicate")) show(Stage.DONE, t(R.string.labs_duplicate, day(read.date)))
-                else {
+                if (r.has("duplicate")) {
+                    // not an error: the same file, or the same results of that day, are already in the history
+                    LabLog.add(app, "duplicate", read.date)
+                    show(Stage.DONE, t(R.string.labs_duplicate, day(read.date)))
+                } else {
                     val known = r.optInt("known", 0)
                     show(Stage.DONE, t(R.string.labs_done, day(read.date), r.optInt("saved", read.values.size)) + if (known > 0) " " + t(R.string.labs_done_known, known) else "")
                 }
                 onSaved()
             } catch (e: kotlinx.coroutines.CancellationException) { throw e
             } catch (e: ApiException) {
-                show(Stage.FAILED, if (e.code == "lab_conflict_values") t(R.string.labs_fail_conflict) else e.message ?: t(R.string.labs_network))
+                val conflict = e.code == "lab_conflict_values"
+                fail(app, e.code, if (conflict) "conflict" else "failed", date, if (conflict) t(R.string.labs_fail_conflict) else e.message ?: t(R.string.labs_network), report = false)
             } catch (e: Exception) {
                 val unsupported = e.message == "document_unsupported"
-                fail(if (unsupported) "lab_unsupported" else "import_failed", t(if (unsupported) R.string.labs_format_unsupported else if (e is java.io.IOException) R.string.labs_network else R.string.labs_failed))
+                fail(app, if (unsupported) "lab_unsupported" else "import_failed", if (unsupported) "format" else "failed", date,
+                    t(if (unsupported) R.string.labs_format_unsupported else if (e is java.io.IOException) R.string.labs_network else R.string.labs_failed))
             } finally { file?.delete() }
         }
     }
     fun clear() { if (!busy) status.value = Status() }
 }
 
+/** One line of the upload history: a report saved on the server, or an upload that saved nothing (kept on the phone). */
+private data class Upload(val at: Long, val date: LocalDate?, val outcome: String, val count: Int = 0, val id: String? = null)
+
 @Composable
-fun LabsScreen(pid: String) {
+fun LabsScreen(pid: String, onDash: () -> Unit) {
     val ctx = LocalContext.current; val scope = rememberCoroutineScope()
     var reports by remember(pid) { mutableStateOf<List<LabReport>>(emptyList()) }
     var message by remember(pid) { mutableStateOf<String?>(null) }
-    var open by remember(pid) { mutableStateOf<String?>(null) }
+    var ask by remember(pid) { mutableStateOf<Upload?>(null) }
     val status by LabImport.status.collectAsState()
-    suspend fun refresh() { reports = LabsRepo.list(pid) }
+    suspend fun refresh() { reports = LabsRepo.list(pid); message = null }
     LaunchedEffect(pid) { try { refresh() } catch (_: Exception) { message = t(R.string.labs_network) } }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) LabImport.start(ctx, pid, uri) { scope.launch { try { refresh() } catch (_: Exception) { } } }
     }
     val working = status.stage in listOf(LabImport.Stage.READING, LabImport.Stage.SCANNING, LabImport.Stage.UPLOADING)
+    val zurich = ZoneId.of("Europe/Zurich")
     val fmt = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // read again after each outcome: the uploads that saved nothing are written on the phone when they end
+    val log = remember(status.stage, reports) { LabLog.list(ctx) }
+    val uploads = remember(log, reports) {
+        (reports.map { Upload(it.at, java.time.Instant.ofEpochMilli(it.t).atZone(zurich).toLocalDate(), "saved", it.values.size, it.id) } +
+            log.map { Upload(it.at, it.day?.let(LocalDate::ofEpochDay), it.outcome) }).sortedByDescending { it.at }
+    }
+    val byDay = uploads.groupBy { java.time.Instant.ofEpochMilli(it.at).atZone(zurich).toLocalDate() }
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item {
-            Text(t(R.string.tab_labs), color = C.Ink, fontSize = 24.sp, modifier = Modifier.padding(top = 20.dp))
+            Header(t(R.string.tab_labs))
             Panel {
                 Text(t(R.string.labs_intro), color = C.Muted, fontSize = 14.sp)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 // PDF and photos only; any other kind of file cannot be picked
-                BigButton(t(R.string.labs_import), enabled = !working) { LabImport.clear(); picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif")) }
-                Text(t(R.string.labs_privacy), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                BigButton(t(R.string.labs_import), enabled = !working, icon = R.drawable.ic_tab_labs) {
+                    LabImport.clear(); picker.launch(arrayOf("application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"))
+                }
+                // one account, one person: the server cannot tell whose report it is (terms of use, v18)
+                Text(t(R.string.labs_own), color = C.Ink, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(t(R.string.labs_privacy), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
             }
-            if (status.stage != LabImport.Stage.IDLE) ImportProgress(status)
-            message?.let { Text(it, color = C.Ink, fontSize = 14.sp) }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = status.stage != LabImport.Stage.IDLE,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+            ) { ImportProgress(status) }
+            message?.let { Panel { Text(it, color = C.Alert, fontSize = 14.sp) } }
+            Text(t(R.string.labs_uploads), color = C.Ink, fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 14.dp, start = 4.dp))
+            Text(if (uploads.isEmpty()) t(R.string.labs_empty) else t(R.string.labs_web_hint), color = C.Muted, fontSize = 13.sp,
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp))
+        }
+        byDay.forEach { (d, list) ->
+            item(key = "d" + d.toEpochDay()) {
+                Panel {
+                    Text(if (d == LocalDate.now(zurich)) t(R.string.labs_today) + " · " + d.format(fmt) else d.format(fmt),
+                        color = C.Muted, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                    list.forEachIndexed { i, u ->
+                        if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(C.Line))
+                        UploadRow(u, fmt) { ask = u }
+                    }
+                }
+            }
         }
         item {
-            Text(t(R.string.labs_history, reports.size), color = C.Ink, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
-            Panel { Text(if (reports.isEmpty()) t(R.string.labs_empty) else t(R.string.labs_web_hint), color = C.Muted, fontSize = 14.sp) }
+            Spacer(Modifier.height(6.dp))
+            GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
+            Text(t(R.string.labs_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 24.dp))
         }
-        items(reports.sortedByDescending { it.t }, key = { it.id }) { report ->
-            val date = java.time.Instant.ofEpochMilli(report.t).atZone(ZoneId.of("Europe/Zurich")).toLocalDate().format(fmt)
-            Panel {
-                TextButton(onClick = { open = if (open == report.id) null else report.id }, contentPadding = PaddingValues(0.dp)) {
-                    Text(t(R.string.labs_report_row, date, report.values.size), color = C.Ink, fontSize = 16.sp)
-                }
-                if (open == report.id) {
-                    report.values.forEach { v ->
-                        val out = v.outOfRange()
-                        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                            Text(v.name + if (v.unit.isNotEmpty()) " · " + v.unit else "", color = C.Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                            Text(v.value + when (out) { 1 -> " ↑"; -1 -> " ↓"; else -> "" } + if (v.reference.isNotEmpty()) "   (" + v.reference + ")" else "",
-                                color = if (out != 0) C.Out else C.Ink, fontSize = 13.sp)
-                        }
-                    }
-                    TextButton(onClick = { scope.launch { try { LabsRepo.delete(pid, report.id); refresh() } catch (_: Exception) { message = t(R.string.labs_network) } } }) {
-                        Text(t(R.string.labs_delete, date), color = C.Muted)
-                    }
-                }
-            }
-        }
-        item { Spacer(Modifier.height(24.dp)) }
+    }
+    // deleting a saved report: always asked first; the file can then be imported again
+    ask?.let { u ->
+        val date = u.date?.format(fmt) ?: ""
+        AlertDialog(
+            onDismissRequest = { ask = null },
+            title = { Text(t(R.string.labs_delete, date)) },
+            text = { Text(t(R.string.labs_delete_q)) },
+            confirmButton = { TextButton(onClick = {
+                ask = null
+                scope.launch { try { LabsRepo.delete(pid, u.id ?: return@launch); refresh() } catch (_: Exception) { message = t(R.string.labs_network) } }
+            }) { Text(t(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { ask = null }) { Text(t(R.string.cancel)) } },
+            containerColor = C.Surface
+        )
     }
 }
 
-/** Three steps with the current one turning, then the outcome. Never a red: a failure is said in words. */
+/** A dot, the report date, the outcome; never the results themselves (they are in the Web Dashboard). */
+@Composable
+private fun UploadRow(u: Upload, fmt: java.time.format.DateTimeFormatter, onDelete: () -> Unit) {
+    val ok = u.outcome == "saved"
+    val tint = when (u.outcome) { "saved" -> C.Dia; "duplicate" -> C.Muted; else -> C.Alert }
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Box(Modifier.size(30.dp).clip(androidx.compose.foundation.shape.CircleShape).background(tint.copy(alpha = 0.18f)),
+            contentAlignment = androidx.compose.ui.Alignment.Center) {
+            Text(when (u.outcome) { "saved" -> "✓"; "duplicate" -> "="; else -> "!" }, color = tint, fontSize = 15.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(u.date?.let { t(R.string.labs_upload_report, it.format(fmt)) } ?: t(R.string.labs_upload_nodate), color = C.Ink, fontSize = 15.sp)
+            Text(java.time.Instant.ofEpochMilli(u.at).atZone(ZoneId.of("Europe/Zurich")).toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")) + " · " +
+                if (ok) t(R.string.labs_out_saved, u.count) else t(when (u.outcome) {
+                    "duplicate" -> R.string.labs_out_duplicate
+                    "conflict" -> R.string.labs_out_conflict
+                    "format" -> R.string.labs_out_format
+                    "unreadable" -> R.string.labs_out_unreadable
+                    "date" -> R.string.labs_out_date
+                    "duplicate_tests" -> R.string.labs_out_duplicate_tests
+                    "no_results" -> R.string.labs_out_no_results
+                    else -> R.string.labs_out_failed
+                }), color = if (ok || u.outcome == "duplicate") C.Muted else C.Alert, fontSize = 13.sp)
+        }
+        if (ok) TextButton(onClick = onDelete) { Text(t(R.string.delete), color = C.Muted, fontSize = 13.sp) }
+    }
+}
+
+/**
+ * The three steps on one bar that fills as the work really goes on, then the outcome. It closes by itself a few
+ * seconds later (LabImport). Never a red: a failure is said in words, in the soft warning colour.
+ */
 @Composable
 private fun ImportProgress(status: LabImport.Status) {
-    val order = listOf(LabImport.Stage.READING, LabImport.Stage.SCANNING, LabImport.Stage.UPLOADING)
     val labels = listOf(t(R.string.labs_short_read), t(R.string.labs_short_scan), t(R.string.labs_short_upload))
-    val at = order.indexOf(status.stage).let { if (status.stage == LabImport.Stage.DONE) 3 else it }
+    val done = status.stage == LabImport.Stage.DONE
+    val failed = status.stage == LabImport.Stage.FAILED
+    val at = status.step
+    val tint = when { failed -> C.Alert; done -> C.Dia; else -> C.Sys }
+    val progress by androidx.compose.animation.core.animateFloatAsState(
+        if (done) 1f else (at + if (failed) 0.5f else 0.6f) / 3f, androidx.compose.animation.core.tween(700), label = "progress")
+    val pulse by androidx.compose.animation.core.rememberInfiniteTransition(label = "pulse").animateFloat(
+        0.35f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(700),
+            androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
     Panel {
-        if (status.stage != LabImport.Stage.FAILED) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text(when { done -> t(R.string.labs_progress_done); failed -> t(R.string.labs_progress_failed); else -> t(R.string.labs_progress_title) },
+                color = C.Ink, fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(if (done || failed) "" else "${(progress * 100).toInt()} %", color = C.Muted, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(10.dp))
+        LinearProgressIndicator(
+            progress = { progress }, color = tint, trackColor = C.Surface2,
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth()) {
             labels.forEachIndexed { i, label ->
-                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    Box(Modifier.size(28.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        when {
-                            i < at -> Text("✓", color = C.Dia, fontSize = 20.sp)
-                            i == at -> CircularProgressIndicator(Modifier.size(24.dp), color = C.Sys, strokeWidth = 3.dp)
-                            else -> Text("•", color = C.Muted, fontSize = 20.sp)
-                        }
+                val passed = done || i < at
+                val current = i == at && !done
+                Row(Modifier.weight(1f), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    val c = when { passed -> C.Dia; current && failed -> C.Alert; current -> C.Sys; else -> C.Muted }
+                    Box(Modifier.size(22.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(if (passed || current) c.copy(alpha = if (current && !failed) 0.25f + 0.3f * pulse else 0.25f) else C.Surface2),
+                        contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text(when { passed -> "✓"; current && failed -> "!"; else -> "${i + 1}" }, color = if (passed || current) c else C.Muted,
+                            fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     }
-                    Text(label, color = if (i <= at) C.Ink else C.Muted, fontSize = 12.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(label, color = if (passed || current) C.Ink else C.Muted, fontSize = 12.sp, maxLines = 1)
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Text(status.text, color = C.Ink, fontSize = 15.sp)
+        Spacer(Modifier.height(12.dp))
+        Text(status.text, color = if (failed) C.Alert else C.Ink, fontSize = 14.sp)
     }
 }

@@ -73,7 +73,7 @@
     <rect x="120" y="33" width="116" height="20" rx="4" class="b"/><text x="126" y="46" class="s">1 · Google once, then fingerprint</text>
     <rect x="120" y="57" width="116" height="20" rx="4" class="b" stroke="#6D5BD0" stroke-width="1.4"/><text x="126" y="70" class="s">2 · Terms accepted (recorded)</text>
     <rect x="120" y="81" width="116" height="24" rx="4" class="b"/><text x="126" y="92" class="s">3 · Check the numbers, Save</text><text x="126" y="100" class="s">voice: phone · photo: AI</text>
-    <rect x="120" y="109" width="116" height="24" rx="4" class="b"/><text x="126" y="120" class="s">4 · Home, charts, 7-day Report</text><text x="126" y="128" class="s">PDF · reminders 9:00/17:00</text>
+    <rect x="120" y="109" width="116" height="24" rx="4" class="b"/><text x="126" y="120" class="s">4 · Home, week, PDF, Dashboard</text><text x="126" y="128" class="s">PDF · reminders 9:00/17:00</text>
     <!-- server -->
     <line x1="244" y1="75" x2="290" y2="75" class="l"/><line x1="290" y1="85" x2="244" y2="85" class="l"/>
     <text x="267" y="70" text-anchor="middle" class="lb">readings</text>
@@ -117,7 +117,7 @@
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
         <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
         <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (AI features).</li>
-        <li><b>Looks back</b>: last reading, the week, the Report with charts and tiles.</li>
+        <li><b>Looks back</b>: last reading, the week; the Dashboard icon opens the Web Dashboard (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
         <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
       </ol>
@@ -329,7 +329,7 @@
   <table>
     <tr><th>Part</th><th>Runs on</th><th>Address</th><th>Operated by</th></tr>
     <tr><td><b>Android app</b></td><td>The user's phone (APK; Google Play later)</td><td>installed from <code>/download</code></td><td>the user</td></tr>
-    <tr><td><b>Web Dashboard</b> (incl. owner's Admin tab)</td><td><b>Cloudflare Workers</b> (static assets of the Worker) — not Vercel</td><td><code>personalhealthy-api.comevava76.workers.dev/my/</code></td><td>Cloudflare, owner's account</td></tr>
+    <tr><td><b>Web Dashboard</b> (Blood pressure, Lab results; owner's area from the app)</td><td><b>Cloudflare Workers</b> (static assets of the Worker) — not Vercel</td><td><code>personalhealthy-api.comevava76.workers.dev/my/</code></td><td>Cloudflare, owner's account</td></tr>
     <tr><td><b>API</b> for the app, public pages, doctor links</td><td><b>Cloudflare Workers</b>, the same single Worker</td><td><code>…/v1/…</code> · <code>/privacy</code> · <code>/terms</code> · <code>/s/…</code></td><td>Cloudflare, owner's account</td></tr>
     <tr><td><b>Database</b></td><td><b>Cloudflare D1</b> (SQLite), EU jurisdiction</td><td>no address: bound to the Worker only</td><td>Cloudflare, owner's account</td></tr>
     <tr><td><b>Source, CI/CD, releases</b></td><td><b>GitHub</b>: repository, Actions, Releases</td><td><code>comevava76-web/personalhealthy</code> (private)</td><td>GitHub, owner's account</td></tr>
@@ -363,7 +363,7 @@
     <rect x="208" y="14" width="148" height="152" rx="9" fill="#0F1C36"/>
     <text x="218" y="30" class="h3" style="fill:#fff">Cloudflare · one Worker</text>
     <rect x="218" y="38" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="49" class="x3" style="fill:#fff">API /v1/… for the app</text>
-    <rect x="218" y="57" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="68" class="x3" style="fill:#fff">Web Dashboard /my/ + Admin tab</text>
+    <rect x="218" y="57" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="68" class="x3" style="fill:#fff">Web Dashboard /my/ + owner area</text>
     <rect x="218" y="76" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="87" class="x3" style="fill:#fff">pages, /download, doctor links /s/</text>
     <rect x="218" y="95" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="106" class="x3" style="fill:#fff">error log · nightly purge 03:17 UTC</text>
     <line x1="282" y1="111" x2="282" y2="124" class="a3"/>
@@ -526,13 +526,13 @@
     <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record → say SYS, DIA, PUL → check → Save reading → <code>/v1/bp/voice</code></td><td>measurements</td></tr>
     <tr><td>4</td><td><b>Turn on AI</b></td><td>user</td><td>Anthropic account → credit → key → paste → Worker tests it, stores it encrypted</td><td>person_keys</td></tr>
     <tr><td>5</td><td><b>Scan (AI)</b></td><td>user with AI on</td><td>Scan → photo → Worker → Anthropic → values → check → Save → <code>/v1/bp/confirm</code>; photo discarded</td><td>scans, measurements, ledger</td></tr>
-    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Report tab: 7 days, one mean per day, morning/evening, extremes</td><td>read only</td></tr>
-    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Report → <b>Send PDF</b> or <b>Excel</b> → Android share sheet (WhatsApp, email, files…). The file goes straight from the phone to the app chosen; the server is not involved</td><td>none on the server</td></tr>
-    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Report → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
+    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Dashboard icon → Web Dashboard, Blood pressure tab: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
+    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Send PDF</b> or <b>Excel</b> → Android share sheet (WhatsApp, email, files…). The file goes straight from the phone to the app chosen; the server is not involved</td><td>none on the server</td></tr>
+    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Dashboard icon → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
     <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
     <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
-    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>Web → Admin: totals, D1 size, version switch-off; Observability: vulnerabilities, EU/CH compliance, problems and fixes, import outcomes</td><td>counts only</td></tr>
-    <tr><td>12</td><td><b>Import a lab report</b></td><td>user</td><td>Lab results → PDF or photo → Processing → Scanning → Uploading → saved; in the background, all or nothing; same file or same test and day never twice; web table: one column per date, ↑↓ orange outside the printed reference, delete a date</td><td>measurements, lab_files</td></tr>
+    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>App → Owner icon (shield, owner only) → web owner's area, not a tab of the dashboard: totals, D1 size, version switch-off; Observability: vulnerabilities, EU/CH compliance, problems and fixes, import outcomes</td><td>counts only</td></tr>
+    <tr><td>12</td><td><b>Import a lab report</b></td><td>user</td><td>Lab results → PDF or photo (own reports only, terms v18) → a progress bar: Processing → Scanning → Uploading → outcome, then it closes; the app keeps an upload history by day (saved reports from the server, uploads that saved nothing on the phone, outcome codes only); in the background, all or nothing; same file or same test and day never twice; web table: one column per date, ↑↓ orange outside the printed reference, delete a date</td><td>measurements, lab_files</td></tr>
     <tr><td>13</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, lab results never (only the user deletes them), expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
   </table>
 

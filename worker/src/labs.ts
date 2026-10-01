@@ -64,8 +64,9 @@ type Q = (s: string, p?: unknown[]) => Promise<any[]>;
 
 /** Every saved report of the person, oldest first, whatever its date: lab results stay until the person deletes them. */
 export async function loadLabs(q: Q, pid: string, _from?: number, _to?: number) {
-  const rows = await q("SELECT id, taken_at, data FROM measurements WHERE person_id = ?1 AND kind = 'lab' ORDER BY taken_at", [pid]);
-  return rows.map(r => ({ id: r.id, t: Number(r.taken_at), items: JSON.parse(r.data).map((x: any) => ({ ...x, name: x.code ? LAB_NAMES[x.code] : x.name })) }));
+  const rows = await q("SELECT id, taken_at, created_at, data FROM measurements WHERE person_id = ?1 AND kind = 'lab' ORDER BY taken_at", [pid]);
+  // c: when it was uploaded, for the upload history in the app
+  return rows.map(r => ({ id: r.id, t: Number(r.taken_at), c: Number(r.created_at), items: JSON.parse(r.data).map((x: any) => ({ ...x, name: x.code ? LAB_NAMES[x.code] : x.name })) }));
 }
 
 /** A keyed fingerprint of the file: the same document is recognized without keeping anything that could identify it. */
