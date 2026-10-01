@@ -71,9 +71,24 @@
    "versions": "0.1.109–0.1.110",
    "status": "fixed",
    "cause": "Reported by the owner on his phone. The app opened the dashboard address with a plain view intent, so any app registered for links of that site (most likely the download manager used to install the APK) could take it instead of the browser",
-   "fix": "The dashboard, the owner area and the data-access link now open with a browser selector (openInBrowser in Report.kt); the icon is renamed Reports",
+   "fix": "The dashboard, the owner area and the data-access link open in the phone's browser, chosen by package (openInBrowser in Report.kt); the icon is renamed Reports",
    "pr": "",
-   "fixedIn": "0.1.111"
+   "fixedIn": "0.1.112"
+  },
+  {
+   "id": "P-006",
+   "found": "2026-10-01",
+   "title": "Reports, Owner and the full-reports button opened the browser without the dashboard",
+   "match": {
+    "code": "user_report",
+    "place": "App/Web"
+   },
+   "versions": "0.1.111",
+   "status": "fixed",
+   "cause": "Reported by the owner on his phone. The P-005 fix used a browser selector intent, which starts the browser's main screen and drops the address",
+   "fix": "openInBrowser now passes the address to the browser itself: the phone's default browser, else Chrome, else the first browser found (manifest <queries> lists browsers); failures go to the error log (Web/browser)",
+   "pr": "",
+   "fixedIn": "0.1.112"
   }
  ]
 }
