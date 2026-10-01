@@ -24,7 +24,11 @@ android {
 
     // Release signing is supplied only through CI secrets. Debug uses Android's separate debug key.
     val ksFile = System.getenv("HINT_KEYSTORE_FILE").orEmpty()
-    val releaseRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+    // Only tasks that build a release package need the key: not "dependencies --configuration releaseRuntimeClasspath",
+    // which the nightly vulnerability scan runs without secrets (problem P-004).
+    val releaseRequested = gradle.startParameter.taskNames.any { arg ->
+        !arg.startsWith("-") && arg.substringAfterLast(':').let { t -> listOf("assemble", "bundle", "package", "sign").any { t.startsWith(it) } && t.contains("Release") }
+    }
     if (releaseRequested) {
         require(ksFile.isNotBlank() && file(ksFile).exists()) { "Release signing key is required; no repository fallback" }
         require(!System.getenv("ANDROID_KEYSTORE_PASSWORD").isNullOrBlank() && !System.getenv("ANDROID_KEY_PASSWORD").isNullOrBlank()) { "Release signing passwords are required" }

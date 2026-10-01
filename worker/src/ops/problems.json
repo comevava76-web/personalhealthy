@@ -44,6 +44,21 @@
    "fix": "An older terms version gets 426 app_disabled: the old app shows its \"install the latest version\" screen with the download link",
    "pr": "",
    "fixedIn": "server, 2026-10-01"
+  },
+  {
+   "id": "P-004",
+   "found": "2026-10-01",
+   "title": "Nightly vulnerability scan could not list the app's libraries",
+   "match": {
+    "code": "security_test",
+    "place": "Security tests"
+   },
+   "versions": "main since 2026-09-30",
+   "status": "fixed",
+   "cause": "The release-signing guard in android/app/build.gradle.kts matched every command argument containing \"Release\", including \"--configuration releaseRuntimeClasspath\" used by the scan, and stopped it for the missing key",
+   "fix": "The guard now applies only to tasks that build a release package (assemble/bundle/package/sign …Release); the scan runs without secrets again",
+   "pr": "",
+   "fixedIn": "main, 2026-10-01"
   }
  ]
 }
