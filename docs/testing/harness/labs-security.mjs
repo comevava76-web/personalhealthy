@@ -81,5 +81,6 @@ assert.equal((await call(owner,'GET','/v1/labs')).json.items.length,0);
 assert.equal(db.prepare('SELECT COUNT(*) n FROM lab_files WHERE person_id = ?').get(owner.pid).n,0);
 const events = Object.fromEntries(db.prepare("SELECT code, SUM(count) n FROM event_log GROUP BY code").all().map(x=>[x.code,x.n]));
 assert.ok(events.lab_saved>=3 && events.lab_duplicate_file>=1 && events.lab_duplicate_values>=1 && events.lab_conflict_values===1 && events.lab_deleted_day===1 && events.lab_deleted_all===1,'every import outcome is counted: '+JSON.stringify(events));
-assert.ok(db.prepare("SELECT COUNT(*) n FROM event_log").get().n === db.prepare("SELECT COUNT(*) n FROM event_log WHERE code LIKE 'lab_%'").get().n,'events are codes only');
+// lab imports and the photo Scan (bp_photo_*, counted by the functional tests on the same database) are the only events
+assert.ok(db.prepare("SELECT COUNT(*) n FROM event_log").get().n === db.prepare("SELECT COUNT(*) n FROM event_log WHERE code LIKE 'lab_%' OR code LIKE 'bp_photo_%'").get().n,'events are codes only');
 console.log('PASS: lab schema, consent gate, idempotency, account isolation, replay, atomic sessions, privacy-safe log, web history, automatic import, duplicates and conflicts, day deletion');
