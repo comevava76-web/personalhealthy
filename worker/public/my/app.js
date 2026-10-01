@@ -588,7 +588,8 @@
     $("actions").hidden = false;
     // blood pressure first, then the lab results; the app says which tab to open on (&bp, &labs)
     const order = ["bp", "labs"].filter((id) => me.modules.includes(id)).concat(me.modules.filter((id) => id !== "bp" && id !== "labs"));
-    if (wantMod && me.modules.includes(wantMod) && MODULES[wantMod]) current.module = wantMod;
+    // opened from the app: one page only, the one of where the person was (no tabs to switch)
+    if (wantMod && me.modules.includes(wantMod) && MODULES[wantMod]) { current.module = wantMod; $("modules").hidden = true; }
     $("modules").innerHTML = order.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("");
     $("modules").onclick = (e) => {
       const id = e.target.dataset.m; if (!id || !MODULES[id]) return;
@@ -600,7 +601,8 @@
     setupShare();
     // the owner's area: only from the owner's button in the app; the server answers it only for the owner
     if (wantAdmin && me.isOwner) {
-      [...$("modules").children].forEach((b) => b.classList.remove("on"));
+      // the console shows the numbers only: no Blood pressure / Lab results tabs above it
+      $("modules").hidden = true;
       $("actions").hidden = true;
       return loadAdmin();
     }

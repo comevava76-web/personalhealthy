@@ -166,7 +166,7 @@
     <string name="err_generic">Etwas ist schiefgelaufen. Versuche es erneut.</string>
     <string name="tab_bp">Blutdruck</string>
     <string name="tab_report">Bericht</string>
-    <string name="tab_credit">Admin</string>
+    <string name="tab_credit">Verwalten</string>
     <string name="section_credits">Guthaben</string>
     <string name="section_token">KI-Funktionen</string>
     <string name="section_db">Messungsdatenbank</string>
@@ -456,7 +456,7 @@
     <string name="labs_web_hint">Das Ergebnis jedes Uploads, Tag für Tag. Die Werte selbst sind im Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d Werte</string>
     <string name="tab_web">Berichte</string>
-    <string name="tab_owner">Betreiber</string>
+    <string name="tab_owner">Admin</string>
     <string name="labs_uploads">Uploads</string>
     <string name="labs_today">Heute</string>
     <string name="labs_upload_report">Befund vom %1$s</string>

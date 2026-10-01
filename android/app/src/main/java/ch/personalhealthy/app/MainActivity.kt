@@ -274,8 +274,10 @@ enum class Tab(val key: String, val label: Int, val icon: Int, val web: Boolean 
     LABS("labs", R.string.tab_labs, R.drawable.ic_tab_labs),
     // these two are not screens of the app: they open the Web Dashboard in the browser, already signed in
     WEB("web", R.string.tab_web, R.drawable.ic_tab_web, web = true),
-    OWNER("owner", R.string.tab_owner, R.drawable.ic_tab_owner, web = true, ownerOnly = true),
+    // "Gestore": the person's own account (Google, readings, sign out, delete, costs, terms)
     CREDIT("credit", R.string.tab_credit, R.drawable.ic_tab_settings),
+    // "Admin": the owner's console on the web (totals only), last
+    OWNER("owner", R.string.tab_owner, R.drawable.ic_tab_owner, web = true, ownerOnly = true),
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
