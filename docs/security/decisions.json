@@ -8,5 +8,10 @@
     "rating": "LOW",
     "plan": "https://developer.android.com/guide/topics/manifest/activity-element#exported",
     "note": "false positive: MainActivity is the launcher screen, Android requires it to be exported; it takes no data from other apps"
+  },
+  "GHSA-3wwx-pv8p-q78v": {
+    "rating": "LOW",
+    "plan": "https://github.com/comevava76-web/personalhealthy/issues/97",
+    "note": "undici inside wrangler/miniflare: deploy tool only, never shipped; the committed lock already has 7.29.1, CI's fresh resolution picks miniflare's pinned 7.29.0 until wrangler updates"
   }
 }
