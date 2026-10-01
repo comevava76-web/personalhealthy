@@ -309,3 +309,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Web: style.css variables for both themes (dark values now identical to the app: bg #0F1D38, panel #172B50…), light via `&light`/`&dark` from the app or the device setting; charts read the CSS variables; public pages follow the device setting.
 - The 0.1.115 build (PR #124) is online.
 
+
+### 2026-10-01 — Claude Code — colourful PDFs (blood pressure in app + web, lab results on the web), never red
+
+- Request (Human): the PDF headers looked dull; make the blood-pressure PDF colourful and give the lab PDF lively colours and a well-designed table. Only the colours of an old version were the reference, not its layout of numbers. Never red.
+- Blood pressure (`Report.kt` `buildPdf` and `report.js`, identical): violet→teal header band with a SYS/DIA/PUL three-colour line, white chart cards with a light shade under each line and coloured legend dots, value boxes tinted with their measure's colour (numbers in that colour), readings table with a gradient header row and lavender alternate rows.
+- Lab results (`labsPdf` in `app.js`, web only): teal→indigo band, table with a gradient header row, alternate row tints, column lines, a frame per block, at most five dates per block split evenly; out-of-range values orange with a small triangle on a pale orange cell; footer with disclaimer and page numbers on every page.
+- Tests: both PDFs generated from a local Worker with test data only (`docs/demo/report-dal-web.pdf`, `docs/demo/lab-results.pdf`), checked page by page. The app's PDF is checked by the APK build in CI; Human checks it on the phone.
+- Next: Human checks the PDFs on the phone; MonitorReader still waits for real photos of the monitor.

@@ -14,6 +14,7 @@ Screenshot da usare per l'animazione che mostra come funziona l'app. Sono fatti 
 | `web-07-tema-chiaro.png` | Web Dashboard nel tema chiaro (computer), stessi colori dell'app |
 | `labs-it-mobile-light.png` | Tabella dei referti nel tema chiaro, sul telefono |
 | `report-dal-web.pdf` | Il PDF A4 dalla dashboard (stesso modello del PDF dell'app) |
+| `lab-results.pdf` | Il PDF dei referti dalla dashboard (dati di prova) |
 
 Mancano gli screenshot dell'app Android: vanno fatti sul telefono con dati di prova
 (non con misure reali), in quest'ordine per la storia della demo:

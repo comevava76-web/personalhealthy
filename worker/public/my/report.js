@@ -91,7 +91,10 @@
   // print colours, as in the app's PDF
   const SYS = "#6D5BD0", DIA = "#0F9C8E", PUL = "#B7860B";
   const SYS_T = "#5543B8", DIA_T = "#0B7A6F", PUL_T = "#8F6806";
-  const INK = "#13223F", MUTED = "#5B6B88", RULE = "#D9E0EA", PANEL = "#F7F9FC";
+  const INK = "#13223F", MUTED = "#5B6B88", RULE = "#D9E0EA";
+  // the colourful parts: a violet-to-teal band (never red), a three-colour line under it, light tints of the three colours
+  const BAND_A = "#4B3BB0", BAND_B = "#0B7A6F", BAND_TXT = "#E4DFFF", CARD_LINE = "#E3E8F0", ZEBRA = "#F5F4FD";
+  const TINT = { [SYS]: "#F1EFFC", [DIA]: "#E8F6F4", [PUL]: "#FBF5E6" };
   const FONT = "Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   const fShort = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short" });
@@ -128,14 +131,13 @@
     txt(g, x0 + w, y0, sub, 8, MUTED, { anchor: "end" });
     let lx = x0; const ly = y0 + 14;
     for (const l of lines) {
-      el(g, "rect", { x: lx, y: ly - 6, width: 10, height: 2.2, fill: l.c });
-      dot(g, lx + 5, ly - 4.9, l.c);
-      txt(g, lx + 14, ly - 2, l.name, 8, INK, { bold: true });
-      lx += 14 + tw(l.name, 8, true) + 14;
+      el(g, "circle", { cx: lx + 3.5, cy: ly - 4.9, r: 3.5, fill: l.c });
+      txt(g, lx + 10, ly - 2, l.name, 8, l.t, { bold: true });
+      lx += 10 + tw(l.name, 8, true) + 14;
     }
     txt(g, x0 + w, ly - 2, units, 7, MUTED, { anchor: "end" });
-    const top = y0 + 24, left = x0 + 26, right = x0 + w - 8, pt = top + 4, pb = y0 + h - 22;
-    el(g, "rect", { x: x0, y: top, width: w, height: y0 + h - top, rx: 4, fill: PANEL });
+    const top = y0 + 24, left = x0 + 26, right = x0 + w - 8, pt = top + 8, pb = y0 + h - 22;
+    el(g, "rect", { x: x0, y: top, width: w, height: y0 + h - top, rx: 6, fill: "#fff", stroke: CARD_LINE, "stroke-width": 0.8 });
     const vals = list.flatMap((r) => lines.map((l) => r[l.k]).filter((v) => v != null));
     if (!vals.length) { txt(g, x0 + w / 2, (top + pb) / 2, W.none, 9, MUTED, { anchor: "middle" }); return; }
     const lo = Math.floor((Math.min(...vals) - 6) / 10) * 10, hi = Math.floor((Math.max(...vals) + 6 + 9) / 10) * 10;
@@ -158,8 +160,12 @@
       }
     }
     const all = lines.map((l) => list.filter((r) => r[l.k] != null).map((r) => ({ x: X(r.t), y: Y(r[l.k]), v: r[l.k], l })));
+    // each line with a light shade of its colour under it
     for (const pts of [...all].reverse()) {
-      if (pts.length > 1) el(g, "polyline", { points: pts.map((p) => `${p.x},${p.y}`).join(" "), fill: "none", stroke: pts[0].l.c, "stroke-width": 1.1, "stroke-opacity": 0.85, "stroke-linejoin": "round" });
+      if (pts.length > 1) el(g, "path", { d: `M${pts[0].x} ${pb} ` + pts.map((p) => `L${p.x} ${p.y}`).join(" ") + ` L${pts[pts.length - 1].x} ${pb} Z`, fill: pts[0].l.c, "fill-opacity": 0.1 });
+    }
+    for (const pts of [...all].reverse()) {
+      if (pts.length > 1) el(g, "polyline", { points: pts.map((p) => `${p.x},${p.y}`).join(" "), fill: "none", stroke: pts[0].l.c, "stroke-width": 1.4, "stroke-linejoin": "round" });
       for (const p of pts) dot(g, p.x, p.y, p.l.c);
     }
     // the numbers, where they hit no other number or dot; highest and lowest of each line first
@@ -214,26 +220,29 @@
       txt(g, left, 829, W.disclaimer, 6.5, MUTED);
       txt(g, right, 829, W.page(pageNo, total), 7, MUTED, { anchor: "end" });
     }
+    // the coloured band (violet to teal) with the three-colour line under it
+    function band(g, h, bar) {
+      const id = "band" + pageNo;
+      const lg = el(el(g, "defs", {}), "linearGradient", { id, x1: 0, x2: 1, y1: 0, y2: 1 });
+      el(lg, "stop", { offset: 0, "stop-color": BAND_A }); el(lg, "stop", { offset: 1, "stop-color": BAND_B });
+      el(g, "rect", { x: 0, y: 0, width: 595, height: h, fill: `url(#${id})` });
+      [SYS, DIA, PUL].forEach((c, i) => el(g, "rect", { x: i * 595 / 3, y: h, width: 595 / 3, height: bar, fill: c }));
+    }
     function smallHeader(g) {
-      el(g, "rect", { x: 0, y: 0, width: 595, height: 40, fill: "#0F1C36" });
-      el(g, "rect", { x: 0, y: 40, width: 595, height: 2, fill: SYS });
+      band(g, 40, 2);
       txt(g, left, 25, W.title, 10, "#fff", { bold: true });
-      txt(g, right, 25, range, 8, "#AFC0DC", { anchor: "end" });
+      txt(g, right, 25, range, 8, BAND_TXT, { anchor: "end" });
     }
 
     // ---------- page 1 ----------
     let g = page();
-    const defs = el(g, "defs", {});
-    const lg = el(defs, "linearGradient", { id: "hg", x1: 0, x2: 1, y1: 0, y2: 1 });
-    el(lg, "stop", { offset: 0, "stop-color": "#0F1C36" }); el(lg, "stop", { offset: 1, "stop-color": "#1F3D72" });
-    el(g, "rect", { x: 0, y: 0, width: 595, height: 112, fill: "url(#hg)" });
-    el(g, "path", { d: "M300 70 H400 l6 -8 6 8 h8 l5 -26 6 44 5 -18 h14 l6 -6 6 6 H595", fill: "none", stroke: "#fff", "stroke-opacity": 0.1, "stroke-width": 1.6 });
-    el(g, "rect", { x: 0, y: 112, width: 595, height: 3, fill: SYS });
-    txt(g, left, 30, "HINT 365 · HEALTHYINSTANTTRACKER", 8, "#AFC0DC", { bold: true, spacing: 1.6 });
-    txt(g, right, 30, W.generated(dayOf(Date.now())), 8, "#AFC0DC", { anchor: "end" });
+    band(g, 112, 3);
+    el(g, "path", { d: "M300 70 H400 l6 -8 6 8 h8 l5 -26 6 44 5 -18 h14 l6 -6 6 6 H595", fill: "none", stroke: "#fff", "stroke-opacity": 0.2, "stroke-width": 1.6 });
+    txt(g, left, 30, "HINT 365 · HEALTHYINSTANTTRACKER", 8, BAND_TXT, { bold: true, spacing: 1.6 });
+    txt(g, right, 30, W.generated(dayOf(Date.now())), 8, BAND_TXT, { anchor: "end" });
     txt(g, left, 62, W.title, 24, "#fff", { bold: true });
-    txt(g, left, 82, range, 10.5, "#DCE5F3");
-    txt(g, left, 98, W.count(list.length, new Set(list.map((r) => dayOf(r.t))).size), 8, "#AFC0DC");
+    txt(g, left, 82, range, 10.5, "#F2F0FF");
+    txt(g, left, 98, W.count(list.length, new Set(list.map((r) => dayOf(r.t))).size), 8, BAND_TXT);
     txt(g, left, 130, W.chartNote, 7.5, MUTED);
     chart(g, left, 146, cw, 300, dailyMeans(list), [sysL, diaL], W.all, W.allSub, W.units, startDay, days);
 
@@ -258,10 +267,10 @@
           if (withV.length) value = String(Math.round(withV.reduce((a, r) => a + r[l.k], 0) / withV.length));
           sub = W.avgOf(withV.length);
         }
-        el(g, "rect", { x, y, width: bw, height: bh, rx: 4, fill: PANEL });
+        el(g, "rect", { x, y, width: bw, height: bh, rx: 5, fill: TINT[l.c] });
         el(g, "rect", { x, y, width: 3, height: bh, fill: l.c });
         txt(g, x + 12, y + 15, label.toUpperCase(), 7.5, MUTED, { bold: true, spacing: 0.4 });
-        txt(g, x + 12, y + 38, value, 20, INK, { bold: true });
+        txt(g, x + 12, y + 38, value, 20, l.t, { bold: true });
         txt(g, x + 12 + tw(value, 20, true) + 4, y + 38, l === pulL ? "bpm" : "mmHg", 7.5, MUTED);
         txt(g, x + 12, y + 50, sub, 7.2, MUTED);
       });
@@ -289,14 +298,16 @@
       g = page(); smallHeader(g);
       txt(g, left, 74, W.list, 11.5, INK, { bold: true });
       y = 84;
-      el(g, "rect", { x: left, y, width: cw, height: 18, fill: "#0F1C36" });
+      const hid = "th" + pageNo, hg = el(el(g, "defs", {}), "linearGradient", { id: hid, x1: 0, x2: 1, y1: 0, y2: 0 });
+      el(hg, "stop", { offset: 0, "stop-color": BAND_A }); el(hg, "stop", { offset: 1, "stop-color": BAND_B });
+      el(g, "rect", { x: left, y, width: cw, height: 18, fill: `url(#${hid})` });
       W.cols.forEach((h, k) => txt(g, cols[k] + 5, y + 12.5, h, 9, "#fff", { bold: true }));
       y += 18;
       let row = 0, lastDay = null;
       if (!list.length) txt(g, left, y + 16, W.empty, 9.5);
       while (i < list.length && row < rowsPerPage) {
         const r = list[i], d = dayOf(r.t);
-        if (row % 2 === 1) el(g, "rect", { x: left, y, width: cw, height: 17, fill: "#F6F8FB" });
+        if (row % 2 === 1) el(g, "rect", { x: left, y, width: cw, height: 17, fill: ZEBRA });
         if (lastDay != null && d !== lastDay) el(g, "line", { x1: left, x2: right, y1: y, y2: y, stroke: "#9FB0C8", "stroke-width": 0.8 });
         const cells = [d !== lastDay ? d : "", timeOf(r.t), (r.period === "morning" ? "AM" : "PM"), r.sys, r.dia, r.pul ?? "–", W.src[r.source] || r.source];
         cells.forEach((v, k) => txt(g, cols[k] + 5, y + 12, v, 9.5, colCol[k], { bold: k >= 3 && k <= 5 }));
@@ -353,7 +364,7 @@
     txt(g, x + w / 2, y + h - 2, level ? W.balSame : W.balDiff(sgn(ds), sgn(dd)), 8 * K, th.ink, { anchor: "middle" });
   }
 
-  const PRINT_THEME = { ink: INK, muted: MUTED, beam: "#8A97B0", panel: "#EEF2F7", sys: SYS_T, dia: DIA_T };
+  const PRINT_THEME = { ink: INK, muted: MUTED, beam: "#8A97B0", panel: "#F1EFFC", sys: SYS_T, dia: DIA_T };
 
   window.HintReport = { render, balance };
 })();
