@@ -73,7 +73,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni
   rilascio; ogni nuovo errore diventa una correzione. Ogni nuova funzione che può fallire deve finire nel registro.
 - **Observability** (Admin web, solo owner): vulnerabilità, compliance UE/Svizzera (`worker/src/ops/compliance.json`), problemi
-  e risoluzioni (`worker/src/ops/problems.json` + `error_log`), esiti dei caricamenti (`event_log`). Solo codici e conteggi.
+  e risoluzioni (`worker/src/ops/problems.json` + `error_log`). Gli esiti dei caricamenti (`event_log`) restano nel registro, non nella pagina (chiesto da Human). Solo codici e conteggi.
   Ogni correzione di un problema aggiorna `problems.json` nella stessa PR; ogni cambio di dati, fornitori o sicurezza
   aggiorna `compliance.json`. I bug sicuri si correggono senza chiedere; a Human solo un riassunto.
 - **Ciclo continuo**: ogni mattina *Error log report* (Actions, 06:30) apre una issue `error-log` se ci sono errori; la routine

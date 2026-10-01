@@ -641,9 +641,7 @@
     obCmpT: "Compliance UE e Svizzera (GDPR, LPD)", obCmpN: (d) => `Autovalutazione dello sviluppatore, non parere legale · rivista il ${d} · fonte docs/compliance/gdpr.md`,
     obCmpCols: ["", "Ambito", "Requisito", "Norma", "Stato", "Evidenza · prossimo passo"],
     obPrbT: "Problemi e risoluzioni", obPrbN: "Dal registro errori (90 giorni) e dal registro dei problemi su git: causa, correzione e pull request.",
-    obPrbCols: ["Problema", "Dove", "Versioni", "Volte", "Ultima", "Stato", "Causa · correzione"],
-    obEvT: "Caricamento referti · ultimi 30 giorni", obEvN: "Esiti contati dal server e motivi dei rifiuti sul telefono. Solo codici.",
-    obEvCols: ["Esito", "Volte", "Versioni", "Ultimo"], obSecOpen: "Console di sicurezza →", selAll: "Seleziona tutte", selNone: "Deseleziona tutte", obProof: "Dossier PDF, paragrafo", obNew: "nuovo, da analizzare",
+    obPrbCols: ["Problema", "Dove", "Versioni", "Volte", "Ultima", "Stato", "Causa · correzione"], obSecOpen: "Console di sicurezza →", selAll: "Seleziona tutte", selNone: "Deseleziona tutte", obProof: "Dossier PDF, paragrafo", obNew: "nuovo, da analizzare",
     secSum: (s) => `${s.vulnerable} librerie vulnerabili su ${s.libraries ?? "?"} · ${s.code} nel nostro codice · ${s.secrets} segreti`,
     secNone: "Nessuna scansione ancora: la prima gira stanotte alle 06:10.", secAt: (d) => `Ultima scansione: ${d}`,
     back: "← Admin", conT: "Console di sicurezza",
@@ -676,9 +674,7 @@
     obCmpT: "EU and Swiss compliance (GDPR, FADP)", obCmpN: (d) => `Developer's self-assessment, not legal advice · reviewed ${d} · source docs/compliance/gdpr.md`,
     obCmpCols: ["", "Area", "Requirement", "Law", "Status", "Evidence · next step"],
     obPrbT: "Problems and resolutions", obPrbN: "From the error log (90 days) and the problem registry in git: cause, fix and pull request.",
-    obPrbCols: ["Problem", "Where", "Versions", "Times", "Last", "Status", "Cause · fix"],
-    obEvT: "Lab report import · last 30 days", obEvN: "Outcomes counted by the server and reasons for refusals on the phone. Codes only.",
-    obEvCols: ["Outcome", "Times", "Versions", "Last"], obSecOpen: "Security console →", selAll: "Select all", selNone: "Select none", obProof: "PDF dossier, section", obNew: "new, to analyse",
+    obPrbCols: ["Problem", "Where", "Versions", "Times", "Last", "Status", "Cause · fix"], obSecOpen: "Security console →", selAll: "Select all", selNone: "Select none", obProof: "PDF dossier, section", obNew: "new, to analyse",
     secSum: (s) => `${s.vulnerable} vulnerable libraries out of ${s.libraries ?? "?"} · ${s.code} in our code · ${s.secrets} secrets`,
     secNone: "No scan yet: the first runs tonight at 06:10.", secAt: (d) => `Last scan: ${d}`,
     back: "← Admin", conT: "Security console",
@@ -788,12 +784,6 @@
           <td>${obChip(p ? p.status : "new")}</td><td class="small">${p ? `${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}${p.fixedIn ? ` · ${esc(p.fixedIn)}` : ""}` : "—"}</td></tr>`; }).join("") || `<tr><td colspan="7">${AD.none}</td></tr>`}
         ${probs.filter((e) => e.registryOnly).map((e) => e.registryOnly).map((p) => `<tr class="old"><td><b>${esc(p.id)}</b> ${esc(p.title)}</td><td class="small">${esc(p.match?.place || p.match?.code || "")}</td>
           <td class="small">${esc(p.versions || "")}</td><td>—</td><td class="small">${esc(p.found)}</td><td>${obChip(p.status)}</td><td class="small">${esc(p.cause)}<br><b>→</b> ${esc(p.fix)} ${link(p.pr, "PR")}</td></tr>`).join("")}
-        </tbody></table></div></div>
-        <div class="card"><div class="card-h"><h2>${AD.obEvT}</h2></div><p class="muted small">${AD.obEvN}</p>
-        <div class="table-wrap"><table class="list ob-t"><thead><tr>${AD.obEvCols.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>
-        ${[...d.events.map((e) => ({ code: e.code, n: e.n, versions: e.versions, last_at: e.last_at })),
-           ...d.errors.filter((e) => /^lab_|^import_failed$/.test(e.code)).map((e) => ({ code: e.code + " (" + e.source + ")", n: e.n, versions: e.versions, last_at: e.last_at }))]
-          .map((e) => `<tr><td><code>${esc(e.code)}</code></td><td>${e.n}</td><td class="small">${esc(e.versions || "")}</td><td class="small">${day(e.last_at)}</td></tr>`).join("") || `<tr><td colspan="4">${AD.none}</td></tr>`}
         </tbody></table></div></div>`;
     };
     // on a phone each row becomes a card: every cell carries the name of its column
