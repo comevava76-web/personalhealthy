@@ -54,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "19"
+const val DISCLAIMER_VERSION = "20"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -476,6 +476,16 @@ object Repo {
         Api.call("POST", "/v1/admin/app-min-version", JSONObject().put("minVersion", minVersion), pid).optInt("appMinVersion", minVersion)
 
     /** Values said aloud, saved only after the person confirms; [spokenAt] is when they were said (checked by the server). */
+    /** The three numbers read from a photo on this phone and confirmed by the person: the photo is not sent. */
+    suspend fun photo(pid: String, sis: Int, dia: Int, pul: Int, takenAt: Long) {
+        Api.call("POST", "/v1/bp/photo", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("takenAt", takenAt), pid)
+    }
+
+    /** How a photo Scan ended when nothing was saved (retake reason, or "wrong"): a code only. Never fails. */
+    suspend fun photoOutcome(pid: String, code: String) {
+        try { Api.call("POST", "/v1/bp/photo/outcome", JSONObject().put("code", code), pid) } catch (_: Exception) { }
+    }
+
     suspend fun voice(pid: String, sis: Int, dia: Int, pul: Int, spokenAt: Long) {
         Api.call("POST", "/v1/bp/voice", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("spokenAt", spokenAt), pid)
     }

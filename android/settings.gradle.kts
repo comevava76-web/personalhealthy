@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PersonalHealthy"
 include(":app")
+include(":reader")

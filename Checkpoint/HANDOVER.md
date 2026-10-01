@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (0.1.112: dashboard links open in the browser again, P-006; Scan without AI in progress).
+Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (photo Scan back without AI, terms v20; dashboard opens on the tab you start from).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -280,4 +280,12 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Change: `openInBrowser` (Report.kt) sends the address to the browser itself (default browser, else Chrome, else the first one; manifest `<queries>` for browsers); failures go to the error log as `Web/browser`. `problems.json` P-006.
 - Scan without AI, work in progress, NOT in main: `MonitorReader.kt` and `MonitorReaderTest.kt` are in commit `5f8713e` (PR #121 history; taken out before merge because the Android unit-test classpath has no java.awt, which the photo generator needs: it must move to a plain JVM test module). Status: 0 wrong values; 171 of 262 easy generated photos read (aim 90%); 0 of 6 real photos read. Next: real photos of the owner's monitor (Paramed Expert-X) with their values, then camera flow, confirm screen, POST /v1/bp/photo, terms v20.
 - Validation: no local Android SDK; compile and unit tests run in CI.
+
+### 2026-10-01 — Claude Code — photo Scan without AI (terms v20); dashboard opens on the right tab
+
+- Requests (Human): put the photo Scan back, without AI, tested, saying "retake" when the photo is not clear; the Web Dashboard must open on the tab the person starts from.
+- Scan: `android/reader` (plain Kotlin module: `MonitorReader.kt` + `MonitorReaderTest.kt`, 400 generated photos, run in CI through `testDebugUnitTest`; 0 wrong values required); `MonitorScan.kt` (photo load/EXIF, MonitorReader, then bundled ML Kit with the same layout rule); `PhotoScreen` in MainActivity: photo + numbers, «Sì, sono giusti: salva» / «I numeri sono sbagliati: rifai la foto», retake with the reason (dark, glare, blurry, not found, unclear, implausible) and "say it aloud". Server: `POST /v1/bp/photo` (same validation as voice, source `photo`), `POST /v1/bp/photo/outcome` (codes `bp_photo_*` in `event_log`). Functional tests P1–P8 pass locally.
+- Measured reader quality: generated photos 0 wrong, about 65% of the easy ones read by MonitorReader alone; real photos (6 available) 0 read by MonitorReader alone; ML Kit fallback is untested off-device. The confirmation screen is the safety net. Next: real photos of the owner's monitor (Paramed Expert-X) with values; watch `bp_photo_*` counts in Observability.
+- Dashboard: the app adds `&bp` / `&labs` (`&admin` for the owner) and `app.js` opens that tab.
+- Terms v20 (IT/EN/DE/FR, synced to the app), privacy/home, compliance.json + dossier + gdpr.md (record of processing), guides IT/EN, architecture pages 1, 2, 6, CLAUDE.md rule.
 

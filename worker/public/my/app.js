@@ -575,7 +575,9 @@
     const m = location.hash.match(/c=([A-Za-z0-9_-]+)/);
     // "&admin": opened from the owner's button in the app. The owner's area is not a tab of the dashboard.
     const wantAdmin = /(?:^#|&)admin\b/.test(location.hash);
-    const home = wantAdmin ? "/my/#admin" : "/my/";
+    // "&labs" / "&bp": the tab to open on, from where the person was in the app (blood pressure if not said)
+    const wantMod = (location.hash.match(/(?:^#|&)(bp|labs)\b/) || [])[1];
+    const home = wantAdmin ? "/my/#admin" : wantMod ? "/my/#" + wantMod : "/my/";
     if (!(await cookiesOk())) { if (m) history.replaceState(null, "", "/my/"); return cookiesRefused(); }
     if (m) {
       history.replaceState(null, "", home);
@@ -584,8 +586,9 @@
     let me;
     try { me = await api("/my/api/me"); } catch (e) { return signedOut(); }
     $("actions").hidden = false;
-    // blood pressure first: the dashboard always opens on it, then the lab results
+    // blood pressure first, then the lab results; the app says which tab to open on (&bp, &labs)
     const order = ["bp", "labs"].filter((id) => me.modules.includes(id)).concat(me.modules.filter((id) => id !== "bp" && id !== "labs"));
+    if (wantMod && me.modules.includes(wantMod) && MODULES[wantMod]) current.module = wantMod;
     $("modules").innerHTML = order.map((id) => `<button type="button" data-m="${id}" class="${id === current.module ? "on" : ""}">${MODULES[id] ? MODULES[id].title() : id}</button>`).join("");
     $("modules").onclick = (e) => {
       const id = e.target.dataset.m; if (!id || !MODULES[id]) return;
