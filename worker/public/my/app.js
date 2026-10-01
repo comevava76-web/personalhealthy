@@ -286,7 +286,7 @@
   function drawBalance(el, items) {
     const draw = () => {
       el.innerHTML = "";
-      const W = el.clientWidth, H = 200;
+      const W = el.clientWidth, H = 214;
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
       window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, DARK_BAL);
     };
