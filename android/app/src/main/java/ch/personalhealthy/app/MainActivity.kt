@@ -263,8 +263,6 @@ private fun toast(ctx: Context, msg: String) = Toast.makeText(ctx, msg, Toast.LE
 
 /* ---------------- Navigation and state ---------------- */
 
-/** Anthropic page where the prepaid credit is recharged. */
-const val RECHARGE_URL = "https://console.anthropic.com/settings/billing"
 
 /**
  * Tabs of the bottom bar, in order. A future module (for example "analyses" for uploading
@@ -285,34 +283,21 @@ fun App() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("battito", Context.MODE_PRIVATE) } // keep: existing storage name
     var personId by remember { mutableStateOf(prefs.getString("personId", null)) }
-    // "tabs", or a full screen without the bottom bar: "scan", "voice", "listen", "key" (own Anthropic key), "all"
+    // "tabs", or a full screen without the bottom bar: "voice", "listen", "all", "terms"
     var screen by rememberSaveable { mutableStateOf("tabs") }
     var tab by rememberSaveable { mutableStateOf(Tab.BP.key) }
     val readings = remember { mutableStateListOf<Reading>() }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-    var scan by rememberSaveable(stateSaver = ScanStateSaver) { mutableStateOf<ScanState>(ScanState.Idle) }
-    var saving by remember { mutableStateOf(false) }
-    var takenAt by rememberSaveable { mutableLongStateOf(0L) }
     var me by remember { mutableStateOf<Me?>(null) }
-    var rechargePending by rememberSaveable { mutableStateOf(false) } // true while the Anthropic page is open
-    var amountDialog by remember { mutableStateOf<String?>(null) }     // "topup" or "set" while the amount dialog is open
-    var scanNeedsKey by remember { mutableStateOf(false) }   // Scan tapped without an AI key: say it is optional
-    var keyBusy by remember { mutableStateOf(false) }
-    var keyError by remember { mutableStateOf<ApiException?>(null) }
-    var deleteKeyAsk by remember { mutableStateOf(false) }
     var linkAsk by remember { mutableStateOf(false) }   // linking Google: the privacy note is on screen
     val scope = rememberCoroutineScope()
-
-    val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
-    val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
 
     // the notice is binding and accepted once per installed version: at the first installation, after every update
     // of the app and whenever its text changes. Remembered as "text version @ app version".
     val noticeKey = (personId ?: "signed-out") + "@" + DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
-    var checkingAi by remember { mutableStateOf(false) }
     val needsNotice = noticeLocal != noticeKey || me?.disclaimerOk == false
 
     // switched off remotely: remembered, so that without a connection the app stays closed too
@@ -336,21 +321,11 @@ fun App() {
         scope.launch {
             loading = true
             try {
-                var m = Repo.me(pid)
+                val m = Repo.me(pid)
                 me = m
                 val l = if (m.sub.blocked) emptyList() else Repo.list(pid)
                 readings.clear(); readings.addAll(l); message = null
                 if (!m.sub.blocked) AppGate.subExpired = false
-                // Scan follows what Anthropic answers, not the estimate: checked again if the last check is over an hour old
-                if (m.selfPays && m.hasKey && (m.aiCheckedAt == null || System.currentTimeMillis() - m.aiCheckedAt!! > 3_600_000L)) {
-                    try { Repo.checkAi(pid); m = Repo.me(pid); me = m } catch (_: Exception) { }
-                }
-                // first start without an AI key: once, the welcome that explains voice (free) and scanning (optional)
-                if (m.selfPays && !m.hasKey && !prefs.getBoolean("welcomeShown", false) && screen == "tabs") {
-                    prefs.edit().putBoolean("welcomeShown", true).apply()
-                    screen = "welcome"
-                }
-                // a friend without a key yet: straight to the guided steps (once; later from the Credit tab)
             } catch (e: Exception) {
                 // this account now lives on another phone (Google sign-in there): back to the sign-in screen (F-10)
                 if (e is ApiException && e.code == "unauthorized") {
@@ -362,35 +337,6 @@ fun App() {
         }
     }
 
-    fun runScan() {
-        val pid = personId ?: return
-        scan = ScanState.Loading
-        scope.launch {
-            try {
-                val img = withContext(Dispatchers.IO) { Img.prepare(photoFile) }
-                val res = Repo.scan(pid, img, takenAt)
-                photoFile.delete()
-                scan = ScanState.Done(res)
-                if (res.credit != null) me = me?.copy(credit = res.credit)
-            } catch (e: Exception) {
-                scan = ScanState.Failed(e.message ?: t(R.string.err_read_failed), (e as? ApiException)?.code)
-                // Anthropic refused (no credit, key refused): the server stored it, the Scan button switches off
-                val code = (e as? ApiException)?.code
-                if (code == "friend_no_credit" || code == "friend_key_invalid") reload()
-            }
-        }
-    }
-
-    // Recharge: open the Anthropic billing page; when the user comes back, ask how much was added
-    fun openRecharge() {
-        rechargePending = true
-        try {
-            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RECHARGE_URL)))
-        } catch (e: ActivityNotFoundException) {
-            rechargePending = false
-            toast(ctx, t(R.string.no_browser))
-        }
-    }
     // the error log: which account reports, and a crash from the last time the app ran
     LaunchedEffect(personId) {
         ErrorReport.personId = personId
@@ -418,42 +364,12 @@ fun App() {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            // back in the app: fresh readings and credit (there is no refresh button)
+            // back in the app: fresh readings (there is no refresh button)
             if (event == Lifecycle.Event.ON_RESUME) checkAppGate()
             if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
-            if (event == Lifecycle.Event.ON_RESUME && rechargePending) {
-                rechargePending = false
-                // after a top-up on Anthropic: check with Anthropic again, Scan follows the answer
-                val pid = personId
-                if (pid != null && me?.hasKey == true) scope.launch { try { Repo.checkAi(pid); reload() } catch (_: Exception) { } }
-            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) {
-            takenAt = System.currentTimeMillis()   // date and time: those of the shot, cannot be changed
-            screen = "scan"
-            runScan()
-        } else if (screen == "scan" && scan !is ScanState.Done) {
-            screen = "tabs"
-        }
-    }
-    fun launchCamera() {
-        try { camera.launch(photoUri) }
-        catch (e: ActivityNotFoundException) { toast(ctx, t(R.string.no_camera)) }
-        catch (e: SecurityException) { toast(ctx, t(R.string.camera_permission)) }
-    }
-    // The QR scanner library adds the camera permission to the app; once it is declared, Android lets the app open
-    // the phone's camera only after the person has allowed it (otherwise the app would close). So: ask first.
-    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) launchCamera() else toast(ctx, t(R.string.camera_permission))
-    }
-    fun openCamera() {
-        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) launchCamera()
-        else cameraPermission.launch(Manifest.permission.CAMERA)
     }
 
     // Values said aloud: the phone's speech recognition, then a confirmation before saving
@@ -499,10 +415,8 @@ fun App() {
         ) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     BackHandler(enabled = screen != "tabs" || tab != Tab.BP.key) {
-        if (screen != "tabs") { if (screen == "scan") photoFile.delete(); screen = "tabs"; scan = ScanState.Idle; keyError = null } else tab = Tab.BP.key
+        if (screen != "tabs") screen = "tabs" else tab = Tab.BP.key
     }
-
-    fun openKeySteps() { keyError = null; scan = ScanState.Idle; screen = "key" }
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         when {
@@ -549,27 +463,6 @@ fun App() {
             )
             // the terms accepted at the start, to read again from the colophon
             screen == "terms" -> DisclaimerScreen(busy = false, onAccept = {}, onDecline = {}, onClose = { screen = "tabs" })
-            screen == "scan" -> ScanScreen(
-                state = scan, saving = saving,
-                onSave = { r ->
-                    val pid = personId ?: return@ScanScreen
-                    saving = true
-                    scope.launch {
-                        try {
-                            Repo.confirm(pid, r.scanId)
-                            toast(ctx, t(R.string.saved))
-                            screen = "tabs"; tab = Tab.BP.key; scan = ScanState.Idle
-                            reload()
-                        } catch (e: Exception) {
-                            toast(ctx, e.message ?: t(R.string.err_generic))
-                        } finally { photoFile.delete(); saving = false }
-                    }
-                },
-                onRetake = { openCamera() },
-                onRecharge = { openRecharge() },
-                onReplaceKey = { openKeySteps() },
-                onCancel = { photoFile.delete(); screen = "tabs"; scan = ScanState.Idle }
-            )
             screen == "listen" -> ListenScreen(
                 onResult = { onSpoken(it) },
                 onFail = { msg -> screen = "tabs"; voiceProblem = msg },
@@ -594,27 +487,6 @@ fun App() {
                 onRetry = { voice = null; screen = "tabs"; openVoice() },
                 onCancel = { voice = null; screen = "tabs" }
             )
-            screen == "key" || screen == "welcome" -> KeyScreen(
-                welcome = screen == "welcome",
-                hasKey = me?.hasKey == true, busy = keyBusy, error = keyError?.message, errorCode = keyError?.code,
-                onSave = { key, amount ->
-                    val pid = personId ?: return@KeyScreen
-                    keyBusy = true; keyError = null
-                    scope.launch {
-                        try {
-                            val c = Repo.saveKey(pid, key, null)
-                            // the server has just tested the key with Anthropic: Scan can switch on straight away
-                            me = me?.copy(hasKey = true, credit = c ?: me?.credit, aiStatus = "ok", aiCheckedAt = System.currentTimeMillis())
-                            reload()
-                            toast(ctx, t(R.string.key_saved))
-                            screen = "tabs"
-                        } catch (e: Exception) { keyError = e as? ApiException ?: ApiException("generic") }
-                        finally { keyBusy = false }
-                    }
-                },
-                onRecharge = { openRecharge() },
-                onLater = { screen = "tabs"; keyError = null }
-            )
             screen == "all" -> AllReadingsScreen(
                 readings = readings,
                 onDelete = { r ->
@@ -634,12 +506,10 @@ fun App() {
                 onClose = { screen = "tabs" }
             )
             else -> Column(Modifier.fillMaxSize()) {
-                // pull down with the thumb: fresh readings, and the AI state checked again with Anthropic
+                // pull down with the thumb: fresh readings
                 val pull = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
                 if (pull.isRefreshing) {
                     LaunchedEffect(true) {
-                        val pid = personId
-                        if (pid != null && me?.selfPays == true && me?.hasKey == true) try { Repo.checkAi(pid) } catch (_: Exception) { }
                         reload()
                         kotlinx.coroutines.delay(400)
                         androidx.compose.runtime.snapshotFlow { loading }.first { !it }
@@ -663,18 +533,7 @@ fun App() {
                         Tab.LABS.key -> personId?.let { LabsScreen(it, onDash = openDash) }
                         Tab.CREDIT.key -> CreditScreen(
                             onTerms = { screen = "terms" },
-                            me = me, readingsCount = readings.size, onRecharge = { openRecharge() }, onCorrect = { amountDialog = "set" },
-                            onKey = { openKeySteps() }, onDeleteKey = { deleteKeyAsk = true },
-                            // after a recharge on Anthropic: ask Anthropic again, Scan follows the answer
-                            checkingAi = checkingAi,
-                            onCheckAi = {
-                                val pid = personId ?: return@CreditScreen
-                                checkingAi = true
-                                scope.launch {
-                                    try { Repo.checkAi(pid); reload() } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                                    checkingAi = false
-                                }
-                            },
+                            me = me, readingsCount = readings.size,
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
                             onSignOut = {
@@ -703,9 +562,7 @@ fun App() {
                         else -> HomeScreen(
                             onTerms = { screen = "terms" },
                             readings = readings, message = message, me = me,
-                            onOpenCredit = { tab = Tab.CREDIT.key }, onAddKey = { openKeySteps() },
-                            // the photo reading is the only paid part: without a key, say so and offer the free voice
-                            onMeasure = { if (me?.selfPays == true && me?.hasKey == false) scanNeedsKey = true else openCamera() },
+                            onOpenCredit = { tab = Tab.CREDIT.key },
                             onVoice = { openVoice() },
                             onDash = openDash,
                         )
@@ -762,50 +619,6 @@ fun App() {
         containerColor = C.Surface
     )
 
-    amountDialog?.let { action ->
-        AmountDialog(
-            title = t(if (action == "topup") R.string.recharge_q else R.string.correct_q),
-            onDismiss = { amountDialog = null },
-            onSave = { v ->
-                val pid = personId ?: return@AmountDialog
-                amountDialog = null
-                scope.launch {
-                    try {
-                        val c = Repo.credit(pid, action, v)
-                        me = me?.copy(credit = c)
-                        toast(ctx, if (action == "topup") t(R.string.topup_added) else t(R.string.balance_updated))
-                    } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                }
-            }
-        )
-    }
-
-    if (scanNeedsKey) AlertDialog(
-        onDismissRequest = { scanNeedsKey = false },
-        title = { Text(t(R.string.scan_needs_key_title)) },
-        text = { Text(t(R.string.scan_needs_key_text)) },
-        confirmButton = { TextButton(onClick = { scanNeedsKey = false; openKeySteps() }) { Text(t(R.string.scan_needs_key_add), color = C.Sys) } },
-        dismissButton = { TextButton(onClick = { scanNeedsKey = false; openVoice() }) { Text(t(R.string.scan_needs_key_voice)) } },
-        containerColor = C.Surface
-    )
-
-    if (deleteKeyAsk) AlertDialog(
-        onDismissRequest = { deleteKeyAsk = false },
-        title = { Text(t(R.string.delete_key_q)) },
-        text = { Text(t(R.string.delete_key_text)) },
-        confirmButton = {
-            TextButton(onClick = {
-                deleteKeyAsk = false
-                val pid = personId ?: return@TextButton
-                scope.launch {
-                    try { Repo.deleteKey(pid); me = me?.copy(hasKey = false); toast(ctx, t(R.string.key_deleted)) }
-                    catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
-                }
-            }) { Text(t(R.string.delete), color = C.Alert) }
-        },
-        dismissButton = { TextButton(onClick = { deleteKeyAsk = false }) { Text(t(R.string.cancel)) } },
-        containerColor = C.Surface
-    )
 }
 
 /** A clear icon and its name in small letters under it. The web ones carry a small arrow: they open the browser. */
@@ -937,17 +750,13 @@ fun BpChart(list: List<Reading>, start: java.time.LocalDate, days: Int, modifier
     }
 }
 
-/**
- * The two costs, side by side and plainly: the app (paid to its owner through Google Play) and the optional
- * AI features (paid by the user to Anthropic, from their own credit). One block per cost: readable on a phone.
- */
+/** What HINT 365 costs, and who is paid: the app only (through Google Play). No other cost. */
 @Composable
 fun CostsTable() {
     Panel {
         Text(t(R.string.costs_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
         listOf(
             Triple(R.string.cost_app_what, R.string.cost_app_cost, R.string.cost_app_to),
-            Triple(R.string.cost_ai_what, R.string.cost_ai_cost, R.string.cost_ai_to),
         ).forEach { (what, cost, to) ->
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
             Text(t(what), color = C.Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
@@ -961,16 +770,6 @@ fun CostsTable() {
             }
         }
         Text(t(R.string.costs_note), color = C.Muted, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 12.dp))
-    }
-}
-
-/** One figure of the credit panel: a hairline above, the label on the left, the value on the right. */
-@Composable
-fun CreditRow(label: String, value: String) {
-    Box(Modifier.fillMaxWidth().height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
-    Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = C.Muted, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Text(value, color = C.Ink, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -1224,14 +1023,13 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 
 @Composable
 fun HomeScreen(
-    readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit, onAddKey: () -> Unit,
-    onMeasure: () -> Unit, onVoice: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
+    readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit,
+    onVoice: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        BrandHeader(onUpgrade = if (me != null && me.selfPays && !me.hasKey) onAddKey else null, premium = me != null && me.selfPays && me.hasKey)
+        BrandHeader()
 
-        // a friend who pays for their own photos has no key yet
         // not linked to Google yet: with a new phone this diary could not be found again
         if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
         // no screen lock on the phone: the app opens without any lock. Said, not imposed: the phone is the person's
@@ -1241,24 +1039,11 @@ fun HomeScreen(
         if (noLock) WarnLine(t(R.string.no_screen_lock)) {
             try { ctx0.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) } catch (_: Exception) { }
         }
-        // one short warning line, only when the credit is low or used up
-        val c = me?.credit
-        // Anthropic said no at the last check: Scan is off, and this says why
-        if (me != null && me.selfPays && me.hasKey && me.aiStatus == "no_credit") WarnLine(t(R.string.ai_no_credit), onOpenCredit)
-        if (me != null && me.selfPays && me.hasKey && me.aiStatus == "invalid") WarnLine(t(R.string.ai_key_invalid), onOpenCredit)
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
-        // two ways to record a reading, side by side and of the same width: say it (free) or photograph it (AI credit)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BigButton(t(R.string.record_short), color = C.Surface2, textColor = C.Ink, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
-            Spacer(Modifier.width(10.dp))
-            // the photo reading is the paid part: off until a key is saved, and off again when the credit is used up
-            val c0 = me?.credit
-            val scanOn = me == null || !me.selfPays || (me.hasKey && me.aiStatus == "ok")
-            // the wand with sparkles says: artificial intelligence reads this photo
-            BigButton(t(R.string.scan_short) + "*", enabled = scanOn, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, trailing = R.drawable.ic_ai_sparkle, onClick = onMeasure)
-        }
-        Text("* " + t(R.string.scan_cost_note), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 6.dp))
+        // one way to record a reading: say it aloud, free, read by the phone
+        BigButton(t(R.string.record_short), icon = R.drawable.ic_mic, onClick = onVoice)
+        Spacer(Modifier.height(6.dp))
 
         LastPanel(readings.lastOrNull())
         WeekPanel(readings)
@@ -1559,26 +1344,13 @@ fun HintLogo(size: Dp = 30.dp) {
 
 /** Home title: logo, the HINT wordmark and the full name in small capitals-like spacing. */
 @Composable
-fun BrandHeader(onUpgrade: (() -> Unit)? = null, premium: Boolean = false) {
+fun BrandHeader() {
     Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 22.dp), verticalAlignment = Alignment.CenterVertically) {
         HintLogo(34.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text("HINT 365", color = C.Ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp, lineHeight = 20.sp)
             Text(t(R.string.app_name), color = C.Muted, fontSize = 11.sp, letterSpacing = 0.5.sp, lineHeight = 13.sp)
-        }
-        // the AI features: "AI on" once the user's own Anthropic key is in; otherwise the way to turn them on stays in sight
-        if (premium) {
-            Text(
-                "✦ " + t(R.string.ai_badge_on), color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(C.Sys.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp)
-            )
-        } else if (onUpgrade != null) {
-            Text(
-                "✦ " + t(R.string.upgrade).uppercase(), color = C.Sys, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
-                modifier = Modifier.clip(RoundedCornerShape(50)).border(1.dp, C.Sys.copy(alpha = 0.6f), RoundedCornerShape(50))
-                    .clickable(onClick = onUpgrade).padding(horizontal = 10.dp, vertical = 4.dp)
-            )
         }
     }
 }
@@ -1593,76 +1365,6 @@ private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() ->
 
 /* ---------------- Photo reading ---------------- */
 
-@Composable
-fun ScanScreen(
-    state: ScanState, saving: Boolean, onSave: (ScanResult) -> Unit, onRetake: () -> Unit,
-    onRecharge: () -> Unit, onReplaceKey: () -> Unit, onCancel: () -> Unit
-) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        Header(t(R.string.new_reading), t(R.string.new_reading_sub), t(R.string.cancel), onCancel)
-        when (state) {
-            is ScanState.Idle -> Panel {
-                Text(t(R.string.err_read_failed), color = C.Ink, fontSize = 16.sp)
-                BigButton(t(R.string.labs_retry_scan), onClick = onRetake)
-            }
-            is ScanState.Loading -> Panel {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(color = C.Sys, strokeWidth = 3.dp, modifier = Modifier.size(28.dp))
-                    Spacer(Modifier.width(14.dp))
-                    Text(t(R.string.reading_display), color = C.Ink, fontSize = 16.sp)
-                }
-                Text(t(R.string.few_seconds), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
-            }
-            is ScanState.Failed -> {
-                Panel { Text(state.msg, color = C.Ink, fontSize = 16.sp) }
-                when (state.code) {
-                    "anthropic_no_credit" -> BigButton(t(R.string.recharge), onClick = onRecharge)
-                    // a friend's own key or credit: never the app manager's as a fallback
-                    "friend_no_credit" -> {
-                        BigButton(t(R.string.recharge), onClick = onRecharge)
-                        BigButton(t(R.string.replace_key), color = C.Surface2, textColor = C.Ink, onClick = onReplaceKey)
-                    }
-                    "friend_key_invalid", "friend_no_key" -> {
-                        BigButton(t(R.string.replace_key), onClick = onReplaceKey)
-                        BigButton(t(R.string.recharge), color = C.Surface2, textColor = C.Ink, onClick = onRecharge)
-                    }
-                    else -> BigButton(t(R.string.retake), onClick = onRetake)
-                }
-            }
-            is ScanState.Done -> {
-                val r = state.r
-                if (!r.readable || r.sis == null || r.dia == null) {
-                    Panel {
-                        Text(t(R.string.unreadable_title), color = C.Ink, fontSize = 17.sp)
-                        Text(t(R.string.unreadable_hint), color = C.Muted, fontSize = 14.sp)
-                        if (r.note.isNotBlank()) Text(r.note, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
-                    }
-                    BigButton(t(R.string.retake), onClick = onRetake)
-                } else {
-                    Panel {
-                        Row(Modifier.fillMaxWidth()) {
-                            ValueBox(t(R.string.legend_sys), r.sis.toString(), C.Sys, Modifier.weight(1f))
-                            ValueBox(t(R.string.legend_dia), r.dia.toString(), C.Dia, Modifier.weight(1f))
-                            ValueBox(t(R.string.label_pul), r.pul?.toString() ?: "—", C.Pul, Modifier.weight(1f))
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Text(Z.whenText(r.takenAt), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text(t(R.string.period_fmt, periodLabel(r.period)), color = C.Muted, fontSize = 13.sp)
-                        if (r.note.isNotBlank()) Text(r.note, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
-                    }
-                    Text(t(R.string.check_numbers), color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 6.dp))
-                    BigButton(if (saving) t(R.string.saving) else t(R.string.save), enabled = !saving) { onSave(r) }
-                    BigButton(t(R.string.mismatch), color = C.Surface2, textColor = C.Ink, enabled = !saving, onClick = onRetake)
-                }
-            }
-        }
-    }
-}
-
-/**
- * Values understood from speech, full screen like a photo reading: nothing is saved until the person taps Save.
- * Date and time are those of the moment the values were said.
- */
 @Composable
 fun VoiceScreen(
     values: Triple<Int, Int, Int?>, spokenAt: Long, unusual: List<String>, saving: Boolean,
@@ -1706,8 +1408,7 @@ fun ValueBox(label: String, value: String, color: Color, modifier: Modifier) {
 
 @Composable
 fun CreditScreen(
-    me: Me?, readingsCount: Int, onRecharge: () -> Unit, onCorrect: () -> Unit,
-    onKey: () -> Unit, onDeleteKey: () -> Unit, onCheckAi: () -> Unit, checkingAi: Boolean,
+    me: Me?, readingsCount: Int,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
     onTerms: () -> Unit
 ) {
@@ -1718,53 +1419,6 @@ fun CreditScreen(
         if (me == null) {
             Panel { Text("…", color = C.Muted) }
             return@Column
-        }
-
-        // Credits: the money left for the AI readings, and adding to it
-        SectionTitle(t(R.string.section_credits))
-        val c = me.credit
-        val noKey = me.selfPays && !me.hasKey
-        // Anthropic lets no app read the balance: shown instead is what Anthropic answered (credit there or not),
-        // what was spent with HINT (exact, from each reading) and the cost of one photo
-        Panel {
-            // the money spent, as far as HINT 365 can count it; the balance itself only Anthropic knows
-            Text(t(R.string.credit_estimated), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
-            val cost = c?.avgCost ?: 0.006
-            CreditRow(t(R.string.credit_spent), if (noKey) "—" else usd(c?.spentAll ?: 0.0))
-            CreditRow(t(R.string.credit_per_photo), "≈ " + usdFine(cost))
-            CreditRow(t(R.string.credit_photos_per_usd), if (cost > 0) "≈ " + (1.0 / cost).toInt() else "—")
-            // said only when Anthropic answered no: then Scan is off until the credit is back
-            if (!noKey && me.aiStatus != "ok")
-                Text(t(if (me.aiStatus == "no_credit") R.string.credit_out_note else R.string.credit_key_note), color = C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
-            if (noKey) Text(t(R.string.credit_needs_key), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
-            else Text(t(R.string.credit_see_anthropic), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 12.dp).clickable(onClick = onRecharge))
-        }
-        BigButton(t(R.string.recharge), onClick = onRecharge)
-
-        // AI features: on with the user's own Anthropic key. Checked with Anthropic by itself (on opening,
-        // after an error, when the screen is pulled down): no button for it
-        SectionTitle(t(R.string.section_token))
-        if (me.selfPays) {
-            if (!me.hasKey) {
-                Panel { Text(t(R.string.key_missing), color = C.Ink, fontSize = 15.sp) }
-                BigButton("✦ " + t(R.string.upgrade), onClick = onKey)
-            } else {
-                Panel {
-                    Text(t(R.string.version_premium), color = C.Sys, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-                    Text(t(R.string.token_own_set), color = C.Ink, fontSize = 14.sp)
-                    // what Anthropic answered at the last check, and when
-                    val st = when (me.aiStatus) { "ok" -> R.string.ai_state_ok; "no_credit" -> R.string.ai_state_no_credit; "invalid" -> R.string.ai_state_invalid; else -> R.string.ai_state_ok }
-                    Text(t(st) + (me.aiCheckedAt?.let { " · " + Z.whenText(it) } ?: ""), color = if (me.aiStatus == "ok") C.Muted else C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
-                    Text(t(R.string.ai_auto_check), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
-                }
-                BigButton(t(R.string.replace_key), onClick = onKey)
-                TextButton(onClick = onDeleteKey, modifier = Modifier.fillMaxWidth()) {
-                    Text(t(R.string.delete_key), color = C.Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
-                }
-            }
-        } else {
-            Panel { Text(t(if (me.isAdmin) R.string.token_owner_admin else R.string.token_owner_member), color = C.Ink, fontSize = 14.sp) }
         }
 
         // Readings database: every reading, to delete a wrong one or all of them
@@ -1842,32 +1496,3 @@ fun CreditScreen(
     )
 }
 
-@Composable
-fun AmountDialog(title: String, onDismiss: () -> Unit, onSave: (Double) -> Unit) {
-    val ctx = LocalContext.current
-    var text by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { AmountField(text) { text = it } },
-        confirmButton = {
-            TextButton(onClick = {
-                val v = text.replace(',', '.').toDoubleOrNull()
-                if (v == null || v <= 0.0) toast(ctx, t(R.string.enter_amount)) else onSave(v)
-            }) { Text(t(R.string.confirm), color = C.Sys) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(t(R.string.cancel)) } },
-        containerColor = C.Surface
-    )
-}
-
-@Composable
-fun AmountField(value: String, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = { txt -> onChange(txt.filter { it.isDigit() || it == ',' || it == '.' }.take(7)) },
-        singleLine = true, label = { Text(t(R.string.amount_usd)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
-        modifier = Modifier.fillMaxWidth()
-    )
-}

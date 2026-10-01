@@ -360,31 +360,27 @@ async function adminOverview(env: any, q: Q) {
   // one grouped pass per table instead of a sub-query per person
   const users = await q("SELECT id, created_at, is_admin, last_seen_at, sub_until, app_version FROM persons ORDER BY created_at DESC LIMIT 1000");
   const counts = await q("SELECT person_id, COUNT(*) AS n, SUM(source = 'voice') AS voice, SUM(source = 'photo') AS photo FROM measurements WHERE kind = 'bp' GROUP BY person_id");
-  const keys = await q("SELECT person_id, COALESCE(status, 'ok') AS status FROM person_keys");
   const byPerson = new Map(counts.map((r: any) => [String(r.person_id), r]));
-  const aiOf = new Map(keys.map((r: any) => [String(r.person_id), String(r.status)]));
   const list = users.map((u: any) => {
     const c: any = byPerson.get(String(u.id)) || {};
     return {
       id: String(u.id), owner: !!u.is_admin, since: Number(u.created_at), lastSeen: u.last_seen_at == null ? null : Number(u.last_seen_at),
       readings: Number(c.n || 0), voice: Number(c.voice || 0), photo: Number(c.photo || 0),
-      ai: aiOf.get(String(u.id)) || "none", app: u.app_version ? String(u.app_version) : null,
+      app: u.app_version ? String(u.app_version) : null,
       subUntil: u.sub_until == null ? null : Number(u.sub_until),
     };
   });
   const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'subscription_on', 'security_scan')");
   const set: Record<string, string> = {};
   for (const r of gate as any[]) set[r.key] = String(r.value);
-  const aiOn = await one("SELECT COUNT(*) AS n FROM person_keys");
   const allUsers = await one("SELECT COUNT(*) AS n FROM persons");
   return {
     at: now,
     totals: {
-      users: allUsers, aiOn, aiOff: allUsers - aiOn,
+      users: allUsers,
       readings: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp'"),
       labReports: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'lab'"),
       voice: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp' AND source = 'voice'"), photo: await one("SELECT COUNT(*) AS n FROM measurements WHERE kind = 'bp' AND source = 'photo'"),
-      aiSpentUsd: (await one("SELECT COALESCE(SUM(amount_micro), 0) AS n FROM ledger WHERE kind = 'usage'")) / 1e6,
       errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },

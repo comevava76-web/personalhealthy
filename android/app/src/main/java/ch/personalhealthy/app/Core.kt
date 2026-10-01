@@ -54,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "18"
+const val DISCLAIMER_VERSION = "19"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -132,28 +132,6 @@ fun parseSpoken(texts: List<String>): Spoken {
     return Spoken(null, firstProblem ?: t(R.string.voice_not_understood))
 }
 
-data class ScanResult(
-    val scanId: String, val readable: Boolean, val sis: Int?, val dia: Int?, val pul: Int?,
-    val note: String, val takenAt: Long, val period: String, val credit: Credit?
-)
-
-/**
- * Credit for AI readings, kept by the server (in dollars).
- * loaded, spent and scans count from the last balance correction ([since], null if there was none).
- */
-data class Credit(
-    val configured: Boolean, val remaining: Double?, val avgCost: Double,
-    val photosLeft: Int?, val low: Boolean, val empty: Boolean,
-    val loaded: Double?, val spent: Double, val scans: Int, val since: Long?,
-    /** Everything spent with HINT on photo readings, exact (from the tokens of each reading). */
-    val spentAll: Double = 0.0
-)
-
-/**
- * Who this phone is. [pays] = "owner": the app manager's key and credit pay for the photos;
- * "self": a friend who pays with their own Anthropic key ([hasKey] says whether it is stored on the server).
- * [credit] is always this person's own pool: friends never see the manager's, and the other way round.
- */
 /** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
 /** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set. */
 data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "") {
@@ -161,66 +139,16 @@ data class Sub(val required: Boolean = false, val active: Boolean = true, val un
 }
 
 data class Me(
-    val isAdmin: Boolean, val billingMode: String, val credit: Credit?, val pays: String = "owner", val hasKey: Boolean = false,
+    val isAdmin: Boolean, val billingMode: String,
     val hasGoogle: Boolean = false, val email: String? = null, val googleOn: Boolean = false,
     val disclaimerOk: Boolean = true,
-    /** The AI as Anthropic last answered: "ok", "no_credit", "invalid", or "none" (no key). Scan is on only when "ok". */
-    val aiStatus: String = "ok", val aiCheckedAt: Long? = null,
     /** Administrator only: apps below this version are switched off (0 = none). */
     val appMinVersion: Int = 0,
     /** The yearly subscription; [subscriptionOn] (owner only) = everyone else must have one. */
     val sub: Sub = Sub(), val subscriptionOn: Boolean = false
-) {
-    val selfPays: Boolean get() = pays == "self"
-    /** Can add money and correct the balance of their own pool: the app manager, or a friend. */
-    val canRecharge: Boolean get() = isAdmin || selfPays
-}
-
-fun parseCredit(o: JSONObject?): Credit? = o?.let {
-    Credit(
-        configured = it.optBoolean("configured", false),
-        remaining = if (it.isNull("remaining")) null else it.getDouble("remaining"),
-        avgCost = it.optDouble("avgCost", 0.006),
-        photosLeft = if (it.isNull("photosLeft")) null else it.getInt("photosLeft"),
-        low = it.optBoolean("low", false),
-        empty = it.optBoolean("empty", false),
-        loaded = if (it.isNull("loaded")) null else it.getDouble("loaded"),
-        spent = it.optDouble("spent", 0.0),
-        spentAll = it.optDouble("spentAll", 0.0),
-        scans = it.optInt("scans", 0),
-        since = if (it.isNull("since")) null else it.getLong("since")
-    )
-}
-
-fun usd(v: Double): String = String.format(Locale.getDefault(), "%.2f $", v)
-fun usdFine(v: Double): String = String.format(Locale.getDefault(), "%.4f $", v)
-
-sealed class ScanState {
-    object Idle : ScanState()
-    object Loading : ScanState()
-    data class Done(val r: ScanResult) : ScanState()
-    data class Failed(val msg: String, val code: String? = null) : ScanState()
-}
-
-// Preserve confirmed extraction across Activity recreation. Never restore a canceled request as Loading.
-val ScanStateSaver = androidx.compose.runtime.saveable.mapSaver<ScanState>(
-    save = { state -> when (state) {
-        is ScanState.Done -> mapOf("state" to "done", "id" to state.r.scanId, "readable" to state.r.readable,
-            "sis" to state.r.sis, "dia" to state.r.dia, "pul" to state.r.pul, "note" to state.r.note,
-            "takenAt" to state.r.takenAt, "period" to state.r.period)
-        is ScanState.Failed -> mapOf("state" to "failed", "msg" to state.msg, "code" to state.code)
-        else -> mapOf("state" to "idle")
-    } },
-    restore = { fields -> when (fields["state"]) {
-        "done" -> ScanState.Done(ScanResult(fields["id"] as String, fields["readable"] as Boolean,
-            fields["sis"] as? Int, fields["dia"] as? Int, fields["pul"] as? Int, fields["note"] as String,
-            fields["takenAt"] as Long, fields["period"] as String, null))
-        "failed" -> ScanState.Failed(fields["msg"] as String, fields["code"] as? String)
-        else -> ScanState.Idle
-    } }
 )
 
-/** Amber of the short warning lines (credit low, key missing). */
+/** Amber of the short warning lines (Google not linked, no screen lock). */
 const val WARN_COLOR = 0xFFFFB35C
 
 /* ---------------- Dates and times (Lugano time) ---------------- */
@@ -506,24 +434,12 @@ object Repo {
         }.sortedBy { it.takenAt }
     }
 
-    suspend fun scan(pid: String, image: String, takenAt: Long): ScanResult {
-        val j = Api.call("POST", "/v1/bp/scan", JSONObject().put("image", image).put("takenAt", takenAt), pid)
-        fun n(k: String): Int? = if (j.isNull(k)) null else j.getInt(k)
-        return ScanResult(
-            j.getString("scanId"), j.optBoolean("readable", false), n("sis"), n("dia"), n("pul"),
-            j.optString("note", ""), j.getLong("takenAt"), j.optString("period", ""),
-            parseCredit(j.optJSONObject("credit"))
-        )
-    }
-
     suspend fun me(pid: String): Me {
         val j = Api.call("GET", "/v1/me", null, pid)
         return Me(
-            j.optBoolean("isAdmin", false), j.optString("billingMode", "private"), parseCredit(j.optJSONObject("credit")),
-            j.optString("pays", "owner"), j.optBoolean("hasKey", false),
+            j.optBoolean("isAdmin", false), j.optString("billingMode", "private"),
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
             j.optBoolean("disclaimerOk", true),
-            j.optString("aiStatus", "ok"), if (j.isNull("aiCheckedAt") || !j.has("aiCheckedAt")) null else j.optLong("aiCheckedAt"),
             j.optInt("appMinVersion", 0),
             parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false)
         )
@@ -559,73 +475,17 @@ object Repo {
     suspend fun setAppMinVersion(pid: String, minVersion: Int): Int =
         Api.call("POST", "/v1/admin/app-min-version", JSONObject().put("minVersion", minVersion), pid).optInt("appMinVersion", minVersion)
 
-    /** action = "topup" (add a top-up) or "set" (set the current balance), always on this person's own pool */
-    suspend fun credit(pid: String, action: String, amount: Double): Credit? {
-        val j = Api.call("POST", "/v1/credit", JSONObject().put("action", action).put("amount", amount), pid)
-        return parseCredit(j.optJSONObject("credit"))
-    }
-
-    /**
-     * A friend's own Anthropic key: the server tests it with a tiny request, then stores it encrypted.
-     * It is never sent back to the phone. [amount] = the balance shown on Anthropic now (null = unchanged).
-     */
-    suspend fun saveKey(pid: String, apiKey: String, amount: Double?): Credit? {
-        val body = JSONObject().put("apiKey", apiKey)
-        if (amount != null) body.put("amount", amount)
-        return parseCredit(Api.call("POST", "/v1/key", body, pid).optJSONObject("credit"))
-    }
-
-    /** Asks the server to check with Anthropic, right now, that the key works and there is credit. Returns the new state. */
-    suspend fun checkAi(pid: String): String =
-        Api.call("POST", "/v1/key/check", JSONObject(), pid).optString("aiStatus", "ok")
-
-    suspend fun deleteKey(pid: String) {
-        Api.call("DELETE", "/v1/key", null, pid)
-    }
-
-    suspend fun confirm(pid: String, scanId: String) {
-        Api.call("POST", "/v1/bp/confirm", JSONObject().put("scanId", scanId), pid)
-    }
-
     /** Values said aloud, saved only after the person confirms; [spokenAt] is when they were said (checked by the server). */
     suspend fun voice(pid: String, sis: Int, dia: Int, pul: Int, spokenAt: Long) {
         Api.call("POST", "/v1/bp/voice", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("spokenAt", spokenAt), pid)
     }
 
-    /** Deletes every measurement and photo reading of this person (the credit stays). */
+    /** Deletes every blood-pressure reading of this person. */
     suspend fun deleteAll(pid: String) {
         Api.call("DELETE", "/v1/bp", null, pid)
     }
 
     suspend fun delete(pid: String, id: String) {
         Api.call("DELETE", "/v1/bp/$id", null, pid)
-    }
-}
-
-/* ---------------- Photo preparation ---------------- */
-
-object Img {
-    fun prepare(f: File): String {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(f.path, bounds)
-        var sample = 1
-        while (max(bounds.outWidth, bounds.outHeight) / sample > 3200) sample *= 2
-        val bmp = BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = sample })
-            ?: throw ApiException("photo_unreadable")
-        val rot = when (ExifInterface(f.path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-            else -> 0f
-        }
-        val scale = min(1f, 1600f / max(bmp.width, bmp.height))
-        val m = Matrix().apply { postScale(scale, scale); postRotate(rot) }
-        val out = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
-        val bos = ByteArrayOutputStream()
-        out.compress(Bitmap.CompressFormat.JPEG, 85, bos)
-        // a 12-megapixel photo is tens of MB in memory: freed at once
-        if (out !== bmp) out.recycle()
-        bmp.recycle()
-        return Base64.encodeToString(bos.toByteArray(), Base64.NO_WRAP)
     }
 }

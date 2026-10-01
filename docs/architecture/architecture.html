@@ -65,14 +65,14 @@
     <rect x="34" y="28" width="66" height="36" rx="6" fill="#F4F2FF" stroke="#6D5BD0" stroke-width="1.4"/>
     <text x="40" y="41" class="t">Voice</text><text x="40" y="51" class="s">127 · 80 · 70</text><text x="40" y="59" class="s">most used · free</text>
     <rect x="34" y="90" width="66" height="36" rx="6" fill="#F4F2FF" stroke="#6D5BD0" stroke-width="1.4"/>
-    <text x="40" y="103" class="t">Camera</text><text x="40" y="113" class="s">photo of display</text><text x="40" y="121" class="s">AI · own credit</text>
+    <text x="40" y="103" class="t">Lab report</text><text x="40" y="113" class="s">PDF or photo</text><text x="40" y="121" class="s">read on the phone</text>
     <line x1="100" y1="46" x2="111" y2="46" class="l"/><line x1="100" y1="108" x2="111" y2="108" class="l"/>
     <!-- app -->
     <rect x="112" y="10" width="132" height="130" rx="8" fill="#F4F7FB" stroke="#13223F" stroke-width="1.2"/>
     <text x="120" y="26" class="t">HINT 365 app (Android)</text>
     <rect x="120" y="33" width="116" height="20" rx="4" class="b"/><text x="126" y="46" class="s">1 · Google once, then fingerprint</text>
     <rect x="120" y="57" width="116" height="20" rx="4" class="b" stroke="#6D5BD0" stroke-width="1.4"/><text x="126" y="70" class="s">2 · Terms accepted (recorded)</text>
-    <rect x="120" y="81" width="116" height="24" rx="4" class="b"/><text x="126" y="92" class="s">3 · Check the numbers, Save</text><text x="126" y="100" class="s">voice: phone · photo: AI</text>
+    <rect x="120" y="81" width="116" height="24" rx="4" class="b"/><text x="126" y="92" class="s">3 · Check the numbers, Save</text><text x="126" y="100" class="s">voice, reports: on the phone</text>
     <rect x="120" y="109" width="116" height="24" rx="4" class="b"/><text x="126" y="120" class="s">4 · Home, week, PDF, Dashboard</text><text x="126" y="128" class="s">PDF · reminders 9:00/17:00</text>
     <!-- server -->
     <line x1="244" y1="75" x2="290" y2="75" class="l"/><line x1="290" y1="85" x2="244" y2="85" class="l"/>
@@ -84,8 +84,6 @@
     <text x="308" y="93" class="s" style="fill:#fff">Database in Europe</text>
     <text x="308" y="102" class="s" style="fill:#AFC0DC">account code · no names</text>
     <!-- providers -->
-    <line x1="404" y1="60" x2="440" y2="40" class="l"/>
-    <rect x="442" y="22" width="72" height="30" rx="6" class="b"/><text x="448" y="35" class="t">Anthropic</text><text x="448" y="45" class="s">reads photos (AI)</text>
     <line x1="404" y1="100" x2="440" y2="118" class="l"/>
     <rect x="442" y="104" width="72" height="30" rx="6" class="b"/><text x="448" y="117" class="t">Google</text><text x="448" y="127" class="s">OAuth · Play</text>
     <!-- web dashboard -->
@@ -116,7 +114,7 @@
         <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (pseudonymous account code, phone, versions, text fingerprint, date).</li>
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
         <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
-        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen) or by photographing the display (AI features).</li>
+        <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen). No AI: nothing goes to an AI provider (the photo Scan was removed, terms v19).</li>
         <li><b>Looks back</b>: last reading, the week; the Dashboard icon opens the Web Dashboard (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
         <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
@@ -127,9 +125,8 @@
       <table>
         <tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
         <tr><td>HINT 365: app, charts, reports, Web Dashboard, keeping the readings</td><td>5 $ a year, cancel any time</td><td>The app's owner, through Google Play</td></tr>
-        <tr><td>AI features, optional: Scan of the monitor (available now); anonymous medical documents (coming)</td><td>Pay-per-use, ≈ 0.006 $ a photo</td><td>Anthropic, from the user's own credit</td></tr>
       </table>
-      <p style="margin-top:1.5mm">One app; the AI features are on or off (never “Premium”). The Anthropic credit is the user's own.</p>
+      <p style="margin-top:1.5mm">One app, one price, no other cost: voice recording and lab import are included.</p>
       <h2>Fixed rules</h2>
       <ul>
         <li>No diagnosis, no advice, no judgement of the values: no coloured zones, no “normal”.</li>
@@ -137,7 +134,7 @@
         <li>Charts: 7 days, one dot per day = the mean of that day's readings (explained before the charts), value next to it, axis with day numbers only. Tables show AM/PM.</li>
         <li>The same A4 PDF from the app and from the web.</li>
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
-        <li>Scan is on only when Anthropic has just confirmed key and credit (checked hourly on opening, after errors, on pull-down).</li>
+        <li>No AI provider: the photo Scan with Anthropic was removed (terms v19); keys, costs and AI readings are purged nightly.</li>
         <li>Readings kept at most 365 days, deleted nightly; acceptances stay as proof.</li>
         <li>The app stays simple: the owner's controls are only in the web Admin area.</li>
       </ul>
@@ -146,16 +143,16 @@
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>1 / 6</span></div>
 </section>
 
-<!-- ======================= PAGE 2: TWO WAYS IN, VOICE AND CAMERA ======================= -->
+<!-- ======================= PAGE 2: TWO WAYS IN, VOICE AND LAB REPORTS ======================= -->
 <section class="page">
   <div class="band">
     <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 6</div>
-    <h1>Input: voice, camera and local documents</h1>
-    <p>How a reading enters HINT 365. Voice is the way most readings arrive; the camera (Scan) is the AI feature. Same result, different technology.</p>
+    <h1>Input: voice and lab reports</h1>
+    <p>How data enters HINT 365: blood pressure by voice, lab results from a report. Both are read on the phone; no AI provider is involved (the photo Scan with Anthropic was removed in terms v19).</p>
   </div>
 
   <h2>From the user to the database <small>the input always starts on the user's side</small></h2>
-  <svg viewBox="0 0 520 196" width="100%" role="img" aria-label="Voice and camera input, side by side">
+  <svg viewBox="0 0 520 196" width="100%" role="img" aria-label="Voice and lab report input, side by side">
     <defs><marker id="v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
     <style>
       .nv { fill:#fff; stroke:#C7D2E1; } .hv { font-size:6.8px; font-weight:700; fill:#13223F; } .xv { font-size:5.7px; fill:#5B6B88; }
@@ -163,9 +160,9 @@
       .hu { fill:#F4F2FF; stroke:#6D5BD0; stroke-width:1.4; } .ph { fill:#F4F7FB; stroke:#9AA8BF; stroke-dasharray:3 2; }
     </style>
     <text x="36" y="12" class="tv" style="fill:#6D5BD0">VOICE · INCLUDED · MOST READINGS</text>
-    <text x="36" y="102" class="tv" style="fill:#0F9C8E">CAMERA · SCAN · AI FEATURES ON (USER'S ANTHROPIC CREDIT)</text>
+    <text x="36" y="102" class="tv" style="fill:#0F9C8E">LAB REPORT · INCLUDED · READ ON THE PHONE</text>
     <text x="118" y="191" class="xv">on the phone</text><line x1="118" y1="184" x2="276" y2="184" stroke="#C7D2E1"/>
-    <text x="286" y="191" class="xv">Cloudflare Worker, Anthropic</text><line x1="286" y1="184" x2="444" y2="184" stroke="#C7D2E1"/>
+    <text x="286" y="191" class="xv">Cloudflare Worker</text><line x1="286" y1="184" x2="444" y2="184" stroke="#C7D2E1"/>
     <circle cx="15" cy="82" r="8" fill="#6D5BD0"/><rect x="6" y="92" width="18" height="16" rx="5" fill="#6D5BD0"/>
     <text x="15" y="118" text-anchor="middle" class="xv">User</text>
     <line x1="22" y1="86" x2="33" y2="52" class="av"/><line x1="22" y1="104" x2="33" y2="142" class="av"/>
@@ -184,41 +181,41 @@
     <rect x="370" y="18" width="74" height="68" rx="6" class="nv"/>
     <text x="376" y="31" class="hv">5 · Worker</text><text x="376" y="42" class="xv">POST /v1/bp/voice</text><text x="376" y="51" class="xv">only 3 numbers,</text><text x="376" y="60" class="xv">signed; ranges</text><text x="376" y="69" class="xv">checked again;</text><text x="376" y="78" class="xv">60 a day</text>
     <rect x="34" y="108" width="74" height="68" rx="6" class="hu"/>
-    <text x="40" y="121" class="hv">1 · Photo</text><text x="40" y="132" class="xv">of the monitor's</text><text x="40" y="141" class="xv">display, with the</text><text x="40" y="150" class="xv">phone's camera</text><text x="40" y="159" class="xv">(TakePicture)</text>
+    <text x="40" y="121" class="hv">1 · Chooses</text><text x="40" y="132" class="xv">Import lab report:</text><text x="40" y="141" class="xv">the PDF or a photo</text><text x="40" y="150" class="xv">of the report,</text><text x="40" y="159" class="xv">own reports only</text>
     <line x1="108" y1="142" x2="117" y2="142" class="av"/>
     <rect x="118" y="108" width="74" height="68" rx="6" class="nv"/>
-    <text x="124" y="121" class="hv">2 · Prepared</text><text x="124" y="132" class="xv">turned upright</text><text x="124" y="141" class="xv">(EXIF), max</text><text x="124" y="150" class="xv">1600 px, JPEG;</text><text x="124" y="159" class="xv">memory freed</text>
+    <text x="124" y="121" class="hv">2 · Read</text><text x="124" y="132" class="xv">PDF text (PDFBox)</text><text x="124" y="141" class="xv">or OCR (ML Kit),</text><text x="124" y="150" class="xv">on the phone;</text><text x="124" y="159" class="xv">copy deleted</text>
     <line x1="192" y1="142" x2="201" y2="142" class="av"/>
-    <rect x="202" y="108" width="74" height="68" rx="6" class="ph"/>
-    <text x="208" y="121" class="hv">nothing read</text><text x="208" y="132" class="xv">on the phone:</text><text x="208" y="141" class="xv">the photo is sent,</text><text x="208" y="150" class="xv">signed, HTTPS</text>
+    <rect x="202" y="108" width="74" height="68" rx="6" class="nv"/>
+    <text x="208" y="121" class="hv">3 · Parser (app)</text><text x="208" y="132" class="xv">one report date,</text><text x="208" y="141" class="xv">every row read;</text><text x="208" y="150" class="xv">any doubt:</text><text x="208" y="159" class="xv">nothing saved</text>
     <line x1="276" y1="142" x2="285" y2="142" class="av"/>
     <rect x="286" y="108" width="74" height="68" rx="6" class="nv"/>
-    <text x="292" y="121" class="hv">3 · Worker + AI</text><text x="292" y="132" class="xv">POST /v1/bp/scan</text><text x="292" y="141" class="xv">key, credit, 60/day</text><text x="292" y="150" class="xv">Claude Sonnet 5</text><text x="292" y="159" class="xv">reads the 3 values</text><text x="292" y="168" class="xv">≈ 0.006 $, user's key</text>
+    <text x="292" y="121" class="hv">4 · Sent</text><text x="292" y="132" class="xv">date and values</text><text x="292" y="141" class="xv">as printed, file</text><text x="292" y="150" class="xv">fingerprint; no</text><text x="292" y="159" class="xv">name; signed</text>
     <line x1="360" y1="142" x2="369" y2="142" class="av"/>
-    <rect x="370" y="108" width="74" height="68" rx="6" class="hu"/>
-    <text x="376" y="121" class="hv">4 · Check, Save</text><text x="376" y="132" class="xv">the user sees what</text><text x="376" y="141" class="xv">the AI read: saves</text><text x="376" y="150" class="xv">or retakes; valid</text><text x="376" y="159" class="xv">1 hour, once;</text><text x="376" y="168" class="xv">photo not kept</text>
+    <rect x="370" y="108" width="74" height="68" rx="6" class="nv"/>
+    <text x="376" y="121" class="hv">5 · Worker</text><text x="376" y="132" class="xv">POST /v1/labs</text><text x="376" y="141" class="xv">all or nothing;</text><text x="376" y="150" class="xv">never twice (file,</text><text x="376" y="159" class="xv">day and test)</text>
     <line x1="444" y1="52" x2="455" y2="84" class="av"/><line x1="444" y1="142" x2="455" y2="112" class="av"/>
     <rect x="456" y="70" width="60" height="56" rx="6" fill="#0F1C36"/>
-    <text x="462" y="84" class="hv" style="fill:#fff">D1 · EU</text><text x="462" y="95" class="xv" style="fill:#AFC0DC">measurements</text><text x="462" y="104" class="xv" style="fill:#AFC0DC">source: voice</text><text x="462" y="113" class="xv" style="fill:#AFC0DC">or photo</text>
+    <text x="462" y="84" class="hv" style="fill:#fff">D1 · EU</text><text x="462" y="95" class="xv" style="fill:#AFC0DC">measurements</text><text x="462" y="104" class="xv" style="fill:#AFC0DC">voice readings,</text><text x="462" y="113" class="xv" style="fill:#AFC0DC">lab results</text>
   </svg>
-  <p class="muted">Purple frame: a step done by the user. Voice: the numbers are recognised on the phone and only the three numbers travel. Camera: the photo travels to the Worker and to Anthropic, and is not kept.</p>
+  <p class="muted">Purple frame: a step done by the user. Voice: the numbers are recognised on the phone and only the three numbers travel. Lab report: the document stays on the phone; only the date and the values as printed travel.</p>
 
   <h2>The differences</h2>
   <table>
-    <tr><th></th><th>Voice</th><th>Camera (Scan)</th></tr>
-    <tr><td><b>Who can use it</b></td><td>everyone, included in the app</td><td>only with the AI features on: the user's own Anthropic key and credit</td></tr>
-    <tr><td><b>What the user does</b></td><td>says the three numbers</td><td>photographs the monitor's display</td></tr>
-    <tr><td><b>Where the numbers are recognised</b></td><td>on the phone: Android speech recognition (usually Google's service), then HINT 365's own parser (<code>parseSpoken</code>)</td><td>on the server side: the Worker sends the image to Anthropic, Claude Sonnet 5 (vision) returns the three values</td></tr>
-    <tr><td><b>What leaves the phone</b></td><td>only the three numbers (the sound goes only to the phone's speech service)</td><td>the photo, reduced; deleted after reading, never stored</td></tr>
-    <tr><td><b>Cost</b></td><td>none</td><td>≈ 0.006 $ a photo, from the user's Anthropic credit</td></tr>
-    <tr><td><b>Checks</b></td><td>exactly 3 numbers; SYS 50–260, DIA 30–160, PUL 30–220; DIA below SYS; odd values listed; user confirms; ranges again on the server</td><td>display readable; user confirms; the values read stay on the server 1 hour and can be saved once</td></tr>
-    <tr><td><b>Typical errors</b></td><td>a misheard number, noise, numbers said in the wrong order</td><td>glare, a blurred or cut display, an unusual monitor layout</td></tr>
-    <tr><td><b>Limits</b></td><td>60 a day</td><td>60 a day, and only while Anthropic confirms key and credit</td></tr>
-    <tr><td><b>Stored as</b></td><td><code>measurements</code>, source <code>voice</code></td><td><code>measurements</code>, source <code>photo</code>; a <code>scans</code> row with the cost</td></tr>
-    <tr><td><b>Code</b></td><td><code>Listen.kt</code>, <code>Core.kt</code> (<code>parseSpoken</code>), <code>POST /v1/bp/voice</code></td><td><code>MainActivity.kt</code> (camera), <code>Core.kt</code> (<code>Img</code>), <code>POST /v1/bp/scan</code>, <code>/v1/bp/confirm</code></td></tr>
+    <tr><th></th><th>Voice (blood pressure)</th><th>Lab report</th></tr>
+    <tr><td><b>Who can use it</b></td><td>everyone, included in the app</td><td>everyone, included in the app; own reports only (terms v18)</td></tr>
+    <tr><td><b>What the user does</b></td><td>says the three numbers</td><td>picks the laboratory's PDF or a photo of the report</td></tr>
+    <tr><td><b>Where it is recognised</b></td><td>on the phone: Android speech recognition (usually Google's service), then HINT 365's own parser (<code>parseSpoken</code>)</td><td>on the phone: PDF text (PDFBox) or on-device OCR (ML Kit), then <code>LabsParser.kt</code></td></tr>
+    <tr><td><b>What leaves the phone</b></td><td>only the three numbers (the sound goes only to the phone's speech service)</td><td>the report date and the results as printed, and a keyed file fingerprint; never the document or a name</td></tr>
+    <tr><td><b>Cost</b></td><td>none</td><td>none</td></tr>
+    <tr><td><b>Checks</b></td><td>exactly 3 numbers; SYS 50–260, DIA 30–160, PUL 30–220; DIA below SYS; odd values listed; user confirms; ranges again on the server</td><td>one report date and every row understood, or nothing saved; server: schema, same file or same test and day never twice</td></tr>
+    <tr><td><b>Typical errors</b></td><td>a misheard number, noise, numbers said in the wrong order</td><td>an unclear photo, two dates on the document, an encrypted PDF</td></tr>
+    <tr><td><b>Limits</b></td><td>60 a day</td><td>PDF up to 15 pages, 20 MB</td></tr>
+    <tr><td><b>Stored as</b></td><td><code>measurements</code>, source <code>voice</code> (older readings may carry <code>photo</code>, from the removed Scan)</td><td><code>measurements</code>, kind <code>lab</code>; <code>lab_files</code> fingerprint</td></tr>
+    <tr><td><b>Code</b></td><td><code>Listen.kt</code>, <code>Core.kt</code> (<code>parseSpoken</code>), <code>POST /v1/bp/voice</code></td><td><code>Labs.kt</code>, <code>LabsParser.kt</code>, <code>POST /v1/labs</code></td></tr>
   </table>
-  <p class="muted">Both ways end on the same check screen and in the same table: charts, reports and the doctor's link do not depend on how a reading came in. Neither judges the values.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>2 / 6</span></div>
+  <p class="muted">Neither way judges the values. Readings feed the charts, reports and the doctor's link; lab results feed the table in the Web Dashboard.</p>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.110</span><span>2 / 6</span></div>
 </section>
 
 <!-- ======================= PAGE 3: TECHNOLOGY ======================= -->
@@ -266,8 +263,7 @@
     <text x="210" y="123" class="x" style="fill:#AFC0DC">readings, accounts, acceptances</text>
     <text x="210" y="132" class="x" style="fill:#AFC0DC">sessions, links: SHA-256 fingerprints</text>
     <!-- externals -->
-    <line x1="342" y1="60" x2="388" y2="40" class="one"/>
-    <rect x="390" y="18" width="126" height="42" rx="6" class="n"/><text x="398" y="31" class="h">Anthropic API</text><text x="398" y="42" class="x">Claude Sonnet 5 reads the photos</text><text x="398" y="51" class="x">user's key, encrypted with AES-GCM</text>
+    <rect x="390" y="18" width="126" height="42" rx="6" class="n" stroke-dasharray="3 2"/><text x="398" y="31" class="h">No AI provider</text><text x="398" y="42" class="x">the Anthropic Scan was removed</text><text x="398" y="51" class="x">in terms v19: nothing sent</text>
     <line x1="342" y1="95" x2="388" y2="95" class="one"/>
     <rect x="390" y="74" width="126" height="42" rx="6" class="n"/><text x="398" y="87" class="h">Google</text><text x="398" y="98" class="x">OAuth 2.0 · OIDC ID token</text><text x="398" y="107" class="x">Play Developer API: subscriptions</text>
     <line x1="388" y1="150" x2="342" y2="130" class="one"/>
@@ -284,27 +280,26 @@
         <tr><td>Server</td><td>Cloudflare Workers, TypeScript</td><td><code>worker/src/</code></td></tr>
         <tr><td>Database</td><td>Cloudflare D1 (SQLite), EU jurisdiction</td><td><code>worker/schema.sql</code></td></tr>
         <tr><td>Web dashboard</td><td>HTML/JS, own SVG charts, jsPDF + svg2pdf</td><td><code>worker/public/my/</code></td></tr>
-        <tr><td>Photo reading</td><td>Anthropic Messages API</td><td><code>index.ts</code></td></tr>
         <tr><td>Sign-in</td><td>Sign in with Google (OAuth 2.0 / OpenID Connect) + phone key</td><td><code>Google.kt</code></td></tr>
         <tr><td>Subscription</td><td>Google Play Billing + Play Developer API</td><td><code>Billing.kt</code>, <code>billing.ts</code></td></tr>
         <tr><td>Build, release</td><td>GitHub Actions, Gradle, Wrangler</td><td><code>.github/workflows/</code></td></tr>
         <tr><td>Guides, documents</td><td>HTML → PDF (Playwright)</td><td><code>docs/</code></td></tr>
       </table>
       <h2>Database tables</h2>
-      <p><code>persons</code> accounts (pseudonymous account code, Google fingerprint, no email; subscription <code>sub_*</code>) · <code>measurements</code> pressure + lab results · <code>lab_files</code> keyed file fingerprints (no duplicates) · <code>scans</code> photo readings · <code>ledger</code> credit and costs · <code>person_keys</code> encrypted Anthropic keys · <code>acceptances</code> accepted terms (versioned evidence) · <code>web_*</code> web access and doctor links · <code>settings</code>, <code>invites</code> · <code>error_log</code>, <code>event_log</code> (import outcomes, codes only) · <code>seen_sigs</code>, <code>rate_limits</code> protection counters; <code>security_snapshot_findings</code> completed scan snapshots.</p>
+      <p><code>persons</code> accounts (pseudonymous account code, Google fingerprint, no email; subscription <code>sub_*</code>) · <code>measurements</code> pressure + lab results · <code>lab_files</code> keyed file fingerprints (no duplicates) · <code>scans</code>, <code>ledger</code>, <code>person_keys</code> left from the removed AI Scan, emptied every night · <code>acceptances</code> accepted terms (versioned evidence) · <code>web_*</code> web access and doctor links · <code>settings</code>, <code>invites</code> · <code>error_log</code>, <code>event_log</code> (import outcomes, codes only) · <code>seen_sigs</code>, <code>rate_limits</code> protection counters; <code>security_snapshot_findings</code> completed scan snapshots.</p>
     </div>
     <div>
       <h2>Security and data</h2>
       <ul>
         <li><b>Phone</b>: a private key that never leaves the phone signs every request; bad signatures, clocks off by over 5 min and replayed canonical messages are refused; mandatory Google nonce, single-use token and browser revocation on recovery.</li>
-        <li><b>Limits</b>: hourly/daily caps on sign-ups, sign-ins, links, logs, Scan, voice (<code>rate_limits</code>, IP only as SHA-256). CSP and anti-framing headers; <code>robots.txt</code>.</li>
+        <li><b>Limits</b>: hourly/daily caps on sign-ups, sign-ins, links, logs, voice (<code>rate_limits</code>, IP only as SHA-256). CSP and anti-framing headers; <code>robots.txt</code>.</li>
         <li><b>Web</b>: a 60 s atomically redeemed code in the <code>#</code> part of the address becomes the only cookie, <code>hint_s</code> (technical, 7 days, HttpOnly, Secure, SameSite=Strict), set only after consent. The app uses no cookies.</li>
         <li><b>Doctor links</b>: read-only, fixed period, expire after 7 days, withdrawable; no sign-in or cookie.</li>
         <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only, from the web Admin area.</li>
-        <li><b>Owner's area</b> (web, owner only): totals only (users, AI on/off, readings by voice/Scan, AI spent, errors), D1 size vs the 500 MB free limit. Never values, codes or names.</li>
+        <li><b>Owner's area</b> (web, owner only): totals only (users, readings, lab reports, errors), D1 size vs the 500 MB free limit. Never values, codes or names.</li>
         <li><b>Subscription</b> (ready, off until Google Play): Play Billing, checked with the Play Developer API.</li>
                 <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an acceptance register.</li>
-        <li><b>Personal data</b>: no name, no email (Google account only as HMAC-SHA256); codes, cookies, links only as SHA-256; Anthropic keys AES-GCM; documents read on-device; only lab results and a keyed file fingerprint sync. Source files never uploaded. Cloudflare D1 is EU-bound.</li>
+        <li><b>Personal data</b>: no name, no email (Google account only as HMAC-SHA256); codes, cookies, links only as SHA-256; no third-party API keys; documents read on-device; only lab results and a keyed file fingerprint sync. Source files never uploaded. Cloudflare D1 is EU-bound.</li>
       </ul>
       <h2>Releasing a version</h2>
       <ol>
@@ -368,8 +363,7 @@
     <rect x="218" y="95" width="128" height="16" rx="3" fill="#1F3D72"/><text x="224" y="106" class="x3" style="fill:#fff">error log · nightly purge 03:17 UTC</text>
     <line x1="282" y1="111" x2="282" y2="124" class="a3"/>
     <rect x="228" y="126" width="108" height="30" rx="3" fill="#2F5596"/><text x="236" y="139" class="x3" style="fill:#fff">D1 database · EU</text><text x="236" y="149" class="x3" style="fill:#AFC0DC">bound to this Worker only</text>
-    <line x1="356" y1="44" x2="398" y2="36" class="a3"/>
-    <rect x="400" y="18" width="116" height="34" rx="6" class="n3"/><text x="408" y="32" class="h3">Anthropic API</text><text x="408" y="43" class="x3">reads a photo (user's key)</text>
+    <rect x="400" y="18" width="116" height="34" rx="6" class="n3" stroke-dasharray="3 2"/><text x="408" y="32" class="h3">No AI provider</text><text x="408" y="43" class="x3">Anthropic Scan removed (v19)</text>
     <line x1="356" y1="86" x2="398" y2="86" class="a3"/>
     <rect x="400" y="70" width="116" height="34" rx="6" class="n3"/><text x="408" y="84" class="h3">Google</text><text x="408" y="95" class="x3">OAuth ID token · Play (later)</text>
     <line x1="398" y1="140" x2="356" y2="140" class="a3"/>
@@ -403,7 +397,7 @@
       <h2>Data protection <small>GDPR · Swiss FADP</small></h2>
       <ul>
         <li><b>Health data</b>, pseudonymous (not anonymous): the GDPR and the Swiss FADP apply. Basis: explicit consent (Art. 9(2)(a)) at sign-in and in the terms (v15, section “Data protection”).</li>
-        <li><b>Roles</b>: owner = controller; Cloudflare = processor; Anthropic and Google in the US under their transfer safeguards.</li>
+        <li><b>Roles</b>: owner = controller; Cloudflare = processor; Google in the US under its transfer safeguards; no AI provider since terms v19.</li>
         <li><b>Rights</b>: access, correction, deletion (in the app), a copy, restriction, objection; answer within one month.</li>
         <li>Gaps still open and the record of processing: <code>docs/compliance/gdpr.md</code>.</li>
       </ul>
@@ -456,7 +450,7 @@
     <text x="378" y="68" class="x4" style="fill:#AFC0DC">secrets of the running server</text>
     <text x="378" y="86" class="x4" style="fill:#fff">free plan · owner's account</text>
     <!-- providers -->
-    <rect x="368" y="116" width="70" height="48" rx="6" class="n4"/><text x="375" y="130" class="h4">Anthropic</text><text x="375" y="141" class="x4">AI for Scan,</text><text x="375" y="150" class="x4">user's own key</text>
+    <rect x="368" y="116" width="70" height="48" rx="6" class="n4"/><text x="375" y="130" class="h4">No AI</text><text x="375" y="141" class="x4">Anthropic Scan</text><text x="375" y="150" class="x4">removed (v19)</text>
     <rect x="446" y="116" width="70" height="48" rx="6" class="n4"/><text x="453" y="130" class="h4">Google</text><text x="453" y="141" class="x4">OAuth sign-in,</text><text x="453" y="150" class="x4">Play (later)</text>
     <line x1="128" y1="40" x2="366" y2="40" class="a4"/><text x="200" y="36" class="l4">owner's Admin tab (web)</text>
   </svg>
@@ -524,8 +518,8 @@
     <tr><td>1</td><td><b>Install, sign in</b></td><td>user</td><td><code>/download</code> → install → Sign in with Google (OAuth, ID token checked by the Worker) → phone key registered</td><td>persons (fingerprint only)</td></tr>
     <tr><td>2</td><td><b>Accept the terms</b></td><td>user</td><td>shown at first install, after every update and when the text changes → accept or the app closes</td><td>acceptances</td></tr>
     <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record → say SYS, DIA, PUL → check → Save reading → <code>/v1/bp/voice</code></td><td>measurements</td></tr>
-    <tr><td>4</td><td><b>Turn on AI</b></td><td>user</td><td>Anthropic account → credit → key → paste → Worker tests it, stores it encrypted</td><td>person_keys</td></tr>
-    <tr><td>5</td><td><b>Scan (AI)</b></td><td>user with AI on</td><td>Scan → photo → Worker → Anthropic → values → check → Save → <code>/v1/bp/confirm</code>; photo discarded</td><td>scans, measurements, ledger</td></tr>
+    <tr><td>4</td><td><b>No AI</b></td><td>system</td><td>the Anthropic Scan was removed (terms v19): its calls answer 410 <code>ai_removed</code>; nightly purge empties the old keys, costs and readings</td><td>person_keys, ledger, scans (emptied)</td></tr>
+    <tr><td>5</td><td><b>Screen lock</b></td><td>user</td><td>app lock: fingerprint, face or the phone's PIN; without any screen lock the app opens and shows a notice that leads to the settings (the user's responsibility)</td><td>none</td></tr>
     <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Dashboard icon → Web Dashboard, Blood pressure tab: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
     <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Send PDF</b> or <b>Excel</b> → Android share sheet (WhatsApp, email, files…). The file goes straight from the phone to the app chosen; the server is not involved</td><td>none on the server</td></tr>
     <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Dashboard icon → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
@@ -539,7 +533,7 @@
   <h2>Who can do what</h2>
   <table>
     <tr><th>Action</th><th>User · app</th><th>User · web</th><th>Doctor · link</th><th>Owner</th><th>Developer</th></tr>
-    <tr><td>Record, scan, delete own readings</td><td>✓</td><td>—</td><td>—</td><td>own only</td><td>—</td></tr>
+    <tr><td>Record, delete own readings</td><td>✓</td><td>—</td><td>—</td><td>own only</td><td>—</td></tr>
     <tr><td>See own charts and report, export PDF/Excel</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
     <tr><td>Create or withdraw a doctor link</td><td>—</td><td>✓</td><td>—</td><td>own only</td><td>—</td></tr>
     <tr><td>See another person's readings or report</td><td>—</td><td>—</td><td>—</td><td><b>never</b></td><td><b>never</b></td></tr>
@@ -547,7 +541,7 @@
     <tr><td>Read the error log</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>✓ to fix</td></tr>
     <tr><td>Switch app versions off</td><td>—</td><td>—</td><td>—</td><td>✓ Admin, Actions</td><td>—</td></tr>
     <tr><td>Change code, docs, deploy</td><td>—</td><td>—</td><td>—</td><td>decides</td><td>✓ through pull requests</td></tr>
-    <tr><td>See keys and secrets</td><td>own AI key</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
+    <tr><td>See keys and secrets</td><td>—</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
   </table>
   <p class="muted">Enforced by the server: signed app calls, web session cookie, owner account, read-only expiring doctor links.</p>
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>6 / 6</span></div>

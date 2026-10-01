@@ -25,7 +25,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 </style></head><body>
 
 <div class="cover"><div class="brand"><svg viewBox="0 0 108 108" width="46" height="46"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C335E"/><stop offset="1" stop-color="#0F1D38"/></linearGradient></defs><rect width="108" height="108" rx="24" fill="url(#g)"/><path d="M13,57.2 H33.5 L38.9,49.7 L44.3,57.2 H48.6 L55.1,27 L62.1,84.2 L68,57.2 H74.5 L79.9,51.8 L85.3,57.2 H95" fill="none" stroke="#8C7BF2" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h1>HINT 365</h1><div class="sub">HealthyInstantTracker</div></div></div>
-<h2>Guida all'uso</h2><p>Il diario della pressione: registri le misure a voce o con una foto e prepari il report per il medico.</p></div>
+<h2>Guida all'uso</h2><p>Il diario della pressione: registri le misure a voce, importi i referti e prepari il report per il medico.</p></div>
 
 <h2>1. Cos'è HINT 365</h2>
 <p>HINT 365 è un <b>diario</b>: registra i valori del tuo misuratore di pressione, <span class="sys">SYS</span> (massima), <span class="dia">DIA</span> (minima) e <span class="pul">PUL</span> (pulsazioni), con data e ora, e li mostra in tabelle, grafici e report.</p>
@@ -34,8 +34,8 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <h2>2. I costi, in chiaro</h2>
 <table><tr><th>Cosa</th><th>Costo</th><th>A chi va</th></tr>
 <tr><td>HINT 365: app, grafici, report, Web Dashboard, conservazione delle misure</td><td class="free">Oggi gratuita. Quando uscirà sul Play Store: 5 $ all'anno, disdici quando vuoi</td><td>Al proprietario dell'app, tramite Google Play</td></tr>
-<tr><td>Funzionalità AI, facoltative: <b>Scan</b> del misuratore (già disponibile); importazione locale dei referti (senza costi Anthropic)</td><td class="paid">A consumo, circa 0,006 $ a foto</td><td>Ad Anthropic, dal tuo credito</td></tr></table>
-<p>Senza funzionalità AI non paghi nient'altro. Il credito Anthropic è tuo: lo gestisci su Anthropic, scala solo quando usi l'AI e puoi usarlo anche per altri scopi. Il proprietario di HINT 365 non ne incassa nulla.</p>
+</table>
+<p>Non ci sono altri costi: registrazione a voce e importazione dei referti sono comprese, e non si paga nient'altro a nessuno.</p>
 
 <h2>3. Installazione e aggiornamenti</h2>
 <ol><li>Sul telefono Android apri <b>https://personalhealthy-api.comevava76.workers.dev/download</b> e scarica <b>HINT.apk</b>.</li>
@@ -51,26 +51,16 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>L'app si ferma da sola quando ha sentito tre numeri e ti mostra i valori.</li>
 <li>Controlla e tocca <b>Salva misura</b>. Data e ora sono quelle del momento in cui hai parlato.</li></ol>
 <p>L'app rifiuta valori impossibili (per esempio DIA più alta di SYS, un numero mancante) e segnala in arancione quelli insoliti, da ricontrollare.</p>
-<h3>✦ Scan (funzionalità AI)</h3>
-<ol><li>Tocca <b>Scan</b> e fotografa il display del misuratore: da vicino, dritto, senza riflessi.</li>
-<li>L'app legge i numeri e te li mostra. Controlla che siano uguali al display e tocca <b>Salva misura</b>. La foto non viene conservata.</li></ol>
-<p class="small">Scan è acceso solo quando Anthropic conferma che la chiave è valida e che c'è credito. Il controllo è automatico: all'apertura, dopo un errore e quando trascini lo schermo in giù. Se il credito finisce, Scan si spegne e l'app te lo dice.</p>
-
-<h2>5. Attivare le funzionalità AI</h2>
-<p>Tocca <b>✦ Attiva AI</b> (in alto nella schermata Pressione, oppure in Admin). I passaggi sono quattro, ognuno con il suo pulsante:</p>
-<ol><li><b>Crea un account su Anthropic</b> (gratis, con la tua email).</li>
-<li><b>Aggiungi credito:</b> carica un piccolo credito prepagato (pochi dollari bastano per molte foto).</li>
-<li><b>Crea una chiave:</b> inizia con <b>sk-ant-</b>; copiala.</li>
-<li><b>Salva la chiave qui:</b> torna nell'app, incollala e tocca <b>Salva</b>.</li></ol>
-<p class="small">La chiave viene provata con Anthropic e salvata cifrata sul server; non viene più mostrata, nemmeno a te. Puoi sostituirla o cancellarla quando vuoi. Anthropic non permette alle app di leggere il saldo: nell'app vedi i <b>consumi stimati</b>, il saldo esatto è sulla tua pagina Anthropic.</p>
+<h2>5. Niente intelligenza artificiale</h2>
+<p>HINT 365 non usa più l'intelligenza artificiale e non manda dati a fornitori di AI. La <b>Scan</b> del misuratore con Anthropic è stata tolta (condizioni d'uso versione 19): la misura si registra a voce, gratis. Se avevi salvato una chiave Anthropic, il server la cancella insieme ai costi e alle letture di quella funzione; se vuoi, cancellala anche dal tuo account su Anthropic.</p>
 
 <h2>6. Le schermate</h2>
 <p>In basso ogni scheda ha un'icona e il suo nome. Solo il gestore dell'app vede anche <b>Gestore</b> (scudo ↗), che apre la sua area sul web.</p>
 <table><tr><th>Scheda</th><th>Cosa trovi</th></tr>
-<tr><td><b>Pressione</b> (cuore)</td><td>I pulsanti Registra e Scan, l'ultima misura, la settimana (una media al giorno) e il riepilogo; in fondo <b>Invia PDF</b>, <b>Invia Excel</b> e <b>Web Dashboard</b>.</td></tr>
+<tr><td><b>Pressione</b> (cuore)</td><td>Il pulsante <b>Registra una misura</b>, l'ultima misura, la settimana (una media al giorno) e il riepilogo; in fondo <b>Invia PDF</b>, <b>Invia Excel</b> e <b>Web Dashboard</b>.</td></tr>
 <tr><td><b>Referti</b> (foglio con provetta)</td><td><b>Importa referto</b>, la barra di avanzamento durante il caricamento e sotto lo <b>storico dei caricamenti</b>, giorno per giorno, con l'esito di ciascuno (salvato, già importato, non salvato e perché). I risultati sono nella Web Dashboard.</td></tr>
 <tr><td><b>Dashboard</b> (schermo con grafico ↗)</td><td>Non è una schermata dell'app: apre la <b>Web Dashboard</b> nel browser, sulla scheda Pressione. Gli ultimi 7 giorni: grafico con un punto per giorno (la media del giorno), medie, mattina e sera con la bilancia, valori estremi, battiti; nelle tabelle il momento è <b>AM</b> (prima delle 12) o <b>PM</b>. Poi la scheda Referti.</td></tr>
-<tr><td><b>Admin</b></td><td><b>Crediti</b> (consumi stimati, link al saldo su Anthropic, Ricarica), <b>Funzionalità AI</b> (stato, sostituisci o cancella la chiave), <b>Costi</b>, <b>Database misure</b> (cancellare una misura o tutte), <b>Identity</b> (account Google, esci, elimina l'account) e in fondo <b>Condividi l'app</b>.</td></tr></table>
+<tr><td><b>Admin</b></td><td><b>Costi</b>, <b>Database misure</b> (cancellare una misura o tutte), <b>Identity</b> (account Google, esci, elimina l'account) e in fondo <b>Condividi l'app</b>.</td></tr></table>
 
 <h2>7. Web Dashboard e medico</h2>
 <ol><li>Tocca <b>Dashboard</b> nella barra in basso (o <b>Web Dashboard</b> in fondo a Pressione e Referti): il browser si apre già collegato al tuo account (il link vale 60 secondi).</li>
@@ -85,8 +75,8 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <p>Installa HINT 365 sul nuovo telefono e tocca <b>"Accedi con Google"</b> con lo stesso account: ritrovi tutte le misure. Il telefono vecchio viene scollegato.</p>
 
 <h2>10. I tuoi dati</h2>
-<ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce o foto); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono; la tua chiave Anthropic cifrata, se la inserisci.</li>
-<li><b>Foto e voce:</b> la foto va ad Anthropic solo per leggere i numeri e non viene conservata. La voce viene trascritta dal telefono; al server arrivano solo i tre numeri.</li>
+<ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce, o foto per le misure fatte con la vecchia Scan); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono.</li>
+<li><b>Voce:</b> la voce viene trascritta dal telefono; al server arrivano solo i tre numeri.</li>
 <li><b>Dove e per quanto:</b> su <b>Cloudflare</b>, database nell'<b>Unione Europea</b>. Le misure si conservano al massimo <b>365 giorni</b>: quelle più vecchie vengono cancellate ogni notte. Esporta PDF o Excel se vuoi tenerle più a lungo.</li>
 <li><b>Chi li vede:</b> solo tu, e il medico con il link che gli mandi. Il proprietario dell'app vede solo numeri d'uso legati a un codice anonimo (iscrizione, ultimo accesso, quante misure), mai i valori o i report. Gli errori tecnici finiscono in un registro sintetico, senza valori delle misure, conservato 90 giorni, per correggere i problemi.</li>
 <li><b>Cancellazione:</b> in Admin puoi cancellare una misura, tutte le misure oppure l'account. È immediata e definitiva; resta solo la prova delle condizioni accettate.</li></ul>
@@ -99,4 +89,4 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <p><b>Servizio senza garanzie.</b> HINT 365 è offerto così com'è, senza garanzia di disponibilità continua; valgono le condizioni d'uso accettate nell'app.</p>
 <p><b>Tieni una copia.</b> Esporta regolarmente il PDF o il file Excel (in fondo alla scheda Pressione) e conservalo.</p></div>
 <p class="small">Questo documento descrive il servizio e non costituisce consulenza legale.</p>
-<h2>Referti</h2><p><b>Solo referti tuoi.</b> Un account è di una sola persona: carica solo referti e misure tuoi, mai di un familiare. HINT 365 non sa di chi sono i dati e non li può separare (condizioni d’uso).</p><ol><li>Apri <b>Referti → Importa referto</b> e scegli il PDF del laboratorio o una foto del referto (massimo 20 MB; PDF non protetti fino a 15 pagine). Altri tipi di file non si possono scegliere.</li><li>Il resto lo fa l’app, anche se cambi scheda: una barra si riempie passando per <b>Elaborazione</b> → <b>Scansione</b> → <b>Caricamento</b>; alla fine l’esito resta qualche secondo, poi la barra sparisce e l’esito va nello storico dei caricamenti. Il documento è letto solo sul telefono; originale, generalità e testo completo non vengono caricati.</li><li>Si salva solo se tutto è chiaro: una sola data del referto e ogni riga dei risultati compresa, anche gli esami che non sono nel nostro elenco (con il nome com’è stampato). Se qualcosa non è chiaro non si salva nulla e l’app dice perché.</li><li>Mai doppioni: lo stesso file, o lo stesso esame nella stessa data, non viene salvato due volte. Anche un referto vecchio si salva con la sua data. I risultati non si cancellano mai da soli: restano finché li elimini tu. Il documento resta sul telefono; al server arrivano, cifrati in transito, solo data e valori come stampati, mai nome o riferimenti alla persona.</li><li>Sul web, <b>Referti</b> mostra una tabella: una riga per esame, una colonna per data di referto; un trattino dove l’esame manca. In arancione con ↑ o ↓ un valore fuori dal riferimento stampato sul referto (solo un confronto, non una valutazione). <b>Elimina</b> sotto una data toglie quella colonna; il referto si può poi caricare di nuovo. <b>Elimina tutti i referti</b>, sotto la tabella, li toglie tutti. <b>Condividi</b> e <b>PDF</b> danno la stessa tabella.</li></ol><p>App e web seguono la lingua di telefono/browser: italiano, inglese, tedesco e francese, con inglese come lingua predefinita. L’importazione non richiede chiave né credito Anthropic. La valutazione medica spetta al medico.</p></body></html>
+<h2>Referti</h2><p><b>Solo referti tuoi.</b> Un account è di una sola persona: carica solo referti e misure tuoi, mai di un familiare. HINT 365 non sa di chi sono i dati e non li può separare (condizioni d’uso).</p><ol><li>Apri <b>Referti → Importa referto</b> e scegli il PDF del laboratorio o una foto del referto (massimo 20 MB; PDF non protetti fino a 15 pagine). Altri tipi di file non si possono scegliere.</li><li>Il resto lo fa l’app, anche se cambi scheda: una barra si riempie passando per <b>Elaborazione</b> → <b>Scansione</b> → <b>Caricamento</b>; alla fine l’esito resta qualche secondo, poi la barra sparisce e l’esito va nello storico dei caricamenti. Il documento è letto solo sul telefono; originale, generalità e testo completo non vengono caricati.</li><li>Si salva solo se tutto è chiaro: una sola data del referto e ogni riga dei risultati compresa, anche gli esami che non sono nel nostro elenco (con il nome com’è stampato). Se qualcosa non è chiaro non si salva nulla e l’app dice perché.</li><li>Mai doppioni: lo stesso file, o lo stesso esame nella stessa data, non viene salvato due volte. Anche un referto vecchio si salva con la sua data. I risultati non si cancellano mai da soli: restano finché li elimini tu. Il documento resta sul telefono; al server arrivano, cifrati in transito, solo data e valori come stampati, mai nome o riferimenti alla persona.</li><li>Sul web, <b>Referti</b> mostra una tabella: una riga per esame, una colonna per data di referto; un trattino dove l’esame manca. In arancione con ↑ o ↓ un valore fuori dal riferimento stampato sul referto (solo un confronto, non una valutazione). <b>Elimina</b> sotto una data toglie quella colonna; il referto si può poi caricare di nuovo. <b>Elimina tutti i referti</b>, sotto la tabella, li toglie tutti. <b>Condividi</b> e <b>PDF</b> danno la stessa tabella.</li></ol><p>App e web seguono la lingua di telefono/browser: italiano, inglese, tedesco e francese, con inglese come lingua predefinita. La valutazione medica spetta al medico.</p></body></html>

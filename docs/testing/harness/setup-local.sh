@@ -11,7 +11,6 @@ cp -r "$REPO/worker/src" "$REPO/worker/public" "$REPO/worker/schema.sql" "$REPO/
 ln -s "$REPO/worker/node_modules" "$W/node_modules"
 sed 's/D1_DATABASE_ID/00000000-0000-0000-0000-000000000000/' "$REPO/worker/wrangler.toml" > "$W/wrangler.toml"
 cat > "$W/.dev.vars" <<EOF
-ANTHROPIC_API_KEY=sk-ant-dummy-not-a-real-key-000000000000
 FAMILY_CODE=QA-FAMILY-CODE-DUMMY
 KEY_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
 EOF
