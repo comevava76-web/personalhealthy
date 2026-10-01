@@ -476,4 +476,5 @@
     <string name="labs_delete_q">Ses résultats sont retirés de votre compte. Le document pourra être importé à nouveau.</string>
     <string name="labs_dash_sub">Les résultats, une colonne par date de compte rendu, sont dans le Web Dashboard.</string>
     <string name="labs_own">N’importez que vos propres comptes rendus : un compte appartient à une seule personne (conditions d’utilisation).</string>
+    <string name="no_screen_lock">Ce téléphone n’a pas de verrouillage d’écran : toute personne qui le prend peut ouvrir HINT 365. Définissez un code, un schéma ou l’empreinte (touchez ici). C’est votre responsabilité.</string>
 </resources>

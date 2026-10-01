@@ -476,4 +476,5 @@
     <string name="labs_delete_q">Seine Werte werden aus Ihrem Konto entfernt. Das Dokument kann erneut importiert werden.</string>
     <string name="labs_dash_sub">Die Werte, eine Spalte pro Befunddatum, sind im Web Dashboard.</string>
     <string name="labs_own">Laden Sie nur eigene Befunde hoch: ein Konto gehört einer einzigen Person (Nutzungsbedingungen).</string>
+    <string name="no_screen_lock">Dieses Telefon hat keine Bildschirmsperre: Wer es in die Hand nimmt, kann HINT 365 öffnen. Richten Sie eine PIN, ein Muster oder den Fingerabdruck ein (hier tippen). Das liegt in Ihrer Verantwortung.</string>
 </resources>

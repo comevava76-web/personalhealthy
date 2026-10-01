@@ -480,4 +480,5 @@
     <string name="labs_delete_q">Its results are removed from your account. The document can be imported again.</string>
     <string name="labs_dash_sub">The results, one column per report date, are in the Web Dashboard.</string>
     <string name="labs_own">Upload only your own reports: one account is one person (terms of use).</string>
+    <string name="no_screen_lock">This phone has no screen lock: anyone holding it can open HINT 365. Set a PIN, pattern or fingerprint (tap here). It is your responsibility.</string>
 </resources>

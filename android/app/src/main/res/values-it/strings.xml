@@ -478,4 +478,5 @@
     <string name="labs_delete_q">I suoi risultati vengono tolti dal tuo account. Il documento potrà essere importato di nuovo.</string>
     <string name="labs_dash_sub">I risultati, una colonna per ogni data di referto, sono nella Web Dashboard.</string>
     <string name="labs_own">Carica solo referti tuoi: un account è di una sola persona (condizioni d’uso).</string>
+    <string name="no_screen_lock">Questo telefono non ha il blocco schermo: chiunque lo prenda può aprire HINT 365. Imposta un PIN, una sequenza o l’impronta (tocca qui). È una tua responsabilità.</string>
 </resources>

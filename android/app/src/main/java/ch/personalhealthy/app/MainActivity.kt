@@ -1234,6 +1234,13 @@ fun HomeScreen(
         // a friend who pays for their own photos has no key yet
         // not linked to Google yet: with a new phone this diary could not be found again
         if (me != null && me.googleOn && !me.hasGoogle) WarnLine(t(R.string.google_banner), onOpenCredit)
+        // no screen lock on the phone: the app opens without any lock. Said, not imposed: the phone is the person's
+        // responsibility (terms of use); a tap opens the phone's security settings.
+        val ctx0 = LocalContext.current
+        val noLock = remember { !(ctx0.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager).isDeviceSecure }
+        if (noLock) WarnLine(t(R.string.no_screen_lock)) {
+            try { ctx0.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) } catch (_: Exception) { }
+        }
         // one short warning line, only when the credit is low or used up
         val c = me?.credit
         // Anthropic said no at the last check: Scan is off, and this says why
