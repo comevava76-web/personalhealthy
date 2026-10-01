@@ -330,3 +330,4 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 
 - 0.1.117 (PR #127) is online. A UI/graphics review of the app code was done (read only) and its findings were given to Human in chat; none applied yet, Human decides which. Main ones: SYS/DIA/PUL labels missing in the readings list, low contrast of small teal/amber numbers in the light theme and of white on violet buttons in the dark theme, DE/FR button labels cut, «Durchschnitt» cut.
 - Human asked to remove «Caricamento referti · ultimi 30 giorni» from the web Observability page: removed (the server still counts the outcomes in `event_log`; they stay in the log). CLAUDE.md and architecture row 11 updated.
+- Build 118 (PR #128): the Worker deployed, but the `/download` check 5 s after the deploy still got 0.1.117 and failed the job (release 0.1.118 not recorded). Fixed in build.yml: retry every 10 s for up to 2 minutes (P-007). The next build is 0.1.119 (same app as 0.1.117).
