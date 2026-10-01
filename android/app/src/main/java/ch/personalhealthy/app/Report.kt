@@ -559,6 +559,39 @@ fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
     return file
 }
 
+/**
+ * The PDF goes to the phone's Downloads folder and opens in the PDF viewer. Android 10 and later need no permission
+ * for that; on older phones it is handed to the share window instead, where it can be saved or sent.
+ */
+fun downloadPdf(ctx: Context, file: File) {
+    if (android.os.Build.VERSION.SDK_INT < 29) { shareFile(ctx, file, "application/pdf"); return }
+    val values = android.content.ContentValues().apply {
+        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, file.name)
+        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+    }
+    val resolver = ctx.contentResolver
+    val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("download_failed")
+    resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("download_failed")
+    android.widget.Toast.makeText(ctx, t(R.string.pdf_saved), android.widget.Toast.LENGTH_LONG).show()
+    try {
+        ctx.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+    } catch (_: android.content.ActivityNotFoundException) { }   // no PDF viewer: the file is in Downloads anyway
+}
+
+/**
+ * Opens an address in a web browser, never in another app that claims the link (a download manager, for example,
+ * would save the page instead of showing it).
+ */
+fun openInBrowser(ctx: Context, url: String) {
+    val view = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+    try {
+        ctx.startActivity(Intent(view).apply { selector = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER) })
+    } catch (_: android.content.ActivityNotFoundException) {
+        ctx.startActivity(view)
+    }
+}
+
 fun shareFile(ctx: Context, file: File, mime: String) {
     val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", file)
     val send = Intent(Intent.ACTION_SEND).apply {
