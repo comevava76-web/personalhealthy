@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (app reorganisation, terms v18).
+Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (AI Scan removed, terms v19).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -259,3 +259,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Validation: functional suite (all groups pass), `labs-security.mjs`, `labs-ui.mjs`, local probe 17/17, layout check; web checked at 1280 and 390 px. The Android code is compiled only by CI (no SDK in the session).
 - User decisions after the PR went up: (1) remove the AI Scan entirely (button, Attiva AI, credit/key UI, stored keys, costs and AI readings; terms v19 without Anthropic) — to do in a separate PR after #116; (2) phone without screen lock: a non-blocking orange notice on Blood pressure that opens the security settings, responsibility stays with the user (done in #116).
 - Next: the user installs the new APK from /download, accepts terms v18 and tries the bottom bar and a lab import.
+
+### 2026-10-01 Europe/Zurich — Claude Code — AI Scan removed, terms v19
+
+- Request (user, chat): yes to removing the photo Scan with Anthropic ("1 sì") and to the screen-lock notice (shipped in #116, APK 0.1.109).
+- Changed: app — Scan button, camera flow, ScanScreen, KeyScreen (Friends.kt deleted), credit/key sections and dialogs, AI badge and warnings removed; one full-width "Record a reading" button; costs table shows only the app. Server — `/v1/bp/scan`, `/v1/bp/confirm`, `/v1/key`, `/v1/key/check`, `/v1/credit*`, `/v1/admin/credit` answer 410 `ai_removed`; `/v1/me` without AI or credit fields; Anthropic code, key sealing and credit pools removed; the nightly purge empties `scans`, `ledger`, `person_keys`; the deploy no longer sends `ANTHROPIC_API_KEY` and deletes it from the Worker. Owner area — totals: users, readings, lab reports, errors. Terms v19 (no Anthropic), privacy and home, CLAUDE.md cost rule, compliance C06/C08, gdpr.md, guides IT/EN, architecture pages 1–5.
+- Validation: functional suite (S1–S10 removal checks, PU4 purge), labs-security, probe 17/17, layout check. Android compiles on CI only.
+- Owner to do: delete the GitHub secret `ANTHROPIC_API_KEY` (no longer used); readings saved earlier with Scan stay (source `photo`).

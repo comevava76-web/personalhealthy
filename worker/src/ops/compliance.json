@@ -70,7 +70,7 @@
    "requirement": "Stored data protected against unauthorised access",
    "law": "GDPR Art. 32 · FADP Art. 8",
    "status": "partial",
-   "evidence": "Only the Worker reaches D1; Anthropic keys AES-GCM; codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked",
+   "evidence": "Only the Worker reaches D1; no third-party API keys stored (the AI Scan and its Anthropic keys were removed in terms v19); codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked",
    "next": "Decide whether to encrypt lab and pressure values per account",
    "doc": "docs/compliance/gdpr.md",
    "declared": [
@@ -96,7 +96,7 @@
    "requirement": "Transfers named, with safeguards",
    "law": "GDPR Art. 13(1)(f), 44–49 · FADP Art. 16",
    "status": "partial",
-   "evidence": "Anthropic (monitor photo only) and Google (sign-in, billing) named with DPF/SCC; lab documents are never transferred",
+   "evidence": "Only Google (sign-in, billing) outside the EU, named with DPF/SCC; no AI provider since terms v19 (Anthropic Scan removed, its keys, costs and readings deleted); lab documents are never transferred",
    "next": "Legal review of the wording (G3)",
    "doc": "docs/compliance/gdpr.md",
    "declared": [

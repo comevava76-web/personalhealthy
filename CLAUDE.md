@@ -43,11 +43,11 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Accesso e cookie dichiarati**: l'accesso è Sign in with Google (OAuth 2.0 / OpenID Connect) e va scritto così in condizioni,
   privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
   nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.
-- **Politica dei costi** (tabella in app, condizioni e home): l'app 5 $/anno al proprietario via Google Play; le funzionalità AI
-  sono facoltative, a consumo, pagate dall'utente ad Anthropic con il proprio credito (mai al proprietario). Mai chiamarle
-  «Standard/Premium»: si dice «funzionalità AI attive / non attive», «Attiva AI».
+- **Politica dei costi** (tabella in app, condizioni e home): solo l'app, 5 $/anno al proprietario via Google Play; nessun altro
+  costo. **Niente AI**: la Scan con Anthropic è stata tolta (condizioni v19, decisione di Human); nessun dato va a fornitori di AI.
+  Non reintrodurla senza una nuova decisione di Human (nuova versione delle condizioni, privacy, compliance).
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la scheda **Admin** (solo totali: utenti, con/senza AI, misure voce/Scan, spesa AI, errori; spazio D1, blocco versioni):
+  nella Web Dashboard la scheda **Admin** (solo totali: utenti, misure, referti, errori; spazio D1, blocco versioni), aperta dall'icona Gestore nell'app:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.

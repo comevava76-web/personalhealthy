@@ -165,57 +165,17 @@ S.check("readings", "D3", "deleting an unknown id answers 200 ok (idempotent)", 
 r = await call(alice, "DELETE", "/v1/bp/..%2f..%2fetc");
 S.check("robustness", "D4", "path traversal-like id -> 404", r.status === 404, r.text);
 
-// ---------------------------------------------------------------- photo scan: only paths that never reach Anthropic
-r = await call(alice, "POST", "/v1/bp/scan", { image: "x".repeat(2000), takenAt: now() - 31 * 60e3 });
-S.check("scan", "S1", "photo older than 30 min -> 400 photo_time", r.status === 400 && r.json?.code === "photo_time", r.text);
-r = await call(alice, "POST", "/v1/bp/scan", { image: "short", takenAt: now() });
-S.check("scan", "S2", "missing/short image -> 400 no_photo", r.status === 400 && r.json?.code === "no_photo", r.text);
-run("UPDATE persons SET pays = 'self' WHERE id = ?", bob.pid);
-r = await call(bob, "POST", "/v1/bp/scan", { image: "x".repeat(2000), takenAt: now() });
-S.check("scan", "S3", "self-paying account without a key -> 402 friend_no_key (Anthropic never called)", r.status === 402 && r.json?.code === "friend_no_key", r.text);
-run("INSERT INTO person_keys (person_id, sealed_key, created_at) VALUES (?, 'v1:AAAA:BBBB', ?)", bob.pid, now());
-r = await call(bob, "POST", "/v1/bp/scan", { image: "x".repeat(2000), takenAt: now() });
-S.check("scan", "S4", "sealed key that cannot be opened -> 402 friend_key_invalid", r.status === 402 && r.json?.code === "friend_key_invalid", r.text);
-r = await call(bob, "POST", "/v1/key", { apiKey: "not-a-key" });
-S.check("scan", "S5", "badly formed Anthropic key -> 400 friend_key_invalid (no call made)", r.status === 400 && r.json?.code === "friend_key_invalid", r.text);
-r = await call(bob, "DELETE", "/v1/key");
-S.check("scan", "S6", "DELETE /v1/key -> hasKey false", r.status === 200 && r.json.hasKey === false, r.text);
-r = await call(bob, "POST", "/v1/key/check", {});
-S.check("scan", "S7", "key check without a key -> none", r.status === 200 && r.json.aiStatus === "none", r.text);
-r = await call(alice, "POST", "/v1/key", { apiKey: "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" });
-S.check("scan", "S8", "every account pays its own AI: a key is checked with Anthropic, not refused by role (F-08)", r.json?.code !== "not_self_pays" && r.status !== 403, r.text);
-// confirm: scans inserted directly, as if Anthropic had read them
-const mkScan = (pid, readable = true) => {
-  const id = "scn_qa" + crypto.randomBytes(6).toString("hex");
-  run("INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at) VALUES (?, ?, 'bp', ?, ?, 0, ?)", id, pid,
-    JSON.stringify({ readable, sis: 125, dia: 81, pul: 66, note: "" }), now() - 60e3, now() - 60e3);
-  return id;
-};
-const sAlice = mkScan(alice.pid);
-r = await call(bob, "POST", "/v1/bp/confirm", { scanId: sAlice });
-S.check("security", "C1", "Bob cannot confirm Alice's scan (IDOR) -> 404", r.status === 404, r.text);
-const confirms = await Promise.all(Array.from({ length: 10 }, () => call(alice, "POST", "/v1/bp/confirm", { scanId: sAlice })));
-const ok = confirms.filter((c) => c.status === 200).length, dup = confirms.filter((c) => c.status === 409 || (c.status === 401 && c.json?.code === "replay")).length;
-S.check("concurrency", "C2", "10 parallel confirms of one scan -> exactly one reading", ok === 1 && dup === 9 && sql("SELECT COUNT(*) n FROM measurements WHERE scan_id = ?", sAlice)[0].n === 1, `ok=${ok} dup=${dup}`);
-r = await call(alice, "POST", "/v1/bp/confirm", { scanId: mkScan(alice.pid, false) });
-S.check("scan", "C3", "unreadable scan cannot be saved -> 400 scan_invalid", r.status === 400 && r.json?.code === "scan_invalid", r.text);
-{
-  const old = mkScan(alice.pid); run("UPDATE scans SET created_at = ? WHERE id = ?", now() - 61 * 60e3, old);
-  r = await call(alice, "POST", "/v1/bp/confirm", { scanId: old });
-  S.check("scan", "C4", "scan older than 60 min -> 400 scan_expired", r.status === 400 && r.json?.code === "scan_expired", r.text);
+// ---------------------------------------------------------------- the photo reading with AI is gone (terms v19)
+// every former AI call answers 410 ai_removed, writes nothing and never reaches Anthropic
+for (const [id, m, p, body] of [["S1", "POST", "/v1/bp/scan", { image: "x".repeat(2000), takenAt: now() }], ["S2", "POST", "/v1/bp/confirm", { scanId: "scn_x" }],
+  ["S3", "POST", "/v1/key", { apiKey: "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" }], ["S4", "DELETE", "/v1/key", null], ["S5", "POST", "/v1/key/check", {}],
+  ["S6", "POST", "/v1/credit", { action: "topup", amount: 5 }], ["S7", "GET", "/v1/credit/history", null], ["S8", "POST", "/v1/admin/credit", { action: "set", amount: 1 }]]) {
+  r = await call(alice, m, p, body);
+  S.check("ai-removed", id, `${m} ${p} -> 410 ai_removed`, r.status === 410 && r.json?.code === "ai_removed", r.text);
 }
-
-// ---------------------------------------------------------------- credit
-r = await call(alice, "POST", "/v1/credit", { action: "topup", amount: 5 });
-S.check("admin", "K1", "a user changes only their own credit estimate (F-08)", r.status === 200 && sql("SELECT COUNT(*) n FROM ledger WHERE person_id = ? AND kind = 'topup'", alice.pid)[0].n >= 1, r.text);
-for (const [id, amt] of [["K2", -1], ["K3", 1001], ["K4", "abc"], ["K5", 0]]) {
-  r = await call(owner, "POST", "/v1/credit", { action: "topup", amount: amt });
-  S.check("admin", id, `credit top-up ${JSON.stringify(amt)} -> 400`, r.status === 400, r.text);
-}
-r = await call(owner, "POST", "/v1/credit", { action: "set", amount: 10 });
-S.check("admin", "K6", "owner sets the balance", r.status === 200 && r.json.credit.remaining === 10, r.text);
-r = await call(owner, "GET", "/v1/credit/history");
-S.check("admin", "K7", "credit history", r.status === 200 && r.json.items.length >= 1, r.text);
+S.check("ai-removed", "S9", "nothing written by the former AI calls", sql("SELECT (SELECT COUNT(*) FROM scans) + (SELECT COUNT(*) FROM ledger) + (SELECT COUNT(*) FROM person_keys) AS n")[0].n === 0);
+r = await call(alice, "GET", "/v1/me");
+S.check("ai-removed", "S10", "/v1/me carries no AI or credit fields", r.status === 200 && !("hasKey" in r.json) && !("credit" in r.json) && !("aiStatus" in r.json), r.text);
 
 // ---------------------------------------------------------------- admin endpoints /v1/admin/*
 for (const [p, b] of [["/v1/admin/subscription", { on: false }], ["/v1/admin/settings", { billingMode: "private" }], ["/v1/admin/app-min-version", { minVersion: 1 }], ["/v1/admin/invites", { type: "self_pays" }]]) {
@@ -481,6 +441,10 @@ S.check("security", "HD3", "/my/ sends Strict-Transport-Security / nosniff", !!h
   const ages = [366, 365.01, 364.9, 300, 1];
   ages.forEach((a, i) => ins.run("bp_qaage" + i, dave.pid, Math.round(t - a * DAY), Math.round(t - a * DAY)));
   run("INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at) VALUES ('scn_qaold', ?, 'bp', '{}', ?, 1, ?)", dave.pid, t - 400 * DAY, t - 400 * DAY);
+  // left over from the former photo reading with AI: a recent reading, a key and a cost row, all deleted by the purge
+  run("INSERT INTO scans (id, person_id, kind, result, taken_at, used, created_at) VALUES ('scn_qanew', ?, 'bp', '{}', ?, 1, ?)", dave.pid, t - DAY, t - DAY);
+  run("INSERT INTO person_keys (person_id, sealed_key, created_at) VALUES (?, 'v1:AAAA:BBBB', ?)", dave.pid, t);
+  run("INSERT INTO ledger (kind, amount_micro, person_id, payer, created_at) VALUES ('usage', 6000, ?, ?, ?)", dave.pid, dave.pid, t);
   run("INSERT INTO web_codes (code_hash, person_id, expires_at) VALUES ('qa-old-code', ?, ?)", dave.pid, t - 1000);
   run("INSERT INTO web_sessions (id_hash, person_id, created_at, expires_at) VALUES ('qa-old-sess', ?, ?, ?)", dave.pid, t - 9 * DAY, t - 1000);
   run("INSERT INTO error_log (day, source, code, place, app_version, count, first_at, last_at) VALUES ('2000-01-01', 'server', 'qa_old', 'x', '', 1, ?, ?)", t - 91 * DAY, t - 91 * DAY);
@@ -499,6 +463,8 @@ S.check("security", "HD3", "/my/ sends Strict-Transport-Security / nosniff", !!h
   S.check("retention", "PU1", "purge deletes readings older than 365 days, keeps 364.9 / 300 / 1 days", r.status === 200 && left.join(",") === "bp_qaage2,bp_qaage3,bp_qaage4", left.join(","));
   S.check("retention", "PU2", "purge deletes old scans, expired codes and sessions, error log > 90 days",
     sql("SELECT (SELECT COUNT(*) FROM scans WHERE id='scn_qaold') + (SELECT COUNT(*) FROM web_codes WHERE code_hash='qa-old-code') + (SELECT COUNT(*) FROM web_sessions WHERE id_hash='qa-old-sess') + (SELECT COUNT(*) FROM error_log WHERE code='qa_old') n")[0].n === 0, "");
+  S.check("retention", "PU4", "purge deletes every key, cost and reading of the former AI Scan",
+    sql("SELECT (SELECT COUNT(*) FROM scans) + (SELECT COUNT(*) FROM ledger) + (SELECT COUNT(*) FROM person_keys) AS n")[0].n === 0, "");
   S.check("retention", "PU3", "acceptances are kept by the purge", sql("SELECT COUNT(*) n FROM acceptances")[0].n === accBefore, "");
   S.check("privacy", "PU4", "any email left in persons/acceptances is erased by the nightly job", sql("SELECT (SELECT COUNT(*) FROM persons WHERE email IS NOT NULL) + (SELECT COUNT(*) FROM acceptances WHERE email IS NOT NULL) n")[0].n === 0, "");
   r = await call(dave, "GET", "/v1/bp?days=400");

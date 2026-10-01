@@ -609,8 +609,8 @@
      Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
   const AD = IT ? {
     tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo totali: nessuna misura, nessun report, nessun nome",
-    upd: "Aggiornato", users: "Utenti", usersU: "in totale", aiOn: "Con funzionalità AI", aiOnU: "chiave Anthropic attiva", aiOff: "Senza funzionalità AI", aiOffU: "solo l'app",
-    rd: "Misure", split: (v, f) => `${v} a voce · ${f} con Scan`, aiSp: "Spesa AI", aiSpU: "in totale, sui crediti Anthropic degli utenti",
+    upd: "Aggiornato", users: "Utenti", usersU: "in totale", labs: "Referti", labsU: "salvati, di tutti gli utenti",
+    rd: "Misure", split: (v, f) => `${v} a voce` + (f ? ` · ${f} con la vecchia Scan` : ""),
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
     stT: "Spazio database", stOf: (a, b) => `${a} <span>di ${b}</span>`, stNote: (pc) => `${pc} usato · piano gratuito Cloudflare D1 · misure oltre 365 giorni cancellate ogni notte`,
     vT: "Versioni dell'app", vNew: (v) => `Versione più recente: ${v}`, vNone: "Nessuna versione bloccata: tutte le app installate funzionano.",
@@ -642,8 +642,8 @@
     fixHint: "Seleziona le righe e premi Fix: Claude prepara la correzione seguendo il processo.", triage: "da valutare", ours: "nostro", run: "dettagli dell'esecuzione", noFix: "nessuna correzione",
   } : {
     tab: "Admin", title: "Owner's area", sub: "Only you see it · totals only: no readings, no reports, no names",
-    upd: "Updated", users: "Users", usersU: "in total", aiOn: "With AI features", aiOnU: "Anthropic key on", aiOff: "Without AI features", aiOffU: "the app only",
-    rd: "Readings", split: (v, f) => `${v} by voice · ${f} with Scan`, aiSp: "AI spending", aiSpU: "in total, on the users' own Anthropic credit",
+    upd: "Updated", users: "Users", usersU: "in total", labs: "Lab reports", labsU: "saved, all users",
+    rd: "Readings", split: (v, f) => `${v} by voice` + (f ? ` · ${f} with the former Scan` : ""),
     errs: "Errors", errsU: "in total, last 90 days",
     stT: "Database space", stOf: (a, b) => `${a} <span>of ${b}</span>`, stNote: (pc) => `${pc} used · Cloudflare D1 free plan · readings older than 365 days deleted every night`,
     vT: "App versions", vNew: (v) => `Newest version: ${v}`, vNone: "No version blocked: every installed app works.",
@@ -688,12 +688,10 @@
     main.innerHTML = `
       <div class="bar"><h1>${AD.title}</h1><span class="grow"></span><span class="sub">${AD.upd} ${time(d.at)}</span></div>
       <p class="note">${AD.sub}</p>
-      <section class="tiles adm">
+      <section class="tiles adm four">
         ${tile(AD.users, t.users, AD.usersU)}
-        ${tile(AD.aiOn, t.aiOn, AD.aiOnU)}
-        ${tile(AD.aiOff, t.aiOff, AD.aiOffU)}
         ${tile(AD.rd, t.readings, AD.split(t.voice, t.photo))}
-        ${tile(AD.aiSp, "$" + t.aiSpentUsd.toFixed(2), AD.aiSpU)}
+        ${tile(AD.labs, t.labReports, AD.labsU)}
         ${tile(AD.errs, t.errors, AD.errsU)}
       </section>
       <div class="card space">

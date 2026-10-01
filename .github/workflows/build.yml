@@ -129,7 +129,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FAMILY_CODE: ${{ secrets.FAMILY_CODE }}
           # JSON key of the Google Cloud service account that checks subscriptions with Google Play (optional)
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
@@ -162,9 +161,11 @@ jobs:
             gh release create "$TAG" ../apk/HealthyInstantTracker-*.apk ../apk/HINT365-*.aab --target "${{ github.sha }}" --title "HINT 365 0.1.${{ github.run_number }}" --notes "Android APK update; no uninstall required." --repo "${{ github.repository }}"
           fi
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}" 2>&1 | tee deploy.log
-          jq -n --arg a "$ANTHROPIC_API_KEY" --arg f "$FAMILY_CODE" '{ANTHROPIC_API_KEY:$a, FAMILY_CODE:$f}' > secrets.json
+          jq -n --arg f "$FAMILY_CODE" '{FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
+          # the photo reading with AI is gone (terms v19): the Worker no longer keeps an Anthropic key
+          npx wrangler secret delete ANTHROPIC_API_KEY --force >/dev/null 2>&1 || true
           # sent only when the GitHub secret exists: an empty value would switch the subscription check off
           if [ -n "$PLAY_SERVICE_ACCOUNT" ]; then
             ( umask 077; jq -n --arg k "$PLAY_SERVICE_ACCOUNT" '{PLAY_SERVICE_ACCOUNT:$k}' > play.json )

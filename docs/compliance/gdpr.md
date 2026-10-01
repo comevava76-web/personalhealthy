@@ -23,7 +23,7 @@ the points marked *legal review* should be confirmed by a data-protection lawyer
 |---|---|---|
 | Owner of HINT 365 (Human) | **Controller** (Art. 4(7)) | decides purposes and means |
 | Cloudflare (Worker, D1, logs) | **Processor** (Art. 28) | Cloudflare's Data Processing Addendum is part of its self-serve terms: to check it is accepted on the account |
-| Anthropic (reading the photo) | Processor for the photo it reads; the user contracts with Anthropic with their own key | *legal review*: who is controller of this transfer when the user's key pays |
+| ~~Anthropic (reading the photo)~~ | Removed in terms v19 (01.10.2026): no AI provider; keys, costs and AI readings deleted from D1 by the nightly purge | none |
 | Google (Sign in with Google, Play Billing, speech recognition on the phone) | Independent controller for its own services | Google's terms and privacy policy |
 
 ## 3. What is already in place
@@ -32,7 +32,7 @@ the points marked *legal review* should be confirmed by a data-protection lawyer
 |---|---|
 | Data minimisation (Art. 5(1)(c)) | no name, no email (HMAC fingerprint only), photos discarded, error log without reading values and without digits, IP only as SHA-256 for limits |
 | Storage limitation (Art. 5(1)(e)) | readings max 365 days (nightly purge), errors 90 days, sessions and doctor links 7 days, limit counters ≤ 2 days |
-| Security (Art. 32) | signed requests with a phone key, replay protection, rate limits, CSP and security headers, Anthropic keys AES-GCM, fingerprints for codes/cookies/links, daily security tests (`security-tests.yml`) |
+| Security (Art. 32) | signed requests with a phone key, replay protection, rate limits, CSP and security headers, no stored third-party keys, fingerprints for codes/cookies/links, daily security tests (`security-tests.yml`) |
 | Privacy by design (Art. 25) | the owner's Admin tab shows counts only, never values or names; only the Worker touches D1 |
 | Consent and proof (Art. 7) | consent at first sign-in (`consent_at`), terms accepted and recorded in `acceptances` (append-only) |
 | Right to erasure (Art. 17) | delete one reading, all readings, or the account, at once, from the app |
@@ -53,7 +53,7 @@ the points marked *legal review* should be confirmed by a data-protection lawyer
 | G8 | Record of processing activities | 30 | Draft below (section 5); keep it in `docs/compliance/` | Claude (done as draft) |
 | G9 | Data protection impact assessment: likely needed (health data, new technology, AI) | 35 | Short DPIA from the threat model in `docs/testing/test-report-2026-09-28.md` | Claude drafts, Human signs |
 | G10 | Personal-data breach procedure (72 hours to the authority, then the users if high risk) | 33, 34 | One-page procedure: who notices (error log, security tests), who decides, who notifies (FDPIC / Italian Garante), template text | Claude drafts |
-| G11 | Processor agreements checked and filed | 28 | Confirm Cloudflare DPA accepted on the account; note Anthropic's commercial terms and DPA | Human (account owner) |
+| G11 | Processor agreements checked and filed | 28 | Confirm Cloudflare DPA accepted on the account; (Anthropic no longer used since terms v19) | Human (account owner) |
 | G12 | The acceptance record kept after deletion lacked its legal basis | 17(3)(e), 6(1)(f) | **Done**: legitimate interest, terms v15 and privacy | — |
 
 G2, G3, G4, G6 and G12 were approved by Human ("GDPR e cookie devono stare nel disclaimer") and are in the terms
@@ -66,7 +66,7 @@ every user accepts again at the next opening. Still open: G1, G5, G7, G9, G10, G
 |---|---|---|---|---|---|---|
 | Blood-pressure diary | keep, chart and share one's own readings | app users (18+) | SYS, DIA, PUL, date/time, moment, source | Cloudflare (processor) | 365 days | explicit consent, Art. 9(2)(a) |
 | Lab results | keep one's own lab history, one table across laboratories | app users (18+) | report date; test code or name as printed, value, unit and reference as printed; HMAC fingerprint of the file. **Not**: the document, its text, name, surname, date of birth or any other identifier (the document stays at rest only on the phone; in transit only these fields over HTTPS/TLS, requests signed by the phone key) | Cloudflare (processor) | until the user deletes them (a date, all, a report, the account): the purpose is the complete history, the user controls it (Art. 5(1)(e)); never deleted automatically | explicit consent, Art. 9(2)(a) |
-| Reading a photo of the display | turn a photo into three numbers | users with AI features on | photo (discarded), numbers | Anthropic, with the user's key | photo not kept | explicit consent |
+| ~~Reading a photo of the display~~ | removed in terms v19 (01.10.2026) | — | — | — | — |
 | Account and sign-in | find the diary again, secure access | users | HMAC of Google id, phone public key, consent time | Google (sign-in) | while the account exists | contract, Art. 6(1)(b) |
 | Doctor links and web sessions | show the report to the doctor chosen by the user | users, doctors | token fingerprint, period | the doctor | 7 days | consent / contract |
 | Terms acceptance record | proof | users | code, phone model, versions, text fingerprint, date | — | kept after deletion | Art. 6(1)(f) / legal claims |
