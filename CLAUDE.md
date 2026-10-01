@@ -13,6 +13,11 @@ Before closing a session, refresh the handover's current state, append a dated e
   mai misure reali).
 - **Mai diagnosi**, mai giudizi sui valori; etichette sempre SYS, DIA, PUL; pressione e battiti mai nello stesso grafico;
   grafici di 7 giorni con un punto per giorno (la media del giorno, spiegata prima dei grafici) e il valore accanto, sotto solo i numeri dei giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
+- **Tema chiaro e scuro, stessi colori in app e web**: una sola palette (scuro e chiaro) in `MainActivity.kt` (`object C`) e `worker/public/my/style.css` (variabili CSS), valori identici; nel Gestore «Aspetto»: come il telefono, chiaro o scuro; l'app passa il tema alla Web Dashboard (`&light`/`&dark`), che altrimenti segue il dispositivo. Non salvato nel browser. Ogni colore nuovo va in entrambi i file.
+- **PDF colorati, mai rosso** (chiesto da Human): pressione con banda viola→verde acqua e riga a tre colori SYS/DIA/PUL,
+  ombra leggera sotto le linee, riquadri dei valori tinti col colore della misura, tabella con intestazione colorata e righe
+  alterne; referti con banda verde acqua→indaco, tabella con intestazione colorata, righe alterne e colonne divise, al più
+  cinque date per blocco. Stessi colori nel PDF dell'app (`Report.kt`) e del web (`report.js`, `labsPdf` in `app.js`).
 - **Niente rosso**, in nessun grafico, pulsante o logo: SYS viola, DIA verde acqua, PUL ambra; nessun colore deve sembrare
   un giudizio (né problema né «bene»). Unica eccezione, chiesta da Human: lo stato complessivo della console Security
   (Secure verde, Vulnerable arancione, Vulnerable · High risk rosso); gli stati Open/Fixing/Fixed/Failed sempre in inglese.

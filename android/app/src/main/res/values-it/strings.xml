@@ -495,4 +495,8 @@
     <string name="photo_save">Sì, sono giusti: salva</string>
     <string name="photo_wrong">I numeri sono sbagliati: rifai la foto</string>
     <string name="db_labs_count">%1$d referti caricati</string>
+    <string name="section_theme">Aspetto</string>
+    <string name="theme_auto">Come il telefono</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
 </resources>

@@ -106,6 +106,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.asImageBitmap
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -118,17 +119,31 @@ import java.io.File
 /* ---------------- Colors ---------------- */
 
 object C {
-    val Bg = Color(0xFF0F1D38)
-    val Surface = Color(0xFF172B50)
-    val Surface2 = Color(0xFF1C335E)
-    val Ink = Color(0xFFEAF0FA)
-    val Muted = Color(0xFF9AAACA)
-    val Line = Color(0x1AEAF0FA)
-    val Sys = Color(0xFF8C7BF2)   // systolic, violet (no red anywhere: red would read as "a problem")
-    val Dia = Color(0xFF1FA396)   // diastolic, teal
-    val Pul = Color(0xFFC08A1E)   // pulse, amber
-    val Out = Color(0xFFF29A3F)   // a lab result outside the reference printed on its report (asked by Human), with ↑ or ↓
-    val Alert = Color(0xFFF0A35E)   // errors and deleting: warm orange, not red
+    /**
+     * Light or dark: the person's choice in Gestore ("auto" follows the phone). Every colour below follows it, and the
+     * Web Dashboard uses exactly the same values (worker/public/my/style.css). Same hues in both themes, darker shades
+     * on the light background for contrast.
+     */
+    var light by mutableStateOf(false)
+    private fun pick(dark: Long, lightV: Long) = Color(if (light) lightV else dark)
+    val Bg: Color get() = pick(0xFF0F1D38, 0xFFF4F6FB)
+    val Surface: Color get() = pick(0xFF172B50, 0xFFFFFFFF)
+    val Surface2: Color get() = pick(0xFF1C335E, 0xFFEBEFF7)
+    val Ink: Color get() = pick(0xFFEAF0FA, 0xFF13223F)
+    val Muted: Color get() = pick(0xFF9AAACA, 0xFF5B6B88)
+    val Line: Color get() = pick(0x1AEAF0FA, 0x1F13223F)
+    val Sys: Color get() = pick(0xFF8C7BF2, 0xFF6D5BD0)   // systolic, violet (no red anywhere: red would read as "a problem")
+    val Dia: Color get() = pick(0xFF1FA396, 0xFF0F9C8E)   // diastolic, teal
+    val Pul: Color get() = pick(0xFFC08A1E, 0xFFB7860B)   // pulse, amber
+    val Out: Color get() = pick(0xFFF29A3F, 0xFFC76A12)   // a lab result outside the reference printed on its report (asked by Human), with ↑ or ↓
+    val Alert: Color get() = pick(0xFFF0A35E, 0xFFB8641D)   // errors and deleting: warm orange, not red
+}
+
+/** The theme chosen in Gestore: "auto" (as the phone), "light" or "dark"; kept on this phone only. */
+object ThemeChoice {
+    var value by mutableStateOf("auto")
+    fun load(ctx: Context) { value = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("theme", "auto") ?: "auto" }
+    fun set(ctx: Context, v: String) { value = v; ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putString("theme", v).apply() }
 }
 
 class MainActivity : FragmentActivity() {
@@ -224,9 +239,22 @@ class MainActivity : FragmentActivity() {
         })
         Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
+        ThemeChoice.load(this)
         setContent {
+            val phoneDark = androidx.compose.foundation.isSystemInDarkTheme()
+            C.light = when (ThemeChoice.value) { "light" -> true; "dark" -> false; else -> !phoneDark }
+            // the phone's bars take the background of the theme, with dark icons on the light one
+            androidx.compose.runtime.SideEffect {
+                window.statusBarColor = C.Bg.toArgb(); window.navigationBarColor = C.Bg.toArgb()
+                androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = C.light; isAppearanceLightNavigationBars = C.light
+                }
+            }
             MaterialTheme(
-                colorScheme = darkColorScheme(
+                colorScheme = if (C.light) androidx.compose.material3.lightColorScheme(
+                    background = C.Bg, surface = C.Surface, primary = C.Sys,
+                    onPrimary = Color.White, onBackground = C.Ink, onSurface = C.Ink
+                ) else darkColorScheme(
                     background = C.Bg, surface = C.Surface, primary = C.Sys,
                     onPrimary = Color.White, onBackground = C.Ink, onSurface = C.Ink
                 )
@@ -584,7 +612,8 @@ fun App() {
                     personId?.let { pid ->
                         scope.launch {
                             try {
-                                val url = Repo.webDashUrl(pid) + target
+                                // the dashboard opens in the app's theme
+                                val url = Repo.webDashUrl(pid) + target + (if (C.light) "&light" else "&dark")
                                 openInBrowser(ctx, url)
                             } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                         }
@@ -753,7 +782,9 @@ fun BigButton(
                 Icon(painterResource(icon), contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            // always on one line: a long label is cut with "…" rather than wrapping in the button
+            Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             if (trailing != null) {
                 // the AI sign stays well visible even when the button is off
                 Spacer(Modifier.width(8.dp))
@@ -1275,7 +1306,7 @@ fun Exponent(value: String, name: String, color: Color, size: Int) {
 /** One short amber line that opens where the problem is fixed. */
 @Composable
 fun WarnLine(text: String, onClick: () -> Unit) {
-    val col = Color(WARN_COLOR)
+    val col = C.Alert
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(14.dp)).background(col.copy(alpha = 0.15f))
             .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp)
@@ -1515,7 +1546,7 @@ fun VoiceScreen(
             if (unusual.isNotEmpty()) {
                 Text(
                     t(R.string.voice_check) + "\n" + unusual.joinToString("\n") { "• $it" },
-                    color = Color(WARN_COLOR), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+                    color = C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
                 )
             }
         }
@@ -1559,6 +1590,25 @@ fun CreditScreen(
         BigButton(t(R.string.manage_readings), onClick = onManageReadings)
 
         // Identity: the Google account, who can join, and deleting it all
+        // light or dark: as the phone, or always one of the two (the Web Dashboard opens in the same one)
+        SectionTitle(t(R.string.section_theme))
+        val themeCtx = LocalContext.current
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            listOf("auto" to R.string.theme_auto, "light" to R.string.theme_light, "dark" to R.string.theme_dark).forEachIndexed { i, (key, label) ->
+                if (i > 0) Spacer(Modifier.width(8.dp))
+                val on = ThemeChoice.value == key
+                Box(
+                    Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(14.dp))
+                        .background(if (on) C.Sys else C.Surface2)
+                        .clickable { ThemeChoice.set(themeCtx, key) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
+            }
+        }
+
         SectionTitle(t(R.string.section_identity))
         if (me.hasGoogle) {
             Panel {

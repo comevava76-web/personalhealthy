@@ -497,4 +497,8 @@
     <string name="photo_save">Yes, they are correct: save</string>
     <string name="photo_wrong">The numbers are wrong: retake the photo</string>
     <string name="db_labs_count">%1$d lab reports uploaded</string>
+    <string name="section_theme">Appearance</string>
+    <string name="theme_auto">As the phone</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
 </resources>

@@ -1,6 +1,7 @@
 package ch.personalhealthy.app
 
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -21,12 +22,12 @@ import kotlin.math.sign
 
 class ChartPal(val bg: Int, val grid: Int, val text: Int, val outline: Int)
 
-// Line colours, the same in the app and in the PDF
-val SYS_COLOR = 0xFF8C7BF2.toInt()    // systolic, violet
-val DIA_COLOR = 0xFF1FA396.toInt()    // diastolic, teal
-val PUL_COLOR = 0xFFC08A1E.toInt()    // pulse, amber
+// Line colours on screen: those of the theme (object C), dark or light (the PDF has its own, P_* below)
+val SYS_COLOR: Int get() = C.Sys.toArgb()    // systolic, violet
+val DIA_COLOR: Int get() = C.Dia.toArgb()    // diastolic, teal
+val PUL_COLOR: Int get() = C.Pul.toArgb()    // pulse, amber
 
-val SCREEN_PAL = ChartPal(bg = 0xFF172B50.toInt(), grid = 0x14EAF0FA, text = 0xFF9AAACA.toInt(), outline = 0)
+val SCREEN_PAL: ChartPal get() = ChartPal(bg = C.Surface.toArgb(), grid = C.Ink.copy(alpha = 0.08f).toArgb(), text = C.Muted.toArgb(), outline = 0)
 
 /** One point per day: the averages of that day's readings. */
 class DayPoint(val day: LocalDate, val sis: Int, val dia: Int, val pul: Int?)
@@ -190,6 +191,23 @@ private const val P_INK = 0xFF13223F.toInt()
 private const val P_MUTED = 0xFF5B6B88.toInt()
 private const val P_RULE = 0xFFD9E0EA.toInt()
 private const val P_PANEL = 0xFFF7F9FC.toInt()
+// the colourful parts: a violet-to-teal band (never red), a three-colour line under it, light tints of the three colours
+private const val P_BAND_A = 0xFF4B3BB0.toInt()
+private const val P_BAND_B = 0xFF0B7A6F.toInt()
+private const val P_BAND_TXT = 0xFFE4DFFF.toInt()
+private const val P_CARD_LINE = 0xFFE3E8F0.toInt()
+private const val P_ZEBRA = 0xFFF5F4FD.toInt()
+
+/** The light tint behind a value box: violet for SYS, teal for DIA, amber for PUL. */
+private fun tint(color: Int) = when (color) { P_SYS -> 0xFFF1EFFC.toInt(); P_DIA -> 0xFFE8F6F4.toInt(); else -> 0xFFFBF5E6.toInt() }
+
+/** The coloured band of the header (violet to teal) with the three-colour line under it. */
+private fun band(c: Canvas, w: Float, h: Float, bar: Float) {
+    c.drawRect(0f, 0f, w, h, Paint().apply {
+        shader = android.graphics.LinearGradient(0f, 0f, w, h, P_BAND_A, P_BAND_B, android.graphics.Shader.TileMode.CLAMP)
+    })
+    listOf(P_SYS, P_DIA, P_PUL).forEachIndexed { i, col -> c.drawRect(i * w / 3f, h, (i + 1) * w / 3f, h + bar, Paint().apply { color = col }) }
+}
 
 /** One line of a PDF chart: which value, its name, the line colour and the colour of its numbers. */
 private class Line(val name: String, val color: Int, val textColor: Int, val value: (Reading) -> Int?)
@@ -217,19 +235,19 @@ private fun pdfChart(
     val ly = y0 + 14f
     val legend = pdfPaint(8f, bold = true)
     for (l in lines) {
-        c.drawRect(lx, ly - 6f, lx + 10f, ly - 3.8f, Paint().apply { color = l.color })
-        dot(c, lx + 5f, ly - 4.9f, l.color)
-        c.drawText(l.name, lx + 14f, ly - 2f, legend)
-        lx += 14f + legend.measureText(l.name) + 14f
+        c.drawCircle(lx + 3.5f, ly - 4.9f, 3.5f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = l.color })
+        c.drawText(l.name, lx + 10f, ly - 2f, legend.apply { color = l.textColor })
+        lx += 10f + legend.measureText(l.name) + 14f
     }
     c.drawText(units, x0 + w, ly - 2f, pdfPaint(7f, P_MUTED, align = Paint.Align.RIGHT))
 
     val top = y0 + 24f
     val left = x0 + 26f
     val right = x0 + w - 8f
-    val pt = top + 4f
+    val pt = top + 8f
     val pb = y0 + h - 22f
-    c.drawRoundRect(RectF(x0, top, x0 + w, y0 + h), 4f, 4f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = P_PANEL })
+    c.drawRoundRect(RectF(x0, top, x0 + w, y0 + h), 6f, 6f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() })
+    c.drawRoundRect(RectF(x0, top, x0 + w, y0 + h), 6f, 6f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = P_CARD_LINE; style = Paint.Style.STROKE; strokeWidth = 0.8f })
 
     val vals = list.flatMap { r -> lines.mapNotNull { it.value(r) } }
     if (vals.isEmpty()) {
@@ -267,13 +285,18 @@ private fun pdfChart(
         }
     }
 
-    // lines and dots (the first line drawn last, so it stays on top)
+    // lines and dots (the first line drawn last, so it stays on top), each with a light shade of its colour under it
     class Pt(val x: Float, val y: Float, val v: Int, val line: Line)
     val all = lines.map { l -> list.mapNotNull { r -> l.value(r)?.let { Pt(x(r.takenAt), y(it), it, l) } } }
     for (pts in all.reversed()) {
+        if (pts.size > 1) c.drawPath(Path().apply {
+            moveTo(pts[0].x, pb); pts.forEach { lineTo(it.x, it.y) }; lineTo(pts.last().x, pb); close()
+        }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = pts[0].line.color; alpha = 26 })
+    }
+    for (pts in all.reversed()) {
         if (pts.isEmpty()) continue
         val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = pts[0].line.color; alpha = 217; strokeWidth = 1.1f; style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND
+            color = pts[0].line.color; strokeWidth = 1.4f; style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND
         }
         if (pts.size > 1) c.drawPath(Path().apply { moveTo(pts[0].x, pts[0].y); pts.drop(1).forEach { lineTo(it.x, it.y) } }, stroke)
         pts.forEach { dot(c, it.x, it.y, it.line.color) }
@@ -334,7 +357,7 @@ private fun pdfBalance(c: Canvas, x: Float, y: Float, w: Float, h: Float, list: 
     c.drawLine(lx, ly, rx, ry, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 3f; strokeCap = Paint.Cap.ROUND })
     c.drawCircle(cx, py, 4f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = P_INK })
     val thin = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = beamCol; strokeWidth = 1f; style = Paint.Style.STROKE }
-    val pan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEEF2F7.toInt() }
+    val pan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF1EFFC.toInt() }
     for ((px, pyy, label, v) in listOf(Quad(lx, ly, t(R.string.pdf_morning_t), m), Quad(rx, ry, t(R.string.pdf_evening_t), e))) {
         c.drawLine(px, pyy, px - 22f, pyy + 16f, thin); c.drawLine(px, pyy, px + 22f, pyy + 16f, thin)
         val bowl = Path().apply { moveTo(px - 30f, pyy + 16f); quadTo(px, pyy + 30f, px + 30f, pyy + 16f); close() }
@@ -413,28 +436,24 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     }
     // pages after the first: a slim band with the title and the period
     fun smallHeader(c: Canvas) {
-        c.drawRect(0f, 0f, W, 40f, Paint().apply { color = 0xFF0F1C36.toInt() })
-        c.drawRect(0f, 40f, W, 42f, Paint().apply { color = P_SYS })
+        band(c, W, 40f, 2f)
         c.drawText(t(R.string.pdf_title), left, 25f, pdfPaint(10f, 0xFFFFFFFF.toInt(), true))
-        c.drawText(range, right, 25f, pdfPaint(8f, 0xFFAFC0DC.toInt(), align = Paint.Align.RIGHT))
+        c.drawText(range, right, 25f, pdfPaint(8f, P_BAND_TXT, align = Paint.Align.RIGHT))
     }
 
     // ---------- page 1: header, the whole period, the nine boxes ----------
     var c = newPage()
-    c.drawRect(0f, 0f, W, 112f, Paint().apply {
-        shader = android.graphics.LinearGradient(0f, 0f, W, 112f, 0xFF0F1C36.toInt(), 0xFF1F3D72.toInt(), android.graphics.Shader.TileMode.CLAMP)
-    })
+    band(c, W, 112f, 3f)
     // a faint heartbeat trace across the band
     c.drawPath(Path().apply {
         moveTo(300f, 70f); lineTo(400f, 70f); rLineTo(6f, -8f); rLineTo(6f, 8f); rLineTo(8f, 0f); rLineTo(5f, -26f)
         rLineTo(6f, 44f); rLineTo(5f, -18f); rLineTo(14f, 0f); rLineTo(6f, -6f); rLineTo(6f, 6f); lineTo(W, 70f)
-    }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1AFFFFFF; style = Paint.Style.STROKE; strokeWidth = 1.6f })
-    c.drawRect(0f, 112f, W, 115f, Paint().apply { color = P_SYS })
-    c.drawText("HINT 365 · HEALTHYINSTANTTRACKER", left, 30f, pdfPaint(8f, 0xFFAFC0DC.toInt(), true, spacing = 0.2f))
-    c.drawText(t(R.string.pdf_generated, Z.dmy(Z.today())), right, 30f, pdfPaint(8f, 0xFFAFC0DC.toInt(), align = Paint.Align.RIGHT))
+    }, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x33FFFFFF; style = Paint.Style.STROKE; strokeWidth = 1.6f })
+    c.drawText("HINT 365 · HEALTHYINSTANTTRACKER", left, 30f, pdfPaint(8f, P_BAND_TXT, true, spacing = 0.2f))
+    c.drawText(t(R.string.pdf_generated, Z.dmy(Z.today())), right, 30f, pdfPaint(8f, P_BAND_TXT, align = Paint.Align.RIGHT))
     c.drawText(t(R.string.pdf_title), left, 62f, pdfPaint(24f, 0xFFFFFFFF.toInt(), true))
-    c.drawText(range, left, 82f, pdfPaint(10.5f, 0xFFDCE5F3.toInt()))
-    c.drawText(t(R.string.pdf_count, list.size, list.map { Z.date(it.takenAt) }.toSet().size), left, 98f, pdfPaint(8f, 0xFFAFC0DC.toInt()))
+    c.drawText(range, left, 82f, pdfPaint(10.5f, 0xFFF2F0FF.toInt()))
+    c.drawText(t(R.string.pdf_count, list.size, list.map { Z.date(it.takenAt) }.toSet().size), left, 98f, pdfPaint(8f, P_BAND_TXT))
 
     // the charts show one dot per day, the day's average: said once here, above the first chart
     c.drawText(t(R.string.pdf_note), left, 130f, pdfPaint(7.5f, P_MUTED))
@@ -470,10 +489,10 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
                     sub = t(R.string.pdf_avg_of, withV.size)
                 }
             }
-            c.drawRoundRect(RectF(x, y, x + bw, y + bh), 4f, 4f, panel)
+            c.drawRoundRect(RectF(x, y, x + bw, y + bh), 5f, 5f, panel.apply { color = tint(l.color) })
             c.drawRect(x, y, x + 3f, y + bh, Paint().apply { color = l.color })
             c.drawText(label.uppercase(), x + 12f, y + 15f, pdfPaint(7.5f, P_MUTED, true, spacing = 0.05f))
-            val big = pdfPaint(20f, bold = true)
+            val big = pdfPaint(20f, l.textColor, bold = true)
             c.drawText(value, x + 12f, y + 38f, big)
             c.drawText(if (l === pulL) "bpm" else "mmHg", x + 12f + big.measureText(value) + 4f, y + 38f, pdfPaint(7.5f, P_MUTED))
             c.drawText(sub, x + 12f, y + 50f, pdfPaint(7.2f, P_MUTED))
@@ -503,7 +522,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
     val cols = floatArrayOf(left, 110f, 160f, 265f, 335f, 405f, 470f)
     val heads = listOf(t(R.string.col_date), t(R.string.col_time), t(R.string.col_period), t(R.string.legend_sys), t(R.string.legend_dia), t(R.string.label_pul), t(R.string.col_source))
     val head = pdfPaint(9f, 0xFFFFFFFF.toInt(), true)
-    val band = Paint().apply { color = 0xFFF6F8FB.toInt() }
+    val zebra = Paint().apply { color = P_ZEBRA }
     val dayRule = Paint().apply { color = 0xFF9FB0C8.toInt(); strokeWidth = 0.8f }
     val cellCol = listOf(P_INK, P_INK, P_INK, P_SYS_T, P_DIA_T, P_PUL_T, P_INK)
     var i = 0
@@ -512,7 +531,9 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         smallHeader(c)
         c.drawText(t(R.string.pdf_all), left, 74f, pdfPaint(11.5f, bold = true))
         y = 84f
-        c.drawRect(left, y, right, y + 18f, Paint().apply { color = 0xFF0F1C36.toInt() })
+        c.drawRect(left, y, right, y + 18f, Paint().apply {
+            shader = android.graphics.LinearGradient(left, 0f, right, 0f, P_BAND_A, P_BAND_B, android.graphics.Shader.TileMode.CLAMP)
+        })
         heads.forEachIndexed { k, h -> c.drawText(h, cols[k] + 5f, y + 12.5f, head) }
         y += 18f
         var row = 0
@@ -521,7 +542,7 @@ fun buildPdf(ctx: Context, all: List<Reading>, n: Int): File {
         while (i < list.size && row < rowsPerPage) {
             val r = list[i]
             val day = Z.date(r.takenAt)
-            if (row % 2 == 1) c.drawRect(left, y, right, y + 17f, band)
+            if (row % 2 == 1) c.drawRect(left, y, right, y + 17f, zebra)
             if (lastDay != null && day != lastDay) c.drawLine(left, y, right, y, dayRule)   // a new day starts
             val cells = listOf(
                 if (day != lastDay) Z.dmy(day) else "", Z.time(r.takenAt), ampm(r.period),

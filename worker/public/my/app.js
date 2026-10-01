@@ -6,6 +6,14 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
+  // light or dark: what the app says ("&light" / "&dark" in the link it opens), otherwise the device's setting.
+  // Kept only in the address, never stored in the browser.
+  const themeAsked = (location.hash.match(/(?:^#|&)(light|dark)\b/) || [])[1] || "";
+  const themeNow = () => themeAsked || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  document.documentElement.dataset.theme = themeNow();
+  matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => {
+    document.documentElement.dataset.theme = themeNow(); (window.__hintRedraw || []).forEach((f) => f());
+  });
   // the page speaks the browser's language: Italian, German, French, otherwise English
   const L2 = (navigator.language || "en").slice(0, 2).toLowerCase();
   const LG = ["it", "de", "fr"].includes(L2) ? L2 : "en";
@@ -186,11 +194,13 @@
   // The week has 7 places, one per day; each day is one dot, the average of that day's readings, with its value
   // written next to it. Under the chart only the day of the month; above it the period. Touching a day shows its
   // date, its averages and how many readings they come from.
-  const COL = { sys: "#8C7BF2", dia: "#1FA396", pul: "#C08A1E" };   // no red: it would read as "a problem"
-  const TXT = { sys: "#B3A7FF", dia: "#5FD3C6", pul: "#F2C25A" };
+  // the theme's colours (style.css, the same as the app): read when drawing, so dark and light both follow
+  const cssv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const COL = new Proxy({}, { get: (_, k) => cssv("--" + k) });          // sys, dia, pul: no red, it would read as "a problem"
+  const TXT = new Proxy({}, { get: (_, k) => cssv("--" + k + "-t") });
   const NS = "http://www.w3.org/2000/svg";
   const fRange = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: "numeric", month: "short" });
-  const redraws = [];
+  const redraws = []; window.__hintRedraw = redraws;
   let resizeTimer;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => redraws.forEach((f) => f()), 150); });
 
@@ -235,7 +245,7 @@
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: "plot", role: "img",
         "aria-label": T.chartAria(keys.map((k) => k.toUpperCase()).join(" / "), date(range.from), date(range.to)) });
       for (let v = lo; v <= hi; v += 10) {
-        svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: "#1F2E50", "stroke-width": 1 });
+        svgEl(svg, "line", { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: cssv("--grid"), "stroke-width": 1 });
         svgEl(svg, "text", { x: R + 8, y: Y(v) + 4, class: "ax" }, v);
       }
       // under each place, only the day of the month
@@ -244,7 +254,7 @@
       for (const k of [...keys].reverse()) {
         const p = slots.map((sl, i) => (sl.v[k] != null ? { x: X(i), y: Y(sl.v[k]), v: sl.v[k], k } : null)).filter(Boolean);
         if (p.length > 1) svgEl(svg, "path", { d: "M" + p.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" L"), fill: "none", stroke: COL[k], "stroke-width": 2.4, "stroke-linejoin": "round", "stroke-linecap": "round" });
-        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 5, fill: COL[k], stroke: "#101C35", "stroke-width": 2 });
+        for (const q of p) svgEl(svg, "circle", { cx: q.x, cy: q.y, r: 5, fill: COL[k], stroke: cssv("--panel"), "stroke-width": 2 });
         dots.push(...p);
       }
       // the value of each day next to its dot: SYS and PUL above, DIA below (the other side if taken)
@@ -261,7 +271,7 @@
         }
       }
       // touching a day: its date, its averages and how many readings they come from
-      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 10, y2: B, stroke: "#8C9BBA", "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
+      const cross = svgEl(svg, "line", { x1: 0, x2: 0, y1: TOP - 10, y2: B, stroke: cssv("--muted"), "stroke-width": 1, "stroke-dasharray": "2 3", visibility: "hidden" });
       const ring = keys.map((k) => svgEl(svg, "circle", { r: 8, fill: "none", stroke: COL[k], "stroke-width": 2, visibility: "hidden" }));
       const pick = (ev) => {
         const rect = svg.getBoundingClientRect();
@@ -281,23 +291,23 @@
     redraws.push(draw);
   }
 
-  // the morning / evening balance, the same drawing as in the PDF (report.js), in the dark colours
-  const DARK_BAL = { ink: "#EAF0FA", muted: "#8C9BBA", beam: "#6F7FA3", panel: "#1C2B4F", sys: "#B3A7FF", dia: "#5FD3C6", scale: 1.5 };
+  // the morning / evening balance, the same drawing as in the PDF (report.js), in the colours of the theme
+  const balTheme = () => ({ ink: cssv("--ink"), muted: cssv("--muted"), beam: cssv("--day"), panel: cssv("--panel2"), sys: cssv("--sys-t"), dia: cssv("--dia-t"), scale: 1.5 });
   function drawBalance(el, items) {
     const draw = () => {
       el.innerHTML = "";
       const W = el.clientWidth, H = 214;
       const svg = svgEl(el, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
-      window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, DARK_BAL);
+      window.HintReport.balance(svg, 2, 4, W - 4, H - 8, items, balTheme());
     };
     draw(); redraws.push(draw);
   }
 
   const LAB = {
-    it: { title: "Referti", above: "sopra il riferimento", below: "sotto il riferimento", note: "Risultati letti sul telefono dai referti che hai caricato: una colonna per ogni data di referto, una riga per ogni esame. Un trattino: esame non presente in quel referto. In arancione con ↑ o ↓ un risultato fuori dal riferimento stampato sul referto. Nessuna interpretazione medica.", empty: "Importa un referto dall’app per iniziare lo storico.", test: "Esame", del: "Elimina", delQ: (d) => `Eliminare tutti i risultati del ${d}? Il referto potrà essere caricato di nuovo.`, period: "Restano finché li elimini", delAll: "Elimina tutti i referti", delAllQ: "Eliminare tutti i risultati dei referti? Non si possono recuperare.", share: "Condividi il PDF delle analisi. Il documento originale non è incluso.", ref: "rif." },
-    en: { title: "Lab results", above: "above the reference", below: "below the reference", note: "Results read on your phone from the reports you uploaded: one column per report date, one row per test. A dash: test not in that report. In orange with ↑ or ↓: a result outside the reference printed on the report. No medical interpretation.", empty: "Import a lab report in the app to start your history.", test: "Test", del: "Delete", delQ: (d) => `Delete all results of ${d}? The report can be imported again.`, period: "Kept until you delete them", delAll: "Delete all lab results", delAllQ: "Delete all lab results? They cannot be recovered.", share: "Share the lab results PDF. The original document is not included.", ref: "ref." },
-    de: { title: "Laborbefunde", above: "über der Referenz", below: "unter der Referenz", note: "Auf Ihrem Telefon aus den hochgeladenen Befunden gelesene Werte: eine Spalte pro Befunddatum, eine Zeile pro Test. Ein Strich: Test nicht in diesem Befund. Orange mit ↑ oder ↓: ein Wert außerhalb der auf dem Befund gedruckten Referenz. Keine medizinische Interpretation.", empty: "Importieren Sie einen Laborbefund in der App, um den Verlauf zu starten.", test: "Test", del: "Löschen", delQ: (d) => `Alle Werte vom ${d} löschen? Der Befund kann erneut importiert werden.`, period: "Gespeichert, bis Sie sie löschen", delAll: "Alle Laborwerte löschen", delAllQ: "Alle Laborwerte löschen? Sie können nicht wiederhergestellt werden.", share: "PDF der Laborwerte teilen. Das Originaldokument ist nicht enthalten.", ref: "Ref." },
-    fr: { title: "Analyses", above: "au-dessus de la référence", below: "en dessous de la référence", note: "Résultats lus sur votre téléphone à partir des comptes rendus importés : une colonne par date, une ligne par analyse. Un tiret : analyse absente de ce compte rendu. En orange avec ↑ ou ↓ : un résultat hors de la référence imprimée sur le compte rendu. Aucune interprétation médicale.", empty: "Importez un compte rendu dans l’application pour commencer votre historique.", test: "Analyse", del: "Supprimer", delQ: (d) => `Supprimer tous les résultats du ${d} ? Le compte rendu pourra être importé à nouveau.`, period: "Conservés jusqu’à ce que vous les supprimiez", delAll: "Supprimer toutes les analyses", delAllQ: "Supprimer tous les résultats d’analyses ? Ils ne pourront pas être récupérés.", share: "Partager le PDF des analyses. Le document original n’est pas inclus.", ref: "réf." },
+    it: { title: "Referti", above: "sopra il riferimento", below: "sotto il riferimento", note: "Risultati letti sul telefono dai referti che hai caricato: una colonna per ogni data di referto, una riga per ogni esame. Un trattino: esame non presente in quel referto. In arancione con ↑ o ↓ un risultato fuori dal riferimento stampato sul referto. Nessuna interpretazione medica.", empty: "Importa un referto dall’app per iniziare lo storico.", test: "Esame", del: "Elimina", delQ: (d) => `Eliminare tutti i risultati del ${d}? Il referto potrà essere caricato di nuovo.`, period: "Restano finché li elimini", delAll: "Elimina tutti i referti", delAllQ: "Eliminare tutti i risultati dei referti? Non si possono recuperare.", share: "Condividi il PDF delle analisi. Il documento originale non è incluso.", ref: "rif.", pdfCount: (r, t) => `${r} ${r === 1 ? "referto" : "referti"} · ${t} esami`, pdfGen: (d) => `Generato il ${d}`, pdfNote: "Valori come stampati sui referti, letti sul telefono. In arancione con un piccolo triangolo un risultato fuori dal riferimento stampato sullo stesso referto: solo un confronto fra numeri.", pdfDisc: "Documento preparato dal paziente, senza valutazioni sui valori. La valutazione clinica spetta al medico.", pdfPage: (a, b) => `Pagina ${a} di ${b}` },
+    en: { title: "Lab results", above: "above the reference", below: "below the reference", note: "Results read on your phone from the reports you uploaded: one column per report date, one row per test. A dash: test not in that report. In orange with ↑ or ↓: a result outside the reference printed on the report. No medical interpretation.", empty: "Import a lab report in the app to start your history.", test: "Test", del: "Delete", delQ: (d) => `Delete all results of ${d}? The report can be imported again.`, period: "Kept until you delete them", delAll: "Delete all lab results", delAllQ: "Delete all lab results? They cannot be recovered.", share: "Share the lab results PDF. The original document is not included.", ref: "ref.", pdfCount: (r, t) => `${r} ${r === 1 ? "report" : "reports"} · ${t} tests`, pdfGen: (d) => `Generated on ${d}`, pdfNote: "Values as printed on the reports, read on the phone. In orange with a small triangle: a result outside the reference printed on the same report, only a comparison of numbers.", pdfDisc: "Document prepared by the patient, with no assessment of the values. Clinical evaluation is up to the doctor.", pdfPage: (a, b) => `Page ${a} of ${b}` },
+    de: { title: "Laborbefunde", above: "über der Referenz", below: "unter der Referenz", note: "Auf Ihrem Telefon aus den hochgeladenen Befunden gelesene Werte: eine Spalte pro Befunddatum, eine Zeile pro Test. Ein Strich: Test nicht in diesem Befund. Orange mit ↑ oder ↓: ein Wert außerhalb der auf dem Befund gedruckten Referenz. Keine medizinische Interpretation.", empty: "Importieren Sie einen Laborbefund in der App, um den Verlauf zu starten.", test: "Test", del: "Löschen", delQ: (d) => `Alle Werte vom ${d} löschen? Der Befund kann erneut importiert werden.`, period: "Gespeichert, bis Sie sie löschen", delAll: "Alle Laborwerte löschen", delAllQ: "Alle Laborwerte löschen? Sie können nicht wiederhergestellt werden.", share: "PDF der Laborwerte teilen. Das Originaldokument ist nicht enthalten.", ref: "Ref.", pdfCount: (r, t) => `${r} ${r === 1 ? "Befund" : "Befunde"} · ${t} Tests`, pdfGen: (d) => `Erstellt am ${d}`, pdfNote: "Werte wie auf den Befunden gedruckt, auf dem Telefon gelesen. Orange mit kleinem Dreieck: ein Wert außerhalb der auf demselben Befund gedruckten Referenz, nur ein Zahlenvergleich.", pdfDisc: "Vom Patienten erstelltes Dokument, ohne Bewertung der Werte. Die klinische Beurteilung ist Sache des Arztes.", pdfPage: (a, b) => `Seite ${a} von ${b}` },
+    fr: { title: "Analyses", above: "au-dessus de la référence", below: "en dessous de la référence", note: "Résultats lus sur votre téléphone à partir des comptes rendus importés : une colonne par date, une ligne par analyse. Un tiret : analyse absente de ce compte rendu. En orange avec ↑ ou ↓ : un résultat hors de la référence imprimée sur le compte rendu. Aucune interprétation médicale.", empty: "Importez un compte rendu dans l’application pour commencer votre historique.", test: "Analyse", del: "Supprimer", delQ: (d) => `Supprimer tous les résultats du ${d} ? Le compte rendu pourra être importé à nouveau.`, period: "Conservés jusqu’à ce que vous les supprimiez", delAll: "Supprimer toutes les analyses", delAllQ: "Supprimer tous les résultats d’analyses ? Ils ne pourront pas être récupérés.", share: "Partager le PDF des analyses. Le document original n’est pas inclus.", ref: "réf.", pdfCount: (r, t) => `${r} ${r === 1 ? "compte rendu" : "comptes rendus"} · ${t} analyses`, pdfGen: (d) => `Généré le ${d}`, pdfNote: "Valeurs telles qu'imprimées sur les comptes rendus, lues sur le téléphone. En orange avec un petit triangle : un résultat hors de la référence imprimée sur le même compte rendu, une simple comparaison de nombres.", pdfDisc: "Document préparé par le patient, sans évaluation des valeurs. L'évaluation clinique revient au médecin.", pdfPage: (a, b) => `Page ${a} sur ${b}` },
   }[LG];
   const labLabel = x => x.code ? (window.HintLabLabels[LG][x.code] || x.name || x.code) : x.name;
   // one row per test across laboratories: same key as the app and the server (worker/src/labs.ts)
@@ -577,7 +587,8 @@
     const wantAdmin = /(?:^#|&)admin\b/.test(location.hash);
     // "&labs" / "&bp": the tab to open on, from where the person was in the app (blood pressure if not said)
     const wantMod = (location.hash.match(/(?:^#|&)(bp|labs)\b/) || [])[1];
-    const home = wantAdmin ? "/my/#admin" : wantMod ? "/my/#" + wantMod : "/my/";
+    const tail = themeAsked ? "&" + themeAsked : "";
+    const home = wantAdmin ? "/my/#admin" + tail : wantMod ? "/my/#" + wantMod + tail : themeAsked ? "/my/#" + themeAsked : "/my/";
     if (!(await cookiesOk())) { if (m) history.replaceState(null, "", "/my/"); return cookiesRefused(); }
     if (m) {
       history.replaceState(null, "", home);
@@ -594,7 +605,7 @@
     $("modules").onclick = (e) => {
       const id = e.target.dataset.m; if (!id || !MODULES[id]) return;
       [...$("modules").children].forEach((b) => b.classList.toggle("on", b.dataset.m === id));
-      if (location.hash) history.replaceState(null, "", "/my/");
+      if (location.hash) history.replaceState(null, "", themeAsked ? "/my/#" + themeAsked : "/my/");
       $("actions").hidden = false; current.module = id; load();
     };
     $("btn-pdf").onclick = printReport;
@@ -932,45 +943,114 @@
   function loadScript(src) {
     return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
   }
+  /**
+   * The lab results as an A4 PDF: a teal-to-indigo band (never red) with the title, then the same table as on screen,
+   * up to five report dates per block, with a coloured header row, alternate row tints and thin column lines.
+   * A result outside the reference printed on the same report is orange with a small triangle (▲ above, ▼ below).
+   */
+  function labsPdf() {
+    const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+    const { days, tests } = labMatrix(current.data);
+    // the standard PDF font has no µ, en dash or curly quote: plain equivalents
+    const safe = (v) => String(v).replaceAll("µ", "u").replaceAll("–", "-").replaceAll("’", "'");
+    const L = 40, R = 555, PW = 595;
+    const A = [15, 140, 128], B = [59, 76, 184];   // teal → indigo
+    const INK = [19, 34, 63], MUTED = [91, 107, 136], LINE = [227, 232, 240], ZEBRA = [244, 247, 253], OUT = [199, 106, 18], OUT_BG = [255, 241, 227];
+    const mix = (k) => A.map((a, i) => Math.round(a + (B[i] - a) * k));
+    function band(h, bar) {
+      for (let x = 0; x < PW; x += 3) { doc.setFillColor(...mix(x / PW)); doc.rect(x, 0, PW - x, h, "F"); }   // each strip runs to the end: no seams
+      [[15, 140, 128], [109, 91, 208], [183, 134, 11]].forEach((c, i) => { doc.setFillColor(...c); doc.rect(i * PW / 3, h, PW / 3 + 0.5, bar, "F"); });
+    }
+    function smallHeader() {
+      band(40, 2);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(255, 255, 255); doc.text("HINT 365 · " + safe(LAB.title), L, 25);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(222, 244, 241); doc.text(safe(LAB.period), R, 25, { align: "right" });
+    }
+    // page 1: the large band
+    band(104, 3);
+    doc.setGState(new doc.GState({ opacity: 0.14 })); doc.setFillColor(255, 255, 255);
+    doc.circle(470, 52, 34, "F"); doc.circle(522, 34, 22, "F"); doc.circle(536, 82, 14, "F");
+    doc.setGState(new doc.GState({ opacity: 1 }));
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(222, 244, 241); doc.text("HINT 365 · HEALTHYINSTANTTRACKER", L, 30, { charSpace: 1.2 });
+    doc.setFont("helvetica", "normal"); doc.text(safe(LAB.pdfGen(day(Date.now()))), R, 30, { align: "right" });
+    doc.setFont("helvetica", "bold"); doc.setFontSize(24); doc.setTextColor(255, 255, 255); doc.text(safe(LAB.title), L, 62);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(240, 250, 249);
+    doc.text(days.length ? `${day(days[0])} - ${day(days[days.length - 1])}` : "", L, 82);
+    doc.setFontSize(8); doc.setTextColor(222, 244, 241); doc.text(safe(LAB.pdfCount(days.length, tests.length)), L, 96);
+    doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    doc.text(doc.splitTextToSize(safe(LAB.pdfNote), R - L), L, 124);
+    let y = 146;
+    if (!days.length) { doc.setFontSize(10); doc.setTextColor(...INK); doc.text(safe(LAB.empty), L, y + 10); }
+    // at most five dates side by side, the blocks as even as possible (6 dates: 3 + 3, not 5 + 1)
+    const W0 = 150, per = Math.ceil(days.length / Math.ceil(days.length / 5 || 1));
+    for (let i = 0; i < days.length; i += per) {
+      const cols = days.slice(i, i + per), CW = Math.min(100, (R - L - W0) / cols.length), TW = W0 + cols.length * CW;
+      const head = () => {
+        for (let x = 0; x < TW; x += 3) { doc.setFillColor(...mix(x / TW)); doc.rect(L + x, y, TW - x, 24, "F"); }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+        doc.text(safe(LAB.test), L + 8, y + 15.5);
+        cols.forEach((t, j) => doc.text(day(t), L + W0 + j * CW + CW / 2, y + 15.5, { align: "center" }));
+        y += 24;
+      };
+      if (y > 700) { doc.addPage(); smallHeader(); y = 64; }
+      const top = y; head();
+      let row = 0, blockTop = top;
+      const frame = (bottom) => {   // thin column lines and a frame around the block on this page
+        doc.setDrawColor(...LINE); doc.setLineWidth(0.6);
+        for (let j = 0; j < cols.length; j++) doc.line(L + W0 + j * CW, blockTop + 24, L + W0 + j * CW, bottom);
+        doc.roundedRect(L, blockTop, TW, bottom - blockTop, 3, 3, "S");
+      };
+      for (const r of tests) {
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+        const name = doc.splitTextToSize(safe(r.label), W0 - 14);
+        const hasRef = cols.some((t) => r.cells.get(t)?.reference);
+        const h = Math.max(name.length * 10 + 10, hasRef ? 28 : 20);
+        if (y + h > 790) { frame(y); doc.addPage(); smallHeader(); y = 64; blockTop = y; head(); row = 0; }
+        if (row % 2) { doc.setFillColor(...ZEBRA); doc.rect(L, y, TW, h, "F"); }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...INK);
+        doc.text(name, L + 8, y + 13);
+        cols.forEach((t, j) => {
+          const x = r.cells.get(t), cx = L + W0 + j * CW + CW / 2;
+          if (!x) { doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUTED); doc.text("-", cx, y + 13, { align: "center" }); return; }
+          const o = outOfRange(x);
+          if (o) { doc.setFillColor(...OUT_BG); doc.rect(L + W0 + j * CW + 0.5, y + 0.5, CW - 1, h - 1, "F"); }
+          const v = safe(x.value), u = x.unit ? " " + safe(x.unit) : "";
+          doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); const vw = doc.getTextWidth(v);
+          doc.setFont("helvetica", "normal"); doc.setFontSize(7); const uw = doc.getTextWidth(u);
+          const total = vw + uw + (o ? 9 : 0); let x0 = cx - total / 2;
+          doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...(o ? OUT : INK)); doc.text(v, x0, y + 13);
+          doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...MUTED); doc.text(u, x0 + vw, y + 13);
+          if (o) {   // the arrow, drawn as a small triangle (the PDF font has no arrows)
+            const ax = x0 + vw + uw + 3; doc.setFillColor(...OUT);
+            if (o > 0) doc.triangle(ax, y + 12, ax + 6, y + 12, ax + 3, y + 6, "F"); else doc.triangle(ax, y + 6, ax + 6, y + 6, ax + 3, y + 12, "F");
+          }
+          if (x.reference) {
+            doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+            doc.text(doc.splitTextToSize(safe(LAB.ref + " " + x.reference), CW - 8)[0], cx, y + 23, { align: "center" });
+          }
+        });
+        y += h; row++;
+      }
+      frame(y);
+      y += 20;
+    }
+    // the same footer on every page
+    const n = doc.getNumberOfPages();
+    for (let p = 1; p <= n; p++) {
+      doc.setPage(p);
+      doc.setDrawColor(217, 224, 234); doc.setLineWidth(0.8); doc.line(L, 806, R, 806);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+      doc.text(safe(LAB.pdfDisc), L, 820);
+      doc.setFontSize(7); doc.text(safe(LAB.pdfPage(p, n)), R, 820, { align: "right" });
+    }
+    return doc;
+  }
   // the A4 report as a jsPDF document (the same pages as the app)
   async function buildPdf() {
     // the PDF libraries (jsPDF, svg2pdf, MIT licence, served from this site) are loaded only when needed
     if (!window.jspdf) await loadScript("/my/vendor/jspdf-4.2.1.umd.min.js");
     if (current.module === "labs") {
-      const doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
-      doc.setFontSize(18); doc.text("HINT 365 · " + LAB.title, 40, 45);
-      doc.setFontSize(10); doc.text(LAB.period, 40, 65); let y = 95;
-      // the same table as on screen, five report dates per block so it fits an A4 page
-      const { days, tests } = labMatrix(current.data), safe = (v) => String(v).replaceAll('µ', 'u').replaceAll('–', '-').replaceAll('’', "'");
-      const W0 = 170, CW = 69;
-      for (let i = 0; i < days.length; i += 5) {
-        const cols = days.slice(i, i + 5);
-        if (y > 700) { doc.addPage(); y = 45; }
-        doc.setFont(undefined, "bold"); doc.text(LAB.test, 40, y); cols.forEach((t, j) => doc.text(day(t), 40 + W0 + j * CW, y)); doc.setFont(undefined, "normal");
-        y += 6; doc.line(40, y, 555, y); y += 14;
-        for (const r of tests) {
-          const name = doc.splitTextToSize(safe(r.label), W0 - 8);
-          const h = Math.max(name.length * 11, 22);
-          if (y + h > 800) { doc.addPage(); y = 45; }
-          doc.text(name, 40, y);
-          cols.forEach((t, j) => {
-            const x = r.cells.get(t);
-            const o = x ? outOfRange(x) : 0, cx = 40 + W0 + j * CW;
-            if (o) doc.setTextColor(214, 120, 30);
-            const shown = x ? safe(x.value + (x.unit ? " " + x.unit : "")) : "-";
-            doc.text(shown, cx + (x ? 0 : 20), y);
-            if (o) {   // ↑ or ↓ drawn as a small triangle (the PDF font has no arrows)
-              const w = doc.getTextWidth(shown) + 4; doc.setFillColor(214, 120, 30);
-              if (o > 0) doc.triangle(cx + w, y - 1, cx + w + 6, y - 1, cx + w + 3, y - 7, "F"); else doc.triangle(cx + w, y - 7, cx + w + 6, y - 7, cx + w + 3, y - 1, "F");
-              doc.setTextColor(0, 0, 0);
-            }
-            if (x?.reference) { doc.setFontSize(7); doc.text(safe(LAB.ref + " " + x.reference).slice(0, 22), 40 + W0 + j * CW, y + 9); doc.setFontSize(10); }
-          });
-          y += h + 4;
-        }
-        y += 16;
-      }
-      return { doc, name: "HINT-lab-results.pdf" };
+      return { doc: labsPdf(), name: "HINT-lab-results.pdf" };
     }
     if (!window.svg2pdf) await loadScript("/my/vendor/svg2pdf-2.8.1.umd.min.js");
     const box = $("print");
