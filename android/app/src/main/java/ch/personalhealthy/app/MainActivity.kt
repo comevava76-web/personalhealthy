@@ -458,7 +458,7 @@ fun App() {
                 onBuy = { val pid = personId; val act = ctx as? android.app.Activity; if (pid != null && act != null) Billing.buy(act, pid) },
                 onManage = { try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Billing.MANAGE_URL))) } catch (_: Exception) { toast(ctx, t(R.string.no_browser)) } },
                 onTerms = { screen = "terms" },
-                onDataAccess = { val pid = personId; if (pid != null) scope.launch { try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Repo.webDashUrl(pid)))) } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } } },
+                onDataAccess = { val pid = personId; if (pid != null) scope.launch { try { openInBrowser(ctx, Repo.webDashUrl(pid)) } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } } },
                 onDeleteAccount = { val pid = personId; if (pid != null) scope.launch { try { Repo.deleteAccount(pid); prefs.edit().remove("personId").remove("googleEmail").apply(); readings.clear(); me = null; personId = null } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) } } }
             )
             // the terms accepted at the start, to read again from the colophon
@@ -522,7 +522,7 @@ fun App() {
                         scope.launch {
                             try {
                                 val url = Repo.webDashUrl(pid) + target
-                                ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                                openInBrowser(ctx, url)
                             } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                         }
                     }
@@ -1049,18 +1049,12 @@ fun HomeScreen(
         WeekPanel(readings)
         SummaryPanel(readings.filter { !Z.date(it.takenAt).isBefore(Z.today().minusDays(6)) })
 
-        // the 7-day report to send, and the web dashboard: bigger charts, and a link to send to the doctor
+        // the 7-day report as a PDF in Downloads, and the full reports on the web: bigger charts, and a link for the doctor
         val per = periodInfo(readings, 7)
         Spacer(Modifier.height(8.dp))
         if (readings.isNotEmpty() && !per.ok) Text(t(R.string.report_not_yet, 7, per.missing), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
-        Row {
-            BigButton(t(R.string.send_pdf), enabled = per.ok, modifier = Modifier.weight(1f)) {
-                try { shareFile(ctx, buildPdf(ctx, readings, 7), "application/pdf") } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
-            }
-            Spacer(Modifier.width(10.dp))
-            BigButton(t(R.string.send_excel), color = C.Surface2, textColor = C.Ink, enabled = per.ok, modifier = Modifier.weight(1f)) {
-                try { shareFile(ctx, buildCsv(ctx, readings, 7), "text/csv") } catch (e: Exception) { ErrorReport.report("Report/Excel", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
-            }
+        BigButton(t(R.string.send_pdf), enabled = per.ok) {
+            try { downloadPdf(ctx, buildPdf(ctx, readings, 7)) } catch (e: Exception) { ErrorReport.report("Report/PDF", e); toast(ctx, t(R.string.file_failed, e.message ?: "")) }
         }
         GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
         Text(t(R.string.my_dash_sub), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp))

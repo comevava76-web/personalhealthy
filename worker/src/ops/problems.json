@@ -59,6 +59,21 @@
    "fix": "The guard now applies only to tasks that build a release package (assemble/bundle/package/sign …Release); the scan runs without secrets again",
    "pr": "",
    "fixedIn": "main, 2026-10-01"
+  },
+  {
+   "id": "P-005",
+   "found": "2026-10-01",
+   "title": "The Dashboard icon downloaded a file instead of opening the dashboard",
+   "match": {
+    "code": "user_report",
+    "place": "App/BottomBar"
+   },
+   "versions": "0.1.109–0.1.110",
+   "status": "fixed",
+   "cause": "Reported by the owner on his phone. The app opened the dashboard address with a plain view intent, so any app registered for links of that site (most likely the download manager used to install the APK) could take it instead of the browser",
+   "fix": "The dashboard, the owner area and the data-access link now open with a browser selector (openInBrowser in Report.kt); the icon is renamed Reports",
+   "pr": "",
+   "fixedIn": "0.1.111"
   }
  ]
 }

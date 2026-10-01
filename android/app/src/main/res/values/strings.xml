@@ -112,7 +112,7 @@
     <string name="max_dia">Highest DIA</string>
     <string name="lowest">Lowest value</string>
     <string name="report_not_yet">The %1$d-day report can be sent in %2$d day(s). Meanwhile, here is a preview.</string>
-    <string name="send_pdf">Send PDF</string>
+    <string name="send_pdf">Download PDF</string>
     <string name="send_excel">Send Excel</string>
     <string name="file_failed">File could not be created: %s</string>
     <string name="share_title">Send report</string>
@@ -301,7 +301,7 @@
     <string name="disc_lang" translatable="false">en</string>
     <string name="colophon_rights">© %1$s · All rights reserved</string>
     <string name="disc_web">Open the web version, with the providers\' links</string>
-    <string name="my_dash">Web Dashboard</string>
+    <string name="my_dash">Go to your full reports</string>
     <string name="my_dash_sub">Opens in the browser already signed in to your account: big charts, and a link to send to your doctor by WhatsApp or email.</string>
     <string name="pdf_note">In the charts each dot is the average of all the readings of that day (an aggregate). The single readings are in the list.</string>
     <string name="bal_title">Morning and evening compared</string>
@@ -459,7 +459,7 @@
     <string name="labs_fail_conflict">Results for the same tests and the same date are already saved with different values: nothing was saved. Delete that date on the Web Dashboard first if you want to replace it.</string>
     <string name="labs_web_hint">The outcome of each upload, by day. The results themselves are in the Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d results</string>
-    <string name="tab_web">Dashboard</string>
+    <string name="tab_web">Reports</string>
     <string name="tab_owner">Owner</string>
     <string name="labs_uploads">Uploads</string>
     <string name="labs_today">Today</string>
@@ -481,4 +481,5 @@
     <string name="labs_dash_sub">The results, one column per report date, are in the Web Dashboard.</string>
     <string name="labs_own">Upload only your own reports: one account is one person (terms of use).</string>
     <string name="no_screen_lock">This phone has no screen lock: anyone holding it can open HINT 365. Set a PIN, pattern or fingerprint (tap here). It is your responsibility.</string>
+    <string name="pdf_saved">PDF saved in Downloads</string>
 </resources>

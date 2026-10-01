@@ -115,8 +115,8 @@
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
         <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
         <li><b>Records</b> a reading: by voice (<b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b>, checked and confirmed on screen). No AI: nothing goes to an AI provider (the photo Scan was removed, terms v19).</li>
-        <li><b>Looks back</b>: last reading, the week; the Dashboard icon opens the Web Dashboard (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
-        <li><b>Shares</b>: PDF or Excel from the phone, or Web Dashboard → “Send to the doctor”.</li>
+        <li><b>Looks back</b>: last reading, the week; the Reports icon (“Go to your full reports”) opens the Web Dashboard in the browser (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
+        <li><b>Shares</b>: the PDF downloaded on the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
       </ol>
     </div>
@@ -375,7 +375,7 @@
       <h2>Error log <small>continuous testing and improvement</small></h2>
       <ul>
         <li><b>Server</b>: failed signed calls (400–599, except 402, 404, 426) and every exception.</li>
-        <li><b>App</b>: crashes and failed PDF or Excel files; at most 20 a session.</li>
+        <li><b>App</b>: crashes and failed PDF files; at most 20 a session.</li>
         <li><b>Web</b>: script errors, at most 5 a page; never on a doctor's link.</li>
         <li><b>Short</b>: one row per day, source, code, place, version, with a counter; no free-text messages, so no reading value; 90 days.</li>
       </ul>
@@ -520,9 +520,9 @@
     <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record → say SYS, DIA, PUL → check → Save reading → <code>/v1/bp/voice</code></td><td>measurements</td></tr>
     <tr><td>4</td><td><b>No AI</b></td><td>system</td><td>the Anthropic Scan was removed (terms v19): its calls answer 410 <code>ai_removed</code>; nightly purge empties the old keys, costs and readings</td><td>person_keys, ledger, scans (emptied)</td></tr>
     <tr><td>5</td><td><b>Screen lock</b></td><td>user</td><td>app lock: fingerprint, face or the phone's PIN; without any screen lock the app opens and shows a notice that leads to the settings (the user's responsibility)</td><td>none</td></tr>
-    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Dashboard icon → Web Dashboard, Blood pressure tab: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
-    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Send PDF</b> or <b>Excel</b> → Android share sheet (WhatsApp, email, files…). The file goes straight from the phone to the app chosen; the server is not involved</td><td>none on the server</td></tr>
-    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Dashboard icon → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
+    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Reports icon → Web Dashboard (always opened in a browser), Blood pressure tab: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
+    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Download PDF</b> → saved in Downloads and opened (Android 9 and older: share sheet). The file stays on the phone; the server is not involved</td><td>none on the server</td></tr>
+    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Reports icon → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
     <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
     <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
     <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>App → Owner icon (shield, owner only) → web owner's area, not a tab of the dashboard: totals, D1 size, version switch-off; Observability: vulnerabilities, EU/CH compliance, problems and fixes, import outcomes</td><td>counts only</td></tr>
@@ -534,7 +534,7 @@
   <table>
     <tr><th>Action</th><th>User · app</th><th>User · web</th><th>Doctor · link</th><th>Owner</th><th>Developer</th></tr>
     <tr><td>Record, delete own readings</td><td>✓</td><td>—</td><td>—</td><td>own only</td><td>—</td></tr>
-    <tr><td>See own charts and report, export PDF/Excel</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
+    <tr><td>See own charts and report, export PDF</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
     <tr><td>Create or withdraw a doctor link</td><td>—</td><td>✓</td><td>—</td><td>own only</td><td>—</td></tr>
     <tr><td>See another person's readings or report</td><td>—</td><td>—</td><td>—</td><td><b>never</b></td><td><b>never</b></td></tr>
     <tr><td>See usage totals (never per account)</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>via the owner's connector, for checks</td></tr>
