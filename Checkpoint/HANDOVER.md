@@ -337,3 +337,9 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Error log last 24 h: nothing; event log only normal outcomes. Issue #119 (30.09–01.10): Core.kt:72 crash = P-001, fixed in 0.1.101; `bad_version` = app 0.1.100 below the minimum version (expected) → closed.
 - Security: Bouncy Castle 1.72 inside the app via pdfbox-android (12 advisories, 2 Critical; owner's Fix request #126; the automatic Security fix run stopped at the AI step). Fixed with a Gradle constraint to 1.86 (P-008, vulnerability-management.md §8). Build-tool findings (#112) unchanged: they follow the Android Gradle plugin update (#94, Human decides).
 - Dependabot: zxing 3.5.4 (patch) taken in this PR (#93). Not merged: coroutines 1.11 (#96, needs Kotlin 2) and exifinterface 1.4.2 (#95, needs compileSdk 35): they wait for the Kotlin 2 / AGP 9 / SDK 35 step (#94, #98, Human). Majors #89–#92, #94, #98, #120 proposed, not merged.
+
+### 2026-10-02 — Claude Code — lock proposal and a colour for Voice
+
+- Human chose to keep the phone's own lock (no PIN for the app) and asked for an occasional proposal: `BioNudge` shows a small window at most every 14 days when the phone has no screen lock («lock») or no fingerprint/face enrolled («bio»); «Attiva» opens the phone's enrolment or security settings, «Non ora» waits 14 days. Kept on the phone.
+- The Voice button has its own calm blue (`C.Voice` dark #3A76C4 / light #2E66AE, `--voice` in style.css), Scan stays violet: the two ways to record stand apart.
+- Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by CI.

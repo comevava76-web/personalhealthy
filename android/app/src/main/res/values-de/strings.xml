@@ -503,4 +503,9 @@
     <string name="account_delete_short">Mein Konto löschen</string>
     <string name="manage_readings_sub">Eine falsche Messung oder alle löschen</string>
     <string name="share_app_sub">Den Download-Link senden</string>
+    <string name="bio_title">HINT 365 schützen</string>
+    <string name="bio_text_enroll">Sie können HINT 365 mit Fingerabdruck oder Gesicht statt mit der PIN des Telefons öffnen. Jetzt einrichten?</string>
+    <string name="bio_text_lock">Dieses Telefon hat keine Bildschirmsperre: Jeder, der es in der Hand hat, kann HINT 365 öffnen. Richten Sie einen Fingerabdruck oder eine PIN am Telefon ein: HINT 365 verwendet dieselbe.</string>
+    <string name="bio_yes">Einrichten</string>
+    <string name="bio_later">Nicht jetzt</string>
 </resources>

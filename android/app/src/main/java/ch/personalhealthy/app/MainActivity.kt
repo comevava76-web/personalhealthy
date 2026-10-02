@@ -137,6 +137,40 @@ object C {
     val Pul: Color get() = pick(0xFFC08A1E, 0xFFB7860B)   // pulse, amber
     val Out: Color get() = pick(0xFFF29A3F, 0xFFC76A12)   // a lab result outside the reference printed on its report (asked by Human), with ↑ or ↓
     val Alert: Color get() = pick(0xFFF0A35E, 0xFFB8641D)   // errors and deleting: warm orange, not red
+    val Voice: Color get() = pick(0xFF3A76C4, 0xFF2E66AE)   // the Voice button: a calm blue, so the two ways to record stand apart
+}
+
+/**
+ * Now and then (at most every 14 days) a small window proposes to protect HINT 365 with the phone's fingerprint or face
+ * (or, on a phone without any screen lock, a PIN): the app uses the phone's own lock, never a separate one. Only a
+ * proposal, asked by Human: "Not now" closes it until next time. Kept on this phone.
+ */
+object BioNudge {
+    private const val EVERY_MS = 14L * 86_400_000L
+    /** "lock" when the phone has no screen lock, "bio" when it has one but no fingerprint or face, null when nothing to propose. */
+    fun what(ctx: Context): String? {
+        val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)
+        if (System.currentTimeMillis() < prefs.getLong("bioNudgeNext", 0L)) return null
+        val secure = (ctx.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager).isDeviceSecure
+        if (!secure) return "lock"
+        val bio = BiometricManager.from(ctx).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        return if (bio == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) "bio" else null
+    }
+    fun later(ctx: Context) {
+        ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putLong("bioNudgeNext", System.currentTimeMillis() + EVERY_MS).apply()
+    }
+    /** Opens the phone's settings: fingerprint enrolment where Android offers it, otherwise the security settings. */
+    fun open(ctx: Context, kind: String) {
+        val enroll = if (kind == "bio" && android.os.Build.VERSION.SDK_INT >= 30)
+            android.content.Intent(android.provider.Settings.ACTION_BIOMETRIC_ENROLL).putExtra(
+                android.provider.Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED, BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        else null
+        try { ctx.startActivity(enroll ?: android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) }
+        catch (e: Exception) {
+            try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) }
+            catch (e2: Exception) { ErrorReport.report("Lock/settings", e2) }
+        }
+    }
 }
 
 /** The theme chosen in Gestore: "auto" (as the phone), "light" or "dark"; kept on this phone only. */
@@ -1139,12 +1173,24 @@ fun HomeScreen(
         if (noLock) WarnLine(t(R.string.no_screen_lock)) {
             try { ctx0.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) } catch (_: Exception) { }
         }
+        // now and then, a small proposal to use the fingerprint or face (or a screen lock) to open HINT 365
+        var nudge by remember { mutableStateOf(BioNudge.what(ctx0)) }
+        nudge?.let { kind ->
+            AlertDialog(
+                onDismissRequest = { BioNudge.later(ctx0); nudge = null },
+                title = { Text(t(R.string.bio_title)) },
+                text = { Text(t(if (kind == "lock") R.string.bio_text_lock else R.string.bio_text_enroll)) },
+                confirmButton = { TextButton(onClick = { BioNudge.later(ctx0); nudge = null; BioNudge.open(ctx0, kind) }) { Text(t(R.string.bio_yes), color = C.Sys) } },
+                dismissButton = { TextButton(onClick = { BioNudge.later(ctx0); nudge = null }) { Text(t(R.string.bio_later), color = C.Muted) } },
+                containerColor = C.Surface
+            )
+        }
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
         // two ways to record a reading, side by side: say it aloud, or photograph the monitor. Both are read on this
         // phone, without AI, and saved only after the person has checked the numbers.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BigButton(t(R.string.record_short), color = C.Surface2, textColor = C.Ink, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
+            BigButton(t(R.string.record_short), color = C.Voice, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
             BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
         }

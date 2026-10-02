@@ -503,4 +503,9 @@
     <string name="account_delete_short">Supprimer mon compte</string>
     <string name="manage_readings_sub">Supprimer une mesure erronée ou toutes</string>
     <string name="share_app_sub">Envoyer le lien de téléchargement</string>
+    <string name="bio_title">Protéger HINT 365</string>
+    <string name="bio_text_enroll">Vous pouvez ouvrir HINT 365 avec votre empreinte ou votre visage au lieu du code du téléphone. Les activer maintenant ?</string>
+    <string name="bio_text_lock">Ce téléphone n\'a pas de verrouillage d\'écran : n\'importe qui peut ouvrir HINT 365. Définissez une empreinte ou un code sur le téléphone : HINT 365 utilisera le même.</string>
+    <string name="bio_yes">Activer</string>
+    <string name="bio_later">Pas maintenant</string>
 </resources>

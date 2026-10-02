@@ -505,4 +505,9 @@
     <string name="account_delete_short">Elimina il mio account</string>
     <string name="manage_readings_sub">Elimina una misura sbagliata o tutte</string>
     <string name="share_app_sub">Invia il link per scaricarla</string>
+    <string name="bio_title">Proteggi HINT 365</string>
+    <string name="bio_text_enroll">Puoi aprire HINT 365 con l\'impronta o il volto invece del PIN del telefono. Vuoi attivarli ora?</string>
+    <string name="bio_text_lock">Questo telefono non ha il blocco schermo: chiunque lo prenda può aprire HINT 365. Imposta un\'impronta o un PIN sul telefono: HINT 365 userà lo stesso.</string>
+    <string name="bio_yes">Attiva</string>
+    <string name="bio_later">Non ora</string>
 </resources>

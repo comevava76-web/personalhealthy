@@ -507,4 +507,9 @@
     <string name="account_delete_short">Delete my account</string>
     <string name="manage_readings_sub">Delete a wrong reading or all of them</string>
     <string name="share_app_sub">Send the download link</string>
+    <string name="bio_title">Protect HINT 365</string>
+    <string name="bio_text_enroll">You can open HINT 365 with your fingerprint or face instead of the phone\'s PIN. Set it up now?</string>
+    <string name="bio_text_lock">This phone has no screen lock, so anyone holding it can open HINT 365. Set a fingerprint or a PIN on the phone: HINT 365 will use the same one.</string>
+    <string name="bio_yes">Set it up</string>
+    <string name="bio_later">Not now</string>
 </resources>
