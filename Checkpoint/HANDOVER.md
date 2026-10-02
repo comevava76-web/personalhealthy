@@ -331,3 +331,9 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - 0.1.117 (PR #127) is online. A UI/graphics review of the app code was done (read only) and its findings were given to Human in chat; none applied yet, Human decides which. Main ones: SYS/DIA/PUL labels missing in the readings list, low contrast of small teal/amber numbers in the light theme and of white on violet buttons in the dark theme, DE/FR button labels cut, «Durchschnitt» cut.
 - Human asked to remove «Caricamento referti · ultimi 30 giorni» from the web Observability page: removed (the server still counts the outcomes in `event_log`; they stay in the log). CLAUDE.md and architecture row 11 updated.
 - Build 118 (PR #128): the Worker deployed, but the `/download` check 5 s after the deploy still got 0.1.117 and failed the job (release 0.1.118 not recorded). Fixed in build.yml: retry every 10 s for up to 2 minutes (P-007). The next build is 0.1.119 (same app as 0.1.117).
+
+### 2026-10-02 — Claude Code — daily check (error log, security, patching)
+
+- Error log last 24 h: nothing; event log only normal outcomes. Issue #119 (30.09–01.10): Core.kt:72 crash = P-001, fixed in 0.1.101; `bad_version` = app 0.1.100 below the minimum version (expected) → closed.
+- Security: Bouncy Castle 1.72 inside the app via pdfbox-android (12 advisories, 2 Critical; owner's Fix request #126; the automatic Security fix run stopped at the AI step). Fixed with a Gradle constraint to 1.86 (P-008, vulnerability-management.md §8). Build-tool findings (#112) unchanged: they follow the Android Gradle plugin update (#94, Human decides).
+- Dependabot: zxing 3.5.4 (patch) taken in this PR (#93). Not merged: coroutines 1.11 (#96, needs Kotlin 2) and exifinterface 1.4.2 (#95, needs compileSdk 35): they wait for the Kotlin 2 / AGP 9 / SDK 35 step (#94, #98, Human). Majors #89–#92, #94, #98, #120 proposed, not merged.

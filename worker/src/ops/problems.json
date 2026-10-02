@@ -104,6 +104,21 @@
    "fix": "The check now tries again every 10 seconds for up to 2 minutes before failing",
    "pr": "",
    "fixedIn": "0.1.119"
+  },
+  {
+   "id": "P-008",
+   "found": "2026-10-01",
+   "title": "Bouncy Castle 1.72 with known advisories inside the app (via pdfbox-android)",
+   "match": {
+    "code": "security_finding",
+    "place": "android/app/build.gradle.kts"
+   },
+   "versions": "0.1.105-0.1.119",
+   "status": "fixed",
+   "cause": "pdfbox-android 2.0.27.0 depends on bcprov/bcpkix-jdk15to18 1.72; the nightly scan listed 12 advisories (2 Critical) and the owner asked a fix from the Security console (#126); the automatic Security fix run stopped before doing it",
+   "fix": "A Gradle constraint raises bcprov, bcpkix and bcutil (jdk15to18) to 1.86, same API; build and tests in CI",
+   "pr": "",
+   "fixedIn": "0.1.120"
   }
  ]
 }

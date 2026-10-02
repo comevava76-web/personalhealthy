@@ -80,6 +80,13 @@ dependencies {
     // Bundled recognizer: no document upload and no runtime model download.
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    // pdfbox-android pulls in Bouncy Castle 1.72, which has known vulnerabilities (GHSA-574f-3g2m-x479 and others,
+    // issue #126): the same libraries at a fixed version, same API
+    constraints {
+        listOf("bcprov", "bcpkix", "bcutil").forEach { m ->
+            implementation("org.bouncycastle:$m-jdk15to18:1.86") { because("Bouncy Castle 1.72 advisories, fixed by 1.85+") }
+        }
+    }
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -101,6 +108,6 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     // QR codes for invites: drawing them (core) and scanning them with the camera (embedded scanner)
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:core:3.5.4")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
