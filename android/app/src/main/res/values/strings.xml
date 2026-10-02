@@ -484,6 +484,9 @@
     <string name="labs_own">Upload only your own reports: one account is one person (terms of use).</string>
     <string name="no_screen_lock">This phone has no screen lock: anyone holding it can open HINT 365. Set a PIN, pattern or fingerprint (tap here). It is your responsibility.</string>
     <string name="pdf_saved">PDF saved in Downloads</string>
+    <string name="pdf_saved_as">PDF saved in Download: %1$s</string>
+    <string name="download_done">Download complete</string>
+    <string name="download_channel">Downloads</string>
     <!-- the photo Scan of the monitor, read on the phone (no AI) -->
     <string name="photo_sub">Read with AI: the photo is not stored anywhere and is then deleted from the phone.</string>
     <string name="photo_retake_title">The photo is not clear enough: take it again</string>

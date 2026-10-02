@@ -430,3 +430,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Human: the PDF buttons opened the "Open with" window instead of downloading; the scroll tab on the terms disappeared at the end so the finger landed on «Non accetto»; disliked the colophon's separate "PDF" link.
 - Done: `downloadPdf` only saves to Downloads with a message (never opens); colophon has «Condizioni d'uso» and «Privacy» (the PDF is downloaded from the terms screen); terms screen: a reading bar at the top fills while scrolling (percent, then «Letto fino in fondo ✓»), a slim position bar on the right, a fade at the bottom while more text follows; the boxes and Accept are enabled only after reading to the end; no floating button.
 - Tests: APK compiles in CI; guides and general document updated.
+
+### 2026-10-02 23:00 — Claude Code — PDF download visible; web terms with providers' links (0.1.127)
+
+- Human: «Scarica condizioni d'uso (PDF)» did not seem to download anything; «Apri la versione web, con i link ai fornitori» landed on a page without the providers' links. Asked to check every download and every link to terms/privacy/providers in the app.
+- Done: `downloadPdf` (all PDFs: report and terms) writes to the phone's Download folder with a unique name, pending → published, a message with the file name and a «Download completato» notification that opens it; `/terms` has a providers section (`#providers`) in 4 languages and the app opens it in the browser at that anchor; Web Dashboard cookie links open the privacy in the right language. P-011, P-012 in problems.json; test T13 (4 languages).
+- Checked: colophon «Condizioni d'uso» (in-app terms) and «Privacy» (browser, app language); terms screen PDF and web buttons; report PDF button.
+- Tests: local functional 195 pass / 0 fail; labs-security pass.

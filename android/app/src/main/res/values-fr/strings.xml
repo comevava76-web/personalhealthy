@@ -480,6 +480,9 @@
     <string name="labs_own">N’importez que vos propres comptes rendus : un compte appartient à une seule personne (conditions d’utilisation).</string>
     <string name="no_screen_lock">Ce téléphone n’a pas de verrouillage d’écran : toute personne qui le prend peut ouvrir HINT 365. Définissez un code, un schéma ou l’empreinte (touchez ici). C’est votre responsabilité.</string>
     <string name="pdf_saved">PDF enregistré dans Téléchargements</string>
+    <string name="pdf_saved_as">PDF enregistré dans Téléchargements : %1$s</string>
+    <string name="download_done">Téléchargement terminé</string>
+    <string name="download_channel">Téléchargements</string>
     <!-- the photo Scan of the monitor, read on the phone (no AI) -->
     <string name="photo_sub">Lue avec l\'IA : la photo n\'est enregistrée nulle part puis est effacée du téléphone.</string>
     <string name="photo_retake_title">La photo n\'est pas assez nette : reprenez-la</string>

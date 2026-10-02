@@ -149,6 +149,36 @@
    "fix": "Decision of Human: only one version is kept. The server accepts only the newest build (APP_VERSION); an older app offers the update (Google Play in-app update when installed from the store, the download link for test APKs) and, once updated, asks the new terms. Builds that show older terms can still record them (TERMS_MIN_APP), so no acceptance loop is possible",
    "pr": "",
    "fixedIn": "server (0.1.123)"
+  },
+  {
+   "id": "P-011",
+   "found": "2026-10-02",
+   "title": "«Download PDF» opened an «Open with» window, then said «saved» without a visible download",
+   "match": {
+    "code": "",
+    "place": "app/PDF"
+   },
+   "versions": "0.1.120-0.1.126",
+   "status": "fixed",
+   "cause": "The PDF was saved through MediaStore and then opened at once (chooser); later only a short message, with no system download notice, so the file was hard to find",
+   "fix": "Saved into the phone's Download folder with a unique name (date and time), published properly (pending → done), a message naming the file and the system notification «Download complete» that opens it when tapped; never opened by itself",
+   "pr": "",
+   "fixedIn": "0.1.127"
+  },
+  {
+   "id": "P-012",
+   "found": "2026-10-02",
+   "title": "«Open the web version, with the providers' links» landed on a page without those links",
+   "match": {
+    "code": "",
+    "place": "app/Terms"
+   },
+   "versions": "0.1.100-0.1.126",
+   "status": "fixed",
+   "cause": "The web terms page showed only the terms text; the providers' links were in the privacy policy",
+   "fix": "/terms now has a «Providers and their terms» section (Cloudflare, Google, Anthropic with privacy and terms links) in 4 languages; the app opens it straight at #providers in the phone's browser; cookie links of the Web Dashboard open the privacy policy in the right language",
+   "pr": "",
+   "fixedIn": "0.1.127"
   }
  ]
 }

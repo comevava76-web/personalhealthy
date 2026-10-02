@@ -586,16 +586,43 @@ fun buildCsv(ctx: Context, all: List<Reading>, n: Int): File {
  */
 fun downloadPdf(ctx: Context, file: File) {
     if (android.os.Build.VERSION.SDK_INT < 29) { shareFile(ctx, file, "application/pdf"); return }
+    // into the phone's own Download folder (the one every file manager shows), as a browser download does:
+    // a name with date and time so it never clashes, written as "pending" and then published to the gallery of files
+    val stamp = java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm", java.util.Locale.ROOT).format(java.util.Date())
+    val name = file.nameWithoutExtension + "_" + stamp + ".pdf"
     val values = android.content.ContentValues().apply {
-        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, file.name)
+        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
         put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
         put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+        put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
     }
     val resolver = ctx.contentResolver
     val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("download_failed")
     resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("download_failed")
-    // only saved, never opened by itself (asked by Human: no "Open with" window); it is in Downloads
-    android.widget.Toast.makeText(ctx, t(R.string.pdf_saved), android.widget.Toast.LENGTH_LONG).show()
+    resolver.update(uri, android.content.ContentValues().apply { put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+    // never opened by itself (asked by Human): a message, and the system notification "Download complete" that opens it
+    android.widget.Toast.makeText(ctx, t(R.string.pdf_saved_as, name), android.widget.Toast.LENGTH_LONG).show()
+    downloadNotice(ctx, uri, name)
+}
+
+/** The notification of a finished download, like a browser's: tap it to open the PDF. Silent if notifications are off. */
+private fun downloadNotice(ctx: Context, uri: android.net.Uri, name: String) {
+    try {
+        val nm = ctx.getSystemService(android.app.NotificationManager::class.java)
+        nm.createNotificationChannel(android.app.NotificationChannel("downloads", t(R.string.download_channel), android.app.NotificationManager.IMPORTANCE_LOW))
+        val open = android.app.PendingIntent.getActivity(ctx, name.hashCode(),
+            Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = androidx.core.app.NotificationCompat.Builder(ctx, "downloads")
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle(t(R.string.download_done))
+            .setContentText(name)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        androidx.core.app.NotificationManagerCompat.from(ctx).notify(name.hashCode(), n)
+    } catch (e: SecurityException) { /* notifications not allowed: the message is enough */ }
+    catch (e: Exception) { ErrorReport.report("PDF/notice", e) }
 }
 
 /**
