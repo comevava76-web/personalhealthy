@@ -84,6 +84,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.geometry.Offset
@@ -857,10 +858,9 @@ fun BigButton(
                 Icon(painterResource(icon), contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            // always on one line: a long label is cut with "…" rather than wrapping in the button
-            Column {
-                Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // always on one line, never cut (asked by Human): a long label gets a slightly smaller font instead
+            Column(Modifier.padding(horizontal = 12.dp)) {
+                FitText(text, fg, 17f, FontWeight.SemiBold)
                 // a short line under the label (the locked Scan: "Unlock this feature")
                 if (sub != null) Text(sub, color = fg, fontSize = 11.sp, maxLines = 1, softWrap = false,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
@@ -894,8 +894,19 @@ fun GlowButton(text: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        FitText(text, C.Ink, 17f, FontWeight.SemiBold, Modifier.padding(horizontal = 12.dp))
     }
+}
+
+/** A label always on one line: if it does not fit, the font gets smaller step by step (down to 11 sp), never "…" and
+ *  never a second line. Used by every button. */
+@Composable
+fun FitText(text: String, color: Color, maxSp: Float, weight: FontWeight, modifier: Modifier = Modifier) {
+    var size by remember(text, maxSp) { mutableStateOf(maxSp) }
+    var ready by remember(text, maxSp) { mutableStateOf(false) }
+    Text(text, color = color, fontSize = size.sp, fontWeight = weight, maxLines = 1, softWrap = false,
+        modifier = modifier.drawWithContent { if (ready) drawContent() },
+        onTextLayout = { if (it.hasVisualOverflow && size > 11f) size -= 0.5f else ready = true })
 }
 
 @Composable
@@ -1062,7 +1073,7 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
         Text(t(R.string.terms_pdf_hint), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
         TextButton(onClick = {
             try { downloadPdf(pdfCtx, termsPdf(pdfCtx)) } catch (e: Exception) { ErrorReport.report("Terms/PDF", e); toast(pdfCtx, t(R.string.err_generic)) }
-        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.terms_pdf), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+        }, modifier = Modifier.fillMaxWidth()) { FitText(t(R.string.terms_pdf), C.Sys, 14f, FontWeight.SemiBold) }
         if (onClose == null) {
             Row(
                 Modifier.fillMaxWidth().padding(top = 8.dp).clickable(enabled = reachedEnd) { read = !read },
