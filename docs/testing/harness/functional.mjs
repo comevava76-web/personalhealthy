@@ -268,6 +268,12 @@ r = await web("GET", "/v1/app-status?v=180");
 S.check("gate", "G9", "the version live on Google Play (180) -> ok", r.json?.ok === true, r.text);
 run("DELETE FROM settings WHERE key = 'app_live_version'");
 
+// the terms on the web carry the providers' links, where the app's "web version" button lands (#providers)
+for (const l of ["it", "en", "de", "fr"]) {
+  r = await web("GET", `/terms?lang=${l}`);
+  S.check("terms", `T13${l}`, `/terms?lang=${l} has the providers section with their links`, r.status === 200 && r.text.includes('id="providers"') && r.text.includes("cloudflare.com") && r.text.includes("anthropic.com"), r.text.slice(0, 120));
+}
+
 // ---------------------------------------------------------------- subscription gate
 run("INSERT INTO settings (key, value) VALUES ('subscription_on', '1') ON CONFLICT (key) DO UPDATE SET value = excluded.value");
 r = await call(alice, "GET", "/v1/bp");

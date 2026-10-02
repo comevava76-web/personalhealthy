@@ -482,6 +482,9 @@
     <string name="labs_own">Carica solo referti tuoi: un account è di una sola persona (condizioni d’uso).</string>
     <string name="no_screen_lock">Questo telefono non ha il blocco schermo: chiunque lo prenda può aprire HINT 365. Imposta un PIN, una sequenza o l’impronta (tocca qui). È una tua responsabilità.</string>
     <string name="pdf_saved">PDF salvato in Download</string>
+    <string name="pdf_saved_as">PDF salvato in Download: %1$s</string>
+    <string name="download_done">Download completato</string>
+    <string name="download_channel">Download</string>
     <!-- the photo Scan of the monitor, read on the phone (no AI) -->
     <string name="photo_sub">Letta con l\'AI: la foto non viene salvata da nessuna parte e poi viene cancellata dal telefono.</string>
     <string name="photo_retake_title">La foto non è abbastanza chiara: rifalla</string>

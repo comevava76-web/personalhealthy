@@ -1095,7 +1095,7 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             // the same text on the web, where the providers' links can be opened
             val webCtx = LocalContext.current
             TextButton(onClick = {
-                webCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL + "?lang=" + appLocale().language)))
+                openInBrowser(webCtx, TERMS_URL + "?lang=" + appLocale().language + "#providers")   // straight to the providers' links
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))

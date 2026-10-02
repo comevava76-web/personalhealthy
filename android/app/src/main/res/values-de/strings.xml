@@ -480,6 +480,9 @@
     <string name="labs_own">Laden Sie nur eigene Befunde hoch: ein Konto gehört einer einzigen Person (Nutzungsbedingungen).</string>
     <string name="no_screen_lock">Dieses Telefon hat keine Bildschirmsperre: Wer es in die Hand nimmt, kann HINT 365 öffnen. Richten Sie eine PIN, ein Muster oder den Fingerabdruck ein (hier tippen). Das liegt in Ihrer Verantwortung.</string>
     <string name="pdf_saved">PDF unter Downloads gespeichert</string>
+    <string name="pdf_saved_as">PDF in Download gespeichert: %1$s</string>
+    <string name="download_done">Download abgeschlossen</string>
+    <string name="download_channel">Downloads</string>
     <!-- the photo Scan of the monitor, read on the phone (no AI) -->
     <string name="photo_sub">Mit KI gelesen: Das Foto wird nirgends gespeichert und danach vom Telefon gelöscht.</string>
     <string name="photo_retake_title">Das Foto ist nicht deutlich genug: bitte neu aufnehmen</string>

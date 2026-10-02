@@ -148,5 +148,17 @@ export function termsPage(language = "en"): Response {
     const [title, ...body] = block.split("\n");
     return `<${i === 0 ? "h2" : "h3"}>${escape(title)}</${i === 0 ? "h2" : "h3"}>${body.length ? `<p>${escape(body.join(" "))}</p>` : ""}`;
   }).join("\n");
-  return page("HINT 365", `<nav><a href="?lang=it">Italiano</a> · <a href="?lang=en">English</a> · <a href="?lang=de">Deutsch</a> · <a href="?lang=fr">Français</a></nav>${text}<p>Version ${NOTICE_VERSION}</p><p><a href="/privacy">Privacy</a></p>`);
+  // the providers HINT 365 relies on, with their own terms: the app's "web version with the providers' links" lands here (#providers)
+  const P: Record<string, [string, string[]]> = {
+    it: ["Fornitori e loro condizioni", ["server e database nell'Unione Europea", "accesso con Google e Google Play", "lettura della foto dello Scan (AI)", "Informativa privacy", "Condizioni"]],
+    en: ["Providers and their terms", ["server and database in the European Union", "Sign in with Google and Google Play", "reading the Scan photo (AI)", "Privacy policy", "Terms"]],
+    de: ["Anbieter und ihre Bedingungen", ["Server und Datenbank in der Europäischen Union", "Anmeldung mit Google und Google Play", "Lesen des Scan-Fotos (KI)", "Datenschutz", "Bedingungen"]],
+    fr: ["Fournisseurs et leurs conditions", ["serveur et base de données dans l'Union européenne", "connexion avec Google et Google Play", "lecture de la photo du Scan (IA)", "Confidentialité", "Conditions"]],
+  };
+  const [ph, [cf, gg, an, pp, tt]] = P[lang] || P.en;
+  const prov = `<h3 id="providers">${ph}</h3><ul>
+<li><strong>Cloudflare</strong> · ${cf}: <a href="https://www.cloudflare.com/privacypolicy/">${pp}</a> · <a href="https://www.cloudflare.com/website-terms/">${tt}</a></li>
+<li><strong>Google</strong> · ${gg}: <a href="https://policies.google.com/privacy">${pp}</a> · <a href="https://policies.google.com/terms">${tt}</a> · <a href="https://play.google.com/about/play-terms/">Google Play</a></li>
+<li><strong>Anthropic</strong> · ${an}: <a href="https://www.anthropic.com/legal/privacy">${pp}</a> · <a href="https://www.anthropic.com/legal/commercial-terms">${tt}</a></li></ul>`;
+  return page("HINT 365", `<nav><a href="?lang=it">Italiano</a> · <a href="?lang=en">English</a> · <a href="?lang=de">Deutsch</a> · <a href="?lang=fr">Français</a></nav>${text}${prov}<p>Version ${NOTICE_VERSION}</p><p><a href="/privacy?lang=${lang}">Privacy</a></p>`);
 }
