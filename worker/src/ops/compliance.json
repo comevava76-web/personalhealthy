@@ -229,6 +229,16 @@
    "evidence": "Nightly OSV/Semgrep/gitleaks scan, Dependabot, deadlines by severity; see the Security console",
    "doc": "docs/security/vulnerability-management.md",
    "declared": []
+  },
+  {
+   "id": "C20",
+   "area": "Backup and disaster recovery",
+   "requirement": "Availability and resilience: data can be restored in time after an incident",
+   "law": "GDPR Art. 32(1)(b)(c) · FADP Art. 8",
+   "status": "partial",
+   "evidence": "D1 Time Travel; nightly AES-256 encrypted export of both databases to an EU R2 bucket (30 days, 7-day lock); infrastructure declared in infra/infrastructure.json and rebuilt by infra/rebuild.sh; restore tested locally on 02.10.2026. Partial until the owner enables R2 and sets BACKUP_PASSPHRASE.",
+   "doc": "docs/operations/disaster-recovery.md",
+   "declared": []
   }
  ],
  "dossier": "/my/HINT365-Compliance.pdf"

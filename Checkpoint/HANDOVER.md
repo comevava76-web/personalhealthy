@@ -437,3 +437,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Done: `downloadPdf` (all PDFs: report and terms) writes to the phone's Download folder with a unique name, pending → published, a message with the file name and a «Download completato» notification that opens it; `/terms` has a providers section (`#providers`) in 4 languages and the app opens it in the browser at that anchor; Web Dashboard cookie links open the privacy in the right language. P-011, P-012 in problems.json; test T13 (4 languages).
 - Checked: colophon «Condizioni d'uso» (in-app terms) and «Privacy» (browser, app language); terms screen PDF and web buttons; report PDF button.
 - Tests: local functional 195 pass / 0 fail; labs-security pass.
+
+### 2026-10-02 23:15 — Claude Code — Infrastructure as Code, nightly encrypted backups, disaster recovery
+
+- Human asked: an IaC script that rebuilds the whole infrastructure and restores from backups (disaster recovery), and extra security layers on Cloudflare.
+- Done: `infra/infrastructure.json` (declarative inventory: D1 ×2 EU, R2 `hint365-backups` EU with 30-day expiry and 7-day lock, Worker, secrets, outside services) and `infra/rebuild.sh` (check, apply, list-backups, restore YYYY-MM-DD into an empty database only, time-travel); workflows *Database backup* (nightly 01:40 UTC: export both DBs, AES-256 with BACKUP_PASSPHRASE, to R2 EU) and *Disaster recovery* (manual, RESTORE confirmation). Runbook with RPO/RTO and security layers `docs/operations/disaster-recovery.md`; compliance C20 (partial until R2 + passphrase); overview (section 4, keys, crontab); CLAUDE.md rule. Script instead of Terraform: D1 jurisdiction only at creation via API, Worker already declared in wrangler.toml, no state file with secrets.
+- Tested locally: export → encrypt → decrypt → restore into an empty database and into one with the schema: same counts (7/11/5).
+- Owner, once: enable R2 in the Cloudflare dashboard; add "Workers R2 Storage: Edit" to the GitHub token; set the secret BACKUP_PASSPHRASE (and keep it in a password manager); then Actions → Disaster recovery → apply, and Actions → Database backup → Run.

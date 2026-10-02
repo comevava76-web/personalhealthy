@@ -1,0 +1,51 @@
+name: Disaster recovery (rebuild the infrastructure, restore the data)
+
+# Run by hand: Actions → Disaster recovery → Run workflow. Infrastructure as Code: infra/infrastructure.json declares
+# what exists, infra/rebuild.sh creates what is missing (never deletes). Then Actions → Build deploys server and app.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "check · apply · list-backups · restore · time-travel"
+        required: true
+        default: check
+      value:
+        description: "restore: the day of the backup (YYYY-MM-DD) · time-travel: the moment (e.g. 2026-10-02T21:00:00Z)"
+        required: false
+        default: ""
+      confirm:
+        description: "restore and time-travel change data: type RESTORE"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hint365-production
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      ACTION: ${{ inputs.action }}
+      VALUE: ${{ inputs.value }}
+      CONFIRM: ${{ inputs.confirm }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run
+        run: |
+          set -euo pipefail
+          case "$ACTION" in
+            check|apply|list-backups) bash infra/rebuild.sh "$ACTION" ;;
+            restore|time-travel)
+              [ "$CONFIRM" = "RESTORE" ] || { echo "Not confirmed: type RESTORE"; exit 1; }
+              bash infra/rebuild.sh "$ACTION" "$VALUE" ;;
+            *) echo "Unknown action: $ACTION"; exit 1 ;;
+          esac

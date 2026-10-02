@@ -90,6 +90,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   funzionano solo dal telefono registrato come owner (`owner_key`); chi ruba l'account Google e lo sposta su un altro telefono non li ha.
   Su un telefono nuovo dell'owner, Gestore chiede il **codice segreto da owner** (secret `OWNER_CODE`, 5 tentativi al giorno);
   riserva: Actions → *Owner phone*. Non togliere questo controllo.
+- **Infrastructure as Code e disaster recovery** (chiesto da Human): tutto ciò che esiste fuori dal codice è dichiarato in `infra/infrastructure.json` (D1 UE, bucket R2 UE dei backup, Worker, secret, servizi esterni); `infra/rebuild.sh` crea ciò che manca e non cancella mai (check, apply, list-backups, restore, time-travel), anche da Actions → *Disaster recovery*. Backup: D1 Time Travel, export notturno cifrato AES-256 con `BACKUP_PASSPHRASE` nel bucket `hint365-backups` (UE, 30 giorni come dice la privacy, lock 7 giorni), copia delle accettazioni. Runbook con RPO/RTO in `docs/operations/disaster-recovery.md`; ogni nuova risorsa va in `infrastructure.json` nello stesso commit.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla

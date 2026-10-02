@@ -544,12 +544,32 @@ The tables at the bottom have no relations.</p></div>
   <tr><td><code>scan_trials</code></td><td>coded fingerprints of Google accounts and phones that already had the AI trial</td><td>2 years</td></tr>
   <tr><td><code>ai_spend_daily, sub_sales_daily</code></td><td>totals per day: Scans and AI cost, subscriptions sold</td><td>for the accounts</td></tr>
 </table>
+<h3>Backups and disaster recovery</h3>
+<p>The whole infrastructure is written down in the repository (<code>infra/infrastructure.json</code>: databases, backup
+bucket, Worker, secrets, outside services) and one script, <code>infra/rebuild.sh</code>, recreates what is missing. If
+something is lost, Actions → <i>Disaster recovery</i> rebuilds it and puts the data back; then <i>Build</i> deploys server and app.</p>
+<table>
+  <tr><th>Backup layer</th><th>How far back</th><th>Where</th></tr>
+  <tr><td>Cloudflare D1 Time Travel (automatic): the live database to any minute</td><td>7 days (free plan), 30 (paid)</td><td>Cloudflare, EU</td></tr>
+  <tr><td>Nightly backup of both databases, encrypted with a phrase only the owner knows</td><td>30 days; nobody can delete one in its first 7 days</td><td>R2 bucket <code>hint365-backups</code>, EU</td></tr>
+  <tr><td>Copy of every acceptance of the terms</td><td>kept as proof</td><td>second database, EU</td></tr>
+</table>
+<table>
+  <tr><th>What happened</th><th>What to run</th><th>Data lost at most</th><th>Back in</th></tr>
+  <tr><td>wrong data written, a mistaken deletion</td><td><i>time-travel</i> to the minute before</td><td>minutes</td><td>~5 min</td></tr>
+  <tr><td>a database lost</td><td><i>apply</i>, <i>restore</i> the last night, <i>Build</i></td><td>up to 1 day</td><td>~30 min</td></tr>
+  <tr><td>the Cloudflare account lost</td><td>new account and token, then the same three steps</td><td>up to 1 day</td><td>~1 hour</td></tr>
+  <tr><td>the Worker broken</td><td><i>Build</i></td><td>nothing</td><td>~12 min</td></tr>
+</table>
+<p class="small">Restore tested on 02.10.2026 on a local copy (same counts as the original). Details, security layers and the owner's one-time steps: <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>.</p>
+
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret
 store (encrypted: nobody can read them back, not even the developer, also when the repository is public) or in Cloudflare.</p>
 <table>
   <tr><th>Name</th><th>What it opens</th><th>Who sets it</th></tr>
-  <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>lets the release pipeline put the new server online and update the database tables</td><td>owner, once</td></tr>
+  <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>lets the release pipeline put the new server online and update the database tables; also the nightly backup and the disaster recovery (D1, Workers and R2 permissions, this account only)</td><td>owner, once</td></tr>
+  <tr><td><code>BACKUP_PASSPHRASE</code></td><td>the phrase that encrypts the nightly backups of the databases: without it a backup cannot be read. Kept also in the owner's password manager</td><td>owner, once</td></tr>
   <tr><td><code>ANDROID_KEYSTORE_B64</code>, <code>ANDROID_KEYSTORE_PASSWORD</code>, <code>ANDROID_KEY_ALIAS</code>, <code>ANDROID_KEY_PASSWORD</code></td><td>the app's
     signature: proves every update comes from us, so it installs over the old app. <b>Never replace it</b>: a new one would force everyone to reinstall.</td><td>owner, once</td></tr>
   <tr><td><code>KEY_ENCRYPTION_KEY</code></td><td>the server's own secret, created once by the pipeline; it makes the coded fingerprints (Google account,
@@ -629,6 +649,7 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
   <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
     and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
+  <tr><td>every night 03:40 / 01:40</td><td>Database backup</td><td>GitHub Actions</td><td>exports both databases, encrypts them (AES-256) and stores them in the EU backup bucket; kept 30 days</td><td>data can be put back after any loss</td></tr>
   <tr><td>every hour, at minute 7</td><td>Version live on Google Play</td><td>Cloudflare (Worker cron)</td><td>asks Google Play which version is published to everyone; from then on only that one is accepted (nothing before Google Play)</td><td>ask for the update only when Google can give it</td></tr>
   <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
     probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
@@ -642,7 +663,7 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><td>every pull request</td><td>Tests, Android build check, Docs check</td><td>GitHub Actions</td><td>about 180 tests, the app must compile, documents must match the code</td><td>nothing broken reaches people</td></tr>
   <tr><td>on the phone, 09:00 and 17:00 local</td><td>Reminders</td><td>the app</td><td>"Remember to measure your blood pressure"; cleared at midnight</td><td>help the person keep the diary</td></tr>
   <tr><td>on the phone, 2 days before the trial ends</td><td>AI trial notice</td><td>the app</td><td>says the Scan stops unless the person subscribes; voice keeps working</td><td>no surprise</td></tr>
-  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back</td><td>control in an emergency</td></tr>
+  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK · Disaster recovery</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back · rebuild the infrastructure and restore the data</td><td>control in an emergency</td></tr>
 </table>
 
 <h2>8. Logs: what we see and what we do not see</h2>

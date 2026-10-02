@@ -1,0 +1,54 @@
+name: Database backup (nightly, encrypted, EU)
+
+# Every night: both D1 databases are exported, packed, encrypted with BACKUP_PASSPHRASE (AES-256, the phrase is
+# known only to the owner and to this secret) and stored in the R2 bucket hint365-backups, bound to the EU.
+# The bucket keeps each backup 30 days (as the privacy policy says) (lifecycle) and nobody can delete one in its first 7 days (bucket lock).
+# Restore: Actions → Disaster recovery (or bash infra/rebuild.sh restore YYYY-MM-DD). Besides this, Cloudflare D1
+# Time Travel can put the live database back to any minute of the last days.
+on:
+  schedule:
+    - cron: "40 1 * * *"     # 03:40 Zurich in summer, before the nightly clean-up of the Worker (03:17 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hint365-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 6c6de5312c59db866e1a8e07d3c21c63
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Export, encrypt and store
+        run: |
+          set -euo pipefail
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::No backup made: add the secret BACKUP_PASSPHRASE (a long phrase, kept in a password manager)"; exit 0; fi
+          cd worker && npm ci --no-audit --no-fund --silent
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          id() { curl -s -H "$AUTH" "$API/d1/database?name=$1" | jq -r --arg n "$1" '.result[]? | select(.name==$n) | .uuid' | head -1; }
+          sed -i -e "s/D1_DATABASE_ID/$(id personalhealthy)/" -e "s/BACKUP_DATABASE_ID/$(id personalhealthy-backup)/" wrangler.toml
+          T=$(mktemp -d); DAY=$(date -u +%F)
+          npx wrangler d1 export personalhealthy --remote --output "$T/personalhealthy.sql"
+          npx wrangler d1 export personalhealthy-backup --remote --output "$T/personalhealthy-backup.sql"
+          tar -czf - -C "$T" personalhealthy.sql personalhealthy-backup.sql \
+            | openssl enc -aes-256-cbc -pbkdf2 -iter 300000 -salt -pass env:BACKUP_PASSPHRASE -out "$T/hint365-db.tar.gz.enc"
+          rm -f "$T"/*.sql
+          if ! npx wrangler r2 object put "hint365-backups/d1/$DAY/hint365-db.tar.gz.enc" --file "$T/hint365-db.tar.gz.enc" \
+                 --jurisdiction eu --remote --content-type application/octet-stream; then
+            echo "::warning::Backup not stored: the R2 bucket hint365-backups (EU) is missing. Run Actions → Disaster recovery → apply (R2 must be enabled once in the Cloudflare dashboard)."
+            exit 1
+          fi
+          echo "Backup d1/$DAY stored ($(stat -c %s "$T/hint365-db.tar.gz.enc") bytes, encrypted)"
+          rm -rf "$T"
