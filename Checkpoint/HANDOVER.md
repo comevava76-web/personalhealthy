@@ -424,3 +424,9 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Done: `playLiveVersion` (billing.ts: production track, releases "completed" only) read hourly by a second Worker cron (`7 * * * *`) into `settings.app_live_version`; `appAllowed` requires that version when set, else the deployed build; error code `play_live_failed`; Admin shows the live version as newest. App: `share_app` renamed in 4 languages; `ScrollDownHint` on the terms (tap scrolls to the end). Docs: swimlane diagrams (`docs/overview/deploy-diagram.py` → deploy-android.svg, deploy-ios.svg) in architecture pages 8–9 and general document section 13 with the who/what/time table; crontab row; CLAUDE.md.
 - Tests: local functional 191 pass / 0 fail (G8, G9 on the live version); labs-security pass; layout ok.
 - Next: when publishing on Google Play, give the service account in PLAY_SERVICE_ACCOUNT the "View app information" permission in Play Console (needed to read the track); iOS app and its App Store check still to be built.
+
+### 2026-10-02 22:10 — Claude Code — PDF only saved; terms with a reading bar (0.1.126)
+
+- Human: the PDF buttons opened the "Open with" window instead of downloading; the scroll tab on the terms disappeared at the end so the finger landed on «Non accetto»; disliked the colophon's separate "PDF" link.
+- Done: `downloadPdf` only saves to Downloads with a message (never opens); colophon has «Condizioni d'uso» and «Privacy» (the PDF is downloaded from the terms screen); terms screen: a reading bar at the top fills while scrolling (percent, then «Letto fino in fondo ✓»), a slim position bar on the right, a fade at the bottom while more text follows; the boxes and Accept are enabled only after reading to the end; no floating button.
+- Tests: APK compiles in CI; guides and general document updated.

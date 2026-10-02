@@ -15,7 +15,9 @@
     <string name="activate">Activate</string>
     <string name="activating">Activating…</string>
     <string name="setup_privacy">No name and no email: this phone gets an anonymous code, protected inside the phone itself.</string>
-    <string name="disc_scroll_hint">Scroll down to read everything and accept</string>
+    <string name="disc_scroll_hint">Scroll to read everything</string>
+    <string name="disc_read_first">Read the whole text to the end to accept</string>
+    <string name="disc_read_done">Read to the end</string>
     <string name="share_app">Recommend HINT 365</string>
     <string name="share_app_text">I use HINT 365, a blood-pressure diary: you photograph the monitor or say the values, and it prepares the report for the doctor. Download it for Android: %1$s — open the file, allow the installation, then tap \"Sign in with Google\".</string>
     <string name="google_intro">Sign in with your Google account. It is used only to create your diary and to find it again if you change phone. Every day the app opens with your fingerprint or face.</string>
@@ -549,6 +551,5 @@
     <string name="terms_save_text">You accepted the terms of use. Do you want to keep a PDF copy on your phone, in Downloads? You can also do it later, at the end of the terms.</string>
     <string name="terms_save_yes">Save the PDF</string>
     <string name="terms_save_later">Later</string>
-    <string name="colophon_terms_pdf">Download the PDF</string>
     <string name="colophon_privacy">Privacy</string>
 </resources>
