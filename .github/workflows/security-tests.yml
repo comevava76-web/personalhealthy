@@ -72,7 +72,7 @@ jobs:
         run: npm i --package-lock-only --silent --no-fund && npm audit --audit-level=critical
       - name: Full list of the app's libraries (Gradle resolves every library and what it pulls in)
         if: always() && github.event_name != 'pull_request'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
