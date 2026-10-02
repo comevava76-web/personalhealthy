@@ -12,7 +12,7 @@ by hand is marked **BY HAND**.
 | **RTO** (time to have the service back) | **1 hour** for a full rebuild from zero; 5 minutes to go back a few minutes in time |
 | Backups | Cloudflare Time Travel (automatic) + **one encrypted backup every night**, last **30 nights** kept |
 | Where | everything in the European Union, at Cloudflare. **Never in Git** (health data, public repository) |
-| Tested | every month, automatically (the *drill*), and on 02.10.2026 by hand on a local copy: restored in 24 s, same counts |
+| Tested | every month, automatically (the *drill*). First drill on the real account, 02.10.2026: rebuilt and restored in 24 s, same counts as production (1 account, 39 readings, 29 acceptances) |
 
 ## 2. What we rely on: Cloudflare Workers Free (today)
 

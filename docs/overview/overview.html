@@ -546,6 +546,28 @@ The tables at the bottom have no relations.</p></div>
 </table>
 <p class="small">Backups and disaster recovery: section 14.</p>
 
+<h3>What a Cloudflare Worker is (and why there is no Tomcat, nginx or server to look after)</h3>
+<p>In a classic set-up a company rents a <b>server</b> (a computer in a data centre, always on), installs an operating system,
+a <b>web server</b> such as nginx or Apache (it receives the requests from the internet and hands out pages and files), an
+<b>application server</b> such as Tomcat or Node.js (it runs the program that answers: sign-in, saving a reading…) and a
+<b>database</b> such as MySQL. Someone must update all of it, watch it, restart it when it stops, and add machines when people grow.</p>
+<p>HINT 365 has none of these machines. Its server is a <b>Cloudflare Worker</b>: just the program (<code>worker/src/</code>,
+written in TypeScript), uploaded to Cloudflare by the <i>Build</i> pipeline. Cloudflare runs it in its own network of
+data centres, in more than 300 cities: when a phone sends a request, the nearest data centre starts the program in a few
+milliseconds, gets the answer and stops it again. This is called <b>serverless</b>: there is a server, but it belongs to
+Cloudflare, who keeps it running, updated and protected.</p>
+<table>
+  <tr><th>Classic set-up</th><th>HINT 365 on Cloudflare</th></tr>
+  <tr><td>a rented server (virtual machine) with Linux</td><td>none: Cloudflare's machines, shared and managed by Cloudflare</td></tr>
+  <tr><td>web server nginx or Apache, with the HTTPS certificate</td><td>Cloudflare's network receives every request and handles HTTPS by itself (certificate renewed automatically)</td></tr>
+  <tr><td>application server Tomcat or Node.js running the program</td><td>the <b>Workers runtime</b> (called <i>workerd</i>, open source, based on V8, the JavaScript engine of Chrome): each request runs in a small sealed space (an "isolate"), separate from every other customer</td></tr>
+  <tr><td>files of the website served by nginx</td><td>Workers <b>static assets</b>: the Web Dashboard (<code>worker/public/</code>) and the APK, served by the same Worker</td></tr>
+  <tr><td>database MySQL or PostgreSQL on a server</td><td><b>D1</b>: Cloudflare's database based on SQLite, kept in the EU, with Time Travel</td></tr>
+  <tr><td>cron on the server for night jobs</td><td><b>Cron Triggers</b> of the Worker (03:17 UTC clean-up, every hour the Google Play version)</td></tr>
+  <tr><td>updates, patches, restarts, scaling: our job</td><td>Cloudflare's job; we only update our code and its libraries</td></tr>
+</table>
+<p class="small">What is ours to look after: the code, its libraries (patch management, section 11), the keys, the data and the backups. What is Cloudflare's: machines, operating system, network, HTTPS, the runtime. The address today is <code>personalhealthy-api.comevava76.workers.dev</code> ("comevava76" is the name of the Cloudflare account); it will become the owner's own domain, connected to the same Worker.</p>
+
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret
 store (encrypted: nobody can read them back, not even the developer, also when the repository is public) or in Cloudflare.</p>
@@ -1217,7 +1239,7 @@ the Infrastructure as Code is in the folder <code>DR/</code> of the repository.<
 <h3>Proof that it works</h3>
 <p>On the 1st of every month the pipeline runs a <b>drill</b> by itself: it builds a complete copy of the databases from zero,
 restores last night's backup into it, compares the counts with production, measures the time and deletes the copy.
-First test, 02.10.2026, on a local copy: rebuilt and restored in 24 seconds, same counts as the original (7 accounts, 11 readings, 5 acceptances).</p>
+First drill on the real account, 02.10.2026: rebuilt from zero and restored in 24 seconds, same counts as production (1 account, 39 readings, 29 acceptances); the copy was then deleted.</p>
 
 <h2>15. Costs: what is free, and up to where</h2>
 <p class="small">As published by the providers in October 2026; the limits can change: check their pricing pages before relying on them.</p>
