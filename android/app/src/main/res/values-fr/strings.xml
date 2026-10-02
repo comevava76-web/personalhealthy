@@ -114,7 +114,7 @@
     <string name="max_dia">DIA la plus haute</string>
     <string name="lowest">Valeur la plus basse</string>
     <string name="report_not_yet">Le rapport sur %1$d jours pourra être envoyé dans %2$d jour(s). Voici un aperçu.</string>
-    <string name="send_pdf">Télécharger le PDF</string>
+    <string name="send_pdf">Télécharger le rapport de tension (PDF)</string>
     <string name="send_excel">Envoyer Excel</string>
     <string name="file_failed">Fichier non créé : %s</string>
     <string name="share_title">Envoyer le rapport</string>

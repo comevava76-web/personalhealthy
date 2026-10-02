@@ -114,7 +114,7 @@
     <string name="max_dia">Höchster DIA</string>
     <string name="lowest">Niedrigster Wert</string>
     <string name="report_not_yet">Der %1$d-Tage-Bericht kann in %2$d Tag(en) gesendet werden. Hier schon eine Vorschau.</string>
-    <string name="send_pdf">PDF herunterladen</string>
+    <string name="send_pdf">Blutdruckbericht herunterladen (PDF)</string>
     <string name="send_excel">Excel senden</string>
     <string name="file_failed">Datei konnte nicht erstellt werden: %s</string>
     <string name="share_title">Bericht senden</string>

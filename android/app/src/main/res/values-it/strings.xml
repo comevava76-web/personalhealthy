@@ -114,7 +114,7 @@
     <string name="max_dia">DIA più alta</string>
     <string name="lowest">Valore più basso</string>
     <string name="report_not_yet">Il report di %1$d giorni sarà inviabile tra %2$d giorni. Intanto vedi l\'anteprima.</string>
-    <string name="send_pdf">Scarica PDF</string>
+    <string name="send_pdf">Scarica il report della pressione (PDF)</string>
     <string name="send_excel">Invia Excel</string>
     <string name="file_failed">File non creato: %s</string>
     <string name="share_title">Invia il report</string>

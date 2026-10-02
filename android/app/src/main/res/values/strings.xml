@@ -115,7 +115,7 @@
     <string name="max_dia">Highest DIA</string>
     <string name="lowest">Lowest value</string>
     <string name="report_not_yet">The %1$d-day report can be sent in %2$d day(s). Meanwhile, here is a preview.</string>
-    <string name="send_pdf">Download PDF</string>
+    <string name="send_pdf">Download the blood pressure report (PDF)</string>
     <string name="send_excel">Send Excel</string>
     <string name="file_failed">File could not be created: %s</string>
     <string name="share_title">Send report</string>
