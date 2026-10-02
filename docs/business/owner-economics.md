@@ -94,9 +94,20 @@ is about 22 subscribers at typical use.
 1. 3 Scans a day per person, on the server: a 4th request never reaches the AI provider.
 2. One trial per Google account and per phone.
 3. At most 2.50 US$ of AI per subscriber a year, recorded in D1 from the provider's token count.
-4. The monthly spend limit in the AI provider's console: above it the provider refuses, the Scan says to use voice.
+4. The AI provider's own ceiling: prepaid credit with **auto-reload off**, and the monthly spend limit (Anthropic Console →
+   Settings → Limits). Above it the provider refuses and the Scan says to use voice: nothing more can be spent. When this
+   happens the server logs `ai_no_credit`: it appears in the next morning's error-log issue and in red-free orange in the
+   Admin console, with the advice to top up. The provider has no API that tells the remaining prepaid credit, so the
+   Admin console shows what the Scans cost (counted by HINT 365) and the provider's console shows the balance.
+   Every other AI provider used in the future needs the same ceiling set at the provider.
 5. The terms let the owner change prices, limits and free parts, or withdraw the app.
 6. The owner's powers and these figures are visible only from the owner's phone (owner code on a new phone).
+
+## Where the owner can lose money
+
+Only in the trial: people who try the Scan and never subscribe cost up to 0.09 US$ each, once, with no income. 100 such
+people cost at most 9 US$. Every subscriber covers their own AI (at most 2.50 US$ against 4.24 US$ after Google Play,
+3.53 US$ if the price includes 20% VAT). Everything, trial included, stops at the provider's ceiling.
 
 ## Limits of this estimate
 

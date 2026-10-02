@@ -305,3 +305,5 @@ td.pick .st { margin-left: 8px; }
 /* the owner's accounts (Admin): numbers right-aligned, the totals row set apart */
 table.money th.num, table.money td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.money tfoot th, table.money tfoot td { border-top: 1px solid var(--line); font-weight: 600; }
+/* Admin: the AI provider refused for lack of credit (orange, never red) */
+.warn-line { color: var(--warn-t); border: 1px solid var(--warn-t); border-radius: 10px; padding: 8px 12px; margin: 6px 0 10px; font-size: 14px; }

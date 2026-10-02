@@ -396,6 +396,8 @@ async function adminOverview(env: any, q: Q) {
     return { month: m, scans: Number(a.scans || 0), ai, sales: Number(b.sales || 0), gross, net: gross * (1 - PLAY_FEE), diff: gross * (1 - PLAY_FEE) - ai };
   });
   const activeSubs = await one("SELECT COUNT(*) AS n FROM persons WHERE is_admin = 0 AND sub_until > ?1", [now]);
+  // the AI provider refused for lack of credit (or the owner's spend limit) in the last 2 days: top up
+  const noCredit = await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log WHERE code = 'ai_no_credit' AND last_at > ?1", [now - 2 * 864e5]);
   return {
     at: now,
     totals: {
@@ -406,7 +408,7 @@ async function adminOverview(env: any, q: Q) {
       errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
-    money: { months: money, activeSubs, playFee: PLAY_FEE },
+    money: { months: money, activeSubs, playFee: PLAY_FEE, noCredit },
     versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
     subscriptionOn: set.subscription_on === "1",
     security: (() => { try { return set.security_scan ? JSON.parse(set.security_scan) : null; } catch { return null; } })(),

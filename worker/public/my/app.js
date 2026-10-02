@@ -627,6 +627,7 @@
     mUseCols: ["Mese", "Scan", "Costo AI"],
     mBalT: "Entrate e uscite", mBalN: (n, f) => `Stima: abbonamenti venduti al prezzo di listino (4,99 $), meno la quota di Google Play (${f}%); uscite = costo AI. Abbonati attivi: ${n}. Le cifre vere sono nella Google Play Console e nella console del fornitore AI.`,
     mBalCols: ["Mese", "Abbonamenti", "Entrate", "Dopo Google Play", "Uscite AI", "Differenza"], mTot: "Totale", mNone: "Ancora nessun movimento.",
+    mNoCredit: (n) => `Credito AI finito: negli ultimi 2 giorni il fornitore AI ha rifiutato ${n} Scan per credito esaurito o tetto di spesa raggiunto. Ricarica dalla console del fornitore (oggi Anthropic): lo Scan riparte da solo.`,
     upd: "Aggiornato", users: "Utenti", usersU: "in totale", labs: "Referti", labsU: "salvati, di tutti gli utenti",
     rd: "Misure", split: (v, f) => `${v} a voce` + (f ? ` · ${f} con la vecchia Scan` : ""),
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
@@ -664,6 +665,7 @@
     mUseCols: ["Month", "Scans", "AI cost"],
     mBalT: "Income and expenses", mBalN: (n, f) => `Estimate: subscriptions sold at the list price (4.99 $), less Google Play's share (${f}%); expenses = AI cost. Active subscribers: ${n}. The real figures are in the Google Play Console and the AI provider's console.`,
     mBalCols: ["Month", "Subscriptions", "Income", "After Google Play", "AI expenses", "Difference"], mTot: "Total", mNone: "No activity yet.",
+    mNoCredit: (n) => `AI credit used up: in the last 2 days the AI provider refused ${n} Scans for lack of credit or the spend limit. Top up in the provider's console (today Anthropic): the Scan starts again by itself.`,
     upd: "Updated", users: "Users", usersU: "in total", labs: "Lab reports", labsU: "saved, all users",
     rd: "Readings", split: (v, f) => `${v} by voice` + (f ? ` · ${f} with the former Scan` : ""),
     errs: "Errors", errsU: "in total, last 90 days",
@@ -716,7 +718,8 @@
     const bal = table(B,
       rows.map((r) => tr(B, [monthName(r.month), r.sales, usd(r.gross), usd(r.net), usd(r.ai), "<b>" + usd(r.diff) + "</b>"])).join(""),
       tr(B, [AD.mTot, sum("sales"), usd(sum("gross")), usd(sum("net")), usd(sum("ai")), "<b>" + usd(sum("diff")) + "</b>"]));
-    return `<div class="card"><div class="card-h"><h2>${AD.mUseT}</h2></div><p class="muted small">${AD.mUseN}</p>${use}</div>
+    const warn = mo.noCredit ? `<p class="warn-line">${AD.mNoCredit(mo.noCredit)}</p>` : "";
+    return `<div class="card"><div class="card-h"><h2>${AD.mUseT}</h2></div>${warn}<p class="muted small">${AD.mUseN}</p>${use}</div>
       <div class="card"><div class="card-h"><h2>${AD.mBalT}</h2></div><p class="muted small">${AD.mBalN(mo.activeSubs, Math.round(mo.playFee * 100))}</p>${bal}</div>`;
   }
 

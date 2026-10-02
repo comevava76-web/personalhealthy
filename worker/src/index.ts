@@ -850,6 +850,12 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       await dayAdd(q, "ai_spend_daily", "scans", "micro_usd", 1, microUsd);
       return json(answer);
     } catch (e) {
+      if (e instanceof Error && e.message === "no_credit") {
+        // in the error log: the next morning's error-log issue and the Admin console tell the owner to top up
+        await logError(q, { source: "server", code: "ai_no_credit", place: "POST /v1/bp/photo/read", message: "AI provider refused: credit or spend limit used up" });
+        await countEvent(q, "bp_photo_ai_no_credit", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
+        return fail("The photo Scan is not available now: record by voice.", 503, "scan_no_credit");
+      }
       await countEvent(q, "bp_photo_ai_error", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
       return fail("The photo could not be read now: try again or record by voice.", 502, "scan_failed");
     }
@@ -952,7 +958,12 @@ async function readMonitor(key: string, jpegB64: string): Promise<{ answer: Reco
       ] }],
     }),
   });
-  if (!r.ok) throw new Error("anthropic " + r.status);
+  if (!r.ok) {
+    // the owner's money ran out or the owner's spend limit was reached: said apart, so the owner hears of it at once
+    const why = await r.text().catch(() => "");
+    if ([400, 402, 403, 429].includes(r.status) && /credit balance|billing|spend limit|usage limit|insufficient|quota/i.test(why)) throw new Error("no_credit");
+    throw new Error("anthropic " + r.status);
+  }
   const m: any = await r.json();
   const u = m.usage || {};
   const microUsd = (Number(u.input_tokens) || 0) * SCAN_IN_MICRO_USD + (Number(u.output_tokens) || 0) * SCAN_OUT_MICRO_USD;
