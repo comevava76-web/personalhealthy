@@ -39,7 +39,7 @@
   security patches and compliance are handled, and what is free. Updated 02.10.2026, app version 0.1.122.</p>
 </div>
 
-<p class="small">This is the general document. Every other document is linked in section 15; how to pick the work up again is in section 16. Times are given in Zurich time and
+<p class="small">This is the general document. Every other document is linked in section 16; how to pick the work up again is in section 17; disaster recovery is section 14. Times are given in Zurich time and
 in UTC (Zurich is UTC+2 in summer, UTC+1 in winter).</p>
 
 <table class="ctl">
@@ -58,7 +58,7 @@ in UTC (Zurich is UTC+2 in summer, UTC+1 in winter).</p>
   <li>What HINT 365 is for</li><li>Who does what</li><li>What the person does, step by step</li><li>Where everything runs</li>
   <li>Keys and secrets</li><li>Personal data and compliance</li><li>Automatic jobs (crontab)</li><li>Logs</li>
   <li>Defect management</li><li>Vulnerability management</li><li>Patch management</li><li>Change management</li>
-  <li>Release management</li><li>Costs</li><li>Where to find the rest</li><li>Picking the work up again</li>
+  <li>Release management</li><li>Disaster recovery</li><li>Costs</li><li>Where to find the rest</li><li>Picking the work up again</li>
 </ol>
 <p class="small">Colours in the diagrams: <span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#EDE9FB;border:1pt solid #6D5BD0;vertical-align:-1pt"></span> Person</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#FFF4DE;border:1pt solid #B7860B;vertical-align:-1pt"></span> Owner</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E2F5F2;border:1pt solid #0F9C8E;vertical-align:-1pt"></span> Developer (Claude)</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E6EEFA;border:1pt solid #2E66AE;vertical-align:-1pt"></span> Automatic</span></p>
 <h2>1. What HINT 365 is for</h2>
@@ -544,12 +544,15 @@ The tables at the bottom have no relations.</p></div>
   <tr><td><code>scan_trials</code></td><td>coded fingerprints of Google accounts and phones that already had the AI trial</td><td>2 years</td></tr>
   <tr><td><code>ai_spend_daily, sub_sales_daily</code></td><td>totals per day: Scans and AI cost, subscriptions sold</td><td>for the accounts</td></tr>
 </table>
+<p class="small">Backups and disaster recovery: section 14.</p>
+
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret
 store (encrypted: nobody can read them back, not even the developer, also when the repository is public) or in Cloudflare.</p>
 <table>
   <tr><th>Name</th><th>What it opens</th><th>Who sets it</th></tr>
-  <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>lets the release pipeline put the new server online and update the database tables</td><td>owner, once</td></tr>
+  <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>lets the release pipeline put the new server online and update the database tables; also the nightly backup and the disaster recovery (D1, Workers and R2 permissions, this account only)</td><td>owner, once</td></tr>
+  <tr><td><code>BACKUP_PASSPHRASE</code></td><td>the phrase that encrypts the nightly backups of the databases: without it a backup cannot be read. Kept also in the owner's password manager</td><td>owner, once</td></tr>
   <tr><td><code>ANDROID_KEYSTORE_B64</code>, <code>ANDROID_KEYSTORE_PASSWORD</code>, <code>ANDROID_KEY_ALIAS</code>, <code>ANDROID_KEY_PASSWORD</code></td><td>the app's
     signature: proves every update comes from us, so it installs over the old app. <b>Never replace it</b>: a new one would force everyone to reinstall.</td><td>owner, once</td></tr>
   <tr><td><code>KEY_ENCRYPTION_KEY</code></td><td>the server's own secret, created once by the pipeline; it makes the coded fingerprints (Google account,
@@ -629,6 +632,8 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
   <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
     and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
+  <tr><td>every night 03:40 / 01:40</td><td>Database backup</td><td>GitHub Actions</td><td>exports both databases, encrypts them (AES-256) and keeps them in the EU vault database; the last 30 nights are kept</td></tr>
+  <tr><td>1st of every month 04:15 / 02:15</td><td>Disaster recovery drill</td><td>GitHub Actions</td><td>rebuilds a copy of the databases from zero, restores last night's backup, compares the counts with production, deletes the copy</td><td>prove that recovery works (section 14)<td>data can be put back after any loss</td></tr>
   <tr><td>every hour, at minute 7</td><td>Version live on Google Play</td><td>Cloudflare (Worker cron)</td><td>asks Google Play which version is published to everyone; from then on only that one is accepted (nothing before Google Play)</td><td>ask for the update only when Google can give it</td></tr>
   <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
     probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
@@ -642,7 +647,7 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><td>every pull request</td><td>Tests, Android build check, Docs check</td><td>GitHub Actions</td><td>about 180 tests, the app must compile, documents must match the code</td><td>nothing broken reaches people</td></tr>
   <tr><td>on the phone, 09:00 and 17:00 local</td><td>Reminders</td><td>the app</td><td>"Remember to measure your blood pressure"; cleared at midnight</td><td>help the person keep the diary</td></tr>
   <tr><td>on the phone, 2 days before the trial ends</td><td>AI trial notice</td><td>the app</td><td>says the Scan stops unless the person subscribes; voice keeps working</td><td>no surprise</td></tr>
-  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back</td><td>control in an emergency</td></tr>
+  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK · Disaster recovery</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back · rebuild the infrastructure and restore the data</td><td>control in an emergency</td></tr>
 </table>
 
 <h2>8. Logs: what we see and what we do not see</h2>
@@ -1161,7 +1166,60 @@ The green check marks a check passed. Web: done at the "Server + Web live" step.
   <li>Block one or more faulty versions on every phone at once (Actions → <i>App versions</i>): the app offers only the update. Data stay.</li>
 </ul>
 
-<h2>14. Costs: what is free, and up to where</h2>
+<h2>14. Disaster recovery</h2>
+<p>What happens if data is lost or the infrastructure disappears: which backups exist, how far back we can go, how long
+it takes to be back, what we commit to and what we do not. The step-by-step runbook, with every manual action, is
+<a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>;
+the Infrastructure as Code is in the folder <code>DR/</code> of the repository.</p>
+<h3>What the service levels rest on: Cloudflare, Workers Free plan (today)</h3>
+<table>
+  <tr><th>Cloudflare, Workers Free</th><th>What it means for HINT 365</th></tr>
+  <tr><td>No availability guarantee (no SLA): uptime commitments exist only on Cloudflare's paid business plans</td><td>we cannot promise a percentage of availability; HINT 365 is offered "as is", as the terms of use say</td></tr>
+  <tr><td>D1 Time Travel: the database can be put back to any minute of the last <b>7 days</b> (30 days on Workers Paid, 5 US$ a month)</td><td>minute-level recovery within 7 days, at no cost</td></tr>
+  <tr><td>Daily limits: 100,000 requests; D1 5 million rows read and 100,000 rows written; above them requests fail until midnight UTC (stored data is not affected)</td><td>far above today's use; if ever reached the service pauses until midnight UTC: Workers Paid removes the limit</td></tr>
+  <tr><td>Data bound to the EU (D1 jurisdiction <code>eu</code>)</td><td>databases and backups stay in the European Union</td></tr>
+  <tr><td>No daily copies kept by Cloudflare beyond Time Travel</td><td>we make our own: one encrypted backup every night, 30 kept</td></tr>
+</table>
+<h3>Backups: what exists and how often</h3>
+<table>
+  <tr><th>Backup</th><th>How often</th><th>How far back</th><th>Where</th></tr>
+  <tr><td>Time Travel (Cloudflare, automatic, always on)</td><td>continuous, every change</td><td>any minute of the last 7 days</td><td>Cloudflare D1, EU</td></tr>
+  <tr><td>Nightly backup of both databases, encrypted (AES-256) with a phrase only the owner knows</td><td>once a night, 01:40 UTC</td><td>the last 30 nights</td><td>third database <code>personalhealthy-vault</code>, EU</td></tr>
+  <tr><td>Copy of every acceptance of the terms</td><td>at once, and checked every night</td><td>kept as proof</td><td>database <code>personalhealthy-backup</code>, EU</td></tr>
+</table>
+<p>The backups are never in the GitHub repository (health data, public repository): only the code that makes and restores them is.</p>
+<h3>If data is lost now, what can be recovered?</h3>
+<table>
+  <tr><th>Data as it was…</th><th>Possible?</th><th>With</th></tr>
+  <tr><td>a few minutes ago, a few hours ago, yesterday</td><td>yes, to the minute</td><td>Time Travel</td></tr>
+  <tr><td>last night · 3 days ago · a week ago</td><td>yes</td><td>Time Travel (up to 7 days) or the backup of that night</td></tr>
+  <tr><td>2 or 3 weeks ago</td><td>yes, as it was that night</td><td>the backup of that night</td></tr>
+  <tr><td>more than 30 days ago</td><td>no</td><td>nothing is kept longer, as the privacy policy says</td></tr>
+</table>
+<h3>Our commitments (internal targets)</h3>
+<table>
+  <tr><th>What happened</th><th>RPO: data lost at most</th><th>RTO: back within</th><th>How</th></tr>
+  <tr><td>wrong data written, a mistaken deletion, noticed within 7 days</td><td>a few minutes</td><td>5 minutes</td><td>Time Travel</td></tr>
+  <tr><td>a database lost or broken</td><td>24 hours (last night)</td><td>30 minutes</td><td>rebuild + restore of last night's backup</td></tr>
+  <tr><td>the server broken</td><td>nothing</td><td>15 minutes</td><td>Build (or the previous verified version)</td></tr>
+  <tr><td>the whole infrastructure rebuilt from zero (same Cloudflare account)</td><td>24 hours</td><td>1 hour</td><td>Disaster recovery → rebuild, then the manual steps of the runbook</td></tr>
+  <tr><td>the Cloudflare account itself lost</td><td>all data (the backups are in the same account)</td><td>1 hour for an empty service; + Google's review if the address changes</td><td>until a copy outside the account exists (planned at the Google Play launch)</td></tr>
+</table>
+<p class="small">These are targets, not a contract: they depend on Cloudflare, GitHub and Google, which give no availability guarantee on the plans in use.</p>
+<h3>How a recovery runs</h3>
+<ol class="steps">
+  <li><b>By hand</b> (only if the Cloudflare account is new): sign in, keep the subdomain <code>comevava76</code>, create the API token, put it in GitHub; check the GitHub secrets (list in the runbook).</li>
+  <li><b>Pipeline</b> Actions → <i>Disaster recovery</i> → <code>rebuild</code>, confirm <code>RESTORE</code>: creates the three databases in the EU, the tables, takes last night's backup, checks its fingerprint, decrypts it, puts the data back, shows the counts, and starts <i>Build</i>.</li>
+  <li><b>Pipeline</b> <i>Build</i>: secrets into the server, server and Web Dashboard online, signed app, download check.</li>
+  <li><b>By hand</b>, only what applies: Anthropic (a new AI key and its spend limit), Google (the sign-in client, only if the address changed), Google Play (the server's access), the owner's phone (owner code).</li>
+  <li><b>By hand</b>, the check: health address, sign in on the app, readings and lab results there, Web Dashboard, Admin numbers, a new backup made.</li>
+</ol>
+<h3>Proof that it works</h3>
+<p>On the 1st of every month the pipeline runs a <b>drill</b> by itself: it builds a complete copy of the databases from zero,
+restores last night's backup into it, compares the counts with production, measures the time and deletes the copy.
+First test, 02.10.2026, on a local copy: rebuilt and restored in 24 seconds, same counts as the original (7 accounts, 11 readings, 5 acceptances).</p>
+
+<h2>15. Costs: what is free, and up to where</h2>
 <p class="small">As published by the providers in October 2026; the limits can change: check their pricing pages before relying on them.</p>
 <table>
   <tr><th>Service</th><th>Free up to</th><th>Above that</th><th>For HINT 365</th></tr>
@@ -1175,7 +1233,7 @@ The green check marks a check passed. Web: done at the "Server + Web live" step.
 <p>Everything except the Scan is free today. The Admin console shows the database size against the free limit, and the money
 spent on the Scan month by month.</p>
 
-<h2>15. Where to find the rest</h2>
+<h2>16. Where to find the rest</h2>
 <table>
   <tr><th>Document</th><th>File</th></tr>
   <tr><td>Technical architecture, drawings, flows and the database diagram (9 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
@@ -1187,7 +1245,7 @@ spent on the Scan month by month.</p>
   <tr><td>Errors and problems</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/observability.md">docs/operations/observability.md</a></td></tr>
 </table>
 
-<h2>16. Picking the work up again, months later</h2>
+<h2>17. Picking the work up again, months later</h2>
 <p>Everything needed to continue is in the repository on GitHub: the code, the documents, and a diary of every working session.
 No memory of the chat is needed.</p>
 <ol class="steps">

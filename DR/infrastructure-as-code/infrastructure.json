@@ -1,0 +1,102 @@
+{
+  "_what": "HINT 365: everything the service needs outside the code, declared once. DR/infrastructure-as-code/rebuild.sh reads this file and creates what is missing (it never deletes). The Worker itself (code, bindings, cron, static files) is declared in worker/wrangler.toml and deployed by .github/workflows/build.yml.",
+  "cloudflare": {
+    "account_id": "6c6de5312c59db866e1a8e07d3c21c63",
+    "workers_subdomain": "comevava76",
+    "worker": {
+      "name": "personalhealthy-api",
+      "config": "worker/wrangler.toml",
+      "crons": [
+        "17 3 * * *",
+        "7 * * * *"
+      ]
+    },
+    "d1": [
+      {
+        "name": "personalhealthy",
+        "jurisdiction": "eu",
+        "binding": "DB",
+        "schema": "worker/schema.sql",
+        "holds": "accounts, readings, lab results, logs, settings"
+      },
+      {
+        "name": "personalhealthy-backup",
+        "jurisdiction": "eu",
+        "binding": "BACKUP",
+        "schema": "worker/schema-backup.sql",
+        "holds": "copy of the acceptances of the terms (legal proof)"
+      },
+      {
+        "name": "personalhealthy-vault",
+        "jurisdiction": "eu",
+        "binding": null,
+        "schema": "worker/schema-vault.sql",
+        "holds": "nightly encrypted backups of the other two databases, 30 days (no card needed)"
+      }
+    ],
+    "r2": [
+      {
+        "name": "hint365-backups",
+        "jurisdiction": "eu",
+        "expire_days": 30,
+        "lock_days": 7,
+        "holds": "later (Google Play launch): an extra copy of the backups; needs R2 enabled (payment method) — not used yet",
+        "enabled": false
+      }
+    ],
+    "worker_secrets": [
+      "FAMILY_CODE",
+      "KEY_ENCRYPTION_KEY",
+      "AI_API_KEY",
+      "OWNER_CODE",
+      "PLAY_SERVICE_ACCOUNT"
+    ],
+    "worker_vars": [
+      "GOOGLE_CLIENT_ID",
+      "CONTACT_EMAIL",
+      "APP_VERSION"
+    ]
+  },
+  "github": {
+    "repository": "comevava76-web/personalhealthy",
+    "secrets": {
+      "CLOUDFLARE_API_TOKEN": "Cloudflare token: D1 Edit, Workers Scripts Edit, Workers R2 Storage Edit, Account Settings Read (this account only)",
+      "ANDROID_KEYSTORE_B64": "the app's signing key (base64): keep an offline copy, without it no update can be installed over the app",
+      "ANDROID_KEYSTORE_PASSWORD": "password of the signing key",
+      "ANDROID_KEY_ALIAS": "alias of the signing key",
+      "ANDROID_KEY_PASSWORD": "password of the key",
+      "FAMILY_CODE": "old invitation code (still checked)",
+      "AI_API_KEY": "the owner's AI key for the Scan",
+      "OWNER_CODE": "the owner's secret phrase for a new phone",
+      "GOOGLE_WEB_CLIENT_ID": "Google sign-in (OAuth client of the Google Cloud project)",
+      "CONTACT_EMAIL": "contact address shown in the privacy policy",
+      "PLAY_SERVICE_ACCOUNT": "Google Play: subscriptions and the version live on the store",
+      "BACKUP_PASSPHRASE": "the phrase that encrypts the nightly database backups: keep it in a password manager, without it a backup cannot be read"
+    },
+    "workflows": [
+      "build.yml",
+      "android-check.yml",
+      "docs-check.yml",
+      "security-tests.yml",
+      "error-log.yml",
+      "db-backup.yml",
+      "disaster-recovery.yml",
+      "owner-phone.yml",
+      "app-versions.yml",
+      "promote-built-apk.yml",
+      "rebuild-lab-docs.yml",
+      "security-fix.yml"
+    ]
+  },
+  "outside": {
+    "google_cloud": "OAuth client for Sign in with Google (web + Android, SHA-1 of the signing key); service account for Google Play",
+    "google_play_console": "the app ch.personalhealthy.app, the subscription hint365_annual, the AAB of every release",
+    "anthropic_console": "the AI key and its monthly spend limit"
+  },
+  "recovery": {
+    "rpo": "24 hours (nightly backup); minutes within the last 7 days with D1 Time Travel",
+    "rto": "1 hour for a full rebuild from zero (measured by the drill: about 10–20 minutes of pipeline)",
+    "backup_time_utc": "01:40",
+    "backup_keep_days": 30
+  }
+}

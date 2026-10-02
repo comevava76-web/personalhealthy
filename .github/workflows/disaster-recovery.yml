@@ -1,0 +1,73 @@
+name: Disaster recovery (rebuild the infrastructure, restore the data, drill)
+
+# Runbook: docs/operations/disaster-recovery.md. Infrastructure as Code: DR/infrastructure-as-code/infrastructure.json
+# declares what exists, DR/infrastructure-as-code/rebuild.sh creates what is missing (never deletes).
+#   check         what exists and what is missing (changes nothing)
+#   rebuild       from zero: databases (EU) + tables + the backup of "value" (empty = last night), then starts Build
+#   restore       only the data, into empty databases ("value" = the day, empty = last night)
+#   time-travel   the live database back to a minute of the last 7 days ("value" = e.g. 2026-10-02T21:00:00Z)
+#   list-backups  the nightly backups in the vault
+#   drill         the whole recovery on a temporary copy, compared with production, then removed (also every month)
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "check · rebuild · restore · time-travel · list-backups · drill"
+        required: true
+        default: check
+      value:
+        description: "rebuild/restore: the day YYYY-MM-DD (empty = last night) · time-travel: the moment"
+        required: false
+        default: ""
+      confirm:
+        description: "rebuild, restore and time-travel change data: type RESTORE"
+        required: false
+        default: ""
+  schedule:
+    - cron: "15 2 1 * *"     # the drill, on the 1st of every month at 02:15 UTC
+
+permissions:
+  contents: read
+  actions: write             # rebuild starts the Build workflow
+
+concurrency:
+  group: hint365-production
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      ACTION: ${{ inputs.action || 'drill' }}
+      VALUE: ${{ inputs.value }}
+      CONFIRM: ${{ inputs.confirm }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run
+        run: |
+          set -euo pipefail
+          R=DR/infrastructure-as-code/rebuild.sh
+          case "$ACTION" in
+            check|list-backups) bash $R "$ACTION" ;;
+            drill)
+              if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::warning::No drill: BACKUP_PASSPHRASE is not set, so there are no backups yet"; exit 0; fi
+              bash $R drill | tee drill.txt
+              grep -q "DRILL PASSED" drill.txt || echo "::warning::Drill: the counts differ (normal if data changed since last night; check the log)" ;;
+            rebuild)
+              [ "$CONFIRM" = "RESTORE" ] || { echo "Not confirmed: type RESTORE"; exit 1; }
+              bash $R rebuild "${VALUE:-latest}"
+              gh workflow run build.yml --ref main && echo "Build started: it sets the secrets and deploys the Worker and the app" ;;
+            restore)
+              [ "$CONFIRM" = "RESTORE" ] || { echo "Not confirmed: type RESTORE"; exit 1; }
+              bash $R restore "${VALUE:-latest}" ;;
+            time-travel)
+              [ "$CONFIRM" = "RESTORE" ] || { echo "Not confirmed: type RESTORE"; exit 1; }
+              bash $R time-travel "$VALUE" ;;
+            *) echo "Unknown action: $ACTION"; exit 1 ;;
+          esac

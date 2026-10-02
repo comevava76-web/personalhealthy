@@ -1,0 +1,36 @@
+name: Database backup (nightly, encrypted, EU)
+
+# Every night: both D1 databases are exported, packed, encrypted (AES-256 with BACKUP_PASSPHRASE, a phrase known only
+# to the owner) and kept in the D1 database personalhealthy-vault (EU, free, no card). One backup a night, the last
+# 30 nights; older ones are deleted, as the privacy policy says. Restore: Actions → Disaster recovery.
+# Runbook: docs/operations/disaster-recovery.md
+on:
+  schedule:
+    - cron: "40 1 * * *"     # 01:40 UTC = 03:40 Zurich in summer, 02:40 in winter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hint365-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Backup
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::No backup made: add the secret BACKUP_PASSPHRASE (a long phrase, also kept in a password manager)"; exit 0; fi
+          bash DR/infrastructure-as-code/rebuild.sh apply
+          bash DR/infrastructure-as-code/rebuild.sh backup
+          bash DR/infrastructure-as-code/rebuild.sh list-backups
