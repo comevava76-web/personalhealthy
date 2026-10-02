@@ -9,6 +9,8 @@
   .ctl td:first-child { width: 30%; font-weight: 600; }
   .toc { columns: 2; font-size: 9pt; margin: 4pt 0 8pt; }
   .toc li { margin: 1pt 0; }
+  .toc .toc-part { list-style: none; margin: 5pt 0 1pt -14pt; font-weight: bold; color: #6D5BD0; break-after: avoid; }
+  .part { page-break-before: always; margin: 0; padding: 7pt 10pt; background: linear-gradient(90deg, #6D5BD0, #0F9C8E); color: #fff; font-weight: bold; font-size: 11.5pt; border-radius: 5pt; page-break-after: avoid; }
   @page { size: A4; margin: 15mm 14mm 16mm; }
   body { font: 10pt/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #13223F; margin: 0; }
   .cover { background: linear-gradient(90deg, #6D5BD0, #0F9C8E); color: #fff; padding: 18pt 20pt; border-radius: 8pt; margin-bottom: 12pt; }
@@ -36,10 +38,10 @@
 <div class="cover">
   <h1>HINT 365 · How it works</h1>
   <p>The whole service in plain words: what it is for, who does what, where everything runs, how changes, releases,
-  security patches and compliance are handled, and what is free. Updated 02.10.2026, app version 0.1.122.</p>
+  security patches and compliance are handled, and what is free. Updated 02.10.2026, app version 0.1.130.</p>
 </div>
 
-<p class="small">This is the general document. Every other document is linked in section 16; how to pick the work up again is in section 17; disaster recovery is section 14. Times are given in Zurich time and
+<p class="small">This is the general document. Every other document is linked in section 16; how to pick the work up again is in section 17; disaster recovery is section 8. Times are given in Zurich time and
 in UTC (Zurich is UTC+2 in summer, UTC+1 in winter).</p>
 
 <table class="ctl">
@@ -49,18 +51,37 @@ in UTC (Zurich is UTC+2 in summer, UTC+1 in winter).</p>
   <tr><td>Scope</td><td>The Android app, the Web Dashboard, the server, the automatic jobs and the processes: compliance, defect, vulnerability, patch, change, release and observability.</td></tr>
   <tr><td>Owner and author</td><td>Human (architect and owner of HINT 365) · <a href="mailto:comevava76@gmail.com">comevava76@gmail.com</a></td></tr>
   <tr><td>Developer</td><td>Claude (Anthropic), working on the owner's instructions</td></tr>
-  <tr><td>Version and date</td><td>app 0.1.122 · terms of use v22 · 02.10.2026</td></tr>
+  <tr><td>Version and date</td><td>app 0.1.130 · terms of use v22 · 02.10.2026</td></tr>
   <tr><td>Updated</td><td>in the same change as any process, job, key, price or provider it describes (rule in <code>CLAUDE.md</code>)</td></tr>
   <tr><td>Binding texts</td><td>the terms of use and the privacy policy; this document only explains them</td></tr>
 </table>
 <h3>Contents</h3>
 <ol class="toc">
-  <li>What HINT 365 is for</li><li>Who does what</li><li>What the person does, step by step</li><li>Where everything runs</li>
-  <li>Keys and secrets</li><li>Personal data and compliance</li><li>Automatic jobs (crontab)</li><li>Logs</li>
-  <li>Defect management</li><li>Vulnerability management</li><li>Patch management</li><li>Change management</li>
-  <li>Release management</li><li>Disaster recovery</li><li>Costs</li><li>Where to find the rest</li><li>Picking the work up again</li>
+  <li class="toc-part">Part 1 · Functional</li>
+  <li value="1">What HINT 365 is for</li>
+  <li value="2">Who does what</li>
+  <li value="3">What the person does, step by step</li>
+  <li class="toc-part">Part 2 · Application architecture</li>
+  <li value="4">Where everything runs</li>
+  <li value="5">Keys and secrets, in plain words</li>
+  <li class="toc-part">Part 3 · Running the service</li>
+  <li value="6">Automatic jobs (the "crontab")</li>
+  <li value="7">Logs</li>
+  <li value="8">Disaster recovery</li>
+  <li class="toc-part">Part 4 · Processes</li>
+  <li value="9">Compliance</li>
+  <li value="10">Change management</li>
+  <li value="11">Release management</li>
+  <li value="12">Patch management</li>
+  <li value="13">Vulnerability management</li>
+  <li value="14">Defect management</li>
+  <li class="toc-part">Part 5 · Reference</li>
+  <li value="15">Costs</li>
+  <li value="16">Where to find the rest</li>
+  <li value="17">Picking the work up again, months later</li>
 </ol>
 <p class="small">Colours in the diagrams: <span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#EDE9FB;border:1pt solid #6D5BD0;vertical-align:-1pt"></span> Person</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#FFF4DE;border:1pt solid #B7860B;vertical-align:-1pt"></span> Owner</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E2F5F2;border:1pt solid #0F9C8E;vertical-align:-1pt"></span> Developer (Claude)</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E6EEFA;border:1pt solid #2E66AE;vertical-align:-1pt"></span> Automatic</span></p>
+<div class="part" style="page-break-before:auto;margin-top:16pt">Part 1 · Functional: what HINT 365 does and for whom</div>
 <h2>1. What HINT 365 is for</h2>
 <p>HINT 365 is a <b>personal diary</b> on an Android phone. A person records their blood pressure (the top number <b>SYS</b>, the
 bottom number <b>DIA</b> and the pulse <b>PUL</b>) and keeps the results of their lab reports. The app shows them in tables,
@@ -166,7 +187,75 @@ one only explains.</p>
     read-only link valid 7 days.</li>
 </ul>
 
+<div class="part">Part 2 · Application architecture: how it is built and how a request travels</div>
 <h2>4. Where everything runs</h2>
+<h3>How a request travels, in five blocks</h3>
+<div class="fig"><svg viewBox="0 0 720 330" width="100%" font-family="Arial" font-size="8" style="margin:4pt 0 2pt">
+<defs><marker id="rf" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10" y="70" width="130" height="70" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="91.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · App on the phone</text>
+<text x="75.0" y="102.6" text-anchor="middle" fill="#13223F">Android (from Google Play)</text>
+<text x="75.0" y="113.4" text-anchor="middle" fill="#13223F">iPhone (App Store, later)</text>
+<text x="75.0" y="124.2" text-anchor="middle" fill="#13223F">the person</text>
+<rect x="10" y="175" width="130" height="62" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="198.2" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · Web browser</text>
+<text x="75.0" y="209.0" text-anchor="middle" fill="#13223F">Web Dashboard</text>
+<text x="75.0" y="219.79999999999998" text-anchor="middle" fill="#13223F">the person, the doctor's link</text>
+<rect x="200" y="18" width="150" height="50" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="275.0" y="40.6" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Domain (bought on GoDaddy)</text>
+<text x="275.0" y="51.400000000000006" text-anchor="middle" fill="#13223F">its name servers point to Cloudflare</text>
+<rect x="200" y="110" width="150" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="275.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">2 · Cloudflare network</text>
+<text x="275.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">DNS: name → address</text>
+<text x="275.0" y="161.0" text-anchor="middle" fill="#13223F">HTTPS: certificate, encryption</text>
+<text x="275.0" y="171.8" text-anchor="middle" fill="#13223F">protection, the nearest</text>
+<text x="275.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">data centre answers</text>
+<rect x="400" y="110" width="140" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="470.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">3 · Worker = our server</text>
+<text x="470.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">the program in TypeScript:</text>
+<text x="470.0" y="161.0" text-anchor="middle" fill="#13223F">API for the app and</text>
+<text x="470.0" y="171.8" text-anchor="middle" fill="#13223F">the Web Dashboard pages</text>
+<text x="470.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">no Tomcat, no nginx</text>
+<rect x="590" y="110" width="120" height="96" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">4 · D1 database (EU)</text>
+<text x="650.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">accounts, readings,</text>
+<text x="650.0" y="161.0" text-anchor="middle" fill="#13223F">lab results, settings</text>
+<text x="650.0" y="171.8" text-anchor="middle" fill="#13223F">+ copy of acceptances</text>
+<text x="650.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">Time Travel: 7 days</text>
+<rect x="590" y="250" width="120" height="66" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">5 · Nightly backup</text>
+<text x="650.0" y="280.6" text-anchor="middle" fill="#13223F">01:40 UTC, encrypted</text>
+<text x="650.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">vault database (EU)</text>
+<text x="650.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">last 30 nights</text>
+<rect x="400" y="250" width="140" height="66" rx="6" fill="#EEF1F5" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="470.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Outside services</text>
+<text x="470.0" y="280.6" text-anchor="middle" fill="#13223F">Google: sign-in, Play</text>
+<text x="470.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">Anthropic: reads the</text>
+<text x="470.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">Scan photo (AI)</text>
+<path d="M140 105 L170 105 L170 140 L198 140" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="99" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M140 206 L170 206 L170 176 L198 176" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="222" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M275 68 L275 108" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="280" y="92" text-anchor="start" font-size="7.4" fill="#5B6B88">set once</text>
+<path d="M350 158 L398 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="374" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">request</text>
+<path d="M540 158 L588 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="564" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">SQL</text>
+<path d="M650 206 L650 248" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="655" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">every night</text>
+<path d="M470 206 L470 248" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="475" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">when needed</text>
+</svg><p class="cap">Figure: from the phone or the browser to the database and the nightly backup.</p></div>
+<ol class="steps">
+  <li><b>The person</b> uses the <b>app</b> on the phone (Android, installed from Google Play; iPhone later, from the App Store) or the <b>Web Dashboard</b> in a browser. Every request leaves encrypted (HTTPS).</li>
+  <li><b>Cloudflare's network</b> receives it. First the <b>DNS</b> turns the name (today <code>personalhealthy-api.comevava76.workers.dev</code>; later the owner's domain, bought on GoDaddy, whose name servers are set once to Cloudflare) into an address. Cloudflare holds the <b>HTTPS certificate</b> (renewed by itself), protects against attacks and answers from the data centre nearest to the person.</li>
+  <li>The <b>Worker</b> is our server: only the program (TypeScript, <code>worker/src/</code>), run by Cloudflare's own engine (<i>workerd</i>) for each request, in a few milliseconds. It does the work of nginx (web server: hands out the Web Dashboard pages and the APK) and of Tomcat (application server: the API that signs in, saves a reading, makes a report). There is no machine of ours to update: see "What a Cloudflare Worker is" below.</li>
+  <li><b>D1</b> is Cloudflare's database, based on SQLite, kept in the European Union: accounts (a code, never the email), readings, lab results, settings, logs; a second D1 holds the copy of every acceptance of the terms. Only the Worker reads and writes it. Cloudflare's <b>Time Travel</b> can put it back to any minute of the last 7 days.</li>
+  <li>The <b>nightly backup</b>: every night at 01:40 UTC (03:40 in Zurich in summer) a GitHub Actions pipeline exports the two databases, encrypts them with a phrase only the owner knows and keeps them in a third D1 (the vault, EU). The last 30 nights are kept. Section 8 says how to restore.</li>
+</ol>
+<p class="small">Dashed: done when needed. The Worker calls Google (sign-in, Google Play subscriptions and versions) and Anthropic (only to read the photo of a Scan) and nothing else.</p>
+<h3>The parts, one by one</h3>
 <table>
   <tr><th>Part</th><th>Technology</th><th>Where the code is</th><th>Where it runs</th></tr>
   <tr><td>The app</td><td>Kotlin with Jetpack Compose (Android)</td><td><code>android/app/src/main/java/ch/personalhealthy/app/</code></td><td>on the person's phone</td></tr>
@@ -544,7 +633,7 @@ The tables at the bottom have no relations.</p></div>
   <tr><td><code>scan_trials</code></td><td>coded fingerprints of Google accounts and phones that already had the AI trial</td><td>2 years</td></tr>
   <tr><td><code>ai_spend_daily, sub_sales_daily</code></td><td>totals per day: Scans and AI cost, subscriptions sold</td><td>for the accounts</td></tr>
 </table>
-<p class="small">Backups and disaster recovery: section 14.</p>
+<p class="small">Backups and disaster recovery: section 8.</p>
 
 <h3>What a Cloudflare Worker is (and why there is no Tomcat, nginx or server to look after)</h3>
 <p>In a classic set-up a company rents a <b>server</b> (a computer in a data centre, always on), installs an operating system,
@@ -566,7 +655,7 @@ Cloudflare, who keeps it running, updated and protected.</p>
   <tr><td>cron on the server for night jobs</td><td><b>Cron Triggers</b> of the Worker (03:17 UTC clean-up, every hour the Google Play version)</td></tr>
   <tr><td>updates, patches, restarts, scaling: our job</td><td>Cloudflare's job; we only update our code and its libraries</td></tr>
 </table>
-<p class="small">What is ours to look after: the code, its libraries (patch management, section 11), the keys, the data and the backups. What is Cloudflare's: machines, operating system, network, HTTPS, the runtime. The address today is <code>personalhealthy-api.comevava76.workers.dev</code> ("comevava76" is the name of the Cloudflare account); it will become the owner's own domain, connected to the same Worker.</p>
+<p class="small">What is ours to look after: the code, its libraries (patch management, section 12), the keys, the data and the backups. What is Cloudflare's: machines, operating system, network, HTTPS, the runtime. The address today is <code>personalhealthy-api.comevava76.workers.dev</code> ("comevava76" is the name of the Cloudflare account); it will become the owner's own domain, connected to the same Worker.</p>
 
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret
@@ -592,7 +681,127 @@ store (encrypted: nobody can read them back, not even the developer, also when t
 <p>The owner's powers (Admin console, blocking old app versions, settings) work only from the owner's phone on record. If someone
 stole the owner's Google account and signed in on another phone, they would see that account's data but not the owner's controls.</p>
 
-<h2>6. Personal data and compliance</h2>
+<div class="part">Part 3 · Running the service: automatic jobs, logs, disaster recovery</div>
+<h2>6. Automatic jobs (the "crontab")</h2>
+<p>These jobs run by themselves. Nobody has to start them.</p>
+<table>
+  <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
+  <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
+    and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
+  <tr><td>every night 03:40 / 01:40</td><td>Database backup</td><td>GitHub Actions</td><td>exports both databases, encrypts them (AES-256) and keeps them in the EU vault database; the last 30 nights are kept</td></tr>
+  <tr><td>1st of every month 04:15 / 02:15</td><td>Disaster recovery drill</td><td>GitHub Actions</td><td>rebuilds a copy of the databases from zero, restores last night's backup, compares the counts with production, deletes the copy</td><td>prove that recovery works (section 8)<td>data can be put back after any loss</td></tr>
+  <tr><td>every hour, at minute 7</td><td>Version live on Google Play</td><td>Cloudflare (Worker cron)</td><td>asks Google Play which version is published to everyone; from then on only that one is accepted (nothing before Google Play)</td><td>ask for the update only when Google can give it</td></tr>
+  <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
+    probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
+  <tr><td>every day 06:30 / 04:30</td><td>Error log report</td><td>GitHub Actions</td><td>reads the errors users met in the last 24 hours; opens an issue if there are any</td><td>see problems before users report them</td></tr>
+  <tr><td>every day 06:48 / 04:48</td><td>Morning routine: defects</td><td>Claude</td><td>reads the errors of the last 24 hours, fixes the real bugs, releases, records
+    each problem and its fix, reports in the chat</td><td>defects handled every day</td></tr>
+  <tr><td>every Monday 06:48 / 04:48</td><td>Morning routine: vulnerabilities and patches</td><td>Claude</td><td>reads Monday's scan and the library updates, fixes every finding it can,
+    writes a short reason for each one it cannot, merges small updates, proposes major ones</td><td>vulnerabilities handled every week</td></tr>
+  <tr><td>every Monday 05:00 Zurich</td><td>Dependabot</td><td>GitHub</td><td>one pull request for each library of the app and the server with a newer version (the pipeline tools: monthly)</td><td>stay up to date</td></tr>
+  <tr><td>every push to the main code</td><td>Build</td><td>GitHub Actions</td><td>tests, server online, signed app, release, download check</td><td>release (section 11)</td></tr>
+  <tr><td>every pull request</td><td>Tests, Android build check, Docs check</td><td>GitHub Actions</td><td>about 180 tests, the app must compile, documents must match the code</td><td>nothing broken reaches people</td></tr>
+  <tr><td>on the phone, 09:00 and 17:00 local</td><td>Reminders</td><td>the app</td><td>"Remember to measure your blood pressure"; cleared at midnight</td><td>help the person keep the diary</td></tr>
+  <tr><td>on the phone, 2 days before the trial ends</td><td>AI trial notice</td><td>the app</td><td>says the Scan stops unless the person subscribes; voice keeps working</td><td>no surprise</td></tr>
+  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK · Disaster recovery</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back · rebuild the infrastructure and restore the data</td><td>control in an emergency</td></tr>
+</table>
+
+<h2>7. Logs: what we see and what we do not see</h2>
+<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">App and web</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">send error codes,</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">never values</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Worker</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">counts errors and</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">outcomes</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">D1 logs</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">error_log, event_log,</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">90 days</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Scans</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">security results,</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">weekly</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Admin</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Observability:</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">problems,</text>
+<text x="466.0" y="54.0" text-anchor="middle" fill="#3B4A66">vulnerabilities,</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Observability: what is collected, where it is shown, who acts on it.</p></div>
+<table>
+  <tr><th>Log</th><th>Where</th><th>What we see</th><th>Kept</th></tr>
+  <tr><td>Error log</td><td>D1 table <code>error_log</code>; Admin → Observability; the daily issue</td><td>an error code, where it happened, the app version, how many times a day</td><td>90 days</td></tr>
+  <tr><td>Event log</td><td>D1 table <code>event_log</code></td><td>outcomes as counts: lab report saved or refused and why, Scan retakes and their reason</td><td>90 days</td></tr>
+  <tr><td>Security results</td><td>Admin → Security; the <code>security-test</code> issue; the run on GitHub</td><td>libraries with known weaknesses, findings in our code, secrets found</td><td>last run; reports 30 days</td></tr>
+  <tr><td>Problem registry</td><td><code>worker/src/ops/problems.json</code>; Admin → Observability</td><td>every real problem met: cause, fix, version, pull request</td><td>for ever (in Git)</td></tr>
+  <tr><td>Pipeline runs</td><td>GitHub → Actions</td><td>every test, build and release, step by step</td><td>as GitHub keeps them</td></tr>
+  <tr><td>Accounts and money (owner)</td><td>Admin console</td><td>number of users, Scans and their cost, subscriptions sold, balance</td><td>totals per day</td></tr>
+</table>
+<p><b>What we never see:</b> the values of a reading or a lab result in any log; names, emails or phone numbers; the photos (not kept
+anywhere); the text people say; the content of the reports. Logs hold only codes and counts linked, at most, to an anonymous account code.</p>
+
+<h2>8. Disaster recovery</h2>
+<p>What happens if data is lost or the infrastructure disappears: which backups exist, how far back we can go, how long
+it takes to be back, what we commit to and what we do not. The step-by-step runbook, with every manual action, is
+<a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>;
+the Infrastructure as Code is in the folder <code>DR/</code> of the repository.</p>
+<h3>What the service levels rest on: Cloudflare, Workers Free plan (today)</h3>
+<table>
+  <tr><th>Cloudflare, Workers Free</th><th>What it means for HINT 365</th></tr>
+  <tr><td>No availability guarantee (no SLA): uptime commitments exist only on Cloudflare's paid business plans</td><td>we cannot promise a percentage of availability; HINT 365 is offered "as is", as the terms of use say</td></tr>
+  <tr><td>D1 Time Travel: the database can be put back to any minute of the last <b>7 days</b> (30 days on Workers Paid, 5 US$ a month)</td><td>minute-level recovery within 7 days, at no cost</td></tr>
+  <tr><td>Daily limits: 100,000 requests; D1 5 million rows read and 100,000 rows written; above them requests fail until midnight UTC (stored data is not affected)</td><td>far above today's use; if ever reached the service pauses until midnight UTC: Workers Paid removes the limit</td></tr>
+  <tr><td>Data bound to the EU (D1 jurisdiction <code>eu</code>)</td><td>databases and backups stay in the European Union</td></tr>
+  <tr><td>No daily copies kept by Cloudflare beyond Time Travel</td><td>we make our own: one encrypted backup every night, 30 kept</td></tr>
+</table>
+<h3>Backups: what exists and how often</h3>
+<table>
+  <tr><th>Backup</th><th>How often</th><th>How far back</th><th>Where</th></tr>
+  <tr><td>Time Travel (Cloudflare, automatic, always on)</td><td>continuous, every change</td><td>any minute of the last 7 days</td><td>Cloudflare D1, EU</td></tr>
+  <tr><td>Nightly backup of both databases, encrypted (AES-256) with a phrase only the owner knows</td><td>once a night, 01:40 UTC</td><td>the last 30 nights</td><td>third database <code>personalhealthy-vault</code>, EU</td></tr>
+  <tr><td>Copy of every acceptance of the terms</td><td>at once, and checked every night</td><td>kept as proof</td><td>database <code>personalhealthy-backup</code>, EU</td></tr>
+</table>
+<p>The backups are never in the GitHub repository (health data, public repository): only the code that makes and restores them is.</p>
+<h3>If data is lost now, what can be recovered?</h3>
+<table>
+  <tr><th>Data as it was…</th><th>Possible?</th><th>With</th></tr>
+  <tr><td>a few minutes ago, a few hours ago, yesterday</td><td>yes, to the minute</td><td>Time Travel</td></tr>
+  <tr><td>last night · 3 days ago · a week ago</td><td>yes</td><td>Time Travel (up to 7 days) or the backup of that night</td></tr>
+  <tr><td>2 or 3 weeks ago</td><td>yes, as it was that night</td><td>the backup of that night</td></tr>
+  <tr><td>more than 30 days ago</td><td>no</td><td>nothing is kept longer, as the privacy policy says</td></tr>
+</table>
+<h3>Our commitments (internal targets)</h3>
+<table>
+  <tr><th>What happened</th><th>RPO: data lost at most</th><th>RTO: back within</th><th>How</th></tr>
+  <tr><td>wrong data written, a mistaken deletion, noticed within 7 days</td><td>a few minutes</td><td>5 minutes</td><td>Time Travel</td></tr>
+  <tr><td>a database lost or broken</td><td>24 hours (last night)</td><td>30 minutes</td><td>rebuild + restore of last night's backup</td></tr>
+  <tr><td>the server broken</td><td>nothing</td><td>15 minutes</td><td>Build (or the previous verified version)</td></tr>
+  <tr><td>the whole infrastructure rebuilt from zero (same Cloudflare account)</td><td>24 hours</td><td>1 hour</td><td>Disaster recovery → rebuild, then the manual steps of the runbook</td></tr>
+  <tr><td>the Cloudflare account itself lost</td><td>all data (the backups are in the same account)</td><td>1 hour for an empty service; + Google's review if the address changes</td><td>until a copy outside the account exists (planned at the Google Play launch)</td></tr>
+</table>
+<p class="small">These are targets, not a contract: they depend on Cloudflare, GitHub and Google, which give no availability guarantee on the plans in use.</p>
+<h3>How a recovery runs</h3>
+<ol class="steps">
+  <li><b>By hand</b> (only if the Cloudflare account is new): sign in, keep the subdomain <code>comevava76</code>, create the API token, put it in GitHub; check the GitHub secrets (list in the runbook).</li>
+  <li><b>Pipeline</b> Actions → <i>Disaster recovery</i> → <code>rebuild</code>, confirm <code>RESTORE</code>: creates the three databases in the EU, the tables, takes last night's backup, checks its fingerprint, decrypts it, puts the data back, shows the counts, and starts <i>Build</i>.</li>
+  <li><b>Pipeline</b> <i>Build</i>: secrets into the server, server and Web Dashboard online, signed app, download check.</li>
+  <li><b>By hand</b>, only what applies: Anthropic (a new AI key and its spend limit), Google (the sign-in client, only if the address changed), Google Play (the server's access), the owner's phone (owner code).</li>
+  <li><b>By hand</b>, the check: health address, sign in on the app, readings and lab results there, Web Dashboard, Admin numbers, a new backup made.</li>
+</ol>
+<h3>Proof that it works</h3>
+<p>On the 1st of every month the pipeline runs a <b>drill</b> by itself: it builds a complete copy of the databases from zero,
+restores last night's backup into it, compares the counts with production, measures the time and deletes the copy.
+First drill on the real account, 02.10.2026: rebuilt from zero and restored in 24 seconds, same counts as production (1 account, 39 readings, 29 acceptances); the copy was then deleted.</p>
+
+<div class="part">Part 4 · Processes: compliance, change, release, patch, vulnerability and defect management</div>
+<h2>9. Compliance: personal data and the law</h2>
 <div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
 <defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
 <rect x="10.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
@@ -648,251 +857,7 @@ stole the owner's Google account and signed in on another phone, they would see 
     <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/HINT365-Compliance.pdf">docs/compliance/HINT365-Compliance.pdf</a>. It is the developer's self-assessment, not legal advice.</li>
 </ul>
 
-<h2>7. Automatic jobs (the "crontab")</h2>
-<p>These jobs run by themselves. Nobody has to start them.</p>
-<table>
-  <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
-  <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
-    and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
-  <tr><td>every night 03:40 / 01:40</td><td>Database backup</td><td>GitHub Actions</td><td>exports both databases, encrypts them (AES-256) and keeps them in the EU vault database; the last 30 nights are kept</td></tr>
-  <tr><td>1st of every month 04:15 / 02:15</td><td>Disaster recovery drill</td><td>GitHub Actions</td><td>rebuilds a copy of the databases from zero, restores last night's backup, compares the counts with production, deletes the copy</td><td>prove that recovery works (section 14)<td>data can be put back after any loss</td></tr>
-  <tr><td>every hour, at minute 7</td><td>Version live on Google Play</td><td>Cloudflare (Worker cron)</td><td>asks Google Play which version is published to everyone; from then on only that one is accepted (nothing before Google Play)</td><td>ask for the update only when Google can give it</td></tr>
-  <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
-    probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
-  <tr><td>every day 06:30 / 04:30</td><td>Error log report</td><td>GitHub Actions</td><td>reads the errors users met in the last 24 hours; opens an issue if there are any</td><td>see problems before users report them</td></tr>
-  <tr><td>every day 06:48 / 04:48</td><td>Morning routine: defects</td><td>Claude</td><td>reads the errors of the last 24 hours, fixes the real bugs, releases, records
-    each problem and its fix, reports in the chat</td><td>defects handled every day</td></tr>
-  <tr><td>every Monday 06:48 / 04:48</td><td>Morning routine: vulnerabilities and patches</td><td>Claude</td><td>reads Monday's scan and the library updates, fixes every finding it can,
-    writes a short reason for each one it cannot, merges small updates, proposes major ones</td><td>vulnerabilities handled every week</td></tr>
-  <tr><td>every Monday 05:00 Zurich</td><td>Dependabot</td><td>GitHub</td><td>one pull request for each library of the app and the server with a newer version (the pipeline tools: monthly)</td><td>stay up to date</td></tr>
-  <tr><td>every push to the main code</td><td>Build</td><td>GitHub Actions</td><td>tests, server online, signed app, release, download check</td><td>release (section 13)</td></tr>
-  <tr><td>every pull request</td><td>Tests, Android build check, Docs check</td><td>GitHub Actions</td><td>about 180 tests, the app must compile, documents must match the code</td><td>nothing broken reaches people</td></tr>
-  <tr><td>on the phone, 09:00 and 17:00 local</td><td>Reminders</td><td>the app</td><td>"Remember to measure your blood pressure"; cleared at midnight</td><td>help the person keep the diary</td></tr>
-  <tr><td>on the phone, 2 days before the trial ends</td><td>AI trial notice</td><td>the app</td><td>says the Scan stops unless the person subscribes; voice keeps working</td><td>no surprise</td></tr>
-  <tr><td>by hand</td><td>App versions · Owner phone · Promote verified APK · Disaster recovery</td><td>the owner (GitHub → Actions)</td><td>block old app versions · give the owner's powers to a new phone · put a previous version back · rebuild the infrastructure and restore the data</td><td>control in an emergency</td></tr>
-</table>
-
-<h2>8. Logs: what we see and what we do not see</h2>
-<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
-<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">App and web</text>
-<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">send error codes,</text>
-<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">never values</text>
-<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Worker</text>
-<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">counts errors and</text>
-<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">outcomes</text>
-<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">D1 logs</text>
-<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">error_log, event_log,</text>
-<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">90 days</text>
-<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Scans</text>
-<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">security results,</text>
-<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">weekly</text>
-<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Admin</text>
-<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Observability:</text>
-<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">problems,</text>
-<text x="466.0" y="54.0" text-anchor="middle" fill="#3B4A66">vulnerabilities,</text>
-<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-</svg><p class="cap">Figure: Observability: what is collected, where it is shown, who acts on it.</p></div>
-<table>
-  <tr><th>Log</th><th>Where</th><th>What we see</th><th>Kept</th></tr>
-  <tr><td>Error log</td><td>D1 table <code>error_log</code>; Admin → Observability; the daily issue</td><td>an error code, where it happened, the app version, how many times a day</td><td>90 days</td></tr>
-  <tr><td>Event log</td><td>D1 table <code>event_log</code></td><td>outcomes as counts: lab report saved or refused and why, Scan retakes and their reason</td><td>90 days</td></tr>
-  <tr><td>Security results</td><td>Admin → Security; the <code>security-test</code> issue; the run on GitHub</td><td>libraries with known weaknesses, findings in our code, secrets found</td><td>last run; reports 30 days</td></tr>
-  <tr><td>Problem registry</td><td><code>worker/src/ops/problems.json</code>; Admin → Observability</td><td>every real problem met: cause, fix, version, pull request</td><td>for ever (in Git)</td></tr>
-  <tr><td>Pipeline runs</td><td>GitHub → Actions</td><td>every test, build and release, step by step</td><td>as GitHub keeps them</td></tr>
-  <tr><td>Accounts and money (owner)</td><td>Admin console</td><td>number of users, Scans and their cost, subscriptions sold, balance</td><td>totals per day</td></tr>
-</table>
-<p><b>What we never see:</b> the values of a reading or a lab result in any log; names, emails or phone numbers; the photos (not kept
-anywhere); the text people say; the content of the reports. Logs hold only codes and counts linked, at most, to an anonymous account code.</p>
-
-<h2>9. Defect management: how a problem gets fixed</h2>
-<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
-<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">User error</text>
-<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">the app or web sends</text>
-<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">an error code</text>
-<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Error log</text>
-<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">D1 error_log, codes</text>
-<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">and counts only</text>
-<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Daily issue</text>
-<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:30 report on GitHub</text>
-<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Analyse</text>
-<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:48: real bug or</text>
-<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">normal situation?</text>
-<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Record</text>
-<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">problem registry,</text>
-<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">status open</text>
-<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
-<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">branch, test that</text>
-<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">catches it</text>
-<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
-<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">about 180 tests,</text>
-<text x="157.0" y="127.5" text-anchor="middle" fill="#3B4A66">build, documents</text>
-<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
-<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">same day, new version</text>
-<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Closed</text>
-<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">registry: fixed,</text>
-<text x="363.0" y="127.5" text-anchor="middle" fill="#3B4A66">version, PR</text>
-<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Summary</text>
-<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">2-3 lines to the owner</text>
-<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-</svg><p class="cap">Figure: Defect management: every day, from the error to the fix in a new version.</p></div>
-<ol class="steps">
-  <li><b>Found</b>: a user meets an error (the app and the web send its code to the error log), or a test fails, or the owner reports it in the chat.</li>
-  <li><b>Collected</b>: every morning the <i>Error log report</i> opens an issue with the last 24 hours.</li>
-  <li><b>Analysed</b> at 06:48 by the morning routine: is it a real bug or a normal situation (a wrong phone clock, one blurred photo)?</li>
-  <li><b>Recorded</b> in the problem registry with its cause (status: open).</li>
-  <li><b>Fixed</b> on a branch, with a test that would have caught it; all checks green; merged; released the same day.</li>
-  <li><b>Closed</b>: the registry says fixed, in which version and with which pull request; the issue is closed; the owner gets a short summary.</li>
-  <li>Large or unclear fixes, and anything touching the terms, wait for the owner.</li>
-</ol>
-
-<h2>10. Security: vulnerability management</h2>
-<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
-<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:10</text>
-<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">scan starts on GitHub</text>
-<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">List</text>
-<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">every library and</text>
-<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">exact version</text>
-<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Match</text>
-<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">OSV.dev public</text>
-<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">database</text>
-<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rate</text>
-<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">advisory severity,</text>
-<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">then our rating</text>
-<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Publish</text>
-<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Admin, open only, with</text>
-<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">date or reason</text>
-<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:48</text>
-<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">routine takes each</text>
-<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">finding</text>
-<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
-<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">update, tests, release</text>
-<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Or reason</text>
-<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">build tool, no fix</text>
-<text x="260.0" y="127.5" text-anchor="middle" fill="#3B4A66">yet, false positive</text>
-<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Next Monday</text>
-<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">fixed ones disappear</text>
-<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Owner</text>
-<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">sees only what is</text>
-<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">still open</text>
-<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-</svg><p class="cap">Figure: Vulnerability management: every Monday, from the scan to the fix or a written reason.</p></div>
-<p>A vulnerability is a known weakness in a piece of software we use. New ones are published every day; we look for them
-<b>once a week</b>, on Monday, and fix them the same morning when we can.</p>
-<h3>How they are found and rated</h3>
-<table>
-  <tr><th>Step</th><th>What happens</th><th>Where</th></tr>
-  <tr><td>1. List what we use</td><td>the scanner lists every library with its exact version: the app's full tree as Gradle resolves it (also libraries pulled in by others),
-    the server's tools, the two libraries copied into the web page, the actions of the pipelines</td><td><code>docs/testing/harness/vuln-scan.mjs</code></td></tr>
-  <tr><td>2. Match with the public database</td><td>each name and version is sent to <b>OSV.dev</b>, the open database that gathers the GitHub Advisory Database, CVE, Android, Maven and npm
-    advisories; it answers with every known weakness for that version and the version that fixes it</td><td>OSV.dev</td></tr>
-  <tr><td>3. Our own code and secrets</td><td>Semgrep checks our code for risky patterns; gitleaks checks that no key was ever written in the repository</td><td>same workflow</td></tr>
-  <tr><td>4. Risk rating</td><td>the advisory's severity (critical, high, moderate, low, from its CVSS score) is the start; then our rating: a library used only to <b>build</b> the app goes one level down, because it is not in the app people install; a decision written in <code>docs/security/decisions.json</code> wins over both</td><td><code>vuln-scan.mjs</code>, <code>decisions.json</code></td></tr>
-  <tr><td>5. Saved and shown</td><td>the results go to the database (replaced at every scan: a fixed weakness simply is not there any more), with the date it was first seen and its reason; the web Admin shows them under Observability</td><td><code>publish-security.mjs</code>, D1 <code>security_findings</code>, <code>security_notes</code></td></tr>
-</table>
-<h3>What the owner sees in Admin → Observability</h3>
-<p>Only the <b>open</b> vulnerabilities. Fixed ones disappear at the next scan. Each open one says when it will be fixed, or why it stays:</p>
-<table>
-  <tr><th>Shown</th><th>Meaning</th></tr>
-  <tr><td>will be fixed by <i>date</i></td><td>found by the scan; the Monday routine fixes it on that date (the first Monday after it was found)</td></tr>
-  <tr><td>fix failed, retrying by <i>date</i></td><td>the update broke something; tried again the next Monday</td></tr>
-  <tr><td>build tool, not in the app</td><td>only in the tools that build the app on GitHub; fixed by a major update of those tools, which needs the owner's go</td></tr>
-  <tr><td>no fix published yet</td><td>the makers of the library have not released a fixed version; checked every Monday</td></tr>
-  <tr><td>false positive</td><td>the scanner is wrong for our case (the note says why)</td></tr>
-  <tr><td>accepted risk</td><td>the owner accepted it for a reason and until a date written in the plan</td></tr>
-</table>
-<h3>The weekly cycle</h3>
-<ol class="steps">
-  <li><b>Monday 06:10 Zurich (04:10 UTC)</b>: the scan runs and updates the list.</li>
-  <li><b>Monday 06:48</b>: the routine takes every open finding, fixes what it can (update the library, run all tests, release the same day).</li>
-  <li>For each one it cannot fix, it writes the short reason in <code>decisions.json</code> (shown in the list).</li>
-  <li><b>Next Monday</b>: the scan confirms; what was fixed is gone; what is left keeps its reason or gets a new date.</li>
-</ol>
-<div class="note"><b>Where we are on 02.10.2026.</b> The only findings inside the app (Bouncy Castle) were fixed in version 0.1.120.
-The 59 left are all build tools (brought in by the Android Gradle plugin 8.5.2): they disappear with its major update (issue #94),
-which waits for the owner's go. The Kotlin build plugin (issue #97) is an accepted risk until Kotlin 2.x is stable.</div>
-<p>The "Fix" button of the Security console has been removed: every fix is made by the Monday routine at no extra cost.</p>
-
-<h2>11. Patch management: keeping libraries up to date</h2>
-<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
-<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 05:00</text>
-<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">Dependabot opens one</text>
-<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">PR per update</text>
-<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
-<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">tests, Android build,</text>
-<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">documents</text>
-<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Small update</text>
-<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">merged by the routine</text>
-<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Major update</text>
-<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">proposed to the owner</text>
-<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
-<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">new version, same day</text>
-<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-</svg><p class="cap">Figure: Patch management: library updates, small ones merged, large ones decided by the owner.</p></div>
-<ul>
-  <li><b>Every Monday</b> GitHub's Dependabot opens a pull request for every library that has a newer version.</li>
-  <li><b>Small updates</b> (patch and minor): merged by the morning routine once all checks are green, then released.</li>
-  <li><b>Large updates</b> (major): proposed to the owner, because they can change how things work.</li>
-  <li><b>Security patches</b> are applied on Monday, together with the weekly scan; a critical one found in the app can be fixed any day, with a release the same day.</li>
-  <li>After a security release every older version stops by itself: only the newest version works, and the app offers the update.</li>
-</ul>
-
-<h2>12. Change management: how a change is made</h2>
+<h2>10. Change management: how a change is made</h2>
 <div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
 <defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
 <rect x="10.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
@@ -934,7 +899,7 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
   <li>The change is merged into the main code. That starts the release.</li>
 </ol>
 
-<h2>13. Release management: how a new version reaches people</h2>
+<h2>11. Release management: how a new version reaches people</h2>
 <p>Three things are released: the <b>server and the Web Dashboard</b> (Cloudflare), the <b>Android app</b> (Google Play) and, later,
 the <b>iPhone app</b> (Apple App Store). The server and the web are live a few minutes after the merge and nobody has to do anything.
 The app needs the store's review first; only when the store has published it to everyone does the server ask for it, and then
@@ -1188,59 +1153,186 @@ The green check marks a check passed. Web: done at the "Server + Web live" step.
   <li>Block one or more faulty versions on every phone at once (Actions → <i>App versions</i>): the app offers only the update. Data stay.</li>
 </ul>
 
-<h2>14. Disaster recovery</h2>
-<p>What happens if data is lost or the infrastructure disappears: which backups exist, how far back we can go, how long
-it takes to be back, what we commit to and what we do not. The step-by-step runbook, with every manual action, is
-<a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>;
-the Infrastructure as Code is in the folder <code>DR/</code> of the repository.</p>
-<h3>What the service levels rest on: Cloudflare, Workers Free plan (today)</h3>
-<table>
-  <tr><th>Cloudflare, Workers Free</th><th>What it means for HINT 365</th></tr>
-  <tr><td>No availability guarantee (no SLA): uptime commitments exist only on Cloudflare's paid business plans</td><td>we cannot promise a percentage of availability; HINT 365 is offered "as is", as the terms of use say</td></tr>
-  <tr><td>D1 Time Travel: the database can be put back to any minute of the last <b>7 days</b> (30 days on Workers Paid, 5 US$ a month)</td><td>minute-level recovery within 7 days, at no cost</td></tr>
-  <tr><td>Daily limits: 100,000 requests; D1 5 million rows read and 100,000 rows written; above them requests fail until midnight UTC (stored data is not affected)</td><td>far above today's use; if ever reached the service pauses until midnight UTC: Workers Paid removes the limit</td></tr>
-  <tr><td>Data bound to the EU (D1 jurisdiction <code>eu</code>)</td><td>databases and backups stay in the European Union</td></tr>
-  <tr><td>No daily copies kept by Cloudflare beyond Time Travel</td><td>we make our own: one encrypted backup every night, 30 kept</td></tr>
-</table>
-<h3>Backups: what exists and how often</h3>
-<table>
-  <tr><th>Backup</th><th>How often</th><th>How far back</th><th>Where</th></tr>
-  <tr><td>Time Travel (Cloudflare, automatic, always on)</td><td>continuous, every change</td><td>any minute of the last 7 days</td><td>Cloudflare D1, EU</td></tr>
-  <tr><td>Nightly backup of both databases, encrypted (AES-256) with a phrase only the owner knows</td><td>once a night, 01:40 UTC</td><td>the last 30 nights</td><td>third database <code>personalhealthy-vault</code>, EU</td></tr>
-  <tr><td>Copy of every acceptance of the terms</td><td>at once, and checked every night</td><td>kept as proof</td><td>database <code>personalhealthy-backup</code>, EU</td></tr>
-</table>
-<p>The backups are never in the GitHub repository (health data, public repository): only the code that makes and restores them is.</p>
-<h3>If data is lost now, what can be recovered?</h3>
-<table>
-  <tr><th>Data as it was…</th><th>Possible?</th><th>With</th></tr>
-  <tr><td>a few minutes ago, a few hours ago, yesterday</td><td>yes, to the minute</td><td>Time Travel</td></tr>
-  <tr><td>last night · 3 days ago · a week ago</td><td>yes</td><td>Time Travel (up to 7 days) or the backup of that night</td></tr>
-  <tr><td>2 or 3 weeks ago</td><td>yes, as it was that night</td><td>the backup of that night</td></tr>
-  <tr><td>more than 30 days ago</td><td>no</td><td>nothing is kept longer, as the privacy policy says</td></tr>
-</table>
-<h3>Our commitments (internal targets)</h3>
-<table>
-  <tr><th>What happened</th><th>RPO: data lost at most</th><th>RTO: back within</th><th>How</th></tr>
-  <tr><td>wrong data written, a mistaken deletion, noticed within 7 days</td><td>a few minutes</td><td>5 minutes</td><td>Time Travel</td></tr>
-  <tr><td>a database lost or broken</td><td>24 hours (last night)</td><td>30 minutes</td><td>rebuild + restore of last night's backup</td></tr>
-  <tr><td>the server broken</td><td>nothing</td><td>15 minutes</td><td>Build (or the previous verified version)</td></tr>
-  <tr><td>the whole infrastructure rebuilt from zero (same Cloudflare account)</td><td>24 hours</td><td>1 hour</td><td>Disaster recovery → rebuild, then the manual steps of the runbook</td></tr>
-  <tr><td>the Cloudflare account itself lost</td><td>all data (the backups are in the same account)</td><td>1 hour for an empty service; + Google's review if the address changes</td><td>until a copy outside the account exists (planned at the Google Play launch)</td></tr>
-</table>
-<p class="small">These are targets, not a contract: they depend on Cloudflare, GitHub and Google, which give no availability guarantee on the plans in use.</p>
-<h3>How a recovery runs</h3>
-<ol class="steps">
-  <li><b>By hand</b> (only if the Cloudflare account is new): sign in, keep the subdomain <code>comevava76</code>, create the API token, put it in GitHub; check the GitHub secrets (list in the runbook).</li>
-  <li><b>Pipeline</b> Actions → <i>Disaster recovery</i> → <code>rebuild</code>, confirm <code>RESTORE</code>: creates the three databases in the EU, the tables, takes last night's backup, checks its fingerprint, decrypts it, puts the data back, shows the counts, and starts <i>Build</i>.</li>
-  <li><b>Pipeline</b> <i>Build</i>: secrets into the server, server and Web Dashboard online, signed app, download check.</li>
-  <li><b>By hand</b>, only what applies: Anthropic (a new AI key and its spend limit), Google (the sign-in client, only if the address changed), Google Play (the server's access), the owner's phone (owner code).</li>
-  <li><b>By hand</b>, the check: health address, sign in on the app, readings and lab results there, Web Dashboard, Admin numbers, a new backup made.</li>
-</ol>
-<h3>Proof that it works</h3>
-<p>On the 1st of every month the pipeline runs a <b>drill</b> by itself: it builds a complete copy of the databases from zero,
-restores last night's backup into it, compares the counts with production, measures the time and deletes the copy.
-First drill on the real account, 02.10.2026: rebuilt from zero and restored in 24 seconds, same counts as production (1 account, 39 readings, 29 acceptances); the copy was then deleted.</p>
+<h2>12. Patch management: keeping libraries up to date</h2>
+<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 05:00</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">Dependabot opens one</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">PR per update</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">tests, Android build,</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">documents</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Small update</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">merged by the routine</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Major update</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">proposed to the owner</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">new version, same day</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Patch management: library updates, small ones merged, large ones decided by the owner.</p></div>
+<ul>
+  <li><b>Every Monday</b> GitHub's Dependabot opens a pull request for every library that has a newer version.</li>
+  <li><b>Small updates</b> (patch and minor): merged by the morning routine once all checks are green, then released.</li>
+  <li><b>Large updates</b> (major): proposed to the owner, because they can change how things work.</li>
+  <li><b>Security patches</b> are applied on Monday, together with the weekly scan; a critical one found in the app can be fixed any day, with a release the same day.</li>
+  <li>After a security release every older version stops by itself: only the newest version works, and the app offers the update.</li>
+</ul>
 
+<h2>13. Vulnerability management: finding and fixing weaknesses</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:10</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">scan starts on GitHub</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">List</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">every library and</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">exact version</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Match</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">OSV.dev public</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">database</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rate</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">advisory severity,</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">then our rating</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Publish</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Admin, open only, with</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">date or reason</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:48</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">routine takes each</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">finding</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">update, tests, release</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Or reason</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">build tool, no fix</text>
+<text x="260.0" y="127.5" text-anchor="middle" fill="#3B4A66">yet, false positive</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Next Monday</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">fixed ones disappear</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Owner</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">sees only what is</text>
+<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">still open</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Vulnerability management: every Monday, from the scan to the fix or a written reason.</p></div>
+<p>A vulnerability is a known weakness in a piece of software we use. New ones are published every day; we look for them
+<b>once a week</b>, on Monday, and fix them the same morning when we can.</p>
+<h3>How they are found and rated</h3>
+<table>
+  <tr><th>Step</th><th>What happens</th><th>Where</th></tr>
+  <tr><td>1. List what we use</td><td>the scanner lists every library with its exact version: the app's full tree as Gradle resolves it (also libraries pulled in by others),
+    the server's tools, the two libraries copied into the web page, the actions of the pipelines</td><td><code>docs/testing/harness/vuln-scan.mjs</code></td></tr>
+  <tr><td>2. Match with the public database</td><td>each name and version is sent to <b>OSV.dev</b>, the open database that gathers the GitHub Advisory Database, CVE, Android, Maven and npm
+    advisories; it answers with every known weakness for that version and the version that fixes it</td><td>OSV.dev</td></tr>
+  <tr><td>3. Our own code and secrets</td><td>Semgrep checks our code for risky patterns; gitleaks checks that no key was ever written in the repository</td><td>same workflow</td></tr>
+  <tr><td>4. Risk rating</td><td>the advisory's severity (critical, high, moderate, low, from its CVSS score) is the start; then our rating: a library used only to <b>build</b> the app goes one level down, because it is not in the app people install; a decision written in <code>docs/security/decisions.json</code> wins over both</td><td><code>vuln-scan.mjs</code>, <code>decisions.json</code></td></tr>
+  <tr><td>5. Saved and shown</td><td>the results go to the database (replaced at every scan: a fixed weakness simply is not there any more), with the date it was first seen and its reason; the web Admin shows them under Observability</td><td><code>publish-security.mjs</code>, D1 <code>security_findings</code>, <code>security_notes</code></td></tr>
+</table>
+<h3>What the owner sees in Admin → Observability</h3>
+<p>Only the <b>open</b> vulnerabilities. Fixed ones disappear at the next scan. Each open one says when it will be fixed, or why it stays:</p>
+<table>
+  <tr><th>Shown</th><th>Meaning</th></tr>
+  <tr><td>will be fixed by <i>date</i></td><td>found by the scan; the Monday routine fixes it on that date (the first Monday after it was found)</td></tr>
+  <tr><td>fix failed, retrying by <i>date</i></td><td>the update broke something; tried again the next Monday</td></tr>
+  <tr><td>build tool, not in the app</td><td>only in the tools that build the app on GitHub; fixed by a major update of those tools, which needs the owner's go</td></tr>
+  <tr><td>no fix published yet</td><td>the makers of the library have not released a fixed version; checked every Monday</td></tr>
+  <tr><td>false positive</td><td>the scanner is wrong for our case (the note says why)</td></tr>
+  <tr><td>accepted risk</td><td>the owner accepted it for a reason and until a date written in the plan</td></tr>
+</table>
+<h3>The weekly cycle</h3>
+<ol class="steps">
+  <li><b>Monday 06:10 Zurich (04:10 UTC)</b>: the scan runs and updates the list.</li>
+  <li><b>Monday 06:48</b>: the routine takes every open finding, fixes what it can (update the library, run all tests, release the same day).</li>
+  <li>For each one it cannot fix, it writes the short reason in <code>decisions.json</code> (shown in the list).</li>
+  <li><b>Next Monday</b>: the scan confirms; what was fixed is gone; what is left keeps its reason or gets a new date.</li>
+</ol>
+<div class="note"><b>Where we are on 02.10.2026.</b> The only findings inside the app (Bouncy Castle) were fixed in version 0.1.120.
+The 59 left are all build tools (brought in by the Android Gradle plugin 8.5.2): they disappear with its major update (issue #94),
+which waits for the owner's go. The Kotlin build plugin (issue #97) is an accepted risk until Kotlin 2.x is stable.</div>
+<p>The "Fix" button of the Security console has been removed: every fix is made by the Monday routine at no extra cost.</p>
+
+<h2>14. Defect management: how a problem gets fixed</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">User error</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">the app or web sends</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">an error code</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Error log</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">D1 error_log, codes</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">and counts only</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Daily issue</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:30 report on GitHub</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Analyse</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:48: real bug or</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">normal situation?</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Record</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">problem registry,</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">status open</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">branch, test that</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">catches it</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">about 180 tests,</text>
+<text x="157.0" y="127.5" text-anchor="middle" fill="#3B4A66">build, documents</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">same day, new version</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Closed</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">registry: fixed,</text>
+<text x="363.0" y="127.5" text-anchor="middle" fill="#3B4A66">version, PR</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Summary</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">2-3 lines to the owner</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Defect management: every day, from the error to the fix in a new version.</p></div>
+<ol class="steps">
+  <li><b>Found</b>: a user meets an error (the app and the web send its code to the error log), or a test fails, or the owner reports it in the chat.</li>
+  <li><b>Collected</b>: every morning the <i>Error log report</i> opens an issue with the last 24 hours.</li>
+  <li><b>Analysed</b> at 06:48 by the morning routine: is it a real bug or a normal situation (a wrong phone clock, one blurred photo)?</li>
+  <li><b>Recorded</b> in the problem registry with its cause (status: open).</li>
+  <li><b>Fixed</b> on a branch, with a test that would have caught it; all checks green; merged; released the same day.</li>
+  <li><b>Closed</b>: the registry says fixed, in which version and with which pull request; the issue is closed; the owner gets a short summary.</li>
+  <li>Large or unclear fixes, and anything touching the terms, wait for the owner.</li>
+</ol>
+
+<div class="part">Part 5 · Reference: costs, other documents, picking the work up again</div>
 <h2>15. Costs: what is free, and up to where</h2>
 <p class="small">As published by the providers in October 2026; the limits can change: check their pricing pages before relying on them.</p>
 <table>
@@ -1258,7 +1350,7 @@ spent on the Scan month by month.</p>
 <h2>16. Where to find the rest</h2>
 <table>
   <tr><th>Document</th><th>File</th></tr>
-  <tr><td>Technical architecture, drawings, flows and the database diagram (9 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
+  <tr><td>Technical architecture, drawings, flows and the database diagram (10 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
   <tr><td>User guides, Italian and English</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guida-IT.pdf">docs/HINT-Guida-IT.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guide-EN.pdf">docs/HINT-Guide-EN.pdf</a></td></tr>
   <tr><td>Terms of use and privacy policy</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Terms.pdf">docs/legal/HINT365-Terms.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Privacy.pdf">docs/legal/HINT365-Privacy.pdf</a></td></tr>
   <tr><td>Compliance dossier and GDPR record</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/HINT365-Compliance.pdf">docs/compliance/HINT365-Compliance.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/gdpr.md">docs/compliance/gdpr.md</a></td></tr>
@@ -1280,7 +1372,7 @@ No memory of the chat is needed.</p>
     security issues. Do not change anything until I say so."</div></li>
   <li><b>Read its summary</b> and decide the next feature or fix, in your own words.</li>
   <li>The assistant follows the rules already written: change on a branch, documents updated, tests green
-    (section 12), your "go", release (section 13): the download link, Google Play, and in future the Apple App Store
+    (section 10), your "go", release (section 11): the download link, Google Play, and in future the Apple App Store
     (an iPhone version would be a new app, built separately, with the same server).</li>
   <li>At the end of each session it adds a dated entry to <a href="https://github.com/comevava76-web/personalhealthy/blob/main/Checkpoint/HANDOVER.md">Checkpoint/HANDOVER.md</a>, so the next one starts from there.</li>
 </ol>
