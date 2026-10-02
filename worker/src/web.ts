@@ -425,7 +425,9 @@ async function adminOverview(env: any, q: Q) {
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
     money: { months: money, activeSubs, playFee: PLAY_FEE, noCredit, glance: await moneyGlance(q) },
-    versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
+    versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env),
+      // how many people have each app version (the one seen last): an old one means the app has not been opened since
+      spread: await q("SELECT COALESCE(app_version, '') AS v, COUNT(*) AS n FROM persons GROUP BY 1") },
     subscriptionOn: set.subscription_on === "1",
     security: (() => { try { return set.security_scan ? JSON.parse(set.security_scan) : null; } catch { return null; } })(),
   };

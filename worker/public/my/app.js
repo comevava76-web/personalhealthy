@@ -637,7 +637,8 @@
     rd: "Misure", split: (v, f) => `${v} a voce` + (f ? ` · ${f} con la vecchia Scan` : ""),
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
     stT: "Spazio database", stOf: (a, b) => `${a} <span>di ${b}</span>`, stNote: (pc) => `${pc} usato · piano gratuito Cloudflare D1 · misure oltre 365 giorni cancellate ogni notte`,
-    vT: "Versioni dell'app", vNew: (v) => `Versione più recente: ${v}`, vOnly: (v) => `Funziona solo l'ultima versione (${v}): ogni app più vecchia, all'avvio, mostra solo la pagina per aggiornarla. I dati restano.`,
+    vT: "Versioni dell'app", vNew: (v) => `Versione più recente: ${v}`, vOnly: (v) => `Funziona solo l'ultima versione (${v}): chi apre un'app più vecchia deve aggiornarla. Una versione vecchia qui sotto vuol dire che quella persona non ha più aperto l'app.`,
+    vLatest: "ultima", vOld: "da aggiornare", vUnknown: "versione sconosciuta", vPeople: (n) => n === 1 ? "persona" : "persone",
     secT: "Sicurezza e vulnerabilità", secOpen: "Apri la console",
     kVc: "Vulnerabilità · codice app", kVcU: "server, web, segreti", kVm: "Vulnerabilità · Android / iOS", kVmU: "librerie dell'app sul telefono",
     kDf: "Difetti aperti", kDfU: "problemi reali ancora da chiudere", kCm: "Compliance non coperta", kCmU: (p, o) => `${p} parziali · ${o} aperti`, obGo: "Apri Observability →",
@@ -680,7 +681,8 @@
     rd: "Readings", split: (v, f) => `${v} by voice` + (f ? ` · ${f} with the former Scan` : ""),
     errs: "Errors", errsU: "in total, last 90 days",
     stT: "Database space", stOf: (a, b) => `${a} <span>of ${b}</span>`, stNote: (pc) => `${pc} used · Cloudflare D1 free plan · readings older than 365 days deleted every night`,
-    vT: "App versions", vNew: (v) => `Newest version: ${v}`, vOnly: (v) => `Only the newest version (${v}) works: every older app, when it starts, shows only the page to update it. Data stay.`,
+    vT: "App versions", vNew: (v) => `Newest version: ${v}`, vOnly: (v) => `Only the newest version (${v}) works: whoever opens an older app must update it. An old version below means that person has not opened the app since.`,
+    vLatest: "latest", vOld: "to update", vUnknown: "unknown version", vPeople: (n) => n === 1 ? "person" : "people",
     secT: "Security and vulnerabilities", secOpen: "Open the console",
     kVc: "Vulnerabilities · app code", kVcU: "server, web, secrets", kVm: "Vulnerabilities · Android / iOS", kVmU: "libraries of the phone app",
     kDf: "Open defects", kDfU: "real problems still to close", kCm: "Compliance not covered", kCmU: (p, o) => `${p} partial · ${o} open`, obGo: "Open Observability →",
@@ -715,6 +717,18 @@
   const usd = (n) => "$\u00a0" + n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const monthName = (m) => new Date(m + "-15T12:00:00Z").toLocaleDateString(LOCALE, { month: "short", year: "numeric", timeZone: TZ });
   // four numbers, each on its own colour of the palette (never red): came in, spent on AI, users, the trial's maximum
+  // one box per app version with the number of people on it: the latest first, then the older ones
+  function versionBoxes(v) {
+    const build = (s) => Number(String(s).split(".").pop()) || 0;
+    const rows = (v.spread || []).slice().sort((a, b) => build(b.v) - build(a.v));
+    if (!rows.length) return "";
+    return `<section class="mg-row">${rows.map((r) => {
+      const b = build(r.v), latest = v.newest && b >= v.newest;
+      return `<div class="mg ${latest ? "mg-in" : "mg-users"}"><div class="l">${r.v ? esc(r.v) : AD.vUnknown}${r.v ? " · " + (latest ? AD.vLatest : AD.vOld) : ""}</div>
+        <div class="v">${r.n}</div><div class="w">${AD.vPeople(r.n)}</div></div>`;
+    }).join("")}</section>`;
+  }
+
   function moneyGlance(g) {
     if (!g) return "";
     const box = (cls, l, v, w) => `<div class="mg ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="w">${w}</div></div>`;
@@ -784,6 +798,7 @@
       <div class="card"><div class="card-h"><h2>${AD.vT}</h2></div>
         <p>${v.newest ? AD.vNew(ver(v.newest)) : ""}</p>
         ${v.newest ? `<p class="muted small">${AD.vOnly(ver(v.newest))}</p>` : ""}
+        ${versionBoxes(v)}
       </div>`;
     $("adm-obs").onclick = () => loadObservability();
   }
