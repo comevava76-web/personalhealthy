@@ -127,13 +127,20 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          # The address is personalhealthy-api.<subdomain>.workers.dev. The subdomain is hint365 (free, not the
+          # definitive domain: see docs/operations/domain.md). The app has the address built in, so if the subdomain
+          # cannot be hint365 the build stops: it must never ship an app that points nowhere.
+          WANT=hint365
           U="https://api.cloudflare.com/client/v4/accounts/6c6de5312c59db866e1a8e07d3c21c63/workers/subdomain"
           R=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$U")
+          HAVE=$(echo "$R" | jq -r '.result.subdomain // empty')
           echo "Check: $(echo "$R" | jq -c '{success, subdomain: .result.subdomain, errors}')"
-          if [ -z "$(echo "$R" | jq -r '.result.subdomain // empty')" ]; then
-            echo "Registering the comevava76 subdomain"
-            curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
-              "$U" --data '{"subdomain":"comevava76"}' | jq -c '{success, errors}'
+          if [ "$HAVE" != "$WANT" ]; then
+            echo "Setting the workers.dev subdomain to $WANT (was: ${HAVE:-none})"
+            P=$(curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+              "$U" --data "{\"subdomain\":\"$WANT\"}")
+            echo "$P" | jq -c '{success, errors}'
+            [ "$(echo "$P" | jq -r '.success')" = "true" ] || { echo "::error::The subdomain $WANT could not be set (taken or not allowed): set the GitHub variable BATTITO_API_URL to the real address and run Build again"; exit 1; }
           fi
 
       - id: deploy
@@ -274,7 +281,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          BATTITO_API_URL: ${{ vars.BATTITO_API_URL || 'https://personalhealthy-api.comevava76.workers.dev' }}
+          BATTITO_API_URL: ${{ vars.BATTITO_API_URL || 'https://personalhealthy-api.hint365.workers.dev' }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
         run: |
           gradle testDebugUnitTest assembleRelease bundleRelease --no-daemon --stacktrace

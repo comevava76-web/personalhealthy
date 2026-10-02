@@ -1,0 +1,25 @@
+/* --- HINT 365 demo skin: the real Web Dashboard screens (test data), the app's palette, never red --- */
+.stage.hint{height:auto;aspect-ratio:1000/560;background:radial-gradient(circle at 30% 20%,#1C335E 0%,#0F1D38 60%,#0B1630 100%);color:#EAF0FA;padding:0}
+.hint .hp-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}
+.hint .hp-shot.live{opacity:1}
+.hint .hp-part{position:absolute;right:12px;top:10px;z-index:5;background:rgba(15,29,56,.85);border:1px solid #8C7BF2;color:#C7BEFF;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:999px}
+.hint .hp-phone{position:absolute;left:50%;top:5%;transform:translateX(-50%);width:28%;height:90%;border-radius:28px;background:#0F1D38;border:6px solid #2A3F66;box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;transition:opacity .45s;z-index:2}
+.hint .hp-phone.away{opacity:0}
+.hint .hp-notch{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:30%;height:12px;border-radius:8px;background:#0B1630}
+.hint .hp-center{text-align:center;margin-top:38%}
+.hint .hp-center h5{font-size:1.4rem;letter-spacing:.12em;margin:8px 0 4px;color:#fff}
+.hint .hp-center p{color:#9AAACA;font-size:.72rem;margin:0 10px 22px}
+.hint .hp-google{display:inline-flex;gap:8px;align-items:center;background:#fff;color:#13223F;border-radius:999px;padding:9px 16px;font-weight:600;font-size:.76rem;white-space:nowrap}
+.hint .hp-google b{color:#2E66AE}
+.hint .hp-toast{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);background:#1FA396;color:#fff;border-radius:12px;padding:8px 14px;font-size:.78rem;font-weight:600;opacity:0;transition:opacity .3s;z-index:5;white-space:nowrap}
+.hint .hp-toast.on{opacity:1}
+/* the click: a bright drop with a ring spreading like a wave, then gone */
+.hint .tap{position:absolute;width:0;height:0;z-index:7;pointer-events:none}
+.hint .tap::before{content:"";position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#fff 0%,#C7BEFF 45%,rgba(140,123,242,0) 75%);animation:tapCore .7s ease-out forwards}
+.hint .tap::after{content:"";position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;border:2px solid #8C7BF2;box-shadow:0 0 14px rgba(140,123,242,.8);animation:tapRing .75s ease-out forwards}
+.hint .tap.finger::before{left:-14px;top:-14px;width:28px;height:28px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(199,190,255,.6) 50%,rgba(140,123,242,0) 75%)}
+@keyframes tapCore{0%{transform:scale(.4);opacity:1}60%{opacity:1}100%{transform:scale(1.6);opacity:0}}
+@keyframes tapRing{0%{transform:scale(.15);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.hint .cursor.hide{opacity:0 !important}
+.hp-trust{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;padding:9px 12px;background:#0F1D38;color:#BDF3EC;font-size:.76rem;border-top:1px solid #2A3F66}
+@media (max-width:640px){.hint .hp-phone{width:44%}.hint .hp-part{font-size:.62rem}}

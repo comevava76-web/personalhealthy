@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-02, Europe/Zurich. Last editor: Claude Code (Scan via server, 3/day paid by the owner, up to 30 with own key; PR #131 awaiting Human's go).
+Last updated: 2026-10-03, Europe/Zurich. Last editor: Claude Code (night vulnerability scan, address hint365, scripted demo in progress).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -467,3 +467,12 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 
 - Human asked for a functional workflow of actions only (sign in, record, import, see, download, share, delete, the doctor), beautiful enough to publish on LinkedIn.
 - Done: `docs/overview/functional-diagram.py` → `functional-flow.svg` (app palette, never red, icons, five stages) in general document section 3, and `docs/overview/HINT365-workflow.png` (1600×900) sent to Human.
+
+### 2026-10-03 01:00 — Claude Code — night vulnerability scan; address hint365; scripted demo (in progress)
+
+- Request (Human): vulnerability scan always at night; rename the `comevava76` address to the free `hint365`, saying in the docs it is not definitive and how to move to the own domain (old version invalidated then); a scripted demo of about 30 s with real screens for Tandem AI and LinkedIn.
+- Scan: *Security tests* now Monday 00:10 UTC (02:10 Zurich in summer), before the 01:40 backup; the weekly extras (load + browser tests) now run in that scheduled run (the Sunday check never fired with a Monday-only cron). Texts updated in the Admin console, CLAUDE.md, overview, vulnerability docs; the vulnerability flow page no longer mentions the removed Fix button.
+- Address: *Build* sets the workers.dev subdomain to `hint365` (stops if it cannot); the app's default API URL is `https://personalhealthy-api.hint365.workers.dev`. Apps up to 0.1.131 point at `comevava76` and stop working at the switch: everyone reinstalls once from the new `/download`. Steps to the definitive domain (GoDaddy, DNS on Cloudflare, custom domain, new build, old version off): `docs/operations/domain.md`.
+- Fix: Admin versions treated the live Google Play version as old (gate query missed `app_live_version`); harness test G10.
+- Demo: `docs/demo/hint365-demo/` (player, ripple click, trust strip) with frames captured on test data by `demo-tour.mjs`. Human will send the screens to use; not yet on the Tandem AI site.
+- Next: put Human's screens into the demo, then a Tandem AI pull request (work.html), shown to Human before publishing.

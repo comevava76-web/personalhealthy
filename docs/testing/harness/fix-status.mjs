@@ -2,7 +2,7 @@
 //   node fix-status.mjs <n> <fixing|fixed|failed|open> [url] [note]     n = number of the finding in the fix issue
 //   node fix-status.mjs --finish [note]                                 whatever is still Fixing becomes Failed
 // Needs FIX_ID and FIX_KEY (from the fix issue, valid 24 hours); HINT_BASE defaults to the production Worker.
-const BASE = (process.env.HINT_BASE || "https://personalhealthy-api.comevava76.workers.dev").replace(/\/$/, "");
+const BASE = (process.env.HINT_BASE || "https://personalhealthy-api.hint365.workers.dev").replace(/\/$/, "");
 const { FIX_ID: id, FIX_KEY: key } = process.env;
 if (!id || !key) { console.error("FIX_ID and FIX_KEY are needed"); process.exit(2); }
 const [a, b, c, d] = process.argv.slice(2);

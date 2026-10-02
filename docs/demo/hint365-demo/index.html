@@ -1,0 +1,167 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HINT 365 · demo</title><style>
+:root{--paper:#F1F0EC;--paper-2:#E6E5E0;--ink:#14161A;--ink-2:#585E66;--line:#C6C5BF;--red:#6D5BD0;--panel-line:#3A4048}
+body{margin:0;background:var(--paper);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+main{max-width:960px;margin:24px auto;padding:0 16px}
+/* scripted demo player */
+.player{border:1px solid var(--ink);background:var(--paper);margin-top:26px}
+.player-bar{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--ink)}
+.player-bar .dots{display:flex;gap:5px}
+.player-bar .dots i{width:9px;height:9px;background:#5A6068;display:block}
+.player-bar .url{flex:1;font-family:"JetBrains Mono",monospace;font-size:.7rem;color:#C9C8C2;border:1px solid var(--panel-line);padding:4px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.player-bar .badge{font-family:"JetBrains Mono",monospace;font-size:.66rem;color:#fff;background:var(--red);padding:4px 8px;white-space:nowrap}
+.stage{position:relative;height:400px;overflow:hidden;background:var(--paper-2)}
+.scr{position:absolute;inset:0;padding:18px;opacity:0;transition:opacity .35s ease;pointer-events:none}
+.scr.live{opacity:1}
+.cursor{position:absolute;left:0;top:0;width:18px;height:18px;z-index:6;transition:transform .65s cubic-bezier(.4,0,.2,1);pointer-events:none;opacity:0}
+.player.playing .cursor{opacity:1}
+.cursor svg{display:block}
+.cursor.click::after{content:"";position:absolute;left:-9px;top:-9px;width:30px;height:30px;border:2px solid var(--red);border-radius:50%;animation:clickRing .45s ease-out forwards}
+@keyframes clickRing{from{transform:scale(.3);opacity:1}to{transform:scale(1.2);opacity:0}}
+.player-foot{display:flex;align-items:center;gap:14px;padding:11px 14px;border-top:1px solid var(--line);background:var(--paper)}
+.player-foot .cap{flex:1;font-size:.86rem;color:var(--ink-2)}
+.track-bar{height:3px;background:var(--line);width:110px}
+.track-bar span{display:block;height:100%;width:0;background:var(--red)}
+.replay{font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--ink);color:var(--ink);padding:6px 13px}
+.replay:hover{background:var(--ink);color:var(--paper)}
+
+/* --- HINT 365 demo skin: the real Web Dashboard screens (test data), the app's palette, never red --- */
+.stage.hint{height:auto;aspect-ratio:1000/560;background:radial-gradient(circle at 30% 20%,#1C335E 0%,#0F1D38 60%,#0B1630 100%);color:#EAF0FA;padding:0}
+.hint .hp-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}
+.hint .hp-shot.live{opacity:1}
+.hint .hp-part{position:absolute;right:12px;top:10px;z-index:5;background:rgba(15,29,56,.85);border:1px solid #8C7BF2;color:#C7BEFF;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:999px}
+.hint .hp-phone{position:absolute;left:50%;top:5%;transform:translateX(-50%);width:28%;height:90%;border-radius:28px;background:#0F1D38;border:6px solid #2A3F66;box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;transition:opacity .45s;z-index:2}
+.hint .hp-phone.away{opacity:0}
+.hint .hp-notch{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:30%;height:12px;border-radius:8px;background:#0B1630}
+.hint .hp-center{text-align:center;margin-top:38%}
+.hint .hp-center h5{font-size:1.4rem;letter-spacing:.12em;margin:8px 0 4px;color:#fff}
+.hint .hp-center p{color:#9AAACA;font-size:.72rem;margin:0 10px 22px}
+.hint .hp-google{display:inline-flex;gap:8px;align-items:center;background:#fff;color:#13223F;border-radius:999px;padding:9px 16px;font-weight:600;font-size:.76rem;white-space:nowrap}
+.hint .hp-google b{color:#2E66AE}
+.hint .hp-toast{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);background:#1FA396;color:#fff;border-radius:12px;padding:8px 14px;font-size:.78rem;font-weight:600;opacity:0;transition:opacity .3s;z-index:5;white-space:nowrap}
+.hint .hp-toast.on{opacity:1}
+/* the click: a bright drop with a ring spreading like a wave, then gone */
+.hint .tap{position:absolute;width:0;height:0;z-index:7;pointer-events:none}
+.hint .tap::before{content:"";position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#fff 0%,#C7BEFF 45%,rgba(140,123,242,0) 75%);animation:tapCore .7s ease-out forwards}
+.hint .tap::after{content:"";position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;border:2px solid #8C7BF2;box-shadow:0 0 14px rgba(140,123,242,.8);animation:tapRing .75s ease-out forwards}
+.hint .tap.finger::before{left:-14px;top:-14px;width:28px;height:28px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(199,190,255,.6) 50%,rgba(140,123,242,0) 75%)}
+@keyframes tapCore{0%{transform:scale(.4);opacity:1}60%{opacity:1}100%{transform:scale(1.6);opacity:0}}
+@keyframes tapRing{0%{transform:scale(.15);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.hint .cursor.hide{opacity:0 !important}
+.hp-trust{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;padding:9px 12px;background:#0F1D38;color:#BDF3EC;font-size:.76rem;border-top:1px solid #2A3F66}
+@media (max-width:640px){.hint .hp-phone{width:44%}.hint .hp-part{font-size:.62rem}}
+
+</style></head><body><main>
+<h1 style="font-size:1.3rem;margin:0 0 4px">HINT 365 · scripted demo</h1>
+<p style="margin:0;color:#585E66;font-size:.9rem">Not a video: the real screens, animated. Test data only.</p>
+        <div class="player" id="hp-root">
+          <div class="player-bar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="url" id="hp-url">HINT 365 · Android app</span>
+            <span class="badge">30s demo</span>
+          </div>
+          <div class="stage hint" id="hp-stage">
+            <div class="hp-part" id="hp-part">1 · What you do</div>
+            <div class="hp-phone" id="hp-phone">
+              <div class="hp-notch"></div>
+              <div class="hp-center">
+                <div class="hp-logo"><svg viewBox="0 0 40 24" width="46" height="28"><path d="M1 13 H11 L15 4 L21 21 L25 13 H39" fill="none" stroke="#8C7BF2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <h5>HINT 365</h5>
+                <p>Blood pressure and lab results, in one diary</p>
+                <div class="hp-google" id="hp-google"><b>G</b> Sign in with Google</div>
+              </div>
+            </div>
+            <img class="hp-shot" data-shot="f1-bp" src="frames/f1-bp.jpg" alt="Blood pressure in the Web Dashboard, test data">
+            <img class="hp-shot" data-shot="f3-hover" src="frames/f3-hover.jpg" alt="A day of the chart, test data">
+            <img class="hp-shot" data-shot="f4-share" src="frames/f4-share.jpg" alt="Send the report to the doctor">
+            <img class="hp-shot" data-shot="f5-labs" src="frames/f5-labs.jpg" alt="Lab results table, test data">
+            <img class="hp-shot" data-shot="u1-admin" src="frames/u1-admin.jpg" alt="The owner's console">
+            <img class="hp-shot" data-shot="u2-versions" src="frames/u2-versions.jpg" alt="App versions in use">
+            <img class="hp-shot" data-shot="u3-observability" src="frames/u3-observability.jpg" alt="Observability">
+            <img class="hp-shot" data-shot="u4-vulns" src="frames/u4-vulns.jpg" alt="Open vulnerabilities, with a date or a reason">
+            <img class="hp-shot" data-shot="u5-compliance" src="frames/u5-compliance.jpg" alt="EU and Swiss compliance">
+            <div class="hp-toast" id="hp-toast"></div>
+            <div class="cursor" id="hp-cursor" aria-hidden="true">
+              <svg viewBox="0 0 18 18" width="18" height="18"><path d="M1 1 L1 14 L4.5 10.8 L7 16 L9.6 14.8 L7.1 9.8 L11.6 9.6 Z" fill="#14161A" stroke="#F1F0EC" stroke-width="1.2"/></svg>
+            </div>
+          </div>
+          <div class="hp-trust"><span>🔒 No name, no email: only an anonymous account code</span><span>Encrypted, each account sealed off from the others</span><span>Kept in the EU · backed up every night</span></div>
+          <div class="player-foot">
+            <button class="replay" id="hp-replay" type="button">Replay</button>
+            <div class="track-bar"><span id="hp-progress"></span></div>
+            <p class="cap" id="hp-cap">From signing in to the checks behind the scenes. Test data only.</p>
+          </div>
+        </div>
+
+</main><script>
+(function(){
+  /* --- scripted demo: HINT 365, the sign-in on the phone and the real Web Dashboard screens (test data only) --- */
+  (function(){
+    var root = document.getElementById("hp-root");
+    if(!root) return;
+    var $ = function(id){ return document.getElementById(id); };
+    var stage = $("hp-stage"), cursor = $("hp-cursor"), cap = $("hp-cap"), prog = $("hp-progress"), url = $("hp-url");
+    var phone = $("hp-phone"), part = $("hp-part");
+    var shots = Array.prototype.slice.call(stage.querySelectorAll(".hp-shot"));
+    var F = {"f1-bp":{"share":{"x":237,"y":32},"pdf":{"x":363,"y":32}},"f2-charts":{"chart":{"x":500,"y":417}},"f3-hover":{"point":{"x":610,"y":383}},"f4-share":{},"f5-labs":{},"u1-admin":{"tiles":{"x":500,"y":192},"obs":{"x":146,"y":365}},"u2-versions":{},"u3-observability":{"vulns":{"x":821,"y":240},"compliance":{"x":500,"y":240}},"u4-vulns":{},"u5-compliance":{}};
+    var timers = [], raf = null, playing = false, DURATION = 30000;
+    function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+    function clearAll(){ timers.forEach(clearTimeout); timers = []; if(raf) cancelAnimationFrame(raf); }
+    function shot(n){ shots.forEach(function(s){ s.classList.toggle("live", s.getAttribute("data-shot") === n); }); phone.classList.toggle("away", !!n); }
+    function say(t){ cap.textContent = t; }
+    function xy(p){ var r = stage.getBoundingClientRect(); return { x: p.x / 1000 * r.width, y: p.y / 560 * r.height }; }
+    function moveXY(p){ var q = xy(p); cursor.style.transform = "translate(" + q.x + "px," + q.y + "px)"; }
+    function moveEl(el){ var a = el.getBoundingClientRect(), b = stage.getBoundingClientRect(); cursor.style.transform = "translate(" + (a.left - b.left + a.width / 2) + "px," + (a.top - b.top + a.height / 2) + "px)"; }
+    function ripple(x, y, finger){
+      var t = document.createElement("span"); t.className = "tap" + (finger ? " finger" : "");
+      t.style.left = x + "px"; t.style.top = y + "px"; stage.appendChild(t); setTimeout(function(){ t.remove(); }, 800);
+    }
+    function click(){ var m = cursor.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/); if(m) ripple(+m[1], +m[2]); }
+    function tapEl(el){ var a = el.getBoundingClientRect(), b = stage.getBoundingClientRect(); ripple(a.left - b.left + a.width / 2, a.top - b.top + a.height / 2, true); }
+    function toast(t){ var e = $("hp-toast"); e.textContent = t; e.classList.add("on"); at(1700, function(){ e.classList.remove("on"); }); }
+    function reset(){
+      clearAll(); shot(null); part.textContent = "1 · What you do"; url.textContent = "HINT 365 · Android app";
+      cursor.classList.add("hide"); cursor.style.transform = "translate(80px,300px)";
+      prog.style.width = "0%"; root.classList.remove("playing");
+    }
+    function run(){
+      if(playing) return;
+      reset(); playing = true; root.classList.add("playing");
+      var t0 = Date.now();
+      (function tick(){ var p = Math.min(1, (Date.now() - t0) / DURATION); prog.style.width = (p * 100) + "%"; if(p < 1) raf = requestAnimationFrame(tick); })();
+      say("Sign in with your Google account: the same diary on any new phone");
+      at(900,  function(){ tapEl($("hp-google")); });
+      at(1700, function(){ shot("f1-bp"); url.textContent = "hint365 · Web Dashboard"; cursor.classList.remove("hide"); moveXY({x:500,y:120}); say("Your Web Dashboard: one average a day, seven days, SYS and DIA"); });
+      at(2600, function(){ moveXY({x:236,y:337}); });
+      at(3500, function(){ moveXY({x:486,y:300}); });
+      at(4400, function(){ shot("f3-hover"); moveXY(F["f3-hover"].point); say("Point at a day: its average and how many readings"); });
+      at(6400, function(){ shot("f1-bp"); moveXY(F["f1-bp"].pdf); say("The report as a PDF, ready for the doctor"); });
+      at(7200, function(){ click(); toast("Download complete · blood pressure report (PDF)"); });
+      at(8700, function(){ moveXY(F["f1-bp"].share); say("Or send it straight to the doctor"); });
+      at(9400, function(){ click(); });
+      at(9700, function(){ shot("f4-share"); say("Email or WhatsApp: the PDF and a read-only link, valid 7 days"); });
+      at(10600,function(){ moveXY({x:378,y:278}); });
+      at(12000,function(){ shot("f5-labs"); moveXY({x:220,y:100}); say("Lab results: every report you upload, in one table, one column per date"); });
+      at(13200,function(){ moveXY({x:408,y:297}); say("In orange only what is outside the range printed on the report. No diagnosis."); });
+      at(15600,function(){ shot("u1-admin"); part.textContent = "2 · Behind the scenes"; url.textContent = "hint365 · Owner's console"; moveXY(F["u1-admin"].tiles); say("Behind the scenes: open weaknesses, defects, compliance, at a glance"); });
+      at(18200,function(){ shot("u2-versions"); moveXY({x:150,y:368}); say("Who uses which app version: only the newest one works"); });
+      at(20400,function(){ moveXY({x:146,y:125}); say("Observability: problems, compliance, vulnerabilities"); });
+      at(21000,function(){ click(); });
+      at(21300,function(){ shot("u3-observability"); url.textContent = "hint365 · Observability"; });
+      at(22200,function(){ moveXY(F["u3-observability"].vulns); });
+      at(22800,function(){ click(); });
+      at(23100,function(){ shot("u4-vulns"); moveXY({x:860,y:340}); say("Scanned every Monday night: each weakness gets a fix date or a written reason"); });
+      at(24800,function(){ moveXY({x:860,y:409}); });
+      at(26300,function(){ shot("u5-compliance"); url.textContent = "hint365 · Compliance"; moveXY({x:500,y:240}); say("EU and Swiss data rules, checked control by control"); });
+      at(DURATION, function(){
+        playing = false; root.classList.remove("playing"); cursor.classList.add("hide");
+        say("Thirty seconds: sign in, the week in charts, the PDF, the doctor, lab results, and the checks behind the scenes. Test data only.");
+      });
+    }
+    $("hp-replay").addEventListener("click", function(){ playing = false; run(); });
+    reset();
+    new IntersectionObserver(function(e){ e.forEach(function(x){ if(x.isIntersecting) run(); }); }, {threshold:.35}).observe(root);
+  })();
+
+})();
+</script></body></html>

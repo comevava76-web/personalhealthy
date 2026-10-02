@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-const BASE = (process.argv[2] || process.env.HINT_PROD || "https://personalhealthy-api.comevava76.workers.dev").replace(/\/$/, "");
+const BASE = (process.argv[2] || process.env.HINT_PROD || "https://personalhealthy-api.hint365.workers.dev").replace(/\/$/, "");
 const results = [];
 const check = (id, desc, ok, detail = "") => {
   results.push({ id, desc, ok: !!ok, detail });

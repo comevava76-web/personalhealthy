@@ -266,6 +266,11 @@ r = await web("GET", "/v1/app-status?v=179");
 S.check("gate", "G8", "older than the version live on Google Play (179 < 180) -> must update", r.json?.ok === false, r.text);
 r = await web("GET", "/v1/app-status?v=180");
 S.check("gate", "G9", "the version live on Google Play (180) -> ok", r.json?.ok === true, r.text);
+{
+  const ow = await webLogin(owner);
+  const ov = await web("GET", "/my/api/admin/overview", { cookie: ow.cookie });
+  S.check("gate", "G10", "Admin shows the version live on Google Play as the newest", ov.json?.versions?.newest === 180, JSON.stringify(ov.json?.versions));
+}
 run("DELETE FROM settings WHERE key = 'app_live_version'");
 
 // the terms on the web carry the providers' links, where the app's "web version" button lands (#providers)

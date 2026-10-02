@@ -45,5 +45,5 @@ jobs:
           cp ../docs/HINT-*.pdf public/
           rm -f public/HINT.apk
           npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:$APP_VERSION"
-          curl -fsS https://personalhealthy-api.comevava76.workers.dev/v1/health
-          curl -fsS 'https://personalhealthy-api.comevava76.workers.dev/terms?lang=en' | grep -q 'Version 16'
+          curl -fsS https://personalhealthy-api.hint365.workers.dev/v1/health
+          curl -fsS 'https://personalhealthy-api.hint365.workers.dev/terms?lang=en' | grep -q 'Version 16'
