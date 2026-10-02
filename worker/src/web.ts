@@ -360,6 +360,22 @@ function newestVersion(env: any): number {
   return Number(env.APP_VERSION) || 0;
 }
 
+/**
+ * The owner's accounts at a glance, since the start: what came in (estimate at list price), what the AI cost, how many
+ * users, and the most the trial of all those users could cost (each at most 45 Scans, at the average cost per Scan
+ * seen so far). Whatever the estimate, the ceiling set at the AI provider is the real limit.
+ */
+async function moneyGlance(q: Q) {
+  const [s] = await q("SELECT COALESCE(SUM(scans), 0) AS scans, COALESCE(SUM(micro_usd), 0) AS micro FROM ai_spend_daily");
+  const [g] = await q("SELECT COALESCE(SUM(sales), 0) AS sales, COALESCE(SUM(gross_cents), 0) AS cents FROM sub_sales_daily");
+  const [u] = await q("SELECT COUNT(*) AS n FROM persons WHERE is_admin = 0");
+  const scans = Number(s?.scans || 0), ai = Number(s?.micro || 0) / 1e6, users = Number(u?.n || 0);
+  const perScan = scans > 0 && ai > 0 ? ai / scans : 0.002;      // until the first Scans: the estimate (Claude Haiku)
+  const gross = Number(g?.cents || 0) / 100;
+  return { gross, net: gross * (1 - PLAY_FEE), sales: Number(g?.sales || 0), ai, scans, users,
+    trialMax: users * 45 * perScan, per100: 100 * 45 * perScan };
+}
+
 /** Google Play's fee on subscriptions, for the owner's estimate of what is left after it. */
 const PLAY_FEE = 0.15;
 
@@ -408,7 +424,7 @@ async function adminOverview(env: any, q: Q) {
       errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
-    money: { months: money, activeSubs, playFee: PLAY_FEE, noCredit },
+    money: { months: money, activeSubs, playFee: PLAY_FEE, noCredit, glance: await moneyGlance(q) },
     versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
     subscriptionOn: set.subscription_on === "1",
     security: (() => { try { return set.security_scan ? JSON.parse(set.security_scan) : null; } catch { return null; } })(),

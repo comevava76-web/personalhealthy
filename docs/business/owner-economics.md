@@ -45,6 +45,18 @@ Each person costs the owner at most 45 Scans, once in their life (15 days × 3).
 
 A second phone or a new account does not start a new trial, so 100 people cannot cost more than about 9 US$.
 
+**The ceiling at the AI provider decides.** What the owner can really spend is the smaller of the two: the estimate
+above and the ceiling set in the provider's console (prepaid credit, auto-reload off, monthly spend limit).
+
+| Ceiling set at Anthropic | 100 users in trial: owner spends at most |
+|---|---|
+| 5 US$ | 5 US$ (the Scan stops at the ceiling; voice keeps working) |
+| 9 US$ | 9 US$ |
+| 10 US$ | 9 US$ (100 trials cannot use more) |
+
+The web Admin console shows the same estimate for the users there really are (*maximum trial cost*), next to what
+came in, what the AI cost and how many users there are, so the owner can keep the proportion in view.
+
 ## After the trial: one subscriber, one year
 
 | | Light | Typical | Maximum |

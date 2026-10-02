@@ -21,6 +21,8 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Niente rosso**, in nessun grafico, pulsante o logo: SYS viola, DIA verde acqua, PUL ambra; nessun colore deve sembrare
   un giudizio (né problema né «bene»). Unica eccezione, chiesta da Human: lo stato complessivo della console Security
   (Secure verde, Vulnerable arancione, Vulnerable · High risk rosso); gli stati Open/Fixing/Fixed/Failed sempre in inglese.
+  Terza eccezione, chiesta da Human: nella console Admin il riquadro «Bilancio» è verde se positivo con margine (copre anche la prova
+  di tutti gli utenti), arancione da «In pari» in giù, anche se negativo (mai rosso).
   Seconda eccezione, chiesta da Human: nella tabella dei referti un risultato fuori dal riferimento stampato sullo stesso
   referto è arancione con ↑ o ↓ (solo confronto fra numeri, mai diagnosi).
 - **Referti**: PDF o foto letti solo sul telefono, in background con stati visibili (Elaborazione → Scansione → Caricamento →
@@ -72,7 +74,7 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Nell'app niente menu Report**: i report completi si aprono dal pulsante in fondo a Pressione e a Referti. Lo storico in Referti mostra solo i referti salvati; rifiuti e doppioni solo nei log (`error_log`, `event_log`). Il Gestore mostra quante misure e quanti referti, Google e account; niente costi.
 - **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la console **Admin** (quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; poi le tabelle **Consumi** (Scan e costo AI per mese) e **Entrate e uscite** (abbonamenti, entrate, dopo Google Play, uscite AI, differenza: stime, da `ai_spend_daily` e `sub_sales_daily`, solo totali); sotto il pulsante a Observability e il blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
+  nella Web Dashboard la console **Admin** (quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; poi «Conti in breve», quattro riquadri colorati con la palette, mai rosso (incassato, speso in AI, utenti, spesa massima della prova stimata per quegli utenti e ogni 100: il limite vero resta il tetto sulla console del fornitore AI); poi le tabelle **Consumi** (Scan e costo AI per mese) e **Entrate e uscite** (abbonamenti, entrate, dopo Google Play, uscite AI, differenza: stime, da `ai_spend_daily` e `sub_sales_daily`, solo totali); sotto il pulsante a Observability e il blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
 - **Poteri dell'owner solo sul suo telefono** (chiesto da Human: l'email da sola non basta): console Admin, versioni e impostazioni
   funzionano solo dal telefono registrato come owner (`owner_key`); chi ruba l'account Google e lo sposta su un altro telefono non li ha.

@@ -307,3 +307,18 @@ table.money th.num, table.money td.num { text-align: right; font-variant-numeric
 table.money tfoot th, table.money tfoot td { border-top: 1px solid var(--line); font-weight: 600; }
 /* Admin: the AI provider refused for lack of credit (orange, never red) */
 .warn-line { color: var(--warn-t); border: 1px solid var(--warn-t); border-radius: 10px; padding: 8px 12px; margin: 6px 0 10px; font-size: 14px; }
+/* Admin «Accounts at a glance»: four small boxes, each tinted with a colour of the palette (never red) */
+.mg-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 6px 0 8px; }
+.mg { border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); min-width: 0; }
+.mg .l { font-size: 13px; color: var(--muted); }
+.mg .v { font-size: 24px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+.mg .w { font-size: 12px; color: var(--muted); }
+.mg-in { background: color-mix(in srgb, var(--dia) 22%, var(--panel)); }
+.mg-out { background: color-mix(in srgb, var(--pul) 22%, var(--panel)); }
+.mg-users { background: color-mix(in srgb, var(--voice) 24%, var(--panel)); }
+.mg-max { background: color-mix(in srgb, var(--sys) 24%, var(--panel)); }
+@media (max-width: 700px) { .mg-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* the balance box (owner only): green while positive with margin, orange from break-even down (never red) */
+.mg-bal { margin: 0 0 8px; }
+.bal-ok { background: color-mix(in srgb, var(--ok-t) 26%, var(--panel)); border-color: var(--ok-t); }
+.bal-warn { background: color-mix(in srgb, var(--warn-t) 26%, var(--panel)); border-color: var(--warn-t); }

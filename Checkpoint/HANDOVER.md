@@ -380,3 +380,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Tests: local functional 182 pass / 0 fail (new B5c/B5d allowance, OW1–OW4 owner phone); labs-security PASS; sync-notice and check-layout OK. App compiled only by CI.
 - Owner to do: GitHub secrets `AI_API_KEY` (or keep `ANTHROPIC_API_KEY`) and `OWNER_CODE` (a long phrase in a password manager); price `hint365_annual` at 4.99 US$ when on Google Play.
 - Next: CI green → squash merge PR #131 (Human said «vai») → Build → tell Human with the APK link.
+
+### 2026-10-02 — Claude Code — Admin «Accounts at a glance» and balance; economics PDF; AI credit exhaustion detected (PR #131)
+
+- Human asked: four lean coloured boxes in Admin (came in, spent on AI, users, most the trial can cost for these users and per 100), a balance status (green positive, orange from break-even down), the provider ceiling stated in the costs document and its PDF, and to know when the AI credit runs out.
+- Done: `moneyGlance()` in `web.ts` (totals since the start; average cost per Scan seen so far, 0.002 US$ before any), boxes and balance in `app.js`/`style.css` (palette tints, never red; third colour exception recorded in CLAUDE.md); `ai_no_credit` logged when the provider refuses for credit or spend limit (error-log issue + orange line in Admin); `docs/business/render.cjs` → `HINT365-Owner-Economics.pdf` with the ceiling table (5 → 5, 9 → 9, 10 → 9 for 100 trials).
+- Tests: local functional 182 pass / 0 fail; boxes checked in dark, light and phone width.
+- Next: CI green → squash merge PR #131 → Build → APK link to Human.
