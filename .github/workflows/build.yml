@@ -135,12 +135,16 @@ jobs:
           R=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$U")
           HAVE=$(echo "$R" | jq -r '.result.subdomain // empty')
           echo "Check: $(echo "$R" | jq -c '{success, subdomain: .result.subdomain, errors}')"
-          if [ "$HAVE" != "$WANT" ]; then
-            echo "Setting the workers.dev subdomain to $WANT (was: ${HAVE:-none})"
+          if [ -z "$HAVE" ]; then
+            echo "Registering the workers.dev subdomain $WANT"
             P=$(curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
               "$U" --data "{\"subdomain\":\"$WANT\"}")
             echo "$P" | jq -c '{success, errors}'
-            [ "$(echo "$P" | jq -r '.success')" = "true" ] || { echo "::error::The subdomain $WANT could not be set (taken or not allowed): set the GitHub variable BATTITO_API_URL to the real address and run Build again"; exit 1; }
+            [ "$(echo "$P" | jq -r '.success')" = "true" ] || { echo "::error::The subdomain $WANT could not be registered (taken?): set the GitHub variable BATTITO_API_URL to the real address and run Build again"; exit 1; }
+          elif [ "$HAVE" != "$WANT" ]; then
+            # Cloudflare's API cannot rename an existing subdomain (error 10036): only the owner can, in the dashboard
+            echo "::error::The workers.dev subdomain is $HAVE, not $WANT. Owner, by hand: Cloudflare dashboard → Workers & Pages → Account details → Subdomain → Change → $WANT. Then run Build again."
+            exit 1
           fi
 
       - id: deploy

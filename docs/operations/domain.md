@@ -9,8 +9,10 @@ Since 02.10.2026 the server, the Web Dashboard and the download link answer at
 - `personalhealthy-api` is the name of the Worker (it stays: its secrets, among them `KEY_ENCRYPTION_KEY`, belong to it).
 - `hint365` is the **workers.dev subdomain** of the Cloudflare account: free, chosen once for the whole account.
   It replaced `comevava76` (the owner's account name), which was not fit to show to anyone.
-- *Build* sets it by itself (step "workers.dev subdomain"); if `hint365` could not be set, the build stops instead of
-  shipping an app that points nowhere.
+- On a new Cloudflare account *Build* registers it by itself (step "workers.dev subdomain"). Cloudflare's API cannot
+  **rename** an existing subdomain (error 10036), so the switch from `comevava76` was done **by hand by the owner**:
+  Cloudflare dashboard → Workers & Pages → Account details → Subdomain → Change → `hint365`. While the subdomain is
+  not `hint365`, the build stops instead of shipping an app that points nowhere.
 
 **This is not the definitive address.** A `workers.dev` address cannot have Cloudflare's WAF and bot protection, and it
 carries Cloudflare's name. The definitive address will be the owner's own domain.
