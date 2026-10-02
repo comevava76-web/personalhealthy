@@ -659,7 +659,11 @@
     kLib: "Librerie controllate", kLibU: (full) => full ? "albero completo dell'app" : "solo quelle dichiarate", kVul: "Librerie vulnerabili", kVulU: "con un avviso pubblicato",
     kCode: "Nostro codice", kCodeU: "segnalazioni Semgrep", kSec: "Segreti", kSecU: "nel repository (gitleaks)",
     libT: "Librerie vulnerabili", codeT: "Nostro codice", secsT: "Segreti nel repository",
-    cols: ["Libreria", "Versione", "Dove", "Rischio", "Corretta in", "Fonte", "Piano"], ccols: ["Regola", "Dove", "Rischio", "Fonte", "Piano"],
+    cols: ["Libreria", "Versione", "Dove", "Rischio", "Corretta in", "Fonte", "Quando"], ccols: ["Regola", "Dove", "Rischio", "Fonte", "Quando"],
+    why: { to_fix: (d) => `sarà sistemata entro ${d}`, patch_failed: (d) => `correzione fallita, riprovo entro ${d}`,
+      build_tool: () => "strumento di build, non nell'app: aspetta l'aggiornamento major (tuo ok)", not_patchable: () => "nessuna correzione pubblicata: ricontrollo ogni lunedì",
+      false_positive: () => "falso positivo", accepted: () => "rischio accettato (vedi piano)" },
+    weekly: "Scansione delle vulnerabilità ogni lunedì; quelle risolte spariscono dalla lista.",
     none: "Niente da segnalare.", plan: "piano", line: "riga", fixCol: "Fix", all: "tutte", fixBtn: (n) => `Fix (${n})`, fixing: "in corso",
     fixAsk: (n) => `Avviare la correzione di ${n} segnalazioni? Claude prepara le modifiche; quelle piccole vengono unite dopo i controlli, quelle grandi aspettano te.`,
     fixOk: (u) => `Richiesta inviata. Segui qui: ${u}`, fixOff: "Fix non è ancora attivo: manca il token GitHub del server (vedi docs/security/vulnerability-management.md).",
@@ -702,7 +706,11 @@
     kLib: "Libraries checked", kLibU: (full) => full ? "the app's full tree" : "declared ones only", kVul: "Vulnerable libraries", kVulU: "with a published advisory",
     kCode: "Our code", kCodeU: "Semgrep findings", kSec: "Secrets", kSecU: "in the repository (gitleaks)",
     libT: "Vulnerable libraries", codeT: "Our code", secsT: "Secrets in the repository",
-    cols: ["Library", "Version", "Where", "Risk", "Fixed in", "Source", "Plan"], ccols: ["Rule", "Where", "Risk", "Source", "Plan"],
+    cols: ["Library", "Version", "Where", "Risk", "Fixed in", "Source", "When"], ccols: ["Rule", "Where", "Risk", "Source", "When"],
+    why: { to_fix: (d) => `will be fixed by ${d}`, patch_failed: (d) => `fix failed, retrying by ${d}`,
+      build_tool: () => "build tool, not in the app: waits for the major update (your go)", not_patchable: () => "no fix published yet: checked every Monday",
+      false_positive: () => "false positive", accepted: () => "accepted risk (see plan)" },
+    weekly: "Vulnerability scan every Monday; fixed ones disappear from the list.",
     none: "Nothing to report.", plan: "plan", line: "line", fixCol: "Fix", all: "all", fixBtn: (n) => `Fix (${n})`, fixing: "in progress",
     fixAsk: (n) => `Start fixing ${n} findings? Claude prepares the changes; small ones are merged after the checks, large ones wait for you.`,
     fixOk: (u) => `Request sent. Follow it here: ${u}`, fixOff: "Fix is not active yet: the server's GitHub token is missing (see docs/security/vulnerability-management.md).",
@@ -879,27 +887,30 @@
       const extra = x.rating && x.severity && x.rating !== x.severity ? ` <span class="muted small">(${esc(x.severity)} → ${AD.ours})</span>` : (!x.rating && x.kind === "library" ? ` <span class="muted small">${AD.triage}</span>` : "");
       return `<span class="risk ${cls}">${esc(r || "?")}</span>${extra}`;
     };
-    // the state of a finding, in English whatever the page language: Open → Fixing → Fixed | Failed
-    const keyOf = (x) => [x.kind, x.ref, x.name, x.location || ""].join("|");
-    const state = secState;
     const libs = items.filter((x) => x.kind === "library"), code = items.filter((x) => x.kind === "code"), secs = items.filter((x) => x.kind === "secret");
     const tile = (l, val, w) => `<div class="tile"><div class="l">${l}</div><div class="v">${val}</div><div class="w">${w}</div></div>`;
     const L = AD.cols, C = AD.ccols;
-    // the first column: a box to pick the row for Fix, and the state once a fix was requested
-    const pick = (x) => `<td data-l="${AD.fixCol}" class="pick"><input type="checkbox" class="fx" aria-label="${AD.fixCol} ${esc(x.name)}"
-      data-k="${esc(x.kind)}" data-r="${esc(x.ref)}" data-n="${esc(x.name)}" data-l="${esc(x.location || "")}"${x.fix_status === "fixing" ? " disabled" : ""}>
-      <span class="st" data-key="${esc(keyOf(x))}">${state(x.fix_status, x.fix_detail || x.fix_url, x.fix_note)}</span></td>`;
-    const head = (cols, kind) => `<thead><tr><th class="pick"><input type="checkbox" class="fx-all" data-kind="${kind}" aria-label="${AD.all}"></th>${cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead>`;
-    const libRows = libs.map((x) => `<tr>${pick(x)}<td data-l="${L[0]}"><code>${esc(x.name)}</code></td><td data-l="${L[1]}">${esc(x.version || "")}</td>
+    // only open findings are listed (the fixed ones are gone from the weekly scan); each says when it will be fixed, or why not:
+    // the Monday routine fixes what it can, so the date is the first Monday on or after it was seen (next Monday if that is past)
+    const monday = (ms) => { const d = new Date(ms); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + ((8 - d.getDay()) % 7)); return d; };
+    const when = (x) => {
+      const reason = x.reason || "to_fix";
+      let due = monday(x.first_at || Date.now());
+      if (due.getTime() < Date.now() - 864e5) due = monday(Date.now() + 864e5);
+      const f = AD.why[reason] || AD.why.to_fix;
+      return `<span class="why w-${esc(reason)}">${esc(f(day(due.getTime())))}</span>${x.plan_url && /^https:\/\//.test(x.plan_url) ? ` · ${link(x.plan_url, AD.plan)}` : ""}`;
+    };
+    const libRows = libs.map((x) => `<tr><td data-l="${L[0]}"><code>${esc(x.name)}</code></td><td data-l="${L[1]}">${esc(x.version || "")}</td>
       <td data-l="${L[2]}" class="muted small">${esc(x.location || "")}</td><td data-l="${L[3]}">${risk(x)}</td>
-      <td data-l="${L[4]}">${esc(x.fixed || AD.noFix)}</td><td data-l="${L[5]}">${link(x.source_url, x.ref)}</td><td data-l="${L[6]}">${link(x.plan_url, AD.plan)}</td></tr>`).join("");
-    const otherRows = (arr) => arr.map((x) => `<tr>${pick(x)}<td data-l="${C[0]}"><code>${esc(x.ref)}</code></td><td data-l="${C[1]}" class="muted small">${esc(x.location || x.name)}</td>
-      <td data-l="${C[2]}">${risk(x)}</td><td data-l="${C[3]}">${link(x.source_url, AD.line)}</td><td data-l="${C[4]}">${link(x.plan_url, AD.plan)}</td></tr>`).join("");
-    const table = (cols, rows, kind) => rows ? `<div class="tbl"><table class="list" data-kind="${kind}">${head(cols, kind)}<tbody>${rows}</tbody></table></div>` : `<p class="muted">${AD.none}</p>`;
+      <td data-l="${L[4]}">${esc(x.fixed || AD.noFix)}</td><td data-l="${L[5]}">${link(x.source_url, x.ref)}</td><td data-l="${L[6]}">${when(x)}</td></tr>`).join("");
+    const otherRows = (arr) => arr.map((x) => `<tr><td data-l="${C[0]}"><code>${esc(x.ref)}</code></td><td data-l="${C[1]}" class="muted small">${esc(x.location || x.name)}</td>
+      <td data-l="${C[2]}">${risk(x)}</td><td data-l="${C[3]}">${link(x.source_url, AD.line)}</td><td data-l="${C[4]}">${when(x)}</td></tr>`).join("");
+    const head = (cols) => `<thead><tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr></thead>`;
+    const table = (cols, rows, kind) => rows ? `<div class="tbl"><table class="list" data-kind="${kind}">${head(cols)}<tbody>${rows}</tbody></table></div>` : `<p class="muted">${AD.none}</p>`;
     root.innerHTML = `<span id="sec-live" hidden></span>
       ${host ? "" : `<div class="bar"><button class="btn ghost small" type="button" id="sec-back">${AD.back}</button><h1>${AD.conT}</h1></div>`}
-      <p class="note">${AD.conSub}${s ? ` ${AD.secAt(day(s.at) + " " + time(s.at))}${s.runUrl ? " · " + link(s.runUrl, AD.run) : ""}` : ""}</p>
-      ${s ? `<div id="sec-overall">${s.complete === true && Date.now() - s.at < 48 * 3600e3 ? overall(items) : `<p class="note">Scan incomplete or stale — last findings retained</p>`}</div>` : ""}
+      <p class="note">${AD.weekly} ${AD.conSub}${s ? ` ${AD.secAt(day(s.at) + " " + time(s.at))}${s.runUrl ? " · " + link(s.runUrl, AD.run) : ""}` : ""}</p>
+      ${s ? `<div id="sec-overall">${s.complete === true && Date.now() - s.at < 8 * 864e5 ? overall(items) : `<p class="note">Scan incomplete or stale — last findings retained</p>`}</div>` : ""}
       ${s ? `<section class="tiles adm four">
         ${tile(AD.kLib, s.libraries ?? "?", AD.kLibU(s.fullTree))}
         ${tile(AD.kVul, s.vulnerable, AD.kVulU)}
@@ -909,44 +920,8 @@
       <div class="card"><div class="card-h"><h2>${AD.libT}</h2></div>${table(L, libRows, "library")}</div>
       <div class="card"><div class="card-h"><h2>${AD.codeT}</h2></div>${table(C, otherRows(code), "code")}</div>
       <div class="card"><div class="card-h"><h2>${AD.secsT}</h2></div>${table(C, otherRows(secs), "secret")}</div>
-      ${items.length ? `<div class="fixbar"><p class="muted small" id="fx-msg" role="status">${AD.fixHint}</p>
-        <button class="btn ghost" type="button" id="fx-every">${AD.selAll}</button><button class="btn" type="button" id="fx-go" disabled>${AD.fixBtn(0)}</button></div>` : ""}`;
-    const boxes = () => [...root.querySelectorAll("input.fx")];
-    const count = () => {
-      const n = boxes().filter((b) => b.checked).length, go = $("fx-go");
-      if (go) { go.disabled = !n; go.textContent = AD.fixBtn(n); }
-    };
-    root.querySelectorAll("input.fx").forEach((b) => (b.onchange = count));
-    root.querySelectorAll("input.fx-all").forEach((a) => (a.onchange = () => {
-      a.closest("table").querySelectorAll("input.fx").forEach((b) => (b.checked = a.checked)); count();
-    }));
-    // select every open finding at once (on a phone the table headers, with their boxes, are hidden)
-    const every = $("fx-every");
-    if (every) every.onclick = () => {
-      const free = boxes().filter((b) => !b.disabled), on = free.some((b) => !b.checked);
-      free.forEach((b) => (b.checked = on)); root.querySelectorAll("input.fx-all").forEach((a) => (a.checked = on));
-      every.textContent = on ? AD.selNone : AD.selAll; count();
-    };
-    const go = $("fx-go");
-    if (go) go.onclick = async () => {
-      const chosen = boxes().filter((b) => b.checked).map((b) => ({ kind: b.dataset.k, ref: b.dataset.r, name: b.dataset.n, location: b.dataset.l }));
-      if (!chosen.length || !confirm(AD.fixAsk(chosen.length))) return;
-      go.disabled = true;
-      try {
-        const r = await api("/my/api/admin/security/fix", { method: "POST", body: JSON.stringify({ items: chosen }) });
-        $("fx-msg").innerHTML = AD.fixOk(link(r.issueUrl, r.issueUrl.replace(/^https:\/\/github\.com\//, "")));
-        boxes().filter((b) => b.checked).forEach((b) => {
-          b.checked = false; b.disabled = true;
-          const cell = b.parentElement.querySelector(".st"); if (cell) cell.innerHTML = state("fixing", r.issueUrl, "");
-        });
-        count(); watch();
-      } catch (e) {
-        $("fx-msg").textContent = e.status === 503 ? AD.fixOff : T.err;
-        count();
-      }
-    };
+`;
     if (!host) $("sec-back").onclick = () => { clearTimeout(secTimer); loadAdmin(); };
-    watch();
   }
   let secTimer = 0, secItems = [], secScan = null;
   // Overall status of the system, always in English: Secure (green) when nothing is open; Vulnerable (orange) while a
@@ -961,38 +936,6 @@
       <b>${label}</b><span class="det">${detail}</span></div>`;
   }
   const secEsc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-  function secState(st, url, note) {
-    const s2 = { fixing: "fixing", fixed: "fixed", failed: "failed" }[st] || "open";
-    const label = { open: "Open", fixing: "Fixing", fixed: "Fixed", failed: "Failed" }[s2];
-    const chip = `<span class="state s-${s2}"${note ? ` title="${secEsc(note)}"` : ""}>${s2 === "fixing" ? '<i class="spin" aria-hidden="true"></i>' : ""}${label}</span>`;
-    return url && /^https:\/\//.test(url) ? `<a href="${secEsc(url)}" target="_blank" rel="noopener">${chip}</a>` : chip;
-  }
-  function watch() {
-    clearTimeout(secTimer);
-    const busy = () => !!document.querySelector(".st .s-fixing");
-    if (!busy()) return;
-    secTimer = setTimeout(async function tick() {
-      if (!document.getElementById("sec-live")) return;           // the console was left
-      if (document.hidden) { secTimer = setTimeout(tick, 8000); return; }
-      try {
-        const d = await api("/my/api/admin/security/status");
-        for (const x of d.items || []) {
-          const k = [x.kind, x.ref, x.name, x.location || ""].join("|");
-          const cell = [...document.querySelectorAll(".st")].find((c) => c.dataset.key === k);
-          if (!cell) continue;
-          const html = secState(x.status, x.detail_url || x.issue_url, x.note);
-          if (cell.innerHTML !== html) cell.innerHTML = html;
-          const box = cell.parentElement.querySelector("input.fx");
-          if (box) box.disabled = x.status === "fixing";
-          const it = secItems.find((y) => [y.kind, y.ref, y.name, y.location || ""].join("|") === k);
-          if (it) it.fix_status = x.status;
-        }
-        const ov = document.getElementById("sec-overall");
-        if (ov && secScan?.complete === true && Date.now() - secScan.at < 48 * 3600e3) { const html = overall(secItems); if (ov.innerHTML !== html) ov.innerHTML = html; }
-      } catch {}
-      if (busy()) secTimer = setTimeout(tick, 8000);
-    }, 8000);
-  }
 
   // PDF: the same A4 report as the app, built from the readings on screen, then the browser's "Save as PDF"
   function loadScript(src) {

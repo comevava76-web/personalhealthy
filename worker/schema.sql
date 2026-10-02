@@ -258,6 +258,19 @@ CREATE TABLE IF NOT EXISTS security_findings (
   PRIMARY KEY (kind, ref, name, location)
 );
 
+-- Since when each open finding is open, and why it is still open (a short reason code written by the nightly
+-- publish from docs/security/decisions.json or from where the finding is): to_fix (within 7 days), build_tool,
+-- not_patchable, false_positive, accepted, patch_failed. Rows of findings that are gone are deleted by the publish.
+CREATE TABLE IF NOT EXISTS security_notes (
+  kind     TEXT NOT NULL,
+  ref      TEXT NOT NULL,
+  name     TEXT NOT NULL,
+  location TEXT NOT NULL,
+  first_at INTEGER NOT NULL,
+  reason   TEXT,
+  PRIMARY KEY (kind, ref, name, location)
+);
+
 -- Fix requests from the Security console. One row per request (the key lets the fix workflow report progress,
 -- stored only as a fingerprint, valid 24 hours) and one row per finding with its state:
 -- Open (no fix requested, or it waits for the owner's decision) -> Fixing -> Fixed | Failed. Always in English.

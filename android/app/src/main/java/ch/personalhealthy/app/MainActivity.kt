@@ -1736,19 +1736,7 @@ fun CreditScreen(
             return@Column
         }
 
-        // what is saved: two numbers, then the way to the readings (to delete a wrong one or all of them)
-        SectionTitle(t(R.string.section_db))
-        Panel {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                CountTile("$readingsCount", t(R.string.stat_readings), C.Sys, Modifier.weight(1f))
-                Spacer(Modifier.width(10.dp))
-                CountTile(labsCount?.toString() ?: "…", t(R.string.stat_labs), C.Dia, Modifier.weight(1f))
-            }
-            RowDivider()
-            SettingRow(R.drawable.ic_list, t(R.string.manage_readings), t(R.string.manage_readings_sub), onClick = onManageReadings)
-        }
-
-        // dark (the default) or light; the Web Dashboard opens in the same one
+        // the app theme, first in Gestore (asked by Human): dark (the default) or light; the Web Dashboard opens in the same one
         SectionTitle(t(R.string.section_theme))
         val themeCtx = LocalContext.current
         Row(Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp)).background(C.Surface)
@@ -1766,6 +1754,18 @@ fun CreditScreen(
                     Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
+        }
+
+        // what is saved: two numbers, then the way to the readings (to delete a wrong one or all of them)
+        SectionTitle(t(R.string.section_db))
+        Panel {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                CountTile("$readingsCount", t(R.string.stat_readings), C.Sys, Modifier.weight(1f))
+                Spacer(Modifier.width(10.dp))
+                CountTile(labsCount?.toString() ?: "…", t(R.string.stat_labs), C.Dia, Modifier.weight(1f))
+            }
+            RowDivider()
+            SettingRow(R.drawable.ic_list, t(R.string.manage_readings), t(R.string.manage_readings_sub), onClick = onManageReadings)
         }
 
         // the owner's account on a new phone: the owner's secret code gives this phone the owner's powers back

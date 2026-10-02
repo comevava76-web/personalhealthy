@@ -57,7 +57,7 @@ one only explains.</p>
   <tr><td><b>The owner</b> (Human)</td><td>Decides what the app does, the prices and the rules; tests every new version; says "go" before a
     release; approves any change to the terms of use; owns every account and key (GitHub, Cloudflare, Google, Anthropic).</td></tr>
   <tr><td><b>The developer</b> (Claude)</td><td>Writes the code and the documents, runs the tests, prepares each release, checks the error log and
-    the security scans every morning, fixes what it can and proposes the rest to the owner.</td></tr>
+    the errors every morning and the security scan every Monday, fixes what it can and proposes the rest to the owner.</td></tr>
   <tr><td><b>GitHub</b></td><td>Keeps the code and the documents, runs the tests and the build, and stores every released app.</td></tr>
   <tr><td><b>Cloudflare</b></td><td>Runs the server and keeps the database, in the European Union.</td></tr>
   <tr><td><b>Google</b></td><td>Lets people sign in with their Google account; later, sells the subscription through Google Play.</td></tr>
@@ -186,11 +186,13 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
   <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
     and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint</td><td>keep only what the rules allow</td></tr>
-  <tr><td>every day 06:10 / 04:10</td><td>Security tests</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
-    probe of the live site; opens an issue if something fails</td><td>find weaknesses the day they are published</td></tr>
+  <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
+    probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
   <tr><td>every day 06:30 / 04:30</td><td>Error log report</td><td>GitHub Actions</td><td>reads the errors users met in the last 24 hours; opens an issue if there are any</td><td>see problems before users report them</td></tr>
-  <tr><td>every day 06:48 / 04:48</td><td>Morning routine ("daily error-log, security and patching check")</td><td>Claude</td><td>reads the two issues and the Monday updates,
-    fixes bugs and vulnerabilities it can confirm, merges small library updates, releases, proposes the rest to the owner, reports in the chat</td><td>defects, vulnerabilities and patches handled every day</td></tr>
+  <tr><td>every day 06:48 / 04:48</td><td>Morning routine: defects</td><td>Claude</td><td>reads the errors of the last 24 hours, fixes the real bugs, releases, records
+    each problem and its fix, reports in the chat</td><td>defects handled every day</td></tr>
+  <tr><td>every Monday 06:48 / 04:48</td><td>Morning routine: vulnerabilities and patches</td><td>Claude</td><td>reads Monday's scan and the library updates, fixes every finding it can,
+    writes a short reason for each one it cannot, merges small updates, proposes major ones</td><td>vulnerabilities handled every week</td></tr>
   <tr><td>every Monday 05:00 Zurich</td><td>Dependabot</td><td>GitHub</td><td>one pull request for each library of the app and the server with a newer version (the pipeline tools: monthly)</td><td>stay up to date</td></tr>
   <tr><td>every push to the main code</td><td>Build</td><td>GitHub Actions</td><td>tests, server online, signed app, release, download check</td><td>release (section 13)</td></tr>
   <tr><td>every pull request</td><td>Tests, Android build check, Docs check</td><td>GitHub Actions</td><td>about 180 tests, the app must compile, documents must match the code</td><td>nothing broken reaches people</td></tr>
@@ -224,38 +226,48 @@ anywhere); the text people say; the content of the reports. Logs hold only codes
 </ol>
 
 <h2>10. Security: vulnerability management</h2>
-<p>A vulnerability is a known weakness in a piece of software we use. New ones are published every day, so the check runs every day.</p>
+<p>A vulnerability is a known weakness in a piece of software we use. New ones are published every day; we look for them
+<b>once a week</b>, on Monday, and fix them the same morning when we can.</p>
+<h3>How they are found and rated</h3>
 <table>
-  <tr><th>When (Zurich / UTC in summer)</th><th>What happens</th><th>Who</th></tr>
-  <tr><td>06:10 / 04:10</td><td>The <i>Security tests</i> run: every library of the app, the server and the web page is compared with the public list of
-    known weaknesses (OSV.dev); our own code is checked for risky patterns (Semgrep) and for keys written by mistake (gitleaks); the live
-    site is probed. Results go to Admin → Security and, if anything is found, to a GitHub issue labelled <code>security-test</code>.</td><td>GitHub, automatic</td></tr>
-  <tr><td>06:30 / 04:30</td><td>The <i>Error log report</i> opens an issue if users met errors in the last 24 hours.</td><td>GitHub, automatic</td></tr>
-  <tr><td>06:48 / 04:48</td><td>The <b>morning routine</b>: the developer reads both issues and the scan, decides for each finding whether it really affects
-    the app, and fixes it.</td><td>Claude</td></tr>
+  <tr><th>Step</th><th>What happens</th><th>Where</th></tr>
+  <tr><td>1. List what we use</td><td>the scanner lists every library with its exact version: the app's full tree as Gradle resolves it (also libraries pulled in by others),
+    the server's tools, the two libraries copied into the web page, the actions of the pipelines</td><td><code>docs/testing/harness/vuln-scan.mjs</code></td></tr>
+  <tr><td>2. Match with the public database</td><td>each name and version is sent to <b>OSV.dev</b>, the open database that gathers the GitHub Advisory Database, CVE, Android, Maven and npm
+    advisories; it answers with every known weakness for that version and the version that fixes it</td><td>OSV.dev</td></tr>
+  <tr><td>3. Our own code and secrets</td><td>Semgrep checks our code for risky patterns; gitleaks checks that no key was ever written in the repository</td><td>same workflow</td></tr>
+  <tr><td>4. Risk rating</td><td>the advisory's severity (critical, high, moderate, low, from its CVSS score) is the start; then our rating: a library used only to <b>build</b> the app goes one level down, because it is not in the app people install; a decision written in <code>docs/security/decisions.json</code> wins over both</td><td><code>vuln-scan.mjs</code>, <code>decisions.json</code></td></tr>
+  <tr><td>5. Saved and shown</td><td>the results go to the database (replaced at every scan: a fixed weakness simply is not there any more), with the date it was first seen and its reason; the web Admin shows them under Observability</td><td><code>publish-security.mjs</code>, D1 <code>security_findings</code>, <code>security_notes</code></td></tr>
 </table>
-<h3>What the morning routine does with each finding</h3>
+<h3>What the owner sees in Admin → Observability</h3>
+<p>Only the <b>open</b> vulnerabilities. Fixed ones disappear at the next scan. Each open one says when it will be fixed, or why it stays:</p>
+<table>
+  <tr><th>Shown</th><th>Meaning</th></tr>
+  <tr><td>will be fixed by <i>date</i></td><td>found by the scan; the Monday routine fixes it on that date (the first Monday after it was found)</td></tr>
+  <tr><td>fix failed, retrying by <i>date</i></td><td>the update broke something; tried again the next Monday</td></tr>
+  <tr><td>build tool, not in the app</td><td>only in the tools that build the app on GitHub; fixed by a major update of those tools, which needs the owner's go</td></tr>
+  <tr><td>no fix published yet</td><td>the makers of the library have not released a fixed version; checked every Monday</td></tr>
+  <tr><td>false positive</td><td>the scanner is wrong for our case (the note says why)</td></tr>
+  <tr><td>accepted risk</td><td>the owner accepted it for a reason and until a date written in the plan</td></tr>
+</table>
+<h3>The weekly cycle</h3>
 <ol class="steps">
-  <li><b>Takes</b> the list of open findings.</li>
-  <li><b>Checks</b> where each one is: inside the app that people install, on the server, or only in the tools used to build the app.</li>
-  <li><b>Fixes</b> what is in the app, the server or the web page: updates the library, runs all the tests, releases a new version the same day.</li>
-  <li><b>Proposes</b> to the owner the changes that are too large to do alone (for example a new major version of the Android build tools).</li>
-  <li><b>Records</b> each decision (fixed, waiting for the owner, risk accepted and why) in <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/security/vulnerability-management.md">docs/security/vulnerability-management.md</a>
-    and removes it from the backlog when the next night's scan confirms it is gone.</li>
+  <li><b>Monday 06:10 Zurich (04:10 UTC)</b>: the scan runs and updates the list.</li>
+  <li><b>Monday 06:48</b>: the routine takes every open finding, fixes what it can (update the library, run all tests, release the same day).</li>
+  <li>For each one it cannot fix, it writes the short reason in <code>decisions.json</code> (shown in the list).</li>
+  <li><b>Next Monday</b>: the scan confirms; what was fixed is gone; what is left keeps its reason or gets a new date.</li>
 </ol>
-<div class="note"><b>Where we are on 02.10.2026.</b> This morning the routine fixed the only findings inside the app (Bouncy Castle,
-version 0.1.120): from 71 to 59. The 59 left are all in the Android <b>build tools</b> (netty, protobuf, commons-io and others brought
-in by the Android Gradle plugin 8.5.2): they run only on GitHub while the app is built and are not part of the app people install.
-They disappear with one change: the Android Gradle plugin's major update (issue #94), which waits for the owner's "go" because a major
-update can change how the app is built. One more (the Kotlin build plugin, issue #97) is an accepted risk until Kotlin 2.x is stable.</div>
-<p>The "Fix" button in the Security console is not active: it would need a paid token. Every fix is made by the morning routine at no extra cost.</p>
+<div class="note"><b>Where we are on 02.10.2026.</b> The only findings inside the app (Bouncy Castle) were fixed in version 0.1.120.
+The 59 left are all build tools (brought in by the Android Gradle plugin 8.5.2): they disappear with its major update (issue #94),
+which waits for the owner's go. The Kotlin build plugin (issue #97) is an accepted risk until Kotlin 2.x is stable.</div>
+<p>The "Fix" button of the Security console has been removed: every fix is made by the Monday routine at no extra cost.</p>
 
 <h2>11. Patch management: keeping libraries up to date</h2>
 <ul>
   <li><b>Every Monday</b> GitHub's Dependabot opens a pull request for every library that has a newer version.</li>
   <li><b>Small updates</b> (patch and minor): merged by the morning routine once all checks are green, then released.</li>
   <li><b>Large updates</b> (major): proposed to the owner, because they can change how things work.</li>
-  <li><b>Security patches</b> are not kept for Monday: the morning routine applies them the day they appear, with a release the same day.</li>
+  <li><b>Security patches</b> are applied on Monday, together with the weekly scan; a critical one found in the app can be fixed any day, with a release the same day.</li>
   <li>After a security release, old versions with the weakness can be blocked so that everyone updates.</li>
 </ul>
 

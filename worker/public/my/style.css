@@ -322,3 +322,8 @@ table.money tfoot th, table.money tfoot td { border-top: 1px solid var(--line); 
 .mg-bal { margin: 0 0 8px; }
 .bal-ok { background: color-mix(in srgb, var(--ok-t) 26%, var(--panel)); border-color: var(--ok-t); }
 .bal-warn { background: color-mix(in srgb, var(--warn-t) 26%, var(--panel)); border-color: var(--warn-t); }
+/* Security console: when an open finding will be fixed, or why it stays (never red) */
+.why { font-size: 13px; }
+.why.w-to_fix { color: var(--sys-t); }
+.why.w-patch_failed, .why.w-build_tool { color: var(--warn-t); }
+.why.w-not_patchable, .why.w-false_positive, .why.w-accepted { color: var(--muted); }

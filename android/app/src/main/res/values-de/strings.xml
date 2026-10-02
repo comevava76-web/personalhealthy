@@ -493,7 +493,7 @@
     <string name="photo_save">Ja, sie stimmen: speichern</string>
     <string name="photo_wrong">Die Zahlen sind falsch: Foto neu aufnehmen</string>
     <string name="db_labs_count">%1$d Befunde hochgeladen</string>
-    <string name="section_theme">Darstellung</string>
+    <string name="section_theme">App-Design</string>
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
     <string name="stat_readings">gespeicherte Messungen</string>
