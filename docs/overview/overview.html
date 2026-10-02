@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <title>HINT 365 · How it works</title>
 <style>
+  .fig { page-break-inside: avoid; margin: 4pt 0 8pt; }
+  .cap { font-size: 8pt; color: #5B6B88; margin: 0 0 4pt; }
+  .ctl td:first-child { width: 30%; font-weight: 600; }
+  .toc { columns: 2; font-size: 9pt; margin: 4pt 0 8pt; }
+  .toc li { margin: 1pt 0; }
   @page { size: A4; margin: 15mm 14mm 16mm; }
   body { font: 10pt/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #13223F; margin: 0; }
   .cover { background: linear-gradient(90deg, #6D5BD0, #0F9C8E); color: #fff; padding: 18pt 20pt; border-radius: 8pt; margin-bottom: 12pt; }
@@ -31,12 +36,31 @@
 <div class="cover">
   <h1>HINT 365 · How it works</h1>
   <p>The whole service in plain words: what it is for, who does what, where everything runs, how changes, releases,
-  security patches and compliance are handled, and what is free. Updated 02.10.2026, app version 0.1.121.</p>
+  security patches and compliance are handled, and what is free. Updated 02.10.2026, app version 0.1.122.</p>
 </div>
 
 <p class="small">This is the general document. Every other document is linked in section 15; how to pick the work up again is in section 16. Times are given in Zurich time and
 in UTC (Zurich is UTC+2 in summer, UTC+1 in winter).</p>
 
+<table class="ctl">
+  <tr><th colspan="2">Document control</th></tr>
+  <tr><td>Document</td><td>HINT 365 · How it works (general document) · <code>docs/HINT365-How-it-works.pdf</code></td></tr>
+  <tr><td>Objective</td><td>Explain the whole service in one place, in plain words, so that anyone (the owner, a new developer, an auditor, Google Play reviewers) understands what HINT 365 does, how it is built and how it is run.</td></tr>
+  <tr><td>Scope</td><td>The Android app, the Web Dashboard, the server, the automatic jobs and the processes: compliance, defect, vulnerability, patch, change, release and observability.</td></tr>
+  <tr><td>Owner and author</td><td>Human (architect and owner of HINT 365) · <a href="mailto:comevava76@gmail.com">comevava76@gmail.com</a></td></tr>
+  <tr><td>Developer</td><td>Claude (Anthropic), working on the owner's instructions</td></tr>
+  <tr><td>Version and date</td><td>app 0.1.122 · terms of use v22 · 02.10.2026</td></tr>
+  <tr><td>Updated</td><td>in the same change as any process, job, key, price or provider it describes (rule in <code>CLAUDE.md</code>)</td></tr>
+  <tr><td>Binding texts</td><td>the terms of use and the privacy policy; this document only explains them</td></tr>
+</table>
+<h3>Contents</h3>
+<ol class="toc">
+  <li>What HINT 365 is for</li><li>Who does what</li><li>What the person does, step by step</li><li>Where everything runs</li>
+  <li>Keys and secrets</li><li>Personal data and compliance</li><li>Automatic jobs (crontab)</li><li>Logs</li>
+  <li>Defect management</li><li>Vulnerability management</li><li>Patch management</li><li>Change management</li>
+  <li>Release management</li><li>Costs</li><li>Where to find the rest</li><li>Picking the work up again</li>
+</ol>
+<p class="small">Colours in the diagrams: <span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#EDE9FB;border:1pt solid #6D5BD0;vertical-align:-1pt"></span> Person</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#FFF4DE;border:1pt solid #B7860B;vertical-align:-1pt"></span> Owner</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E2F5F2;border:1pt solid #0F9C8E;vertical-align:-1pt"></span> Developer (Claude)</span><span style="display:inline-block;margin-right:12pt"><span style="display:inline-block;width:9pt;height:9pt;border-radius:2pt;background:#E6EEFA;border:1pt solid #2E66AE;vertical-align:-1pt"></span> Automatic</span></p>
 <h2>1. What HINT 365 is for</h2>
 <p>HINT 365 is a <b>personal diary</b> on an Android phone. A person records their blood pressure (the top number <b>SYS</b>, the
 bottom number <b>DIA</b> and the pulse <b>PUL</b>) and keeps the results of their lab reports. The app shows them in tables,
@@ -65,12 +89,64 @@ one only explains.</p>
 </table>
 
 <h2>3. What the person does, step by step</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Install</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">from the download link</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">(later Google Play)</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Sign in</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">with Google; email</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">never stored</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Accept terms</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">not a medical device;</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">save the PDF if wanted</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Phone key</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">created on the phone,</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">signs every request</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Phone lock</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">fingerprint or PIN of</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">the phone (suggested)</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Record</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">voice, or Scan photo</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">read with AI</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Check</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">the person confirms</text>
+<text x="157.0" y="127.5" text-anchor="middle" fill="#3B4A66">the three numbers</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Saved</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">Worker checks, writes</text>
+<text x="260.0" y="127.5" text-anchor="middle" fill="#3B4A66">to D1 in the EU</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Look back</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">week averages, PDF,</text>
+<text x="363.0" y="127.5" text-anchor="middle" fill="#3B4A66">Web Dashboard</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Doctor</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">PDF and a 7-day link,</text>
+<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">sent by the person</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Using the app: from the first start to the report for the doctor.</p></div>
 <h3>First time</h3>
 <ol class="steps">
   <li><b>Installs the app</b> from the download link (later from Google Play).</li>
   <li><b>Signs in with Google.</b> The Google account is used only to recognise the person on a new phone. The email address is
     never stored on the server: only a coded fingerprint of the account that cannot be turned back into the email.</li>
-  <li><b>Accepts the terms of use</b> and the storage of health data. Without that the app does not open. The acceptance is recorded as proof.</li>
+  <li><b>Accepts the terms of use</b> and the storage of health data. Without that the app does not open. The terms say clearly that HINT 365 is not a medical device, gives no diagnosis or advice, and that treatments and medicines are never started, stopped or changed because of the app: the doctor decides. The acceptance is recorded as proof (pseudonymous account code, coded fingerprints of the account and the phone, version, language, date; never the email) and copied into a second database in the EU as a backup. Right after accepting, the app offers to save the terms as a PDF on the phone; nothing is downloaded without the person's tap. The terms and the privacy policy can be opened and downloaded at any time from the links at the bottom of the screen, in the app's language (English when the phone uses a language HINT 365 does not have, for example Georgian).</li>
   <li>The phone creates its own <b>private key</b>, which never leaves the phone. Every request the app sends is signed with it, so
     the server knows it really comes from that phone.</li>
 </ol>
@@ -158,8 +234,8 @@ store (encrypted: nobody can read them back, not even the developer, also when t
   <tr><td><code>OWNER_CODE</code></td><td>the owner's secret phrase: gives the owner's powers to a new phone of the owner</td><td>owner</td></tr>
   <tr><td><code>FAMILY_CODE</code></td><td>the older way for family members to join without Google</td><td>owner</td></tr>
   <tr><td><code>PLAY_SERVICE_ACCOUNT</code></td><td>lets the server ask Google Play whether a subscription is paid (once the app is on the Play Store)</td><td>owner, later</td></tr>
-  <tr><td><code>SECURITY_FIX_TOKEN</code>, <code>CLAUDE_CODE_OAUTH_TOKEN</code></td><td>would let the "Fix" button of the Security console start an automatic fix.
-    <b>Not set</b>, by the owner's choice (it would cost money): fixes are made in the morning routine instead.</td><td>not used</td></tr>
+  <tr><td><code>SECURITY_FIX_TOKEN</code>, <code>CLAUDE_CODE_OAUTH_TOKEN</code></td><td>were meant for an automatic "Fix" button. <b>Not set</b> and the button is removed, by the owner's choice (it would cost money):
+    fixes are made in the Monday morning routine instead.</td><td>not used</td></tr>
   <tr><td>The phone's key</td><td>signs every request of that phone; created on the phone, stored in the phone's secure chip, never sent anywhere</td><td>the app</td></tr>
   <tr><td>Cookie <code>hint_s</code></td><td>keeps the browser signed in to the Web Dashboard for 7 days; saved only after consent</td><td>the browser</td></tr>
 </table>
@@ -167,6 +243,48 @@ store (encrypted: nobody can read them back, not even the developer, also when t
 stole the owner's Google account and signed in on another phone, they would see that account's data but not the owner's controls.</p>
 
 <h2>6. Personal data and compliance</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Consent</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">terms and health data,</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">at first start</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Proof</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">acceptance recorded,</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">backup copy</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Minimum data</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">pseudonymous, no name,</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">no email</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">EU storage</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">Cloudflare D1, EU</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Retention</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">365 days readings,</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">nightly clean-up</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rights</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">see, download, delete,</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">in app or web</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Processors</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">Cloudflare, Anthropic</text>
+<text x="157.0" y="127.5" text-anchor="middle" fill="#3B4A66">(Scan), Google</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Controls</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">listed in</text>
+<text x="260.0" y="127.5" text-anchor="middle" fill="#3B4A66">Observability and</text>
+<text x="260.0" y="136.0" text-anchor="middle" fill="#3B4A66">dossier</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Compliance: each rule becomes a control, a piece of evidence and a check.</p></div>
 <ul>
   <li><b>Laws</b>: the EU GDPR and the Swiss data protection law (FADP). Blood pressure and lab results are health data.</li>
   <li><b>Consent</b>: asked explicitly before first use; withdrawn by deleting the account.</li>
@@ -174,7 +292,7 @@ stole the owner's Google account and signed in on another phone, they would see 
   <li><b>Where</b>: Cloudflare D1 in the EU. Anthropic (Scan photo, not kept) and Google (sign-in, payments) are in the US, under their
     transfer safeguards.</li>
   <li><b>How long</b>: blood-pressure readings at most 365 days (deleted every night); lab results until the person deletes them; error
-    codes 90 days; acceptances of the terms kept as proof.</li>
+    codes 90 days; acceptances of the terms kept as proof, with a backup copy in a second EU database (<code>personalhealthy-backup</code>), never with an email.</li>
   <li><b>Rights</b>: see, download, correct and delete one's data, in the app or on the web; answer within a month.</li>
   <li><b>Checks</b>: every control and its evidence is listed in Admin → Observability and in the dossier
     <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/HINT365-Compliance.pdf">docs/compliance/HINT365-Compliance.pdf</a>. It is the developer's self-assessment, not legal advice.</li>
@@ -185,7 +303,7 @@ stole the owner's Google account and signed in on another phone, they would see 
 <table>
   <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
   <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
-    and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint</td><td>keep only what the rules allow</td></tr>
+    and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
   <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
     probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
   <tr><td>every day 06:30 / 04:30</td><td>Error log report</td><td>GitHub Actions</td><td>reads the errors users met in the last 24 hours; opens an issue if there are any</td><td>see problems before users report them</td></tr>
@@ -202,6 +320,34 @@ stole the owner's Google account and signed in on another phone, they would see 
 </table>
 
 <h2>8. Logs: what we see and what we do not see</h2>
+<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">App and web</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">send error codes,</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">never values</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Worker</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">counts errors and</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">outcomes</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">D1 logs</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">error_log, event_log,</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">90 days</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Scans</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">security results,</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">weekly</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Admin</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Observability:</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">problems,</text>
+<text x="466.0" y="54.0" text-anchor="middle" fill="#3B4A66">vulnerabilities,</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Observability: what is collected, where it is shown, who acts on it.</p></div>
 <table>
   <tr><th>Log</th><th>Where</th><th>What we see</th><th>Kept</th></tr>
   <tr><td>Error log</td><td>D1 table <code>error_log</code>; Admin → Observability; the daily issue</td><td>an error code, where it happened, the app version, how many times a day</td><td>90 days</td></tr>
@@ -215,6 +361,55 @@ stole the owner's Google account and signed in on another phone, they would see 
 anywhere); the text people say; the content of the reports. Logs hold only codes and counts linked, at most, to an anonymous account code.</p>
 
 <h2>9. Defect management: how a problem gets fixed</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">User error</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">the app or web sends</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">an error code</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Error log</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">D1 error_log, codes</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">and counts only</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Daily issue</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:30 report on GitHub</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Analyse</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">06:48: real bug or</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">normal situation?</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Record</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">problem registry,</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">status open</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">branch, test that</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">catches it</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">about 180 tests,</text>
+<text x="157.0" y="127.5" text-anchor="middle" fill="#3B4A66">build, documents</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">same day, new version</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Closed</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">registry: fixed,</text>
+<text x="363.0" y="127.5" text-anchor="middle" fill="#3B4A66">version, PR</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Summary</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">2-3 lines to the owner</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Defect management: every day, from the error to the fix in a new version.</p></div>
 <ol class="steps">
   <li><b>Found</b>: a user meets an error (the app and the web send its code to the error log), or a test fails, or the owner reports it in the chat.</li>
   <li><b>Collected</b>: every morning the <i>Error log report</i> opens an issue with the last 24 hours.</li>
@@ -226,6 +421,55 @@ anywhere); the text people say; the content of the reports. Logs hold only codes
 </ol>
 
 <h2>10. Security: vulnerability management</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:10</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">scan starts on GitHub</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">List</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">every library and</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">exact version</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Match</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">OSV.dev public</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">database</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rate</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">advisory severity,</text>
+<text x="363.0" y="45.5" text-anchor="middle" fill="#3B4A66">then our rating</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Publish</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">Admin, open only, with</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">date or reason</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 06:48</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">routine takes each</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">finding</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Fix</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">update, tests, release</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Or reason</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">build tool, no fix</text>
+<text x="260.0" y="127.5" text-anchor="middle" fill="#3B4A66">yet, false positive</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Next Monday</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">fixed ones disappear</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Owner</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">sees only what is</text>
+<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">still open</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Vulnerability management: every Monday, from the scan to the fix or a written reason.</p></div>
 <p>A vulnerability is a known weakness in a piece of software we use. New ones are published every day; we look for them
 <b>once a week</b>, on Monday, and fix them the same morning when we can.</p>
 <h3>How they are found and rated</h3>
@@ -263,6 +507,30 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
 <p>The "Fix" button of the Security console has been removed: every fix is made by the Monday routine at no extra cost.</p>
 
 <h2>11. Patch management: keeping libraries up to date</h2>
+<div class="fig"><svg viewBox="0 0 520 88" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Monday 05:00</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">Dependabot opens one</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">PR per update</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Checks</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">tests, Android build,</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">documents</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Small update</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">merged by the routine</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Major update</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">proposed to the owner</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Release</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">new version, same day</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Patch management: library updates, small ones merged, large ones decided by the owner.</p></div>
 <ul>
   <li><b>Every Monday</b> GitHub's Dependabot opens a pull request for every library that has a newer version.</li>
   <li><b>Small updates</b> (patch and minor): merged by the morning routine once all checks are green, then released.</li>
@@ -272,6 +540,37 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
 </ul>
 
 <h2>12. Change management: how a change is made</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Request</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">the owner asks in the</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">chat</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Branch</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">claude/… never the</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">main code</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Change</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">code and every</text>
+<text x="260.0" y="45.5" text-anchor="middle" fill="#3B4A66">document it touches</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Pull request</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">checks must be green</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Approval</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">owner&#x27;s go; terms need</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">CODEOWNERS</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Merge</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">into main: starts the</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">release</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Change management: every change goes through a branch, the checks and, for binding texts, the owner.</p></div>
 <ol class="steps">
   <li>The owner asks for a change in the chat, in their own words.</li>
   <li>The developer makes it on a separate branch (<code>claude/…</code>), never directly on the main code.</li>
@@ -283,6 +582,53 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
 </ol>
 
 <h2>13. Release management: how a new version reaches people</h2>
+<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Build</text>
+<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">tests on the exact</text>
+<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">code</text>
+<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Server</text>
+<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">Worker online, tables,</text>
+<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">secrets</text>
+<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">App</text>
+<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">APK and AAB signed</text>
+<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Saved</text>
+<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">GitHub Release v0.1.N</text>
+<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Check</text>
+<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">download link serves</text>
+<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">it</text>
+<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Test</text>
+<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">the owner installs and</text>
+<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">tries</text>
+<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Play internal</text>
+<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">upload AAB, testers</text>
+<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
+<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rollout</text>
+<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">20% then 100%</text>
+<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Google review</text>
+<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">hours to days</text>
+<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Update</text>
+<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">phones update by</text>
+<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">themselves</text>
+<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
+</svg><p class="cap">Figure: Release management: from the merge to the app on the phone.</p></div>
 <h3>Today (download link)</h3>
 <ol class="steps">
   <li>Merge into the main code starts the <i>Build</i> pipeline on GitHub.</li>
