@@ -87,7 +87,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
   stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
-  condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`). Il workflow *Docs check* lo verifica.
+  condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni
   rilascio; ogni nuovo errore diventa una correzione. Ogni nuova funzione che può fallire deve finire nel registro.
