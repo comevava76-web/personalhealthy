@@ -95,7 +95,7 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
-  stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  stesso commit i documenti che tocca: architettura (7 pagine, la 7 è lo schema del database, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni
