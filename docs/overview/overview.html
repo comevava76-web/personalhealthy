@@ -167,6 +167,73 @@ one only explains.</p>
 </ul>
 
 <h2>4. Where everything runs</h2>
+<h3>How a request travels, in five blocks</h3>
+<div class="fig"><svg viewBox="0 0 720 330" width="100%" font-family="Arial" font-size="8" style="margin:4pt 0 2pt">
+<defs><marker id="rf" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10" y="70" width="130" height="70" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="91.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · App on the phone</text>
+<text x="75.0" y="102.6" text-anchor="middle" fill="#13223F">Android (from Google Play)</text>
+<text x="75.0" y="113.4" text-anchor="middle" fill="#13223F">iPhone (App Store, later)</text>
+<text x="75.0" y="124.2" text-anchor="middle" fill="#13223F">the person</text>
+<rect x="10" y="175" width="130" height="62" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="198.2" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · Web browser</text>
+<text x="75.0" y="209.0" text-anchor="middle" fill="#13223F">Web Dashboard</text>
+<text x="75.0" y="219.79999999999998" text-anchor="middle" fill="#13223F">the person, the doctor's link</text>
+<rect x="200" y="18" width="150" height="50" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="275.0" y="40.6" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Domain (bought on GoDaddy)</text>
+<text x="275.0" y="51.400000000000006" text-anchor="middle" fill="#13223F">its name servers point to Cloudflare</text>
+<rect x="200" y="110" width="150" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="275.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">2 · Cloudflare network</text>
+<text x="275.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">DNS: name → address</text>
+<text x="275.0" y="161.0" text-anchor="middle" fill="#13223F">HTTPS: certificate, encryption</text>
+<text x="275.0" y="171.8" text-anchor="middle" fill="#13223F">protection, the nearest</text>
+<text x="275.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">data centre answers</text>
+<rect x="400" y="110" width="140" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="470.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">3 · Worker = our server</text>
+<text x="470.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">the program in TypeScript:</text>
+<text x="470.0" y="161.0" text-anchor="middle" fill="#13223F">API for the app and</text>
+<text x="470.0" y="171.8" text-anchor="middle" fill="#13223F">the Web Dashboard pages</text>
+<text x="470.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">no Tomcat, no nginx</text>
+<rect x="590" y="110" width="120" height="96" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">4 · D1 database (EU)</text>
+<text x="650.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">accounts, readings,</text>
+<text x="650.0" y="161.0" text-anchor="middle" fill="#13223F">lab results, settings</text>
+<text x="650.0" y="171.8" text-anchor="middle" fill="#13223F">+ copy of acceptances</text>
+<text x="650.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">Time Travel: 7 days</text>
+<rect x="590" y="250" width="120" height="66" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">5 · Nightly backup</text>
+<text x="650.0" y="280.6" text-anchor="middle" fill="#13223F">01:40 UTC, encrypted</text>
+<text x="650.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">vault database (EU)</text>
+<text x="650.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">last 30 nights</text>
+<rect x="400" y="250" width="140" height="66" rx="6" fill="#EEF1F5" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="470.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Outside services</text>
+<text x="470.0" y="280.6" text-anchor="middle" fill="#13223F">Google: sign-in, Play</text>
+<text x="470.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">Anthropic: reads the</text>
+<text x="470.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">Scan photo (AI)</text>
+<path d="M140 105 L170 105 L170 140 L198 140" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="99" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M140 206 L170 206 L170 176 L198 176" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="222" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M275 68 L275 108" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="280" y="92" text-anchor="start" font-size="7.4" fill="#5B6B88">set once</text>
+<path d="M350 158 L398 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="374" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">request</text>
+<path d="M540 158 L588 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="564" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">SQL</text>
+<path d="M650 206 L650 248" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="655" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">every night</text>
+<path d="M470 206 L470 248" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="475" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">when needed</text>
+</svg><p class="cap">Figure: from the phone or the browser to the database and the nightly backup.</p></div>
+<ol class="steps">
+  <li><b>The person</b> uses the <b>app</b> on the phone (Android, installed from Google Play; iPhone later, from the App Store) or the <b>Web Dashboard</b> in a browser. Every request leaves encrypted (HTTPS).</li>
+  <li><b>Cloudflare's network</b> receives it. First the <b>DNS</b> turns the name (today <code>personalhealthy-api.comevava76.workers.dev</code>; later the owner's domain, bought on GoDaddy, whose name servers are set once to Cloudflare) into an address. Cloudflare holds the <b>HTTPS certificate</b> (renewed by itself), protects against attacks and answers from the data centre nearest to the person.</li>
+  <li>The <b>Worker</b> is our server: only the program (TypeScript, <code>worker/src/</code>), run by Cloudflare's own engine (<i>workerd</i>) for each request, in a few milliseconds. It does the work of nginx (web server: hands out the Web Dashboard pages and the APK) and of Tomcat (application server: the API that signs in, saves a reading, makes a report). There is no machine of ours to update: see "What a Cloudflare Worker is" below.</li>
+  <li><b>D1</b> is Cloudflare's database, based on SQLite, kept in the European Union: accounts (a code, never the email), readings, lab results, settings, logs; a second D1 holds the copy of every acceptance of the terms. Only the Worker reads and writes it. Cloudflare's <b>Time Travel</b> can put it back to any minute of the last 7 days.</li>
+  <li>The <b>nightly backup</b>: every night at 01:40 UTC (03:40 in Zurich in summer) a GitHub Actions pipeline exports the two databases, encrypts them with a phrase only the owner knows and keeps them in a third D1 (the vault, EU). The last 30 nights are kept. Section 14 says how to restore.</li>
+</ol>
+<p class="small">Dashed: done when needed. The Worker calls Google (sign-in, Google Play subscriptions and versions) and Anthropic (only to read the photo of a Scan) and nothing else.</p>
+<h3>The parts, one by one</h3>
 <table>
   <tr><th>Part</th><th>Technology</th><th>Where the code is</th><th>Where it runs</th></tr>
   <tr><td>The app</td><td>Kotlin with Jetpack Compose (Android)</td><td><code>android/app/src/main/java/ch/personalhealthy/app/</code></td><td>on the person's phone</td></tr>
@@ -1258,7 +1325,7 @@ spent on the Scan month by month.</p>
 <h2>16. Where to find the rest</h2>
 <table>
   <tr><th>Document</th><th>File</th></tr>
-  <tr><td>Technical architecture, drawings, flows and the database diagram (9 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
+  <tr><td>Technical architecture, drawings, flows and the database diagram (10 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
   <tr><td>User guides, Italian and English</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guida-IT.pdf">docs/HINT-Guida-IT.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guide-EN.pdf">docs/HINT-Guide-EN.pdf</a></td></tr>
   <tr><td>Terms of use and privacy policy</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Terms.pdf">docs/legal/HINT365-Terms.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Privacy.pdf">docs/legal/HINT365-Privacy.pdf</a></td></tr>
   <tr><td>Compliance dossier and GDPR record</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/HINT365-Compliance.pdf">docs/compliance/HINT365-Compliance.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/gdpr.md">docs/compliance/gdpr.md</a></td></tr>
