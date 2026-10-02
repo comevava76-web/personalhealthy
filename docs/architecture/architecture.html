@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>HINT 365 · Functional and architecture document</title>
 <!--
-  Functional (page 1), voice and camera input (page 2), architecture (page 3), hosting and runtime flow (page 4), roles and delivery (page 5), flows and permissions (page 6), database (page 7), release and deployment (pages 8 and 9), runtime flow in five blocks (page 10) document of HINT 365 · HealthyInstantTracker. Always in English.
+  Functional: overview (page 1), voice and lab reports (page 2), application flows and permissions (page 3); application architecture: technology (page 4), runtime flow in five blocks (page 5), hosting and runtime (page 6), database (page 7); processes: roles and delivery (page 8), release and deployment Android and iPhone (pages 9 and 10) document of HINT 365 · HealthyInstantTracker. Always in English.
   Update it with every change to a flow, a technology or a rule; then rebuild the PDF:
   node docs/architecture/render.cjs   →   docs/architecture/HINT-Architecture.pdf
 -->
@@ -221,10 +221,53 @@
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.113</span><span>2 / 10</span></div>
 </section>
 
-<!-- ======================= PAGE 3: TECHNOLOGY ======================= -->
+<!-- ======================= PAGE 3: APPLICATION FLOWS AND PERMISSIONS ======================= -->
 <section class="page">
   <div class="band">
     <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 3 OF 10</div>
+    <h1>Application flows and permissions</h1>
+    <p>Every flow of the application, step by step, and who is allowed to do what.</p>
+  </div>
+
+  <h2>Application flows</h2>
+  <table>
+    <tr><th>#</th><th>Flow</th><th>Who</th><th>Steps</th><th>Data</th></tr>
+    <tr><td>1</td><td><b>Install, sign in</b></td><td>user</td><td><code>/download</code> → install → Sign in with Google (OAuth, ID token checked by the Worker) → phone key registered</td><td>persons (fingerprint only)</td></tr>
+    <tr><td>2</td><td><b>Accept the terms</b></td><td>user</td><td>shown at first install, after every update and when the text changes → accept or the app closes</td><td>acceptances</td></tr>
+    <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record (voice) or Scan (photo read on the phone) → check → Save → <code>/v1/bp/voice</code> or <code>/photo</code></td><td>measurements, event_log</td></tr>
+    <tr><td>4</td><td><b>No AI</b></td><td>system</td><td>the Anthropic Scan was removed (terms v19): its calls answer 410 <code>ai_removed</code>; nightly purge empties the old keys, costs and readings</td><td>person_keys, ledger, scans (emptied)</td></tr>
+    <tr><td>5</td><td><b>Screen lock</b></td><td>user</td><td>app lock: fingerprint, face or the phone's PIN; without any screen lock the app opens and shows a notice that leads to the settings (the user's responsibility)</td><td>none</td></tr>
+    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Go to your full reports (end of Blood pressure) → Web Dashboard in a browser, Blood pressure page only: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
+    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Download blood pressure report (PDF)</b> → saved in Downloads, not opened (Android 9 and older: share sheet). The file stays on the phone; the server is not involved</td><td>none on the server</td></tr>
+    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Go to your full reports → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
+    <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
+    <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
+    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>App → Admin icon (last, owner only) → web console: 4 numbers, version switch-off; Observability: vulnerabilities, EU/CH compliance, problems and fixes (import outcomes stay in the log, not on the page)</td><td>counts only</td></tr>
+    <tr><td>12</td><td><b>Import a lab report</b></td><td>user</td><td>Lab results → PDF or photo (own reports only, terms v18) → a progress bar: Processing → Scanning → Uploading → outcome, then it closes; the app keeps an upload history by day (saved reports from the server, uploads that saved nothing on the phone, outcome codes only); in the background, all or nothing; same file or same test and day never twice; web table: one column per date, ↑↓ orange outside the printed reference, delete a date</td><td>measurements, lab_files</td></tr>
+    <tr><td>13</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, lab results never (only the user deletes them), expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
+  </table>
+
+  <h2>Who can do what</h2>
+  <table>
+    <tr><th>Action</th><th>User · app</th><th>User · web</th><th>Doctor · link</th><th>Owner</th><th>Developer</th></tr>
+    <tr><td>Record, delete own readings</td><td>✓</td><td>—</td><td>—</td><td>own only</td><td>—</td></tr>
+    <tr><td>See own charts and report, export PDF</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
+    <tr><td>Create or withdraw a doctor link</td><td>—</td><td>✓</td><td>—</td><td>own only</td><td>—</td></tr>
+    <tr><td>See another person's readings or report</td><td>—</td><td>—</td><td>—</td><td><b>never</b></td><td><b>never</b></td></tr>
+    <tr><td>See usage totals (never per account)</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>via the owner's connector, for checks</td></tr>
+    <tr><td>Read the error log</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>✓ to fix</td></tr>
+    <tr><td>Switch app versions off</td><td>—</td><td>—</td><td>—</td><td>✓ Admin, Actions</td><td>—</td></tr>
+    <tr><td>Change code, docs, deploy</td><td>—</td><td>—</td><td>—</td><td>decides</td><td>✓ through pull requests</td></tr>
+    <tr><td>See keys and secrets</td><td>—</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
+  </table>
+  <p class="muted">Enforced by the server: signed app calls, web session cookie, owner account, read-only expiring doctor links.</p>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>3 / 10</span></div>
+</section>
+
+<!-- ======================= PAGE 4: TECHNOLOGY ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 4 OF 10</div>
     <h1>Architecture and technology</h1>
     <p>The components, how they talk, where the data live and how a new version is released.</p>
   </div>
@@ -313,12 +356,86 @@
 
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>3 / 10</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>4 / 10</span></div>
 </section>
-<!-- ======================= PAGE 4: HOSTING, RUNTIME FLOW, ERROR LOG ======================= -->
+<!-- ======================= PAGE 5: RUNTIME FLOW IN FIVE BLOCKS ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 4 OF 10</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 5 OF 10</div>
+    <h1>Runtime flow in five blocks</h1>
+    <p>Who does what when the person uses HINT 365: phone or browser, Cloudflare, the Worker, the D1 database, the nightly backup.</p>
+  </div>
+  <svg viewBox="0 0 720 330" width="100%" font-family="Arial" font-size="8" style="display:block;margin:3mm auto 0">
+<defs><marker id="rf" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="10" y="70" width="130" height="70" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="91.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · App on the phone</text>
+<text x="75.0" y="102.6" text-anchor="middle" fill="#13223F">Android (from Google Play)</text>
+<text x="75.0" y="113.4" text-anchor="middle" fill="#13223F">iPhone (App Store, later)</text>
+<text x="75.0" y="124.2" text-anchor="middle" fill="#13223F">the person</text>
+<rect x="10" y="175" width="130" height="62" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
+<text x="75.0" y="198.2" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · Web browser</text>
+<text x="75.0" y="209.0" text-anchor="middle" fill="#13223F">Web Dashboard</text>
+<text x="75.0" y="219.79999999999998" text-anchor="middle" fill="#13223F">the person, the doctor's link</text>
+<rect x="200" y="18" width="150" height="50" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="275.0" y="40.6" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Domain (bought on GoDaddy)</text>
+<text x="275.0" y="51.400000000000006" text-anchor="middle" fill="#13223F">its name servers point to Cloudflare</text>
+<rect x="200" y="110" width="150" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="275.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">2 · Cloudflare network</text>
+<text x="275.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">DNS: name → address</text>
+<text x="275.0" y="161.0" text-anchor="middle" fill="#13223F">HTTPS: certificate, encryption</text>
+<text x="275.0" y="171.8" text-anchor="middle" fill="#13223F">protection, the nearest</text>
+<text x="275.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">data centre answers</text>
+<rect x="400" y="110" width="140" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
+<text x="470.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">3 · Worker = our server</text>
+<text x="470.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">the program in TypeScript:</text>
+<text x="470.0" y="161.0" text-anchor="middle" fill="#13223F">API for the app and</text>
+<text x="470.0" y="171.8" text-anchor="middle" fill="#13223F">the Web Dashboard pages</text>
+<text x="470.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">no Tomcat, no nginx</text>
+<rect x="590" y="110" width="120" height="96" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">4 · D1 database (EU)</text>
+<text x="650.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">accounts, readings,</text>
+<text x="650.0" y="161.0" text-anchor="middle" fill="#13223F">lab results, settings</text>
+<text x="650.0" y="171.8" text-anchor="middle" fill="#13223F">+ copy of acceptances</text>
+<text x="650.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">Time Travel: 7 days</text>
+<rect x="590" y="250" width="120" height="66" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
+<text x="650.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">5 · Nightly backup</text>
+<text x="650.0" y="280.6" text-anchor="middle" fill="#13223F">01:40 UTC, encrypted</text>
+<text x="650.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">vault database (EU)</text>
+<text x="650.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">last 30 nights</text>
+<rect x="400" y="250" width="140" height="66" rx="6" fill="#EEF1F5" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="470.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Outside services</text>
+<text x="470.0" y="280.6" text-anchor="middle" fill="#13223F">Google: sign-in, Play</text>
+<text x="470.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">Anthropic: reads the</text>
+<text x="470.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">Scan photo (AI)</text>
+<path d="M140 105 L170 105 L170 140 L198 140" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="99" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M140 206 L170 206 L170 176 L198 176" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="170" y="222" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
+<path d="M275 68 L275 108" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="280" y="92" text-anchor="start" font-size="7.4" fill="#5B6B88">set once</text>
+<path d="M350 158 L398 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="374" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">request</text>
+<path d="M540 158 L588 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="564" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">SQL</text>
+<path d="M650 206 L650 248" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
+<text x="655" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">every night</text>
+<path d="M470 206 L470 248" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
+<text x="475" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">when needed</text>
+</svg>
+  <table>
+    <tr><th>Block</th><th>What it is</th><th>Who runs it</th></tr>
+    <tr><td><b>1 · App, browser</b></td><td>Android app (Google Play), iPhone later; Web Dashboard in any browser; every call is HTTPS, app calls signed with the phone's key</td><td>the person</td></tr>
+    <tr><td><b>2 · Cloudflare network</b></td><td>DNS (domain bought on GoDaddy, name servers set to Cloudflare), HTTPS certificate renewed automatically, DDoS protection, nearest data centre</td><td>Cloudflare</td></tr>
+    <tr><td><b>3 · Worker</b></td><td>our server, serverless: TypeScript run by Cloudflare's <i>workerd</i> engine (V8 isolates) for each request; replaces nginx (static files: Web Dashboard, APK) and Tomcat (the API); 2 cron triggers</td><td>code: us · engine and machines: Cloudflare</td></tr>
+    <tr><td><b>4 · D1 (EU)</b></td><td>SQLite-based managed database, jurisdiction EU; main data + copy of acceptances; Time Travel to any minute of 7 days (Workers Free)</td><td>Cloudflare</td></tr>
+    <tr><td><b>5 · Nightly backup</b></td><td>01:40 UTC, GitHub Actions: export of both databases, AES-256 with the owner's phrase, kept in the vault D1 (EU), 30 nights; restore and monthly drill by <i>Disaster recovery</i></td><td>GitHub Actions</td></tr>
+  </table>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.129</span><span>5 / 10</span></div>
+</section>
+<!-- ======================= PAGE 6: HOSTING, RUNTIME FLOW, ERROR LOG ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 6 OF 10</div>
     <h1>Hosting and runtime flow</h1>
     <p>Where every part runs, who talks to whom at run time, and how errors met by users are recorded.</p>
   </div>
@@ -394,7 +511,7 @@
       <h2>Who uses it</h2>
       <ul>
         <li><b>Owner</b>: Admin tab → total errors (90 days); the details reach the developer through the daily issue.</li>
-        <li><b>Developer</b>: every morning a scheduled routine reads the report of the log and fixes (page 5); in working sessions it is also read after every release.</li>
+        <li><b>Developer</b>: every morning a scheduled routine reads the report of the log and fixes (page 8); in working sessions it is also read after every release.</li>
         <li><b>Table</b>: <code>error_log</code> in D1, written by <code>worker/src/errors.ts</code>; app side <code>ErrorReport</code> in <code>Core.kt</code>; web side in <code>app.js</code>.</li>
       </ul>
       <h2>Data protection <small>GDPR · Swiss FADP</small></h2>
@@ -406,147 +523,6 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>4 / 10</span></div>
-</section>
-
-<!-- ======================= PAGE 5: ROLES AND DELIVERY ======================= -->
-<section class="page">
-  <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 5 OF 10</div>
-    <h1>Roles and delivery</h1>
-    <p>Who does what — the architect, the developer, the repository and the hosting — and how a change goes from the chat to the phone.</p>
-  </div>
-
-  <h2>Roles <small>people and platforms</small></h2>
-  <svg viewBox="0 0 520 178" width="100%" role="img" aria-label="Roles of people and platforms">
-    <defs><marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
-    <style>
-      .n4 { fill:#fff; stroke:#C7D2E1; } .h4 { font-size:8px; font-weight:700; fill:#13223F; } .x4 { font-size:6.3px; fill:#5B6B88; }
-      .a4 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#d); } .l4 { font-size:6.1px; fill:#5B6B88; }
-    </style>
-    <!-- people -->
-    <rect x="4" y="14" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#6D5BD0" stroke-width="1.4"/>
-    <text x="14" y="29" class="h4">Human · owner</text>
-    <text x="14" y="41" class="x4">decides design, rules, priorities</text><text x="14" y="50" class="x4">tests APKs, reviews documents</text>
-    <text x="14" y="59" class="x4">owns the accounts and the secrets</text><text x="14" y="68" class="x4">reads the Admin tab</text>
-    <rect x="4" y="98" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#0F9C8E" stroke-width="1.4"/>
-    <text x="14" y="113" class="h4">Claude · developer</text>
-    <text x="14" y="125" class="x4">writes code and documents</text><text x="14" y="134" class="x4">tests, merges, watches the pipeline</text>
-    <text x="14" y="143" class="x4">reads the error log, fixes</text><text x="14" y="152" class="x4">sends the APK in the chat</text>
-    <line x1="24" y1="80" x2="24" y2="96" class="a4"/><text x="30" y="91" class="l4">design, feedback</text>
-    <line x1="108" y1="98" x2="108" y2="82" class="a4"/><text x="86" y="91" class="l4">APK</text>
-    <!-- GitHub -->
-    <line x1="128" y1="130" x2="176" y2="112" class="a4"/><text x="134" y="114" class="l4">PR, merge</text>
-    <rect x="178" y="60" width="140" height="104" rx="8" class="n4" stroke="#13223F"/>
-    <text x="188" y="75" class="h4">GitHub · source and CI/CD</text>
-    <rect x="188" y="82" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="93" class="x4">Repository: code + docs/ (private)</text>
-    <rect x="188" y="101" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="112" class="x4">Build, docs, security tests</text>
-    <rect x="188" y="120" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="131" class="x4">Releases: v0.1.N, APK + AAB</text>
-    <rect x="188" y="139" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="150" class="x4">Secrets: keys, never in the code</text>
-    <!-- Cloudflare -->
-    <line x1="318" y1="100" x2="366" y2="82" class="a4"/><text x="336" y="104" class="l4">deploy</text>
-    <rect x="368" y="14" width="148" height="92" rx="8" fill="#0F1C36"/>
-    <text x="378" y="29" class="h4" style="fill:#fff">Cloudflare · hosting</text>
-    <text x="378" y="41" class="x4" style="fill:#AFC0DC">Worker: API, Web Dashboard, pages</text>
-    <text x="378" y="50" class="x4" style="fill:#AFC0DC">D1 database (EU) · nightly cron</text>
-    <text x="378" y="59" class="x4" style="fill:#AFC0DC">static files: app, guides</text>
-    <text x="378" y="68" class="x4" style="fill:#AFC0DC">secrets of the running server</text>
-    <text x="378" y="86" class="x4" style="fill:#fff">free plan · owner's account</text>
-    <!-- providers -->
-    <rect x="368" y="116" width="70" height="48" rx="6" class="n4"/><text x="375" y="130" class="h4">No AI</text><text x="375" y="141" class="x4">Anthropic Scan</text><text x="375" y="150" class="x4">removed (v19)</text>
-    <rect x="446" y="116" width="70" height="48" rx="6" class="n4"/><text x="453" y="130" class="h4">Google</text><text x="453" y="141" class="x4">OAuth sign-in,</text><text x="453" y="150" class="x4">Play (later)</text>
-    <line x1="128" y1="40" x2="366" y2="40" class="a4"/><text x="200" y="36" class="l4">owner's Admin tab (web)</text>
-  </svg>
-
-  <h2>Responsibilities</h2>
-  <table>
-    <tr><th>Activity</th><th>Human · architect</th><th>Claude · developer</th><th>GitHub</th><th>Cloudflare</th></tr>
-    <tr><td>Design, rules, priorities</td><td><b>decides</b></td><td>proposes, asks when unclear</td><td>—</td><td>—</td></tr>
-    <tr><td>Code and documents (<code>docs/</code>)</td><td>reads</td><td><b>writes, same commit</b></td><td>stores</td><td>—</td></tr>
-    <tr><td>Tests before merge</td><td>—</td><td><b>runs</b></td><td>Docs check, Security tests</td><td>—</td></tr>
-    <tr><td>Merge, build, release</td><td>delegated</td><td><b>merges, watches</b></td><td><b>builds, releases</b></td><td>—</td></tr>
-    <tr><td>Hosting, database, cron</td><td>owns the account</td><td>—</td><td>deploys</td><td><b>runs</b></td></tr>
-    <tr><td>Keys and secrets</td><td><b>owns</b></td><td>never sees them</td><td>stores</td><td>stores</td></tr>
-    <tr><td>Trying the app on a phone</td><td><b>tries every APK</b></td><td>sends it</td><td>—</td><td>serves <code>/download</code></td></tr>
-    <tr><td>Errors met by users</td><td>sees them in Admin</td><td><b>analyses, fixes</b></td><td>—</td><td>stores the log</td></tr>
-  </table>
-
-  <h2>Delivery, from the chat to the phone</h2>
-  <ol>
-    <li><b>Decide</b> — Human describes the change in the chat; unclear points are asked, not guessed.</li>
-    <li><b>Build and test</b> — Claude on <code>claude/…</code>: code and documents in one commit; harness, pages in Chromium, documents rendered.</li>
-    <li><b>Merge</b> — pull request, <i>Docs check</i> and <i>Security tests</i> green, squash merge into <code>main</code>.</li>
-    <li><b>Release</b> — local tests → privately signed APK/AAB → Worker + same-revision APK promotion → release record. No missing-key fallback. D1 tables, Worker, APK/AAB <code>v0.1.N</code>, <code>/download</code>; Claude checks it and sends the APK.</li>
-    <li><b>Try</b> — Human tries the APK; feedback starts the next round. Rollback: revert the pull request.</li>
-  </ol>
-  <h2>Continuous improvement loop <small>proactive: every day, without being asked</small></h2>
-  <svg viewBox="0 0 520 128" width="100%" role="img" aria-label="Continuous improvement loop with security tests">
-    <defs><marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
-    <style>
-      .n5 { fill:#fff; stroke:#C7D2E1; } .h5 { font-size:7.4px; font-weight:700; fill:#13223F; } .x5 { font-size:6.1px; fill:#5B6B88; }
-      .a5 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#e); }
-    </style>
-    <rect x="4" y="4" width="92" height="36" rx="6" class="n5"/><text x="11" y="16" class="h5">1a · User errors</text><text x="11" y="26" class="x5">app, web, server write</text><text x="11" y="34" class="x5">to error_log (D1)</text>
-    <rect x="4" y="46" width="92" height="36" rx="6" class="n5" stroke="#0F9C8E" stroke-width="1.4"/><text x="11" y="58" class="h5">1b · Security 06:10</text><text x="11" y="68" class="x5">suite, live probe, audit;</text><text x="11" y="76" class="x5">Sundays load + browser</text>
-    <line x1="96" y1="22" x2="110" y2="36" class="a5"/><line x1="96" y1="64" x2="110" y2="50" class="a5"/>
-    <rect x="112" y="23" width="92" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="119" y="36" class="h5">2 · Issues by 06:30</text><text x="119" y="47" class="x5">"Error log", "Security</text><text x="119" y="56" class="x5">tests" when something fails</text>
-    <line x1="204" y1="43" x2="218" y2="43" class="a5"/>
-    <rect x="220" y="23" width="92" height="40" rx="6" class="n5" stroke="#0F9C8E" stroke-width="1.4"/><text x="227" y="36" class="h5">3 · Check 06:48</text><text x="227" y="47" class="x5">Claude, scheduled routine:</text><text x="227" y="56" class="x5">cause, reproduce</text>
-    <line x1="312" y1="43" x2="326" y2="43" class="a5"/>
-    <rect x="328" y="23" width="92" height="40" rx="6" class="n5"/><text x="335" y="36" class="h5">4 · Fix + documents</text><text x="335" y="47" class="x5">branch, harness, PR</text><text x="335" y="56" class="x5">"Fixes #issue"</text>
-    <line x1="420" y1="43" x2="434" y2="43" class="a5"/>
-    <rect x="436" y="23" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="36" class="h5">5 · Gates</text><text x="443" y="47" class="x5">Docs check, Security</text><text x="443" y="56" class="x5">tests, squash merge</text>
-    <line x1="476" y1="63" x2="476" y2="80" class="a5"/>
-    <rect x="436" y="82" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="95" class="h5">6 · Build, release</text><text x="443" y="106" class="x5">Worker + APK vN,</text><text x="443" y="115" class="x5">/download</text>
-    <line x1="434" y1="102" x2="316" y2="102" class="a5"/>
-    <rect x="220" y="82" width="94" height="40" rx="6" class="n5" stroke="#6D5BD0" stroke-width="1.4"/><text x="227" y="95" class="h5">7 · Human informed</text><text x="227" y="106" class="x5">report in the issue + chat;</text><text x="227" y="115" class="x5">decides what is larger</text>
-    <line x1="218" y1="102" x2="50" y2="102" class="a5"/><line x1="50" y1="102" x2="50" y2="84" class="a5"/>
-    <text x="70" y="98" class="x5">the next day, with the fixed version in use</text>
-  </svg>
-  <p class="muted">Security tests, vulnerability scan, Dependabot and who pays for the loop: page 4. Larger fixes wait for the human.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>5 / 10</span></div>
-</section>
-
-<!-- ======================= PAGE 6: APPLICATION FLOWS AND PERMISSIONS ======================= -->
-<section class="page">
-  <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 6 OF 10</div>
-    <h1>Application flows and permissions</h1>
-    <p>Every flow of the application, step by step, and who is allowed to do what.</p>
-  </div>
-
-  <h2>Application flows</h2>
-  <table>
-    <tr><th>#</th><th>Flow</th><th>Who</th><th>Steps</th><th>Data</th></tr>
-    <tr><td>1</td><td><b>Install, sign in</b></td><td>user</td><td><code>/download</code> → install → Sign in with Google (OAuth, ID token checked by the Worker) → phone key registered</td><td>persons (fingerprint only)</td></tr>
-    <tr><td>2</td><td><b>Accept the terms</b></td><td>user</td><td>shown at first install, after every update and when the text changes → accept or the app closes</td><td>acceptances</td></tr>
-    <tr><td>3</td><td><b>Record by voice</b></td><td>user</td><td>Record (voice) or Scan (photo read on the phone) → check → Save → <code>/v1/bp/voice</code> or <code>/photo</code></td><td>measurements, event_log</td></tr>
-    <tr><td>4</td><td><b>No AI</b></td><td>system</td><td>the Anthropic Scan was removed (terms v19): its calls answer 410 <code>ai_removed</code>; nightly purge empties the old keys, costs and readings</td><td>person_keys, ledger, scans (emptied)</td></tr>
-    <tr><td>5</td><td><b>Screen lock</b></td><td>user</td><td>app lock: fingerprint, face or the phone's PIN; without any screen lock the app opens and shows a notice that leads to the settings (the user's responsibility)</td><td>none</td></tr>
-    <tr><td>6</td><td><b>See the report</b></td><td>user</td><td>Go to your full reports (end of Blood pressure) → Web Dashboard in a browser, Blood pressure page only: 7 days, one mean per day, the eight tiles of the app, morning/evening balance, extremes</td><td>read only</td></tr>
-    <tr><td>7</td><td><b>Share the report — app</b></td><td>user</td><td>Blood pressure tab, bottom → <b>Download blood pressure report (PDF)</b> → saved in Downloads, not opened (Android 9 and older: share sheet). The file stays on the phone; the server is not involved</td><td>none on the server</td></tr>
-    <tr><td>8</td><td><b>Share the report — web</b></td><td>user</td><td>Go to your full reports → Web Dashboard → cookie consent → <b>PDF</b> download (same A4) or <b>Send to the doctor</b>: Email or WhatsApp only; the PDF and a read-only link (7 days) go together, with a ready message in the phone's language; withdrawable</td><td>web_sessions, web_shares</td></tr>
-    <tr><td>9</td><td><b>Doctor's view</b></td><td>anyone with the link</td><td>open <code>/s/…</code> → charts and readings of that period, PDF; nothing else</td><td>read only</td></tr>
-    <tr><td>10</td><td><b>Delete, sign out</b></td><td>user</td><td>Admin → delete a reading, all, or the account; Sign out ends web sessions too</td><td>deleted at once</td></tr>
-    <tr><td>11</td><td><b>Owner's Admin tab</b></td><td>owner</td><td>App → Admin icon (last, owner only) → web console: 4 numbers, version switch-off; Observability: vulnerabilities, EU/CH compliance, problems and fixes (import outcomes stay in the log, not on the page)</td><td>counts only</td></tr>
-    <tr><td>12</td><td><b>Import a lab report</b></td><td>user</td><td>Lab results → PDF or photo (own reports only, terms v18) → a progress bar: Processing → Scanning → Uploading → outcome, then it closes; the app keeps an upload history by day (saved reports from the server, uploads that saved nothing on the phone, outcome codes only); in the background, all or nothing; same file or same test and day never twice; web table: one column per date, ↑↓ orange outside the printed reference, delete a date</td><td>measurements, lab_files</td></tr>
-    <tr><td>13</td><td><b>Automatic</b></td><td>system</td><td>nightly: readings &gt; 365 days, lab results never (only the user deletes them), expired links and sessions, errors &gt; 90 days deleted; every error logged</td><td>purge, error_log</td></tr>
-  </table>
-
-  <h2>Who can do what</h2>
-  <table>
-    <tr><th>Action</th><th>User · app</th><th>User · web</th><th>Doctor · link</th><th>Owner</th><th>Developer</th></tr>
-    <tr><td>Record, delete own readings</td><td>✓</td><td>—</td><td>—</td><td>own only</td><td>—</td></tr>
-    <tr><td>See own charts and report, export PDF</td><td>✓</td><td>✓ (PDF)</td><td>the shared period</td><td>own only</td><td>—</td></tr>
-    <tr><td>Create or withdraw a doctor link</td><td>—</td><td>✓</td><td>—</td><td>own only</td><td>—</td></tr>
-    <tr><td>See another person's readings or report</td><td>—</td><td>—</td><td>—</td><td><b>never</b></td><td><b>never</b></td></tr>
-    <tr><td>See usage totals (never per account)</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>via the owner's connector, for checks</td></tr>
-    <tr><td>Read the error log</td><td>—</td><td>—</td><td>—</td><td>✓ Admin tab</td><td>✓ to fix</td></tr>
-    <tr><td>Switch app versions off</td><td>—</td><td>—</td><td>—</td><td>✓ Admin, Actions</td><td>—</td></tr>
-    <tr><td>Change code, docs, deploy</td><td>—</td><td>—</td><td>—</td><td>decides</td><td>✓ through pull requests</td></tr>
-    <tr><td>See keys and secrets</td><td>—</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
-  </table>
-  <p class="muted">Enforced by the server: signed app calls, web session cookie, owner account, read-only expiring doctor links.</p>
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>6 / 10</span></div>
 </section>
 
@@ -859,10 +835,108 @@
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>7 / 10</span></div>
 </section>
 
-<!-- ======================= PAGE 8: RELEASE AND DEPLOYMENT, ANDROID ======================= -->
+<!-- ======================= PAGE 8: ROLES AND DELIVERY ======================= -->
 <section class="page">
   <div class="band">
     <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 8 OF 10</div>
+    <h1>Roles and delivery</h1>
+    <p>Who does what — the architect, the developer, the repository and the hosting — and how a change goes from the chat to the phone.</p>
+  </div>
+
+  <h2>Roles <small>people and platforms</small></h2>
+  <svg viewBox="0 0 520 178" width="100%" role="img" aria-label="Roles of people and platforms">
+    <defs><marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
+    <style>
+      .n4 { fill:#fff; stroke:#C7D2E1; } .h4 { font-size:8px; font-weight:700; fill:#13223F; } .x4 { font-size:6.3px; fill:#5B6B88; }
+      .a4 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#d); } .l4 { font-size:6.1px; fill:#5B6B88; }
+    </style>
+    <!-- people -->
+    <rect x="4" y="14" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#6D5BD0" stroke-width="1.4"/>
+    <text x="14" y="29" class="h4">Human · owner</text>
+    <text x="14" y="41" class="x4">decides design, rules, priorities</text><text x="14" y="50" class="x4">tests APKs, reviews documents</text>
+    <text x="14" y="59" class="x4">owns the accounts and the secrets</text><text x="14" y="68" class="x4">reads the Admin tab</text>
+    <rect x="4" y="98" width="124" height="66" rx="8" fill="#F4F7FB" stroke="#0F9C8E" stroke-width="1.4"/>
+    <text x="14" y="113" class="h4">Claude · developer</text>
+    <text x="14" y="125" class="x4">writes code and documents</text><text x="14" y="134" class="x4">tests, merges, watches the pipeline</text>
+    <text x="14" y="143" class="x4">reads the error log, fixes</text><text x="14" y="152" class="x4">sends the APK in the chat</text>
+    <line x1="24" y1="80" x2="24" y2="96" class="a4"/><text x="30" y="91" class="l4">design, feedback</text>
+    <line x1="108" y1="98" x2="108" y2="82" class="a4"/><text x="86" y="91" class="l4">APK</text>
+    <!-- GitHub -->
+    <line x1="128" y1="130" x2="176" y2="112" class="a4"/><text x="134" y="114" class="l4">PR, merge</text>
+    <rect x="178" y="60" width="140" height="104" rx="8" class="n4" stroke="#13223F"/>
+    <text x="188" y="75" class="h4">GitHub · source and CI/CD</text>
+    <rect x="188" y="82" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="93" class="x4">Repository: code + docs/ (private)</text>
+    <rect x="188" y="101" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="112" class="x4">Build, docs, security tests</text>
+    <rect x="188" y="120" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="131" class="x4">Releases: v0.1.N, APK + AAB</text>
+    <rect x="188" y="139" width="120" height="16" rx="3" fill="#EEF2F7"/><text x="194" y="150" class="x4">Secrets: keys, never in the code</text>
+    <!-- Cloudflare -->
+    <line x1="318" y1="100" x2="366" y2="82" class="a4"/><text x="336" y="104" class="l4">deploy</text>
+    <rect x="368" y="14" width="148" height="92" rx="8" fill="#0F1C36"/>
+    <text x="378" y="29" class="h4" style="fill:#fff">Cloudflare · hosting</text>
+    <text x="378" y="41" class="x4" style="fill:#AFC0DC">Worker: API, Web Dashboard, pages</text>
+    <text x="378" y="50" class="x4" style="fill:#AFC0DC">D1 database (EU) · nightly cron</text>
+    <text x="378" y="59" class="x4" style="fill:#AFC0DC">static files: app, guides</text>
+    <text x="378" y="68" class="x4" style="fill:#AFC0DC">secrets of the running server</text>
+    <text x="378" y="86" class="x4" style="fill:#fff">free plan · owner's account</text>
+    <!-- providers -->
+    <rect x="368" y="116" width="70" height="48" rx="6" class="n4"/><text x="375" y="130" class="h4">No AI</text><text x="375" y="141" class="x4">Anthropic Scan</text><text x="375" y="150" class="x4">removed (v19)</text>
+    <rect x="446" y="116" width="70" height="48" rx="6" class="n4"/><text x="453" y="130" class="h4">Google</text><text x="453" y="141" class="x4">OAuth sign-in,</text><text x="453" y="150" class="x4">Play (later)</text>
+    <line x1="128" y1="40" x2="366" y2="40" class="a4"/><text x="200" y="36" class="l4">owner's Admin tab (web)</text>
+  </svg>
+
+  <h2>Responsibilities</h2>
+  <table>
+    <tr><th>Activity</th><th>Human · architect</th><th>Claude · developer</th><th>GitHub</th><th>Cloudflare</th></tr>
+    <tr><td>Design, rules, priorities</td><td><b>decides</b></td><td>proposes, asks when unclear</td><td>—</td><td>—</td></tr>
+    <tr><td>Code and documents (<code>docs/</code>)</td><td>reads</td><td><b>writes, same commit</b></td><td>stores</td><td>—</td></tr>
+    <tr><td>Tests before merge</td><td>—</td><td><b>runs</b></td><td>Docs check, Security tests</td><td>—</td></tr>
+    <tr><td>Merge, build, release</td><td>delegated</td><td><b>merges, watches</b></td><td><b>builds, releases</b></td><td>—</td></tr>
+    <tr><td>Hosting, database, cron</td><td>owns the account</td><td>—</td><td>deploys</td><td><b>runs</b></td></tr>
+    <tr><td>Keys and secrets</td><td><b>owns</b></td><td>never sees them</td><td>stores</td><td>stores</td></tr>
+    <tr><td>Trying the app on a phone</td><td><b>tries every APK</b></td><td>sends it</td><td>—</td><td>serves <code>/download</code></td></tr>
+    <tr><td>Errors met by users</td><td>sees them in Admin</td><td><b>analyses, fixes</b></td><td>—</td><td>stores the log</td></tr>
+  </table>
+
+  <h2>Delivery, from the chat to the phone</h2>
+  <ol>
+    <li><b>Decide</b> — Human describes the change in the chat; unclear points are asked, not guessed.</li>
+    <li><b>Build and test</b> — Claude on <code>claude/…</code>: code and documents in one commit; harness, pages in Chromium, documents rendered.</li>
+    <li><b>Merge</b> — pull request, <i>Docs check</i> and <i>Security tests</i> green, squash merge into <code>main</code>.</li>
+    <li><b>Release</b> — local tests → privately signed APK/AAB → Worker + same-revision APK promotion → release record. No missing-key fallback. D1 tables, Worker, APK/AAB <code>v0.1.N</code>, <code>/download</code>; Claude checks it and sends the APK.</li>
+    <li><b>Try</b> — Human tries the APK; feedback starts the next round. Rollback: revert the pull request.</li>
+  </ol>
+  <h2>Continuous improvement loop <small>proactive: every day, without being asked</small></h2>
+  <svg viewBox="0 0 520 128" width="100%" role="img" aria-label="Continuous improvement loop with security tests">
+    <defs><marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5B6B88"/></marker></defs>
+    <style>
+      .n5 { fill:#fff; stroke:#C7D2E1; } .h5 { font-size:7.4px; font-weight:700; fill:#13223F; } .x5 { font-size:6.1px; fill:#5B6B88; }
+      .a5 { stroke:#5B6B88; stroke-width:1; fill:none; marker-end:url(#e); }
+    </style>
+    <rect x="4" y="4" width="92" height="36" rx="6" class="n5"/><text x="11" y="16" class="h5">1a · User errors</text><text x="11" y="26" class="x5">app, web, server write</text><text x="11" y="34" class="x5">to error_log (D1)</text>
+    <rect x="4" y="46" width="92" height="36" rx="6" class="n5" stroke="#0F9C8E" stroke-width="1.4"/><text x="11" y="58" class="h5">1b · Security 06:10</text><text x="11" y="68" class="x5">suite, live probe, audit;</text><text x="11" y="76" class="x5">Sundays load + browser</text>
+    <line x1="96" y1="22" x2="110" y2="36" class="a5"/><line x1="96" y1="64" x2="110" y2="50" class="a5"/>
+    <rect x="112" y="23" width="92" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="119" y="36" class="h5">2 · Issues by 06:30</text><text x="119" y="47" class="x5">"Error log", "Security</text><text x="119" y="56" class="x5">tests" when something fails</text>
+    <line x1="204" y1="43" x2="218" y2="43" class="a5"/>
+    <rect x="220" y="23" width="92" height="40" rx="6" class="n5" stroke="#0F9C8E" stroke-width="1.4"/><text x="227" y="36" class="h5">3 · Check 06:48</text><text x="227" y="47" class="x5">Claude, scheduled routine:</text><text x="227" y="56" class="x5">cause, reproduce</text>
+    <line x1="312" y1="43" x2="326" y2="43" class="a5"/>
+    <rect x="328" y="23" width="92" height="40" rx="6" class="n5"/><text x="335" y="36" class="h5">4 · Fix + documents</text><text x="335" y="47" class="x5">branch, harness, PR</text><text x="335" y="56" class="x5">"Fixes #issue"</text>
+    <line x1="420" y1="43" x2="434" y2="43" class="a5"/>
+    <rect x="436" y="23" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="36" class="h5">5 · Gates</text><text x="443" y="47" class="x5">Docs check, Security</text><text x="443" y="56" class="x5">tests, squash merge</text>
+    <line x1="476" y1="63" x2="476" y2="80" class="a5"/>
+    <rect x="436" y="82" width="80" height="40" rx="6" class="n5" stroke="#1E9A5B"/><text x="443" y="95" class="h5">6 · Build, release</text><text x="443" y="106" class="x5">Worker + APK vN,</text><text x="443" y="115" class="x5">/download</text>
+    <line x1="434" y1="102" x2="316" y2="102" class="a5"/>
+    <rect x="220" y="82" width="94" height="40" rx="6" class="n5" stroke="#6D5BD0" stroke-width="1.4"/><text x="227" y="95" class="h5">7 · Human informed</text><text x="227" y="106" class="x5">report in the issue + chat;</text><text x="227" y="115" class="x5">decides what is larger</text>
+    <line x1="218" y1="102" x2="50" y2="102" class="a5"/><line x1="50" y1="102" x2="50" y2="84" class="a5"/>
+    <text x="70" y="98" class="x5">the next day, with the fixed version in use</text>
+  </svg>
+  <p class="muted">Security tests, vulnerability scan, Dependabot and who pays for the loop: page 6. Larger fixes wait for the human.</p>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>8 / 10</span></div>
+</section>
+
+<!-- ======================= PAGE 9: RELEASE AND DEPLOYMENT, ANDROID ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 9 OF 10</div>
     <h1>Release and deployment · Android</h1>
     <p>Who does what, and when, from the owner's request to the person working on the new version. Server and Web Dashboard are live minutes after the merge; the app waits for Google's review.</p>
   </div>
@@ -995,13 +1069,13 @@
 <text x="4" y="885.0" font-size="6.6" fill="#5B6B88"></text>
 </svg>
   <p class="muted">✓ = check passed. The Worker reads every hour the newest version Google Play has published to everyone (production track, status completed) and only then requires it (<code>app_live_version</code>); before Google Play, the build just deployed. Phones with automatic updates get it from Google Play without opening the app.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>8 / 10</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>9 / 10</span></div>
 </section>
 
-<!-- ======================= PAGE 9: RELEASE AND DEPLOYMENT, IPHONE AND ROLES ======================= -->
+<!-- ======================= PAGE 10: RELEASE AND DEPLOYMENT, IPHONE AND ROLES ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 9 OF 10</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 10 OF 10</div>
     <h1>Release and deployment · iPhone and roles</h1>
     <p>The same release through the Apple App Store, when the iOS app exists (today there is none), and the part each actor plays.</p>
   </div>
@@ -1100,82 +1174,8 @@
     <tr><td><b>Google · Apple</b></td><td>review ✓, then publish to a share of people, then to all</td><td>hours–3 days · 1–2 days; Apple up to 7 days</td></tr>
     <tr><td><b>Person</b></td><td>opens the app, updates in the store's window, accepts the new terms (scroll to the end), goes on</td><td>~2 min</td></tr>
   </table>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>9 / 10</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>10 / 10</span></div>
 </section>
 
-<!-- ======================= PAGE 10: RUNTIME FLOW IN FIVE BLOCKS ======================= -->
-<section class="page">
-  <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 10 OF 10</div>
-    <h1>Runtime flow in five blocks</h1>
-    <p>Who does what when the person uses HINT 365: phone or browser, Cloudflare, the Worker, the D1 database, the nightly backup.</p>
-  </div>
-  <svg viewBox="0 0 720 330" width="100%" font-family="Arial" font-size="8" style="display:block;margin:3mm auto 0">
-<defs><marker id="rf" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10" y="70" width="130" height="70" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
-<text x="75.0" y="91.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · App on the phone</text>
-<text x="75.0" y="102.6" text-anchor="middle" fill="#13223F">Android (from Google Play)</text>
-<text x="75.0" y="113.4" text-anchor="middle" fill="#13223F">iPhone (App Store, later)</text>
-<text x="75.0" y="124.2" text-anchor="middle" fill="#13223F">the person</text>
-<rect x="10" y="175" width="130" height="62" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
-<text x="75.0" y="198.2" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">1 · Web browser</text>
-<text x="75.0" y="209.0" text-anchor="middle" fill="#13223F">Web Dashboard</text>
-<text x="75.0" y="219.79999999999998" text-anchor="middle" fill="#13223F">the person, the doctor's link</text>
-<rect x="200" y="18" width="150" height="50" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2" stroke-dasharray="4 3"/>
-<text x="275.0" y="40.6" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Domain (bought on GoDaddy)</text>
-<text x="275.0" y="51.400000000000006" text-anchor="middle" fill="#13223F">its name servers point to Cloudflare</text>
-<rect x="200" y="110" width="150" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="275.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">2 · Cloudflare network</text>
-<text x="275.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">DNS: name → address</text>
-<text x="275.0" y="161.0" text-anchor="middle" fill="#13223F">HTTPS: certificate, encryption</text>
-<text x="275.0" y="171.8" text-anchor="middle" fill="#13223F">protection, the nearest</text>
-<text x="275.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">data centre answers</text>
-<rect x="400" y="110" width="140" height="96" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="470.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">3 · Worker = our server</text>
-<text x="470.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">the program in TypeScript:</text>
-<text x="470.0" y="161.0" text-anchor="middle" fill="#13223F">API for the app and</text>
-<text x="470.0" y="171.8" text-anchor="middle" fill="#13223F">the Web Dashboard pages</text>
-<text x="470.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">no Tomcat, no nginx</text>
-<rect x="590" y="110" width="120" height="96" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="650.0" y="139.4" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">4 · D1 database (EU)</text>
-<text x="650.0" y="150.20000000000002" text-anchor="middle" fill="#13223F">accounts, readings,</text>
-<text x="650.0" y="161.0" text-anchor="middle" fill="#13223F">lab results, settings</text>
-<text x="650.0" y="171.8" text-anchor="middle" fill="#13223F">+ copy of acceptances</text>
-<text x="650.0" y="182.60000000000002" text-anchor="middle" fill="#13223F">Time Travel: 7 days</text>
-<rect x="590" y="250" width="120" height="66" rx="6" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1.2"/>
-<text x="650.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">5 · Nightly backup</text>
-<text x="650.0" y="280.6" text-anchor="middle" fill="#13223F">01:40 UTC, encrypted</text>
-<text x="650.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">vault database (EU)</text>
-<text x="650.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">last 30 nights</text>
-<rect x="400" y="250" width="140" height="66" rx="6" fill="#EEF1F5" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3"/>
-<text x="470.0" y="269.8" text-anchor="middle" fill="#13223F" font-weight="bold" font-size="8.6">Outside services</text>
-<text x="470.0" y="280.6" text-anchor="middle" fill="#13223F">Google: sign-in, Play</text>
-<text x="470.0" y="291.40000000000003" text-anchor="middle" fill="#13223F">Anthropic: reads the</text>
-<text x="470.0" y="302.20000000000005" text-anchor="middle" fill="#13223F">Scan photo (AI)</text>
-<path d="M140 105 L170 105 L170 140 L198 140" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
-<text x="170" y="99" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
-<path d="M140 206 L170 206 L170 176 L198 176" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
-<text x="170" y="222" text-anchor="middle" font-size="7.4" fill="#5B6B88">HTTPS</text>
-<path d="M275 68 L275 108" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
-<text x="280" y="92" text-anchor="start" font-size="7.4" fill="#5B6B88">set once</text>
-<path d="M350 158 L398 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
-<text x="374" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">request</text>
-<path d="M540 158 L588 158" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
-<text x="564" y="152" text-anchor="middle" font-size="7.4" fill="#5B6B88">SQL</text>
-<path d="M650 206 L650 248" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#rf)"/>
-<text x="655" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">every night</text>
-<path d="M470 206 L470 248" fill="none" stroke="#5B6B88" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#rf)"/>
-<text x="475" y="230" text-anchor="start" font-size="7.4" fill="#5B6B88">when needed</text>
-</svg>
-  <table>
-    <tr><th>Block</th><th>What it is</th><th>Who runs it</th></tr>
-    <tr><td><b>1 · App, browser</b></td><td>Android app (Google Play), iPhone later; Web Dashboard in any browser; every call is HTTPS, app calls signed with the phone's key</td><td>the person</td></tr>
-    <tr><td><b>2 · Cloudflare network</b></td><td>DNS (domain bought on GoDaddy, name servers set to Cloudflare), HTTPS certificate renewed automatically, DDoS protection, nearest data centre</td><td>Cloudflare</td></tr>
-    <tr><td><b>3 · Worker</b></td><td>our server, serverless: TypeScript run by Cloudflare's <i>workerd</i> engine (V8 isolates) for each request; replaces nginx (static files: Web Dashboard, APK) and Tomcat (the API); 2 cron triggers</td><td>code: us · engine and machines: Cloudflare</td></tr>
-    <tr><td><b>4 · D1 (EU)</b></td><td>SQLite-based managed database, jurisdiction EU; main data + copy of acceptances; Time Travel to any minute of 7 days (Workers Free)</td><td>Cloudflare</td></tr>
-    <tr><td><b>5 · Nightly backup</b></td><td>01:40 UTC, GitHub Actions: export of both databases, AES-256 with the owner's phrase, kept in the vault D1 (EU), 30 nights; restore and monthly drill by <i>Disaster recovery</i></td><td>GitHub Actions</td></tr>
-  </table>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.129</span><span>10 / 10</span></div>
-</section>
 </body>
 </html>

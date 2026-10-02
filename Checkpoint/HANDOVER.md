@@ -457,3 +457,8 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - BACKUP_PASSPHRASE set (a first weak value was replaced at once on my warning). First real backup in `personalhealthy-vault` (EU); first real drill PASSED in 24 s (1 account, 39 readings, 29 acceptances; clone deleted).
 - Human decided: stay on Cloudflare (not Vercel) with an own domain instead of `personalhealthy-api.comevava76.workers.dev`. Domain name and purchase still to be chosen by Human (needs a card; possibly at the Google Play launch). Plan: DNS on Cloudflare, Worker custom domain, workers.dev kept in parallel, new app build with the new address, Google OAuth origins, privacy/links/docs, then old address off.
 - General document section 4: what a Cloudflare Worker is vs a classic nginx/Tomcat/VM/MySQL set-up.
+
+### 2026-10-03 00:10 — Claude Code — documents reorganised in coherent parts; runtime flow in five blocks
+
+- Human asked for a five-block flow (phone/browser → Cloudflare DNS+HTTPS, domain to be bought on GoDaddy → Worker → D1 → nightly backup) with explanations, and for documents organised by topic, not scattered.
+- Done: `docs/overview/runtime-diagram.py` → runtime-flow.svg; general document now in five parts (1 functional 1–3; 2 application architecture 4–5 with the five-block flow, Workers explained, database diagram; 3 running the service 6–8: jobs, logs, disaster recovery; 4 processes 9–14: compliance, change, release, patch, vulnerability, defect; 5 reference 15–17), each part on a new page, TOC by parts, cross references renumbered. Architecture document reordered: functional 1–3, application architecture 4–7 (five-block flow on page 5, database page 7), processes 8–10 (roles, release Android, iPhone). CLAUDE.md and docs index updated.

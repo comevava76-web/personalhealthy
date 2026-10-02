@@ -6,8 +6,8 @@ Read **[Checkpoint/HANDOVER.md](Checkpoint/HANDOVER.md)** first for project cont
 
 Before closing a session, refresh the handover's current state, append a dated entry identifying the developer/tool and its work, tests, commits/releases, limits and next step, and commit it with the related changes. Keep one living `HANDOVER.md`; use Git for history. Never mark pending work as completed or store secrets/patient data there. The user explicitly chose `Checkpoint/` for this shared handover.
 
-- **Documentazione sempre aggiornata, e sempre solo in inglese.** `docs/architecture/architecture.html` (pagina 1 funzionale, pagina 2 tecnologie)
-  (pagina 3: flusso a runtime e CI/CD) va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
+- **Documentazione sempre aggiornata, e sempre solo in inglese.** `docs/architecture/architecture.html` (funzionale: pagine 1-3; architettura applicativa: 4-7, con il flusso a cinque blocchi a pagina 5 e il database a pagina 7;
+  processi: 8-10, con il rilascio Android e iPhone a pagine 9-10) va aggiornata a ogni modifica che cambia un flusso, una tecnologia, una regola o una tabella; poi si rigenera il PDF con
   `node docs/architecture/render.cjs` e si committano HTML, PDF e anteprime insieme alla modifica.
 - **Materiale demo** in `docs/demo/`: se cambia l'aspetto della dashboard o del PDF, rifare gli screenshot (solo dati di prova,
   mai misure reali).
@@ -54,7 +54,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   ripiego fuori dal Play Store (APK di prova: link di download). Sul Play Store la versione richiesta è quella che Google ha
   davvero pubblicato a tutti (track production, «completed»): il Worker la legge ogni ora (cron `7 * * * *`, `playLiveVersion`,
   setting `app_live_version`); una versione ancora in revisione o al 20% non ferma nessuno. Prima del Play Store vale la build
-  appena pubblicata sul link. Processo disegnato: architettura pagine 8-9, documento generale sezione 13. Restano per le emergenze `app_min_version`,
+  appena pubblicata sul link. Processo disegnato: architettura pagine 9-10, documento generale sezione 11. Restano per le emergenze `app_min_version`,
   `app_blocked`, `app_off` (Actions → *App versions*). Non togliere questo controllo.
 - **Abbonamento alle funzionalità AI** (decisione di Human del 02.10.2026): l'app è gratuita (voce, referti, grafici,
   report, Web Dashboard) a discrezione dell'owner, che nelle condizioni si riserva di cambiare prezzi, togliere il gratuito, mettere
@@ -90,16 +90,16 @@ Before closing a session, refresh the handover's current state, append a dated e
   funzionano solo dal telefono registrato come owner (`owner_key`); chi ruba l'account Google e lo sposta su un altro telefono non li ha.
   Su un telefono nuovo dell'owner, Gestore chiede il **codice segreto da owner** (secret `OWNER_CODE`, 5 tentativi al giorno);
   riserva: Actions → *Owner phone*. Non togliere questo controllo.
-- **Disaster recovery** (chiesto da Human): cartella `DR/` con l'Infrastructure as Code (`DR/infrastructure-as-code/infrastructure.json` dichiara i tre D1 UE, Worker, secret, servizi esterni, RPO/RTO; `rebuild.sh` crea ciò che manca e non cancella mai). Backup: D1 Time Travel (7 giorni sul piano Free) + backup notturno cifrato AES-256 (`BACKUP_PASSPHRASE`) nel D1 `personalhealthy-vault` (UE, 30 notti, gratis, niente carta); mai backup su Git. Actions → *Disaster recovery*: `rebuild` (database + tabelle + restore + Build), `restore`, `time-travel`, `drill` ogni mese. Impegni RPO/RTO basati sul piano Cloudflare in uso, sezione 14 del documento generale e runbook `docs/operations/disaster-recovery.md` con ogni passo manuale. R2 / copia fuori account: al lancio su Google Play. Ogni nuova risorsa va in `infrastructure.json` nello stesso commit.
+- **Disaster recovery** (chiesto da Human): cartella `DR/` con l'Infrastructure as Code (`DR/infrastructure-as-code/infrastructure.json` dichiara i tre D1 UE, Worker, secret, servizi esterni, RPO/RTO; `rebuild.sh` crea ciò che manca e non cancella mai). Backup: D1 Time Travel (7 giorni sul piano Free) + backup notturno cifrato AES-256 (`BACKUP_PASSPHRASE`) nel D1 `personalhealthy-vault` (UE, 30 notti, gratis, niente carta); mai backup su Git. Actions → *Disaster recovery*: `rebuild` (database + tabelle + restore + Build), `restore`, `time-travel`, `drill` ogni mese. Impegni RPO/RTO basati sul piano Cloudflare in uso, sezione 8 del documento generale e runbook `docs/operations/disaster-recovery.md` con ogni passo manuale. R2 / copia fuori account: al lancio su Google Play. Ogni nuova risorsa va in `infrastructure.json` nello stesso commit.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
   https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
-- **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
+- **Documento generale** `docs/HINT365-How-it-works.pdf` (cinque parti, sempre in quest'ordine: funzionale, architettura applicativa, esercizio con job, log e disaster recovery, processi, riferimenti; un argomento nuovo va nella sua parte) (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
-  stesso commit i documenti che tocca: architettura (10 pagine: la 7 è lo schema del database, la 8 e la 9 il rilascio Android e iPhone, la 10 il flusso a cinque blocchi, generati da `docs/overview/*-diagram.py`, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  stesso commit i documenti che tocca: architettura (10 pagine in tre parti: funzionale 1-3, architettura applicativa 4-7 con flusso a cinque blocchi a pagina 5 e database a pagina 7, processi 8-10 con il rilascio Android e iPhone, generati da `docs/overview/*-diagram.py`, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni

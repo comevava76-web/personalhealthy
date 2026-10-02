@@ -1,7 +1,7 @@
 # DR · Disaster recovery of HINT 365
 
 What is needed to rebuild HINT 365 after a loss. The runbook — backups and how far back they go, RPO/RTO, every
-manual step — is `docs/operations/disaster-recovery.md` (and section 14 of `docs/HINT365-How-it-works.pdf`).
+manual step — is `docs/operations/disaster-recovery.md` (and section 8 of `docs/HINT365-How-it-works.pdf`).
 
 | Here | What it is |
 |---|---|
