@@ -37,6 +37,9 @@ Before closing a session, refresh the handover's current state, append a dated e
   l'email resta sul telefono. Nessuna funzione deve reintrodurla.
 - **Mai segreti nel repository**: chiavi e token solo nei secrets di GitHub o sul server.
 - **Nome**: sempre «HINT 365» nei testi per l'utente (app, web, PDF, guide, condizioni).
+- **Lingue**: italiano, tedesco, francese, inglese. Se il telefono o il browser è in un'altra lingua (georgiano, spagnolo,
+  bulgaro…) tutto è in inglese: testi (`values/`), date e giorni (`appLocale()` in `Core.kt`, inglese britannico),
+  condizioni e risposte del server (`X-Lang`), Web Dashboard (`app.js`).
 - **Condizioni d'uso vincolanti**: mostrate alla prima installazione, a ogni aggiornamento dell'app e quando cambia il testo
   (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms`.
 - **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto

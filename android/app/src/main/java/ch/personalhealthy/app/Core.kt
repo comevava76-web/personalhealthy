@@ -42,6 +42,12 @@ import kotlin.math.roundToInt
 
 /* ---------------- Texts in the phone's language ---------------- */
 
+/** The app speaks Italian, German, French or English: any other phone language gets English (texts fall back to
+ *  values/ by themselves; this keeps dates, weekdays and the server's answers in the same language). English dates
+ *  are written the British way (day/month, 24 h). */
+val APP_LANGS = setOf("it", "de", "fr", "en")
+fun appLocale(): Locale = Locale.getDefault().let { if (it.language in APP_LANGS) it else Locale.UK }
+
 object Txt {
     @Volatile var res: Resources? = null
     fun init(ctx: Context) { res = ctx.resources }
@@ -157,7 +163,7 @@ const val WARN_COLOR = 0xFFFFB35C
 
 object Z {
     val zone: ZoneId = ZoneId.of("Europe/Zurich")
-    private fun loc(): Locale = Locale.getDefault()
+    private fun loc(): Locale = appLocale()
 
     fun date(ts: Long): LocalDate = Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
     fun today(): LocalDate = LocalDate.now(zone)
@@ -360,7 +366,7 @@ object Api {
                 c.readTimeout = 120000
                 c.setRequestProperty("X-Ts", ts)
                 c.setRequestProperty("X-Sig", sig)
-                c.setRequestProperty("X-Lang", Locale.getDefault().language)
+                c.setRequestProperty("X-Lang", appLocale().language)
                 c.setRequestProperty("X-App-Version", BuildConfig.VERSION_CODE.toString())
                 if (personId != null) c.setRequestProperty("X-Person", personId)
                 device?.let { c.setRequestProperty("X-Device", it) }
