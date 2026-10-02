@@ -139,14 +139,16 @@ CREATE INDEX IF NOT EXISTS idx_acceptances_person ON acceptances (person_id, doc
 CREATE TABLE IF NOT EXISTS web_codes (
   code_hash   TEXT PRIMARY KEY,
   person_id   TEXT NOT NULL,
-  expires_at  INTEGER NOT NULL
+  expires_at  INTEGER NOT NULL,
+  owner       INTEGER                        -- 1: asked from the owner's own phone (owner_key), opens the Admin console
 );
 -- Browsers signed in to My Dash (7 days, or until "Sign out").
 CREATE TABLE IF NOT EXISTS web_sessions (
   id_hash     TEXT PRIMARY KEY,
   person_id   TEXT NOT NULL,
   created_at  INTEGER NOT NULL,
-  expires_at  INTEGER NOT NULL
+  expires_at  INTEGER NOT NULL,
+  owner       INTEGER                        -- copied from the code
 );
 -- Read-only links for the doctor: the readings between date_from and date_to, until expires_at.
 CREATE TABLE IF NOT EXISTS web_shares (
@@ -205,6 +207,29 @@ CREATE TABLE IF NOT EXISTS seen_sigs (
 CREATE TABLE IF NOT EXISTS scan_trials (
   fp         TEXT PRIMARY KEY,
   started_at INTEGER NOT NULL
+);
+
+-- The yearly AI allowance of each person (the photo Scan): Scans made and what they cost the owner, in micro-US$
+-- from the tokens the AI provider counted, in a 12-month window that starts with the first Scan of the window. When
+-- micro_usd reaches the allowance (2.50 US$) the Scan stops until the window renews. Deleted with the account.
+CREATE TABLE IF NOT EXISTS scan_usage (
+  person_id    TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  scans        INTEGER NOT NULL DEFAULT 0,
+  micro_usd    INTEGER NOT NULL DEFAULT 0
+);
+
+-- The owner's accounts, day by day, for the Admin console: AI cost of the Scans (all accounts, the owner included) and
+-- subscriptions sold (a new paid year seen on Google Play). Totals only: no account, no person.
+CREATE TABLE IF NOT EXISTS ai_spend_daily (
+  day       TEXT PRIMARY KEY,                -- YYYY-MM-DD, Zurich time
+  scans     INTEGER NOT NULL DEFAULT 0,
+  micro_usd INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS sub_sales_daily (
+  day         TEXT PRIMARY KEY,              -- YYYY-MM-DD, Zurich time
+  sales       INTEGER NOT NULL DEFAULT 0,    -- paid years
+  gross_cents INTEGER NOT NULL DEFAULT 0     -- at the list price (SUB_PRICE_CENTS): an estimate, Google Play has the real figure
 );
 
 -- Limits against abuse (test report F-07): a counter per key and window. IP addresses only as a fingerprint.

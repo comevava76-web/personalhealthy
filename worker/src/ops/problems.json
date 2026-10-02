@@ -131,7 +131,7 @@
    "versions": "0.1.113-0.1.120",
    "status": "fixed",
    "cause": "The on-phone seven-segment reader (MonitorReader) and the ML Kit fallback were tuned on generated photos; on real displays they read 0 of 7 photos, so they asked for a retake even on clear photos",
-   "fix": "Decision of Human: the Scan now reads the display with AI: an AI feature: 15-day trial, then 4 USD a year; 3 Scans a day per person through the Worker to Anthropic (Claude Haiku, paid by the owner, photo never stored), up to 30 with the person's own AI key (Claude, ChatGPT, Gemini or Kimi) kept encrypted on the phone; terms v21",
+   "fix": "Decision of Human: the Scan now reads the display with AI: an AI feature: 15-day trial, then 4.99 USD a year with a 2.50 USD yearly AI allowance; 3 Scans a day per person through the Worker to Anthropic (Claude Haiku, owner's key, photo never stored); terms v21",
    "pr": "",
    "fixedIn": "0.1.121"
   }

@@ -17,7 +17,7 @@ import kotlin.math.min
  */
 object MonitorScan {
     sealed class Result {
-        /** by: "ai" (the person's AI provider). */
+        /** by: "ai" (read with AI through the server). */
         data class Values(val sys: Int, val dia: Int, val pul: Int, val by: String) : Result()
         /** reason: dark, glare, blurry, not_found, unclear, implausible; ai_key, ai_quota, ai_network, ai_error. */
         data class Retake(val reason: String) : Result()

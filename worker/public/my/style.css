@@ -302,3 +302,6 @@ td.pick .st { margin-left: 8px; }
 .tiles.stats .tile .v { font-size: 24px; }
 .tiles.stats .tile .w { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 860px) { .tiles.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiles.stats .tile .v { font-size: 21px; } }
+/* the owner's accounts (Admin): numbers right-aligned, the totals row set apart */
+table.money th.num, table.money td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.money tfoot th, table.money tfoot td { border-top: 1px solid var(--line); font-weight: 600; }

@@ -47,33 +47,37 @@ Before closing a session, refresh the handover's current state, append a dated e
   Actions → *App versions*. Non togliere questo controllo.
 - **Abbonamento alle funzionalità AI** (decisione di Human del 02.10.2026): l'app è gratuita (voce, referti, grafici,
   report, Web Dashboard) a discrezione dell'owner, che nelle condizioni si riserva di cambiare prezzi, togliere il gratuito, mettere
-  tutta l'app a pagamento o ritirarla (con nuova versione delle condizioni; nell'app non va scritto altrove). Si pagano solo le funzionalità AI, oggi lo Scan: 4 US$ all'anno via Google Play (`hint365_annual`),
+  tutta l'app a pagamento o ritirarla (con nuova versione delle condizioni; nell'app non va scritto altrove). Si pagano solo le funzionalità AI, oggi lo Scan: 4,99 US$ all'anno via Google Play (`hint365_annual`),
   dopo una prova di 15 giorni dal primo Scan (3 al giorno, al massimo 45 foto), una volta per account Google e per telefono
   (impronte HMAC in `scan_trials`, mai email, tenute al massimo 2 anni). Due giorni prima della fine una notifica
   (`Reminders.aiTrial`). Dopo, senza abbonamento, il pulsante Scan è grigio con «Sblocca questa funzionalità» → `ScanLockScreen`
-  (abbonarsi o usare la propria chiave AI). Un abbonato usa al massimo 3 US$ di AI all'anno (`SCAN_YEAR_USD`, dai token di
-  Anthropic). L'owner non paga. Del pagamento si salvano solo token, stato e scadenza. Solo l'owner può disattivare versioni dell'app.
+  (abbonarsi). Un abbonato ha un plafond annuo di 2,50 US$ di AI (`SCAN_YEAR_USD`, dai token del fornitore), tracciato
+  nel DB (`scan_usage`: Scan e costo nei 12 mesi dal primo Scan, cancellato con l'account); il pulsante mostra gli Scan che restano;
+  finito il plafond, `429 scan_budget`. Nessuna chiave AI personale: la chiave è solo dell'owner (decisione di Human: nessuno la metterebbe). L'owner non paga. Del pagamento si salvano solo token, stato e scadenza. Solo l'owner può disattivare versioni dell'app.
 - **Accesso e cookie dichiarati**: l'accesso è Sign in with Google (OAuth 2.0 / OpenID Connect) e va scritto così in condizioni,
   privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
   nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.
-- **Politica dei costi** (tabella in app, condizioni e home): app gratuita; funzionalità AI 15 giorni gratis, poi 4 $/anno al
+- **Politica dei costi** (tabella in app, condizioni e home): app gratuita; funzionalità AI 15 giorni gratis, poi 4,99 $/anno al
   proprietario via Google Play; nessun altro costo di HINT 365. Gli Scan della prova e degli abbonati li paga l'owner (chiave
-  Anthropic nel secret del Worker); oltre, fino a 30 al giorno, la persona con la propria chiave AI.
+  AI nel secret del Worker). Conti e scenari in `docs/business/owner-economics.md`.
 - **Scan della foto del misuratore con l'AI** (condizioni v21, decisione di Human del 02.10.2026: il lettore senza AI delle
   v20 non leggeva i display veri; far inserire una chiave a tutti sarebbe un deterrente). Pulsante Scan con la bacchetta e le stelline (`ic_ai_wand`):
   **3 Scan al giorno per persona** (prova di 15 giorni, poi abbonamento), pagati dall'owner: la foto del solo display va al Worker (`POST /v1/bp/photo/read`,
   mai salvata né registrata) e da lì ad Anthropic (`claude-haiku-4-5`, il più economico, chiave nel secret `AI_API_KEY`, nome generico perché il fornitore può cambiare, impostato dalla
   pipeline dal secret GitHub omonimo (vale ancora il vecchio `ANTHROPIC_API_KEY`); senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30; prova finita senza abbonamento = `402 scan_locked`.
-  Oltre i 3: «Fino a 30 Scan al giorno con la tua AI» → `AiScreen` (anche da Gestore → Scan con l'AI): la persona incolla la
-  propria chiave (Claude, ChatGPT, Gemini, Kimi), verificata e cifrata **solo sul telefono** (`AiScan.kt`); con quella la foto
-  va dal telefono al fornitore, fino a 30 al giorno. I numeri si mostrano e si salvano solo dopo la conferma; valori non
+  La chiave sta nel secret GitHub `AI_API_KEY` (cifrato, mai visibile, anche con repository pubblico) oppure direttamente in
+  Cloudflare (Worker → Settings → Variables and Secrets): il deploy non la cancella. I numeri si mostrano e si salvano solo dopo la conferma; valori non
   plausibili = rifare la foto. Si salvano solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti (`bp_photo_*`).
   Il modulo `android/reader` (MonitorReader) resta nel repository ma l'app non lo usa più.
 - **Nell'app niente menu Report**: i report completi si aprono dal pulsante in fondo a Pressione e a Referti. Lo storico in Referti mostra solo i referti salvati; rifiuti e doppioni solo nei log (`error_log`, `event_log`). Il Gestore mostra quante misure e quanti referti, Google e account; niente costi.
 - **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la console **Admin** (solo quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; sotto il pulsante a Observability e il blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
+  nella Web Dashboard la console **Admin** (quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; poi le tabelle **Consumi** (Scan e costo AI per mese) e **Entrate e uscite** (abbonamenti, entrate, dopo Google Play, uscite AI, differenza: stime, da `ai_spend_daily` e `sub_sales_daily`, solo totali); sotto il pulsante a Observability e il blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
+- **Poteri dell'owner solo sul suo telefono** (chiesto da Human: l'email da sola non basta): console Admin, versioni e impostazioni
+  funzionano solo dal telefono registrato come owner (`owner_key`); chi ruba l'account Google e lo sposta su un altro telefono non li ha.
+  Su un telefono nuovo dell'owner, Gestore chiede il **codice segreto da owner** (secret `OWNER_CODE`, 5 tentativi al giorno);
+  riserva: Actions → *Owner phone*. Non togliere questo controllo.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla

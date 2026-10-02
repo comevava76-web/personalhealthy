@@ -99,6 +99,9 @@ jobs:
           add_col persons sub_until INTEGER
           add_col persons sub_state TEXT
           add_col persons sub_checked_at INTEGER
+          # Owner's powers only from the owner's phone: web codes and sessions say whether they came from it
+          add_col web_codes owner INTEGER
+          add_col web_sessions owner INTEGER
           # When the app was last opened (a usage figure for the owner's area)
           add_col persons last_seen_at INTEGER
           # The app version each account last opened with (shown to the owner)
@@ -134,6 +137,8 @@ jobs:
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
           # GitHub token that may open issues in this repository: the Security console's Fix button (optional)
           SECURITY_FIX_TOKEN: ${{ secrets.SECURITY_FIX_TOKEN }}
+          # the owner's secret code, asked in the app when the owner's account is on a new phone
+          OWNER_CODE: ${{ secrets.OWNER_CODE }}
           # the owner's AI key for the photo Scan (terms v21), any provider: secret AI_API_KEY, or the older ANTHROPIC_API_KEY
           AI_API_KEY: ${{ secrets.AI_API_KEY || secrets.ANTHROPIC_API_KEY }}
           # Google Cloud "Web client ID" for Sign in with Google (not a secret: it only names the app to Google).
@@ -166,7 +171,7 @@ jobs:
           jq -n --arg f "$FAMILY_CODE" '{FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
-          # the photo Scan reads with the owner's AI key (terms v21); without the GitHub secret the Scan is off
+          # the photo Scan reads with the owner's AI key (terms v21): from the GitHub secret, or kept as set in Cloudflare
           npx wrangler secret delete ANTHROPIC_API_KEY --force >/dev/null 2>&1 || true   # the older name
           if [ -n "$AI_API_KEY" ]; then
             ( umask 077; jq -n --arg k "$AI_API_KEY" '{AI_API_KEY:$k}' > ai.json )
@@ -174,14 +179,21 @@ jobs:
             rm -f ai.json
             echo "Scan AI key: set"
           else
-            npx wrangler secret delete AI_API_KEY --force >/dev/null 2>&1 || true
-            echo "::warning::Scan AI key missing: add the GitHub secret AI_API_KEY, the photo Scan answers scan_off"
+            # not in GitHub: the key may have been set straight in Cloudflare (Worker → Settings → Variables and Secrets); kept
+            if npx wrangler secret list 2>/dev/null | grep -q '"AI_API_KEY"'; then echo "Scan AI key: set in Cloudflare"
+            else echo "::warning::Scan AI key missing: set AI_API_KEY in GitHub secrets or in Cloudflare, the photo Scan answers scan_off"; fi
           fi
           # sent only when the GitHub secret exists: an empty value would switch the subscription check off
           if [ -n "$PLAY_SERVICE_ACCOUNT" ]; then
             ( umask 077; jq -n --arg k "$PLAY_SERVICE_ACCOUNT" '{PLAY_SERVICE_ACCOUNT:$k}' > play.json )
             npx wrangler secret bulk play.json
             rm -f play.json
+          fi
+          # sent only when the GitHub secret exists; otherwise a code set straight in Cloudflare is kept
+          if [ -n "$OWNER_CODE" ]; then
+            ( umask 077; jq -n --arg k "$OWNER_CODE" '{OWNER_CODE:$k}' > owner.json )
+            npx wrangler secret bulk owner.json
+            rm -f owner.json
           fi
           if [ -n "$SECURITY_FIX_TOKEN" ]; then
             ( umask 077; jq -n --arg k "$SECURITY_FIX_TOKEN" '{GITHUB_FIX_TOKEN:$k}' > fix.json )

@@ -265,6 +265,25 @@ r = await call(alice, "GET", "/v1/bp");
 S.check("subscription", "B5", "valid subscription -> readings again", r.status === 200, r.text);
 r = await call(alice, "GET", "/v1/me");
 S.check("subscription", "B5b", "valid subscription -> the Scan is on again", r.status === 200 && r.json.sub.scan === "on", r.text);
+run("INSERT OR REPLACE INTO scan_usage (person_id, window_start, scans, micro_usd) VALUES (?, ?, 10, 20000)", alice.pid, now() - DAY);
+r = await call(alice, "GET", "/v1/me");
+S.check("subscription", "B5c", "subscriber sees the Scans left in the yearly allowance (2.50 $, from the recorded use)", r.status === 200 && r.json.sub.scansLeft === 1240, r.text);
+run("UPDATE scan_usage SET micro_usd = 2500000 WHERE person_id = ?", alice.pid);
+r = await call(alice, "GET", "/v1/me");
+S.check("subscription", "B5d", "allowance used up -> no Scans left", r.status === 200 && r.json.sub.scansLeft === 0, r.text);
+run("DELETE FROM scan_usage WHERE person_id = ?", alice.pid);
+
+// ---------------------------------------------------------------- owner's powers only from the owner's phone
+r = await call(owner, "GET", "/v1/me");
+S.check("owner", "OW1", "owner on the phone on record: owner powers", r.status === 200 && r.json.isAdmin === true, r.text);
+run("UPDATE settings SET value = 'another-phone-key' WHERE key = 'owner_key'");
+r = await call(owner, "GET", "/v1/me");
+S.check("owner", "OW2", "owner account moved to a phone not on record (e.g. stolen Google account): no owner powers", r.status === 200 && r.json.isAdmin === false, r.text);
+r = await call(owner, "POST", "/v1/admin/app-min-version", { minVersion: 0 });
+S.check("owner", "OW3", "owner calls from that phone are refused", r.status === 403, r.text);
+run("DELETE FROM settings WHERE key = 'owner_key'");
+r = await call(owner, "GET", "/v1/me");
+S.check("owner", "OW4", "no phone on record yet: the owner's phone in use is recorded", r.status === 200 && r.json.isAdmin === true, r.text);
 run("DELETE FROM scan_trials WHERE fp = ?", "p:" + alice.pid);
 run("UPDATE persons SET sub_until = NULL, sub_state = NULL WHERE id = ?", alice.pid);
 

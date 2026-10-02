@@ -623,6 +623,10 @@
      Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
   const AD = IT ? {
     tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo totali: nessuna misura, nessun report, nessun nome",
+    mUseT: "Consumi", mUseN: "Scan con l'AI di tutti gli account, te compreso, e quanto sono costati: dai token contati dal fornitore AI.",
+    mUseCols: ["Mese", "Scan", "Costo AI"],
+    mBalT: "Entrate e uscite", mBalN: (n, f) => `Stima: abbonamenti venduti al prezzo di listino (4,99 $), meno la quota di Google Play (${f}%); uscite = costo AI. Abbonati attivi: ${n}. Le cifre vere sono nella Google Play Console e nella console del fornitore AI.`,
+    mBalCols: ["Mese", "Abbonamenti", "Entrate", "Dopo Google Play", "Uscite AI", "Differenza"], mTot: "Totale", mNone: "Ancora nessun movimento.",
     upd: "Aggiornato", users: "Utenti", usersU: "in totale", labs: "Referti", labsU: "salvati, di tutti gli utenti",
     rd: "Misure", split: (v, f) => `${v} a voce` + (f ? ` · ${f} con la vecchia Scan` : ""),
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
@@ -656,6 +660,10 @@
     fixHint: "Seleziona le righe e premi Fix: Claude prepara la correzione seguendo il processo.", triage: "da valutare", ours: "nostro", run: "dettagli dell'esecuzione", noFix: "nessuna correzione",
   } : {
     tab: "Admin", title: "Owner's area", sub: "Only you see it · totals only: no readings, no reports, no names",
+    mUseT: "Usage", mUseN: "Scans with AI of every account, yours included, and what they cost: from the tokens the AI provider counted.",
+    mUseCols: ["Month", "Scans", "AI cost"],
+    mBalT: "Income and expenses", mBalN: (n, f) => `Estimate: subscriptions sold at the list price (4.99 $), less Google Play's share (${f}%); expenses = AI cost. Active subscribers: ${n}. The real figures are in the Google Play Console and the AI provider's console.`,
+    mBalCols: ["Month", "Subscriptions", "Income", "After Google Play", "AI expenses", "Difference"], mTot: "Total", mNone: "No activity yet.",
     upd: "Updated", users: "Users", usersU: "in total", labs: "Lab reports", labsU: "saved, all users",
     rd: "Readings", split: (v, f) => `${v} by voice` + (f ? ` · ${f} with the former Scan` : ""),
     errs: "Errors", errsU: "in total, last 90 days",
@@ -691,6 +699,27 @@
   const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const mb = (b) => (b / 1048576).toLocaleString(LOCALE, { maximumFractionDigits: b < 10485760 ? 2 : 0 }) + " MB";
   const ver = (n) => "0.1." + n;
+  // the owner's accounts: usage (Scans and AI cost) and income and expenses, month by month, with the difference
+  const usd = (n) => "$ " + n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const monthName = (m) => new Date(m + "-15T12:00:00Z").toLocaleDateString(LOCALE, { month: "short", year: "numeric", timeZone: TZ });
+  function moneyCards(mo) {
+    if (!mo) return "";
+    const rows = mo.months, sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+    // cells carry their column name: on a phone each row becomes a small card with labels
+    const tr = (cols, cells, tag = "td") => `<tr>${cells.map((c, i) => `<${tag}${i ? ' class="num"' : ""} data-l="${cols[i]}">${c}</${tag}>`).join("")}</tr>`;
+    const table = (cols, body, foot) => `<div class="tbl"><table class="list money"><thead><tr>${cols.map((c, i) => `<th${i ? ' class="num"' : ""}>${c}</th>`).join("")}</tr></thead>
+      <tbody>${body || `<tr><td colspan="${cols.length}" class="muted">${AD.mNone}</td></tr>`}</tbody>${rows.length ? `<tfoot>${foot}</tfoot>` : ""}</table></div>`;
+    const U = AD.mUseCols, B = AD.mBalCols;
+    const use = table(U,
+      rows.map((r) => tr(U, [monthName(r.month), r.scans, usd(r.ai)])).join(""),
+      tr(U, [AD.mTot, sum("scans"), usd(sum("ai"))]));
+    const bal = table(B,
+      rows.map((r) => tr(B, [monthName(r.month), r.sales, usd(r.gross), usd(r.net), usd(r.ai), "<b>" + usd(r.diff) + "</b>"])).join(""),
+      tr(B, [AD.mTot, sum("sales"), usd(sum("gross")), usd(sum("net")), usd(sum("ai")), "<b>" + usd(sum("diff")) + "</b>"]));
+    return `<div class="card"><div class="card-h"><h2>${AD.mUseT}</h2></div><p class="muted small">${AD.mUseN}</p>${use}</div>
+      <div class="card"><div class="card-h"><h2>${AD.mBalT}</h2></div><p class="muted small">${AD.mBalN(mo.activeSubs, Math.round(mo.playFee * 100))}</p>${bal}</div>`;
+  }
+
   async function loadAdmin() {
     main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
     let d, o;
@@ -710,6 +739,7 @@
         ${tile(AD.kDf, defects, AD.kDfU, defects > 0)}
         ${tile(AD.kCm, cnt("partial") + cnt("open"), AD.kCmU(cnt("partial"), cnt("open")), cnt("open") > 0)}
       </section>
+      ${moneyCards(d.money)}
       <div class="card sec"><div class="card-h"><h2>${AD.obT}</h2></div>
         <p class="muted small">${AD.obSub}</p>
         <div class="send" style="margin:12px 0 6px"><button class="btn glow" type="button" id="adm-obs">${AD.obGo}</button></div>

@@ -142,7 +142,9 @@ fun parseSpoken(texts: List<String>): Spoken {
 /** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set.
  *  [scan]: the photo Scan, the only thing the subscription unlocks: "on", "trial" (free until [trialUntil]) or "locked". */
 data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "",
-               val scan: String = "on", val trialUntil: Long? = null, val trialStarted: Boolean = false) {
+               val scan: String = "on", val trialUntil: Long? = null, val trialStarted: Boolean = false,
+               /** about how many Scans are left in the subscriber's yearly allowance (null: owner, or not subscribed) */
+               val scansLeft: Int? = null) {
     val blocked: Boolean get() = required && !active
 }
 
@@ -153,7 +155,9 @@ data class Me(
     /** Administrator only: apps below this version are switched off (0 = none). */
     val appMinVersion: Int = 0,
     /** The yearly subscription; [subscriptionOn] (owner only) = everyone else must have one. */
-    val sub: Sub = Sub(), val subscriptionOn: Boolean = false
+    val sub: Sub = Sub(), val subscriptionOn: Boolean = false,
+    /** The owner's account on a phone not on record: the owner's secret code makes it the owner's phone. */
+    val ownerClaim: Boolean = false
 )
 
 /** Amber of the short warning lines (Google not linked, no screen lock). */
@@ -453,15 +457,22 @@ object Repo {
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
             j.optBoolean("disclaimerOk", true),
             j.optInt("appMinVersion", 0),
-            parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false)
+            parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false),
+            j.optBoolean("ownerClaim", false)
         )
+    }
+
+    /** The owner's secret code, on a new phone: true when accepted. */
+    suspend fun ownerClaim(pid: String, code: String) {
+        Api.call("POST", "/v1/owner/claim", JSONObject().put("code", code), pid)
     }
 
     private fun parseSub(o: JSONObject?): Sub = if (o == null) Sub() else Sub(
         o.optBoolean("required", false), o.optBoolean("active", true),
         if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", ""),
         o.optString("scan", "on"), if (o.isNull("trialUntil") || !o.has("trialUntil")) null else o.optLong("trialUntil"),
-        o.optBoolean("trialStarted", false)
+        o.optBoolean("trialStarted", false),
+        if (o.isNull("scansLeft") || !o.has("scansLeft")) null else o.optInt("scansLeft")
     )
 
     /** A purchase made in Google Play, checked by the server with Google Play. */
