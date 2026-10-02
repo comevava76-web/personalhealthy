@@ -88,6 +88,8 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
   https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
+- **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
+  è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
   stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.

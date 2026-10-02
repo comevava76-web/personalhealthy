@@ -6,6 +6,7 @@ documents are in English; user-facing documents are in Italian and English.
 
 | Document | Files | Made from | Update when |
 |---|---|---|---|
+| **The general document, in plain words**: purpose (not a medical device), who does what, flows, technologies, keys, call sequence, compliance, automatic jobs, logs, defect, vulnerability, patch, change and release management, costs and free limits, how to pick the work up again | `overview/overview.html` → `HINT365-How-it-works.pdf` | hand-written HTML, `node docs/overview/render.cjs` | anything above changes: a process, a job, a key, a price, a provider |
 | Functional overview, voice and camera input, architecture, hosting and runtime flow, roles and delivery, application flows and permissions (6 pages) | `architecture/architecture.html` → `HINT-Architecture.pdf`, `page-1..6.png` | hand-written HTML, `node docs/architecture/render.cjs` | a flow, technology, rule, table, cost or process changes |
 | User guide IT / EN | `guide-it.html`, `guide-en.html` → `HINT-Guida-IT.pdf`, `HINT-Guide-EN.pdf` | hand-written HTML, `node docs/render-guides.cjs` | anything the user sees or does changes (buttons, screens, costs, data) |
 | Terms of use, privacy policy, home page | `legal/terms.html`, `legal/privacy.html`, `legal/home.html` → `legal/HINT365-Terms.pdf`, `legal/HINT365-Privacy.pdf` | generated from `worker/src/pages.ts`: `cd worker && node scripts/export-docs.mjs`, then `node docs/legal/render.cjs` | the site pages change (the terms also change the version the app asks to accept) |

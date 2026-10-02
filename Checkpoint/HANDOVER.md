@@ -387,3 +387,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Done: `moneyGlance()` in `web.ts` (totals since the start; average cost per Scan seen so far, 0.002 US$ before any), boxes and balance in `app.js`/`style.css` (palette tints, never red; third colour exception recorded in CLAUDE.md); `ai_no_credit` logged when the provider refuses for credit or spend limit (error-log issue + orange line in Admin); `docs/business/render.cjs` → `HINT365-Owner-Economics.pdf` with the ceiling table (5 → 5, 9 → 9, 10 → 9 for 100 trials).
 - Tests: local functional 182 pass / 0 fail; boxes checked in dark, light and phone width.
 - Next: CI green → squash merge PR #131 → Build → APK link to Human.
+
+### 2026-10-02 — Claude Code — 0.1.121 merged; general document «HINT 365 · How it works»
+
+- PR #131 squash-merged (3351bef); Build 121 started (deploy, APK 0.1.121). Branch reset to main.
+- Human asked for one plain-language general document: purpose (not a medical device, responsibility, links to terms and privacy), who does what, user flows, technology map, keys and their purpose, call sequence, compliance, automatic jobs (crontab table), logs (seen / never seen), defect, vulnerability, patch, change and release management (today and on Google Play), costs and free limits, and how to pick the work up months later. Done: `docs/overview/overview.html` → `docs/HINT365-How-it-works.pdf` (10 pages), indexed first in docs/README.md, rule in CLAUDE.md, pair in Docs check.
+- Vulnerabilities, as of 02.10: the app's own findings (Bouncy Castle) fixed in 0.1.120 by the morning routine (71 → 59); the 59 left are all in the Android build tools (AGP 8.5.2, issue #94, major update waiting for Human's go) plus Kotlin plugin accepted risk (#97). The Fix button stays off (needs a paid token): fixes are done by the morning routine.
+- Next: Human's go on the AGP major update (#94) to clear the build-tool findings.
