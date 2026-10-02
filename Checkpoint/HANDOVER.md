@@ -343,3 +343,4 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Human chose to keep the phone's own lock (no PIN for the app) and asked for an occasional proposal: `BioNudge` shows a small window at most every 14 days when the phone has no screen lock («lock») or no fingerprint/face enrolled («bio»); «Attiva» opens the phone's enrolment or security settings, «Non ora» waits 14 days. Kept on the phone.
 - The Voice button has its own calm blue (`C.Voice` dark #3A76C4 / light #2E66AE, `--voice` in style.css), Scan stays violet: the two ways to record stand apart.
 - Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by CI.
+- Referti: the Web Dashboard button now sits right after the import; «Storico referti caricati» (renamed from «Caricamenti») is last (asked by Human).

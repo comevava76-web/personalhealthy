@@ -460,7 +460,7 @@
     <string name="labs_web_hint">The outcome of each upload, by day. The results themselves are in the Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d results</string>
     <string name="tab_owner">Admin</string>
-    <string name="labs_uploads">Uploads</string>
+    <string name="labs_uploads">History of uploaded reports</string>
     <string name="labs_today">Today</string>
     <string name="labs_upload_report">Report of %1$s</string>
     <string name="labs_upload_nodate">Report (date not read)</string>

@@ -456,7 +456,7 @@
     <string name="labs_web_hint">Das Ergebnis jedes Uploads, Tag für Tag. Die Werte selbst sind im Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d Werte</string>
     <string name="tab_owner">Admin</string>
-    <string name="labs_uploads">Uploads</string>
+    <string name="labs_uploads">Verlauf der hochgeladenen Befunde</string>
     <string name="labs_today">Heute</string>
     <string name="labs_upload_report">Befund vom %1$s</string>
     <string name="labs_upload_nodate">Befund (Datum nicht gelesen)</string>

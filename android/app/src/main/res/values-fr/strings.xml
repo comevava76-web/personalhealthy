@@ -456,7 +456,7 @@
     <string name="labs_web_hint">Le résultat de chaque import, jour par jour. Les résultats eux-mêmes sont dans le Web Dashboard.</string>
     <string name="labs_report_row">%1$s · %2$d résultats</string>
     <string name="tab_owner">Admin</string>
-    <string name="labs_uploads">Imports</string>
+    <string name="labs_uploads">Historique des comptes rendus importés</string>
     <string name="labs_today">Aujourd’hui</string>
     <string name="labs_upload_report">Compte rendu du %1$s</string>
     <string name="labs_upload_nodate">Compte rendu (date non lue)</string>
