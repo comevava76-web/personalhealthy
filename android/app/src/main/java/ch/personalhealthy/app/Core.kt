@@ -133,8 +133,10 @@ fun parseSpoken(texts: List<String>): Spoken {
 }
 
 /** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
-/** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set. */
-data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "") {
+/** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set.
+ *  [scan]: the photo Scan, the only thing the subscription unlocks: "on", "trial" (free until [trialUntil]) or "locked". */
+data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "",
+               val scan: String = "on", val trialUntil: Long? = null, val trialStarted: Boolean = false) {
     val blocked: Boolean get() = required && !active
 }
 
@@ -335,6 +337,9 @@ fun errorText(code: String): String = when (code) {
 
 object Api {
     private val base = BuildConfig.API_URL.trimEnd('/')
+    /** This phone's Android id (same app, same phone): the server keeps only an HMAC of it, to count the Scan trial
+     *  once per phone. Set at start-up. */
+    var device: String? = null
 
     private fun sha256Hex(b: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
@@ -358,6 +363,7 @@ object Api {
                 c.setRequestProperty("X-Lang", Locale.getDefault().language)
                 c.setRequestProperty("X-App-Version", BuildConfig.VERSION_CODE.toString())
                 if (personId != null) c.setRequestProperty("X-Person", personId)
+                device?.let { c.setRequestProperty("X-Device", it) }
                 if (body != null) {
                     c.doOutput = true
                     c.setRequestProperty("Content-Type", "application/json")
@@ -447,7 +453,9 @@ object Repo {
 
     private fun parseSub(o: JSONObject?): Sub = if (o == null) Sub() else Sub(
         o.optBoolean("required", false), o.optBoolean("active", true),
-        if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", "")
+        if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", ""),
+        o.optString("scan", "on"), if (o.isNull("trialUntil") || !o.has("trialUntil")) null else o.optLong("trialUntil"),
+        o.optBoolean("trialStarted", false)
     )
 
     /** A purchase made in Google Play, checked by the server with Google Play. */

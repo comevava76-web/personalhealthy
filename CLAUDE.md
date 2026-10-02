@@ -42,20 +42,25 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
   `app_min_version`, quelle in `app_blocked` o tutte con `app_off` (tabella `settings`). Si comanda dall'app (gestore) o da
   Actions → *App versions*. Non togliere questo controllo.
-- **Abbonamento**: 5 US$ all'anno (costi dell'app e spazio delle misure) via Google Play (`hint365_annual`), spento finché l'owner non lo accende; l'owner non paga.
-  Senza abbonamento valido solo il messaggio di cortesia per rinnovare; i dati restano. Del pagamento si salvano solo token,
-  stato e scadenza. Solo l'owner (primo account, `is_admin`) può accendere l'abbonamento o disattivare versioni dell'app.
+- **Abbonamento alle funzionalità AI** (decisione di Human del 02.10.2026): l'app è gratuita (voce, referti, grafici,
+  report, Web Dashboard) a discrezione dell'owner, che nelle condizioni si riserva di cambiare prezzi, togliere il gratuito, mettere
+  tutta l'app a pagamento o ritirarla (con nuova versione delle condizioni; nell'app non va scritto altrove). Si pagano solo le funzionalità AI, oggi lo Scan: 4 US$ all'anno via Google Play (`hint365_annual`),
+  dopo una prova di 15 giorni dal primo Scan (3 al giorno, al massimo 45 foto), una volta per account Google e per telefono
+  (impronte HMAC in `scan_trials`, mai email, tenute al massimo 2 anni). Due giorni prima della fine una notifica
+  (`Reminders.aiTrial`). Dopo, senza abbonamento, il pulsante Scan è grigio con «Sblocca questa funzionalità» → `ScanLockScreen`
+  (abbonarsi o usare la propria chiave AI). Un abbonato usa al massimo 3 US$ di AI all'anno (`SCAN_YEAR_USD`, dai token di
+  Anthropic). L'owner non paga. Del pagamento si salvano solo token, stato e scadenza. Solo l'owner può disattivare versioni dell'app.
 - **Accesso e cookie dichiarati**: l'accesso è Sign in with Google (OAuth 2.0 / OpenID Connect) e va scritto così in condizioni,
   privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
   nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.
-- **Politica dei costi** (tabella in app, condizioni e home): solo l'app, 5 $/anno al proprietario via Google Play; nessun altro
-  costo di HINT 365. I 3 Scan al giorno li paga l'owner (chiave Anthropic nel secret del Worker); oltre, fino a 30, la persona
-  con la propria chiave AI. Il pagamento all'owner per più Scan arriverà con Google Play (non ancora attivo).
+- **Politica dei costi** (tabella in app, condizioni e home): app gratuita; funzionalità AI 15 giorni gratis, poi 4 $/anno al
+  proprietario via Google Play; nessun altro costo di HINT 365. Gli Scan della prova e degli abbonati li paga l'owner (chiave
+  Anthropic nel secret del Worker); oltre, fino a 30 al giorno, la persona con la propria chiave AI.
 - **Scan della foto del misuratore con l'AI** (condizioni v21, decisione di Human del 02.10.2026: il lettore senza AI delle
-  v20 non leggeva i display veri; far inserire una chiave a tutti sarebbe un deterrente). Pulsante Scan sempre attivo:
-  **3 Scan al giorno per persona gratis**, pagati dall'owner: la foto del solo display va al Worker (`POST /v1/bp/photo/read`,
-  mai salvata né registrata) e da lì ad Anthropic (`claude-opus-5-5`, chiave nel secret `ANTHROPIC_API_KEY`, impostato dalla
-  pipeline dal secret GitHub omonimo; senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30.
+  v20 non leggeva i display veri; far inserire una chiave a tutti sarebbe un deterrente). Pulsante Scan con la bacchetta e le stelline (`ic_ai_wand`):
+  **3 Scan al giorno per persona** (prova di 15 giorni, poi abbonamento), pagati dall'owner: la foto del solo display va al Worker (`POST /v1/bp/photo/read`,
+  mai salvata né registrata) e da lì ad Anthropic (`claude-haiku-4-5`, il più economico, chiave nel secret `ANTHROPIC_API_KEY`, impostato dalla
+  pipeline dal secret GitHub omonimo; senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30; prova finita senza abbonamento = `402 scan_locked`.
   Oltre i 3: «Fino a 30 Scan al giorno con la tua AI» → `AiScreen` (anche da Gestore → Scan con l'AI): la persona incolla la
   propria chiave (Claude, ChatGPT, Gemini, Kimi), verificata e cifrata **solo sul telefono** (`AiScan.kt`); con quella la foto
   va dal telefono al fornitore, fino a 30 al giorno. I numeri si mostrano e si salvano solo dopo la conferma; valori non

@@ -127,6 +127,8 @@ object AiScan {
         val r = try { Repo.photoRead(pid, jpegBase64(photo)) } catch (e: ApiException) {
             return MonitorScan.Result.Retake(when (e.code) {
                 "scan_quota" -> "quota_free"
+                "scan_budget" -> "quota_year"
+                "scan_locked" -> "locked"
                 "network" -> "ai_network"
                 else -> "ai_error"
             })
@@ -192,7 +194,7 @@ object AiScan {
     /** The first model, in order of preference, that this key can use and that reads photos. */
     internal fun pickModel(p: Provider, available: List<String>): String? {
         val prefs = when (p) {
-            Provider.CLAUDE -> listOf("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-4-5")
+            Provider.CLAUDE -> listOf("claude-haiku-4-5", "claude-sonnet-5-5", "claude-opus-5-5")
             Provider.CHATGPT -> listOf("gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini", "gpt-4o")
             Provider.GEMINI -> listOf("gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash")
             Provider.KIMI -> listOf("kimi-latest", "moonshot-v1-8k-vision-preview", "moonshot-v1-32k-vision-preview")

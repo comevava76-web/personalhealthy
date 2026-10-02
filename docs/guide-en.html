@@ -33,9 +33,10 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 
 <h2>2. Costs, plainly</h2>
 <table><tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
-<tr><td>HINT 365: the app, charts, reports, Web Dashboard, keeping your readings</td><td class="free">Free today. Once it is on the Play Store: 5 $ a year, cancel any time</td><td>The owner of the app, through Google Play</td></tr>
+<tr><td>HINT 365: the app, voice, lab results, charts, reports, Web Dashboard, keeping your readings</td><td class="free">Free</td><td>Nobody</td></tr>
+<tr><td>AI features: the Scan of the monitor, up to 3 photos a day</td><td>15 days free from the first Scan, then 4 $ a year, cancel any time</td><td>The owner of the app, through Google Play</td></tr>
 </table>
-<p>HINT 365 has no other costs: voice recording and lab import are included. The <b>Scan</b> includes 3 readings a day; for up to 30 a day you can use <b>your own</b> AI subscription, whose cost your provider charges.</p>
+<p>The app is free. Only the <b>AI features</b> (today the Scan) are paid: they are on at once for a 15-day trial (3 Scans a day, at most 45 photos), then 4 $ a year. The subscription covers up to 3 $ of AI a year per person; once that is used up, the Scan stops until renewal. Two days before the trial ends a notification says so. Without the subscription the Scan button turns grey; voice and everything else keep working. The trial is given once per Google account and per phone. With <b>your own</b> AI subscription you can do up to 30 Scans a day, paid to your provider.</p>
 
 <h2>3. Installing and updating</h2>
 <ol><li>On your Android phone open <b>https://personalhealthy-api.comevava76.workers.dev/download</b> and download <b>HINT.apk</b>.</li>
@@ -53,13 +54,13 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>Check them and tap <b>Save reading</b>. Date and time are those of the moment you spoke.</li></ol>
 <p>The app refuses impossible values (for example DIA higher than SYS, a missing number) and marks unusual ones in orange, to check again.</p>
 <h3>📷 Scan</h3>
-<p>Every day you have <b>3 free Scans</b>. For more, up to 30 a day: Manage → <b>Scan with AI</b> → choose your provider (Claude, ChatGPT, Gemini or Kimi), paste the <b>API key</b> of your subscription and tap <b>Check and turn on</b>. The link «Where do I find my key?» opens the provider's page.</p>
+<p>The Scan button carries a small magic wand: it is an AI feature. For the first 15 days you have <b>3 Scans a day</b> free, then with the 4 $ yearly subscription. For more, up to 30 a day, or after the trial without subscribing: Manage → <b>Scan with AI</b> → choose your provider (Claude, ChatGPT, Gemini or Kimi), paste the <b>API key</b> of your subscription and tap <b>Check and turn on</b>. The link «Where do I find my key?» opens the provider's page.</p>
 <ol><li>Tap <b>Scan</b> and photograph the monitor's display: straight, close, without reflections, with <span class="sys">SYS</span>, <span class="dia">DIA</span> and <span class="pul">PUL</span> all visible.</li>
 <li>Artificial intelligence reads the numbers (Claude by Anthropic, or your provider if you added your key); the app shows you the photo with the three values.</li>
 <li>If they are the ones on the display tap <b>Yes, they are correct: save</b>. If they are wrong tap <b>The numbers are wrong: retake the photo</b>.</li></ol>
 <p>If the photo cannot be read with certainty (dark, blurred, a reflection, crooked) the app does not guess: it says why and asks you to take it again, or to say the values aloud. The photo is not stored anywhere and is deleted from the phone at the end.</p>
 <h2>5. Artificial intelligence in the Scan</h2>
-<p>The Scan (terms of use version 21) reads the display with artificial intelligence. The 3 free Scans a day go through HINT 365's server to Anthropic (Claude): only the photo of the display, without name or account, not stored by the server and not used to train models. With <b>your own</b> key (up to 30 a day) the photo goes from the phone to the provider you chose; the key stays only on the phone, encrypted, and you can remove it at any time. Only the three numbers you confirm reach HINT 365. The on-phone reader of version 20 was removed because it did not read real displays reliably.</p>
+<p>The Scan (terms of use version 21) reads the display with artificial intelligence. The Scans of the trial and of the subscription (3 a day) go through HINT 365's server to Anthropic (Claude Haiku): only the photo of the display, without name or account, not stored by the server and not used to train models. With <b>your own</b> key (up to 30 a day) the photo goes from the phone to the provider you chose; the key stays only on the phone, encrypted, and you can remove it at any time. Only the three numbers you confirm reach HINT 365. The on-phone reader of version 20 was removed because it did not read real displays reliably.</p>
 
 <h2>6. The screens</h2>
 <p>At the bottom every tab has an icon and its name. Only the owner of the app also sees <b>Admin</b> (shield ↗, the last one), which opens the owner's console on the web: numbers only, without the Blood pressure and Lab results tabs.</p>

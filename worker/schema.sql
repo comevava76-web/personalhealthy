@@ -198,6 +198,15 @@ CREATE TABLE IF NOT EXISTS seen_sigs (
   expires_at  INTEGER NOT NULL
 );
 
+-- The free trial of the AI features (the photo Scan): when it started, per Google account and per phone, so that a
+-- second phone or a new account does not start it again. Only HMAC fingerprints ("g:" Google account, "d:" phone,
+-- "p:" account without Google), never an id, an email or a phone number. Kept after the account is deleted, at most
+-- 2 years (nightly job), only for this purpose.
+CREATE TABLE IF NOT EXISTS scan_trials (
+  fp         TEXT PRIMARY KEY,
+  started_at INTEGER NOT NULL
+);
+
 -- Limits against abuse (test report F-07): a counter per key and window. IP addresses only as a fingerprint.
 CREATE TABLE IF NOT EXISTS rate_limits (
   key          TEXT PRIMARY KEY,             -- e.g. "register:<ip fingerprint>", "voice:<person>"

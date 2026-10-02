@@ -56,14 +56,16 @@ async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boo
   };
 }
 /* ---------- the yearly subscription (Google Play) ----------
-   Off until the owner switches it on (setting subscription_on = "1", from the app). The owner never pays.
-   Without a valid subscription the app and the Web Dashboard show only the invitation to renew; the data stay,
-   under the usual 365-day rule, and come back as soon as the subscription is renewed. */
-const SUB_RECHECK = 6 * 3600e3;   // an expired subscription is asked to Google Play again at most every 6 hours
-async function subState(q: Q, env: Env, pid: string): Promise<{ required: boolean; active: boolean; until: number | null; state: string }> {
-  const [p] = await q("SELECT is_admin, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
-  if (!p) return { required: false, active: false, until: null, state: "" };
-  const on = (await getSetting(q, "subscription_on", "0")) === "1";
+   Bought on Google Play (the old switch subscription_on no longer blocks anything). The owner never pays. The app stays
+   free for everyone: the subscription unlocks only the AI features, today the photo Scan (asked by Human, 02.10.2026).
+   The Scan is on at once for TRIAL_DAYS days from the first Scan (3 a day, so at most 45 photos); after that it needs
+   the subscription, or the person's own AI key on the phone. The trial is counted per Google account and per phone
+   (scan_trials): another phone or a new account on the same phone does not start it again. */
+const SUB_RECHECK = 6 * 3600e3;
+const TRIAL_DAYS = 15;            // free days of the AI features (the photo Scan), counted from the first Scan   // an expired subscription is asked to Google Play again at most every 6 hours
+async function subState(q: Q, env: Env, pid: string, device = ""): Promise<{ required: boolean; active: boolean; until: number | null; state: string; scan: string; trialUntil: number | null; trialStarted: boolean }> {
+  const [p] = await q("SELECT id, is_admin, google_sub, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
+  if (!p) return { required: false, active: false, until: null, state: "", scan: "locked", trialUntil: null, trialStarted: false };
   let until = Number(p.sub_until) || 0, state = String(p.sub_state || "");
   // renewed on Google Play after it ran out here: ask again, now and then
   if (p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
@@ -73,14 +75,26 @@ async function subState(q: Q, env: Env, pid: string): Promise<{ required: boolea
       await q("UPDATE persons SET sub_until = ?1, sub_state = ?2, sub_checked_at = ?3 WHERE id = ?4", [until, state, Date.now(), pid]);
     } catch (e) { console.error("subscription check failed"); }
   }
-  return { required: on && !p.is_admin, active: !!p.is_admin || subValid(until, state), until: until || null, state };
+  const paid = !!p.is_admin || subValid(until, state);
+  // not tried yet on this account nor on this phone: the 15 days are all there (they start with the first Scan)
+  const started = await trialStart(q, await trialKeys(env, p, device));
+  const trialUntil = (started || Date.now()) + TRIAL_DAYS * 864e5;
+  // scan: "on" (paid, or the owner), "trial" (the free days), "locked" (the Scan needs the subscription)
+  const scan = paid ? "on" : Date.now() < trialUntil ? "trial" : "locked";
+  // required stays false: the app itself is never blocked (older apps read it as "show only the invitation")
+  return { required: false, active: paid, until: until || null, state, scan, trialUntil: scan === "trial" ? trialUntil : null, trialStarted: !!started };
 }
-async function subOk(q: Q, env: Env, pid: string): Promise<boolean> {
-  const s = await subState(q, env, pid);
-  return !s.required || s.active;
+/** The fingerprints the Scan trial is counted on: the Google account (or the account, without Google) and the phone. */
+async function trialKeys(env: Env, p: any, device: string): Promise<string[]> {
+  const keys = [p.google_sub ? "g:" + p.google_sub : "p:" + p.id];
+  if (/^[A-Za-z0-9_-]{4,64}$/.test(device)) keys.push("d:" + await fingerprint(env, "device:" + device));
+  return keys;
 }
-// what still works without a subscription: seeing the invitation, renewing, the terms, leaving, deleting the account
-const SUB_FREE = new Set(["GET /v1/me", "GET /v1/bp", "GET /v1/labs", "POST /v1/web/code", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me", "POST /v1/log"]);
+/** When the trial started for any of these fingerprints (0 = never). */
+async function trialStart(q: Q, keys: string[]): Promise<number> {
+  const [r] = await q(`SELECT MIN(started_at) AS s FROM scan_trials WHERE fp IN (${keys.map((_, i) => "?" + (i + 1)).join(",")})`, keys);
+  return Number(r?.s) || 0;
+}
 
 async function appAllowed(q: Q, version: number): Promise<boolean> {
   const g = await appGate(q);
@@ -170,11 +184,16 @@ function b64urlToBytes(s: string): Uint8Array {
  * turn it back into a Google account or an email. No email is ever stored.
  */
 async function googleId(env: Env, sub: string): Promise<string> {
+  return "h1:" + await fingerprint(env, "google-sub:" + sub);
+}
+/** HMAC-SHA-256 of [what] with the server secret, in hex: the same input always gives the same fingerprint, and
+ *  nobody can turn it back (used for Google accounts and, for the Scan trial, phones). */
+async function fingerprint(env: Env, what: string): Promise<string> {
   const raw = env.KEY_ENCRYPTION_KEY ? b64ToBytes(env.KEY_ENCRYPTION_KEY) : new Uint8Array(0);
   if (raw.length !== 32) throw new Error("KEY_ENCRYPTION_KEY missing or not 32 bytes");
   const k = await crypto.subtle.importKey("raw", raw, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode("google-sub:" + sub)));
-  return "h1:" + [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(what)));
+  return [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** Older rows kept Google's raw id and the email: replaced by the fingerprint, email erased (every night, and at sign-in). */
@@ -325,7 +344,9 @@ export async function purgeOld(env: Env) {
     env.DB.prepare("DELETE FROM error_log WHERE last_at < ?1").bind(now - 90 * 864e5),
     env.DB.prepare("DELETE FROM event_log WHERE last_at < ?1").bind(now - 90 * 864e5),
     env.DB.prepare("DELETE FROM seen_sigs WHERE expires_at < ?1").bind(now),
-    env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1").bind(now - 2 * 864e5),
+    env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1 AND key NOT LIKE 'scan_usd:%'").bind(now - 2 * 864e5),
+    env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1 AND key LIKE 'scan_usd:%'").bind(now - 366 * 864e5),
+    env.DB.prepare("DELETE FROM scan_trials WHERE started_at < ?1").bind(now - 730 * 864e5),
   ]);
 }
 
@@ -368,7 +389,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
-      const res = (await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid), () => AUTHENTICATED.add(req)))
+      const res = (await handleWeb(req, env, q, url, async () => true, () => AUTHENTICATED.add(req)))   // the web is never behind the subscription
         ?? (await handle(req, env, q, url));
       // errors met by users go to the error log, grouped (see errors.ts). Logged only for calls that passed
       // authentication, or for server failures (5xx): a stranger cannot write into the log (test report F-03).
@@ -559,9 +580,6 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/bp/photo", "/v1/labs", "/v1/web/code"].includes(url.pathname);
   if (requiresNotice && !(await acceptedNotice(q, pid))) return fail("Accept the current terms first", 403, "notice_required");
 
-  // no valid subscription: only the invitation to renew
-  if (!SUB_FREE.has(req.method + " " + url.pathname) && !(req.method === "DELETE" && /^\/v1\/(bp|labs)(?:\/[^/]+)?$/.test(url.pathname)) && !(await subOk(q, env, pid)))
-    return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
   // the photo reading with AI was removed (terms v19): its calls answer "gone", never reach Anthropic
   if (["/v1/bp/scan", "/v1/bp/confirm", "/v1/key", "/v1/key/check", "/v1/credit", "/v1/admin/credit", "/v1/credit/history"].includes(url.pathname))
     return fail("The photo reading with AI is no longer available: record by voice.", 410, "ai_removed");
@@ -585,7 +603,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       billingMode: await getSetting(q, "billing_mode", "private"),
       disclaimerOk: await acceptedNotice(q, pid),
       ...(person.is_admin ? { appMinVersion: (await appGate(q)).min, subscriptionOn: (await getSetting(q, "subscription_on", "0")) === "1" } : {}),
-      sub: await subState(q, env, pid),
+      sub: await subState(q, env, pid, req.headers.get("X-Device") || ""),
     });
   }
 
@@ -768,17 +786,28 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   // The photo Scan (terms v21): the photo of the monitor display, read by Claude with the owner's key. At most
-  // SCAN_FREE readings a day per person (the owner pays them; the owner's own account has SCAN_PLUS). The photo is
-  // passed on and never stored or logged; only the three numbers go back to the phone, to be confirmed by the person.
+  // SCAN_FREE readings a day per person (the owner pays them; the owner's own account has SCAN_PLUS), and at most
+  // SCAN_YEAR_USD of AI cost per person in a year, counted from the tokens Anthropic reports. The photo is passed on
+  // and never stored or logged; only the three numbers go back to the phone, to be confirmed by the person.
   if (req.method === "POST" && url.pathname === "/v1/bp/photo/read") {
     if (!env.ANTHROPIC_API_KEY) return fail("The photo Scan is not available now: record by voice.", 503, "scan_off");
     const image = typeof data.image === "string" ? data.image : "";
     if (image.length < 1000 || image.length > 4_000_000 || !/^[A-Za-z0-9+/=]+$/.test(image)) return fail("Bad photo", 400, "bad_photo");
+    const device = req.headers.get("X-Device") || "";
+    if ((await subState(q, env, pid, device)).scan === "locked") return fail("The Scan needs the HINT 365 subscription", 402, "scan_locked");
     const [who] = await q("SELECT is_admin FROM persons WHERE id = ?1", [pid]);
     const limit = who?.is_admin ? SCAN_PLUS : SCAN_FREE;
+    if (!who?.is_admin && await scanSpent(q, pid) >= SCAN_YEAR_USD * 1e6) return fail("Yearly Scan allowance reached", 429, "scan_budget");
     if (await tooMany(q, "scan_ai:" + pid, limit, DAY)) return fail("Daily Scan limit reached", 429, "scan_quota");
+    // the trial starts now, or carries over to this account and this phone from where it started before
+    {
+      const keys = await trialKeys(env, person, device);
+      const start = (await trialStart(q, keys)) || Date.now();
+      for (const k of keys) await q("INSERT OR IGNORE INTO scan_trials (fp, started_at) VALUES (?1, ?2)", [k, start]);
+    }
     try {
-      const answer = await readMonitor(env.ANTHROPIC_API_KEY, image);
+      const { answer, microUsd } = await readMonitor(env.ANTHROPIC_API_KEY, image);
+      if (!who?.is_admin) await scanSpend(q, pid, microUsd);
       return json(answer);
     } catch (e) {
       await countEvent(q, "bp_photo_ai_error", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
@@ -820,8 +849,26 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   return fail("Not found", 404, "not_found");
 }
 
-/** Free photo Scans a day per person (paid by the owner), and the owner's own allowance (asked by Human, 02.10.2026). */
-const SCAN_FREE = 3, SCAN_PLUS = 30;
+/** Free photo Scans a day per person (paid by the owner), the owner's own allowance, and the most AI cost a person may
+ *  use in a year: 3 US$ of the 4 US$ subscription (asked by Human, 02.10.2026). */
+const SCAN_FREE = 3, SCAN_PLUS = 30, SCAN_YEAR_USD = 3;
+/** Claude Haiku 4.5, the cheapest Claude model that reads a display well; its list price per token in micro-US$. */
+const SCAN_MODEL = "claude-haiku-4-5-20251001", SCAN_IN_MICRO_USD = 1, SCAN_OUT_MICRO_USD = 5;
+const YEAR = 365 * 864e5;
+
+/** Micro-US$ of AI cost this person used for Scans in the current year (a window that starts at the first Scan). */
+async function scanSpent(q: Q, pid: string): Promise<number> {
+  const [r] = await q("SELECT window_start, count FROM rate_limits WHERE key = ?1", ["scan_usd:" + pid]);
+  return r && Number(r.window_start) >= Date.now() - YEAR ? Number(r.count) || 0 : 0;
+}
+async function scanSpend(q: Q, pid: string, microUsd: number): Promise<void> {
+  const now = Date.now();
+  await q(`INSERT INTO rate_limits (key, window_start, count) VALUES (?1, ?2, ?4)
+     ON CONFLICT (key) DO UPDATE SET
+       count = CASE WHEN window_start < ?3 THEN ?4 ELSE count + ?4 END,
+       window_start = CASE WHEN window_start < ?3 THEN ?2 ELSE window_start END`,
+    ["scan_usd:" + pid, now, now - YEAR, Math.max(0, Math.round(microUsd))]);
+}
 
 const SCAN_PROMPT = "This is a photo of the display of a home blood-pressure monitor. Read the three measured numbers: " +
   "SYS (systolic, usually the top and largest), DIA (diastolic, below it) and PUL (pulse, the smallest, often next to a " +
@@ -830,28 +877,27 @@ const SCAN_PROMPT = "This is a photo of the display of a home blood-pressure mon
   "with certainty, or this is not a monitor display, answer {\"retake\": \"<reason>\"} with reason one of: not_found, " +
   "unclear, glare, dark, blurry. Never guess a digit.";
 
-/** Asks Claude for the three numbers of the display; the answer is checked like any other input before it goes back. */
-async function readMonitor(key: string, jpegB64: string): Promise<Record<string, unknown>> {
-  const body = (extras: boolean) => JSON.stringify({
-    model: "claude-opus-5-5", max_tokens: 2000,
-    ...(extras ? { output_config: { effort: "low" }, fallbacks: "default" } : {}),
-    messages: [{ role: "user", content: [
-      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpegB64 } },
-      { type: "text", text: SCAN_PROMPT },
-    ] }],
-  });
-  const ask = (extras: boolean) => fetch("https://api.anthropic.com/v1/messages", {
+/** Asks Claude for the three numbers of the display; the answer is checked like any other input before it goes back.
+ *  Also returns what the call cost, from the tokens Anthropic counted. */
+async function readMonitor(key: string, jpegB64: string): Promise<{ answer: Record<string, unknown>; microUsd: number }> {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01",
-      ...(extras ? { "anthropic-beta": "server-side-fallback-2026-07-01" } : {}),
-    },
-    body: body(extras),
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: SCAN_MODEL, max_tokens: 200,
+      messages: [{ role: "user", content: [
+        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpegB64 } },
+        { type: "text", text: SCAN_PROMPT },
+      ] }],
+    }),
   });
-  let r = await ask(true);
-  if (r.status === 400) r = await ask(false);   // a model or account that does not take effort or fallbacks
   if (!r.ok) throw new Error("anthropic " + r.status);
   const m: any = await r.json();
+  const u = m.usage || {};
+  const microUsd = (Number(u.input_tokens) || 0) * SCAN_IN_MICRO_USD + (Number(u.output_tokens) || 0) * SCAN_OUT_MICRO_USD;
+  return { answer: readAnswer(m), microUsd };
+}
+function readAnswer(m: any): Record<string, unknown> {
   if (m.stop_reason === "refusal") return { retake: "unclear" };
   const text = (m.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
   const a = text.indexOf("{"), z = text.lastIndexOf("}");

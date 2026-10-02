@@ -152,21 +152,23 @@ Each Admin tab shows only its own pool: friends do not see the manager's balance
 friends' balances or keys. If a friend's key is refused or their credit is finished, the app tells them and offers
 **Recharge** and **Replace key**; the manager's key is never used in their place.
 
-## Subscription (Google Play, 5 US$ a year)
-The app can require a yearly subscription, bought and renewed through Google Play (people pay with Google Pay or
-any method Google Play offers, and cancel in Google Play at any time). It is **off** until the owner switches it on
-in the app (Admin → Subscription); the owner never pays. Without a valid subscription the app and the Web Dashboard
-show only a courteous invitation to renew; the readings stay and come back as soon as it is renewed.
+## AI features subscription (Google Play, 4 US$ a year)
+The app is free. The subscription unlocks only the AI features (today the photo Scan), bought and renewed through
+Google Play (people pay with Google Pay or any method Google Play offers, and cancel in Google Play at any time). Every
+person gets a 15-day trial from the first Scan (3 Scans a day), counted once per Google account and per phone; a
+notification arrives 2 days before it ends. After that the Scan button is grey until the person subscribes (or adds
+their own AI key). A subscriber may use up to 3 US$ of AI a year (3 Scans a day). The owner never pays. Voice, lab
+results and the Web Dashboard never depend on the subscription.
 
 To make it work, once:
 1. Play Console (one-off 25 US$ developer fee): create the app `ch.personalhealthy.app` and upload the `.aab`
    attached to each release (`HINT365-0.1.N.aab`), at least to the internal-testing track.
-2. Monetize → Subscriptions: create `hint365_annual` with one base plan, yearly, auto-renewing, 5 US$.
+2. Monetize → Subscriptions: create `hint365_annual` with one base plan, yearly, auto-renewing, 4 US$ (no Play free trial: the 15-day trial is HINT 365's own).
 3. Google Cloud: enable the *Google Play Android Developer API*, create a service account and a JSON key for it.
 4. Play Console → Users and permissions: invite the service account's email with *View financial data* and
    *Manage orders and subscriptions*.
 5. GitHub → Settings → Secrets → Actions: `PLAY_SERVICE_ACCOUNT` = the whole JSON key. Run the build again.
-6. In the app, installed from Google Play: Admin → Subscription → switch it on.
+6. Nothing to switch on: the Scan's lock screen offers the subscription as soon as the app is installed from Google Play.
 
 The server checks every purchase with Google Play (`worker/src/billing.ts`) and keeps only the purchase token,
 its state and its end date (`persons.sub_*`). A purchase works only for the account that made it.

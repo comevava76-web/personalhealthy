@@ -276,6 +276,8 @@ class MainActivity : FragmentActivity() {
         Reminders.schedule(this)
         ThemeChoice.load(this)
         AiScan.load(this)
+        // the Scan trial is counted once per phone too: the server keeps only an HMAC of this id
+        Api.device = try { android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID) } catch (_: Exception) { null }
         setContent {
             C.light = ThemeChoice.value == "light"
             // the phone's bars take the background of the theme, with dark icons on the light one
@@ -391,6 +393,8 @@ fun App() {
                 val l = if (m.sub.blocked) emptyList() else Repo.list(pid)
                 readings.clear(); readings.addAll(l); message = null
                 if (!m.sub.blocked) AppGate.subExpired = false
+                // the AI trial is running: a notice 2 days before it ends
+                Reminders.aiTrial(ctx, if (m.sub.scan == "trial" && m.sub.trialStarted) m.sub.trialUntil else null)
             } catch (e: Exception) {
                 // this account now lives on another phone (Google sign-in there): back to the sign-in screen (F-10)
                 if (e is ApiException && e.code == "unauthorized") {
@@ -421,9 +425,9 @@ fun App() {
     // the server said it has run out: fetch the account again, the invitation to renew follows from it
     LaunchedEffect(AppGate.subExpired) { if (AppGate.subExpired) reload() }
     // not paid (or run out): read the price and hand the server a renewal already made on Google Play
-    LaunchedEffect(personId, me?.sub?.blocked) {
+    LaunchedEffect(personId, me?.sub?.blocked, me?.sub?.scan) {
         val pid = personId
-        if (pid != null && me?.sub?.blocked == true) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
+        if (pid != null && (me?.sub?.blocked == true || me?.sub?.scan == "locked")) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -575,6 +579,13 @@ fun App() {
                 onCancel = { screen = "tabs" }
             )
             screen == "ai" -> AiScreen(onClose = { screen = "tabs" })
+            // the Scan's 15 free days are over: the subscription unlocks it (the rest of the app stays free)
+            screen == "scanlock" -> ScanLockScreen(
+                price = Billing.price, busy = Billing.busy,
+                onBuy = { val pid = personId; val act = ctx as? android.app.Activity; if (pid != null && act != null) Billing.buy(act, pid) },
+                onOwnKey = { screen = "ai" },
+                onClose = { screen = "tabs" }
+            )
             screen == "photo" -> PhotoScreen(
                 photo = photo, result = photoRead, takenAt = photoAt, saving = photoSaving,
                 onSave = { v ->
@@ -703,6 +714,7 @@ fun App() {
                             onScan = { openCamera() },
                             onDash = openDash,
                             onUnlockAi = { screen = "ai" },
+                            onScanLocked = { screen = "scanlock" },
                         )
                     }
                     androidx.compose.material3.pulltorefresh.PullToRefreshContainer(
@@ -901,6 +913,7 @@ fun CostsTable() {
         Text(t(R.string.costs_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
         listOf(
             Triple(R.string.cost_app_what, R.string.cost_app_cost, R.string.cost_app_to),
+            Triple(R.string.cost_ai_what, R.string.cost_ai_cost, R.string.cost_ai_to),
         ).forEach { (what, cost, to) ->
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
             Text(t(what), color = C.Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
@@ -1028,6 +1041,23 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** The Scan's 15 free days are over: the subscription brings it back (3 a day, at most 3 US$ of AI a year), or the
+ *  person's own AI key. Everything else in the app stays free. */
+@Composable
+fun ScanLockScreen(price: String?, busy: Boolean, onBuy: () -> Unit, onOwnKey: () -> Unit, onClose: () -> Unit) {
+    val p = price ?: t(R.string.sub_price_default)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.scan_lock_title), null, t(R.string.cancel), onClose)
+        Panel {
+            Text(t(R.string.scan_lock_text, p), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp)
+            Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp))
+        }
+        BigButton(t(R.string.scan_lock_buy, p), enabled = !busy, onClick = onBuy)
+        Panel { Text(t(R.string.scan_lock_own), color = C.Muted, fontSize = 14.sp, lineHeight = 20.sp) }
+        BigButton(t(R.string.scan_lock_own_btn), color = C.Surface2, textColor = C.Ink, onClick = onOwnKey)
     }
 }
 
@@ -1168,7 +1198,8 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit,
-    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit, onUnlockAi: () -> Unit
+    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit, onUnlockAi: () -> Unit,
+    onScanLocked: () -> Unit = {}
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -1202,8 +1233,17 @@ fun HomeScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             BigButton(t(R.string.record_short), color = C.Voice, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
-            // the Scan reads the photo with AI: 3 a day free (paid by the owner), up to 30 with the person's own key
-            BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
+            // the Scan reads the photo with AI: 3 a day (paid by the owner, free for 15 days, then with the subscription),
+            // up to 30 with the person's own key. Locked: grey, "Unlock this feature".
+            val scan = me?.sub?.scan ?: "on"
+            if (scan == "locked" && AiScan.active == null)
+                BigButton(t(R.string.scan_short), color = C.Surface2, textColor = C.Muted, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera,
+                    trailing = R.drawable.ic_ai_wand, sub = t(R.string.ai_unlock_short), onClick = onScanLocked)
+            else {
+                val left = me?.sub?.trialUntil?.let { ((it - System.currentTimeMillis()) / 86_400_000L + 1).coerceAtLeast(1) }
+                BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, trailing = R.drawable.ic_ai_wand,
+                    sub = if (scan == "trial" && AiScan.active == null && left != null) t(R.string.scan_trial_left, left.toInt()) else null, onClick = onScan)
+            }
         }
         Spacer(Modifier.height(6.dp))
 
@@ -1551,6 +1591,8 @@ fun PhotoScreen(
             is MonitorScan.Result.Retake -> {
                 Panel {
                     Text(t(when {
+                        result.reason == "quota_year" -> R.string.photo_quota_year_title
+                        result.reason == "locked" -> R.string.scan_lock_title
                         result.reason.startsWith("quota") -> R.string.photo_quota_title
                         result.reason.startsWith("ai_") -> R.string.photo_ai_title
                         else -> R.string.photo_retake_title
@@ -1567,11 +1609,13 @@ fun PhotoScreen(
                         "ai_error" -> R.string.photo_why_ai_error
                         "quota_free" -> R.string.photo_why_quota_free
                         "quota_own" -> R.string.photo_why_quota_own
+                        "quota_year" -> R.string.photo_why_quota_year
+                        "locked" -> R.string.scan_lock_own
                         else -> R.string.photo_why_not_found
                     }), color = C.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
-                    if (!result.reason.startsWith("quota")) Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                    if (!result.reason.startsWith("quota") && result.reason != "locked") Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
                 }
-                if (result.reason == "quota_free") BigButton(t(R.string.photo_more_scans), onClick = onMoreScans)
+                if (result.reason == "quota_free" || result.reason == "quota_year" || result.reason == "locked") BigButton(t(R.string.photo_more_scans), onClick = onMoreScans)
                 else if (result.reason != "quota_own") BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
                 BigButton(t(R.string.photo_use_voice), color = C.Surface2, textColor = C.Ink, icon = R.drawable.ic_mic, onClick = onVoice)
             }

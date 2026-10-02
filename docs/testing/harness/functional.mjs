@@ -250,7 +250,12 @@ run("INSERT INTO settings (key, value) VALUES ('subscription_on', '1') ON CONFLI
 r = await call(alice, "GET", "/v1/bp");
 S.check("subscription", "B1", "subscription expired: own readings remain available", r.status === 200, r.text);
 r = await call(alice, "GET", "/v1/me");
-S.check("subscription", "B2", "/v1/me still answers, sub.required and not active", r.status === 200 && r.json.sub.required === true && r.json.sub.active === false, r.text);
+S.check("subscription", "B2", "the app is never blocked: sub.required false, not paid, Scan on trial", r.status === 200 && r.json.sub.required === false && r.json.sub.active === false && r.json.sub.scan === "trial", r.text);
+run("INSERT OR REPLACE INTO scan_trials (fp, started_at) VALUES (?, ?)", "p:" + alice.pid, now() - 16 * DAY);
+r = await call(alice, "GET", "/v1/me");
+S.check("subscription", "B2b", "after the 15-day Scan trial: the Scan is locked, the rest still answers", r.status === 200 && r.json.sub.scan === "locked", r.text);
+r = await call(owner, "GET", "/v1/me");
+S.check("subscription", "B2c", "the owner's Scan is never locked", r.status === 200 && r.json.sub.scan === "on", r.text);
 r = await call(owner, "GET", "/v1/bp");
 S.check("subscription", "B3", "the owner never pays", r.status === 200, r.text);
 r = await call(alice, "POST", "/v1/sub/verify", { purchaseToken: "x" });
@@ -258,6 +263,9 @@ S.check("subscription", "B4", "sub/verify without Play account -> 503", r.status
 run("UPDATE persons SET sub_until = ?, sub_state = 'SUBSCRIPTION_STATE_ACTIVE' WHERE id = ?", now() + 30 * DAY, alice.pid);
 r = await call(alice, "GET", "/v1/bp");
 S.check("subscription", "B5", "valid subscription -> readings again", r.status === 200, r.text);
+r = await call(alice, "GET", "/v1/me");
+S.check("subscription", "B5b", "valid subscription -> the Scan is on again", r.status === 200 && r.json.sub.scan === "on", r.text);
+run("DELETE FROM scan_trials WHERE fp = ?", "p:" + alice.pid);
 run("UPDATE persons SET sub_until = NULL, sub_state = NULL WHERE id = ?", alice.pid);
 
 // ---------------------------------------------------------------- web dashboard
@@ -326,7 +334,7 @@ S.check("share", "SH9", "withdrawn link -> 404", r.status === 404, r.text);
   const s3 = (await web("POST", "/my/api/share", { cookie: sessA.cookie, body: {}, origin: BASE })).json.url.split("/s/")[1];
   run("INSERT INTO settings (key, value) VALUES ('subscription_on', '1') ON CONFLICT (key) DO UPDATE SET value = excluded.value");
   r = await web("GET", "/s/" + s3 + "/data");
-  S.check("subscription", "SH11", "doctor link stops while the subscription has run out (as /my/api/data does)", r.status !== 200, `status ${r.status}: link keeps serving readings`);
+  S.check("subscription", "SH11", "doctor link keeps working: the subscription unlocks only the Scan", r.status === 200, `status ${r.status}`);
   r = await web("GET", "/my/api/data", { cookie: sessA.cookie });
   S.check("subscription", "SH12", "web data remains accessible after subscription expiry", r.status === 200, r.text);
   run("UPDATE settings SET value = '0' WHERE key = 'subscription_on'");

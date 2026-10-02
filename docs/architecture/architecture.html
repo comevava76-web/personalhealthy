@@ -114,7 +114,7 @@
         <li><b>Accepts the terms of use</b>, binding, at the first installation and after every update: without acceptance the app does not open. Every acceptance is recorded (pseudonymous account code, phone, versions, text fingerprint, date).</li>
         <li><b>Every day</b> unlocks with the phone's fingerprint or PIN, and stays signed in until “Sign out”.</li>
         <li><b>Imports lab reports</b> by itself: PDF or photo read on the phone, every test (also outside the catalog), one report date; any doubt: nothing saved; never twice.</li>
-        <li><b>Records</b> a reading: by voice or with a photo of the monitor (Scan, read with AI: 3 a day via the Worker and Anthropic, up to 30 with the person's own key; <b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b> checked and confirmed on screen). The photo is never stored (terms v21).</li>
+        <li><b>Records</b> a reading: by voice or with a photo of the monitor (Scan, an AI feature marked by a small wand: 15-day trial then 4 $ a year, 3 a day via the Worker and Anthropic, up to 30 with the person's own key; <b class="sys">SYS</b>, <b class="dia">DIA</b>, <b class="pul">PUL</b> checked and confirmed on screen). The photo is never stored (terms v21).</li>
         <li><b>Looks back</b>: last reading, the week; “Go to your full reports” at the end of Blood pressure or Lab results opens that page of the Web Dashboard in the browser (Blood pressure first: chart, eight tiles, morning/evening balance, pulse; then Lab results).</li>
         <li><b>Shares</b>: the PDF downloaded on the phone, or Web Dashboard → “Send to the doctor”.</li>
         <li><b>Changes phone</b>: signs in with Google and finds everything. <b>Signs out</b> or <b>deletes the account</b> at any time.</li>
@@ -124,9 +124,10 @@
       <h2>Costs and who is paid</h2>
       <table>
         <tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
-        <tr><td>HINT 365: app, charts, reports, Web Dashboard, keeping the readings</td><td>5 $ a year, cancel any time</td><td>The app's owner, through Google Play</td></tr>
+        <tr><td>HINT 365: app, voice, lab results, charts, reports, Web Dashboard, keeping the readings</td><td>Free</td><td>Nobody</td></tr>
+        <tr><td>AI features: the Scan, up to 3 a day</td><td>15 days free, then 4 $ a year</td><td>The app's owner, through Google Play</td></tr>
       </table>
-      <p style="margin-top:1.5mm">One app, one price, no other cost: voice recording and lab import are included.</p>
+      <p style="margin-top:1.5mm">The app is free; only the AI features are paid, at most 3 $ of AI per person a year. With one's own AI key: up to 30 Scans a day, paid to that provider.</p>
       <h2>Fixed rules</h2>
       <ul>
         <li>No diagnosis, no advice, no judgement of the values: no coloured zones, no “normal”.</li>
@@ -134,7 +135,7 @@
         <li>Charts: 7 days, one dot per day = the mean of that day's readings (explained before the charts), value next to it, axis with day numbers only. Tables show AM/PM.</li>
         <li>The same A4 PDF from the app and from the web.</li>
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
-        <li>Scan (terms v21): 3 a day per person through the Worker to Anthropic with the owner's key (secret <code>ANTHROPIC_API_KEY</code>; photo passed on, never stored or logged); up to 30 a day with the person's own key (Claude, ChatGPT, Gemini or Kimi), kept encrypted on the phone, photo phone → provider. Only the three confirmed numbers are stored.</li>
+        <li>Scan (terms v21): an AI feature, free for 15 days from the first Scan (once per Google account and per phone, HMAC fingerprints in <code>scan_trials</code>), then with the 4 $ yearly subscription (at most 3 $ of AI per person a year, counted from Anthropic's token usage); 3 a day per person through the Worker to Anthropic (Claude Haiku 4.5) with the owner's key (secret <code>ANTHROPIC_API_KEY</code>; photo passed on, never stored or logged); up to 30 a day with the person's own key (Claude, ChatGPT, Gemini or Kimi), kept encrypted on the phone, photo phone → provider. Only the three confirmed numbers are stored.</li>
         <li>Readings kept at most 365 days, deleted nightly; acceptances stay as proof.</li>
         <li>The app stays simple: the owner's controls are only in the web Admin area.</li>
       </ul>
@@ -214,7 +215,7 @@
     <tr><td><b>Stored as</b></td><td><code>measurements</code>, source <code>voice</code> or <code>photo</code> (Scan)</td><td><code>measurements</code>, kind <code>lab</code>; <code>lab_files</code> fingerprint</td></tr>
     <tr><td><b>Code</b></td><td><code>Listen.kt</code>, <code>Core.kt</code> (<code>parseSpoken</code>), <code>POST /v1/bp/voice</code></td><td><code>Labs.kt</code>, <code>LabsParser.kt</code>, <code>POST /v1/labs</code></td></tr>
   </table>
-  <p class="muted"><b>Scan (photo of the monitor)</b>: camera → by default <code>POST /v1/bp/photo/read</code> (3 a day per person, owner's Anthropic key, photo not stored) → Claude answers JSON only; or, with the person's own key (checked with the provider's model list, AES-GCM-encrypted with the Android Keystore), phone → provider directly, up to 30 a day → plausibility check → the photo and the numbers on screen → the person confirms → <code>POST /v1/bp/photo</code> (3 numbers only); the photo is deleted. A retake reason or "numbers wrong" is counted in <code>event_log</code> (<code>bp_photo_*</code>, code only). Code: <code>AiScan.kt</code>, <code>AiScreen.kt</code>, <code>MonitorScan.kt</code>.</p>
+  <p class="muted"><b>Scan (photo of the monitor)</b>: camera → by default <code>POST /v1/bp/photo/read</code> (trial or subscription, else <code>402 scan_locked</code>; 3 a day and 3 $ a year per person; Claude Haiku 4.5 with the owner's key; photo not stored) → Claude answers JSON only; or, with the person's own key (checked with the provider's model list, AES-GCM-encrypted with the Android Keystore), phone → provider directly, up to 30 a day → plausibility check → the photo and the numbers on screen → the person confirms → <code>POST /v1/bp/photo</code> (3 numbers only); the photo is deleted. A retake reason or "numbers wrong" is counted in <code>event_log</code> (<code>bp_photo_*</code>, code only). Code: <code>AiScan.kt</code>, <code>AiScreen.kt</code>, <code>MonitorScan.kt</code>.</p>
   <p class="muted">Neither way judges the values. Readings feed the charts, reports and the doctor's link; lab results feed the table in the Web Dashboard.</p>
   <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.113</span><span>2 / 6</span></div>
 </section>

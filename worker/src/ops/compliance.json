@@ -70,7 +70,7 @@
    "requirement": "Stored data protected against unauthorised access",
    "law": "GDPR Art. 32 · FADP Art. 8",
    "status": "partial",
-   "evidence": "Only the Worker reaches D1; the owner's Anthropic key for the Scan is a Worker secret (never in D1 or the repository); a person's own AI key, if added, stays only on the phone, encrypted with the Android Keystore; codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked",
+   "evidence": "Only the Worker reaches D1; the owner's Anthropic key for the Scan is a Worker secret (never in D1 or the repository); a person's own AI key, if added, stays only on the phone, encrypted with the Android Keystore; codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked. The Scan trial is counted on HMAC fingerprints of the Google account and the phone (scan_trials), never an email or a raw id, kept at most 2 years after the account is deleted, only to prevent a second trial.",
    "next": "Decide whether to encrypt lab and pressure values per account",
    "doc": "docs/compliance/gdpr.md",
    "declared": [
@@ -96,7 +96,7 @@
    "requirement": "Transfers named, with safeguards",
    "law": "GDPR Art. 13(1)(f), 44–49 · FADP Art. 16",
    "status": "partial",
-   "evidence": "Google (sign-in, billing) and Anthropic (photo Scan, terms v21) outside the EU, named with DPF/SCC. The free Scan (3 a day) sends the photo of the display alone through the Worker to Anthropic, which reads it as processor and does not train on it; the Worker neither stores nor logs it. With a person's own key (up to 30 a day) the photo goes from the phone straight to the provider they chose, under their own contract. Only the three confirmed numbers are stored; lab documents are never transferred",
+   "evidence": "Google (sign-in, billing) and Anthropic (photo Scan, terms v21) outside the EU, named with DPF/SCC. The Scan (15-day trial, then the 4 USD AI features subscription; 3 a day, at most 3 USD of AI per person a year; Claude Haiku 4.5) sends the photo of the display alone through the Worker to Anthropic, which reads it as processor and does not train on it; the Worker neither stores nor logs it. With a person's own key (up to 30 a day) the photo goes from the phone straight to the provider they chose, under their own contract. Only the three confirmed numbers are stored; lab documents are never transferred",
    "next": "Accept Anthropic's commercial terms and DPA on the owner's account; legal review of the wording (G3)",
    "doc": "docs/compliance/gdpr.md",
    "declared": [
