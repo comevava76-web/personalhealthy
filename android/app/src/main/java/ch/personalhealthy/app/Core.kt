@@ -144,7 +144,9 @@ fun parseSpoken(texts: List<String>): Spoken {
 data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "",
                val scan: String = "on", val trialUntil: Long? = null, val trialStarted: Boolean = false,
                /** about how many Scans are left in the subscriber's yearly allowance (null: owner, or not subscribed) */
-               val scansLeft: Int? = null) {
+               val scansLeft: Int? = null,
+               /** Scans made in the last 12 months (null: the owner) */
+               val scansUsed: Int? = null) {
     val blocked: Boolean get() = required && !active
 }
 
@@ -472,7 +474,8 @@ object Repo {
         if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", ""),
         o.optString("scan", "on"), if (o.isNull("trialUntil") || !o.has("trialUntil")) null else o.optLong("trialUntil"),
         o.optBoolean("trialStarted", false),
-        if (o.isNull("scansLeft") || !o.has("scansLeft")) null else o.optInt("scansLeft")
+        if (o.isNull("scansLeft") || !o.has("scansLeft")) null else o.optInt("scansLeft"),
+        if (o.isNull("scansUsed") || !o.has("scansUsed")) null else o.optInt("scansUsed")
     )
 
     /** A purchase made in Google Play, checked by the server with Google Play. */

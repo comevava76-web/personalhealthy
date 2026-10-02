@@ -78,9 +78,9 @@ async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boo
    (scan_trials): another phone or a new account on the same phone does not start it again. */
 const SUB_RECHECK = 6 * 3600e3;
 const TRIAL_DAYS = 15;            // free days of the AI features (the photo Scan), counted from the first Scan   // an expired subscription is asked to Google Play again at most every 6 hours
-async function subState(q: Q, env: Env, pid: string, device = ""): Promise<{ required: boolean; active: boolean; until: number | null; state: string; scan: string; trialUntil: number | null; trialStarted: boolean; scansLeft: number | null }> {
+async function subState(q: Q, env: Env, pid: string, device = ""): Promise<{ required: boolean; active: boolean; until: number | null; state: string; scan: string; trialUntil: number | null; trialStarted: boolean; scansLeft: number | null; scansUsed: number | null }> {
   const [p] = await q("SELECT id, is_admin, google_sub, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
-  if (!p) return { required: false, active: false, until: null, state: "", scan: "locked", trialUntil: null, trialStarted: false, scansLeft: null };
+  if (!p) return { required: false, active: false, until: null, state: "", scan: "locked", trialUntil: null, trialStarted: false, scansLeft: null, scansUsed: null };
   let until = Number(p.sub_until) || 0, state = String(p.sub_state || "");
   // renewed on Google Play after it ran out here: ask again, now and then
   if (p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
@@ -98,8 +98,12 @@ async function subState(q: Q, env: Env, pid: string, device = ""): Promise<{ req
   const scan = paid ? "on" : Date.now() < trialUntil ? "trial" : "locked";
   // required stays false: the app itself is never blocked (older apps read it as "show only the invitation")
   return { required: false, active: paid, until: until || null, state, scan, trialUntil: scan === "trial" ? trialUntil : null, trialStarted: !!started,
-    // a subscriber sees about how many Scans are left in the year (the owner has no allowance)
-    scansLeft: scan === "on" && !p.is_admin ? (await scanUsage(q, String(p.id))).left : null };
+    // a subscriber sees about how many Scans are left in the year (an estimate: it depends on the provider's cost per
+    // photo); everyone but the owner sees how many they made in the last 12 months
+    ...(p.is_admin ? { scansLeft: null, scansUsed: null } : await (async () => {
+      const u = await scanUsage(q, String(p.id));
+      return { scansLeft: scan === "on" ? u.left : null, scansUsed: u.scans };
+    })()) };
 }
 /** The fingerprints the Scan trial is counted on: the Google account (or the account, without Google) and the phone. */
 async function trialKeys(env: Env, p: any, device: string): Promise<string[]> {

@@ -1021,6 +1021,12 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
                 if (lines.size > 1) Text(lines[1], color = C.Ink.copy(alpha = 0.85f), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
+        // the same text as a PDF in Downloads, to keep: offered before accepting and when reading again
+        val pdfCtx = LocalContext.current
+        Text(t(R.string.terms_pdf_hint), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+        TextButton(onClick = {
+            try { downloadPdf(pdfCtx, termsPdf(pdfCtx)) } catch (e: Exception) { ErrorReport.report("Terms/PDF", e); toast(pdfCtx, t(R.string.err_generic)) }
+        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.terms_pdf), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
         if (onClose == null) {
             Row(
                 Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
@@ -1786,10 +1792,20 @@ fun CreditScreen(
             }
         }
 
-        // the AI features subscription (the photo Scan): shown while on trial or locked, never to the owner or a subscriber
-        if (me.sub.scan != "on") {
+        // the AI features (the photo Scan): how many made, how many left (an estimate) or the trial days; while on trial
+        // or locked, a tap opens the subscription. Never shown to the owner.
+        if (me.sub.scansUsed != null) {
             SectionTitle(t(R.string.section_ai))
-            Panel { SettingRow(R.drawable.ic_ai_wand, t(R.string.ai_unlock), t(R.string.ai_unlock_row_sub), color = C.Sys, onClick = onAi) }
+            Panel {
+                val used = me.sub.scansUsed
+                val days = me.sub.trialUntil?.let { ((it - System.currentTimeMillis()) / 86_400_000L + 1).coerceAtLeast(1).toInt() }
+                val sub = when {
+                    me.sub.scan == "trial" && days != null -> t(R.string.ai_row_trial, used, days)
+                    me.sub.scan == "on" && me.sub.scansLeft != null -> t(R.string.ai_row_on, used, me.sub.scansLeft)
+                    else -> t(R.string.ai_unlock_row_sub)
+                }
+                SettingRow(R.drawable.ic_ai_wand, t(R.string.ai_unlock), sub, color = C.Sys, onClick = if (me.sub.scan == "on") null else onAi)
+            }
         }
 
         // the account: Google, leaving this phone, deleting it all
