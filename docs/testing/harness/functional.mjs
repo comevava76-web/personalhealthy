@@ -223,6 +223,22 @@ S.check("admin", "AD3", "owner creates an invite", r.status === 200 && /^[A-Z2-9
   const rs = await Promise.all(Array.from({ length: 10 }, () => register(newPhone(), c3)));
   S.check("concurrency", "AD7", "one invite used by 10 phones at once -> exactly one account", rs.filter((z) => z.status === 200).length === 1, rs.map((z) => z.status).join(","));
 }
+// an app built before the current terms keeps working with its own terms until the person updates (P-010)
+{
+  const old = newPhone(); await register(old);
+  r = await web("GET", "/v1/app-status?v=121");
+  S.check("terms", "T7", "app 121 (older terms) is still allowed", r.status === 200 && r.json.ok === true, r.text);
+  r = await call(old, "GET", "/v1/me", null, { version: 121 });
+  S.check("terms", "T8", "app 121 before accepting -> disclaimerOk false", r.status === 200 && r.json.disclaimerOk === false, r.text);
+  r = await call(old, "POST", "/v1/accept", { ...notice, version: "21", textSha256: "a".repeat(64) }, { version: 121 });
+  S.check("terms", "T9", "app 121 accepts its own terms v21 -> recorded as v21", r.status === 200 && sql("SELECT version FROM acceptances WHERE person_id = ?", old.pid)[0]?.version === "21", r.text);
+  r = await call(old, "GET", "/v1/me", null, { version: 121 });
+  S.check("terms", "T10", "app 121 after accepting -> disclaimerOk true, no loop", r.json?.disclaimerOk === true, r.text);
+  r = await call(old, "GET", "/v1/me", null, { version: 122 });
+  S.check("terms", "T11", "after the update (122) the current terms are asked", r.json?.disclaimerOk === false, r.text);
+  r = await call(old, "POST", "/v1/accept", { ...notice, version: "21", textSha256: "a".repeat(64) }, { version: 122 });
+  S.check("terms", "T12", "a build with the current terms cannot accept older ones -> 426", r.status === 426, r.text);
+}
 r = await call(owner, "POST", "/v1/admin/app-min-version", { minVersion: 999 });
 S.check("admin", "AD8", "min version above the owner's own app -> 400", r.status === 400, r.text);
 r = await call(owner, "POST", "/v1/admin/app-min-version", { minVersion: 150 });

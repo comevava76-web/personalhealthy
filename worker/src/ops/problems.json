@@ -134,6 +134,21 @@
    "fix": "Decision of Human: the Scan now reads the display with AI: an AI feature: 15-day trial, then 4.99 USD a year with a 2.50 USD yearly AI allowance; 3 Scans a day per person through the Worker to Anthropic (Claude Haiku, owner's key, photo never stored); terms v21",
    "pr": "",
    "fixedIn": "0.1.121"
+  },
+  {
+   "id": "P-010",
+   "found": "2026-10-02",
+   "title": "After terms v22 went online, app 0.1.121 asked to accept the terms at every start",
+   "match": {
+    "code": "app_disabled",
+    "place": "POST /v1/accept"
+   },
+   "versions": "0.1.121 and older",
+   "status": "fixed",
+   "cause": "The server accepted only the newest terms: an app built with older terms could not record its acceptance (app_disabled), and at the next start it showed its terms again",
+   "fix": "Decision of Human: old versions are never blocked for new terms. An app built before the current terms (TERMS_MIN_APP = 122) records the acceptance of the terms it shows (their version and text fingerprint) and keeps working; the new terms are asked when the person installs the new version",
+   "pr": "",
+   "fixedIn": "server (0.1.123)"
   }
  ]
 }

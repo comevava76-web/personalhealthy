@@ -646,7 +646,7 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
   <li>The owner tests that version from Google Play.</li>
   <li>The owner promotes it to <b>production</b>, with a <b>staged rollout</b> (for example 20% of users, then 100% after a day without new errors).</li>
   <li>Google reviews the version (from a few hours to a few days); then phones update by themselves.</li>
-  <li>The server always accepts the previous versions, so people who have not updated yet keep working.</li>
+  <li>The server always accepts the previous versions, so people who have not updated yet keep working. When the terms of use change, nobody is blocked: an older version keeps the terms it shows (their acceptance is recorded with that version), and the new terms are asked right after the update.</li>
 </ol>
 <h3>If something goes wrong</h3>
 <ul>

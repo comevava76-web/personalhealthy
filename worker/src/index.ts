@@ -261,8 +261,14 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
 const DISCLAIMER_VERSION = "22";
-async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
-  const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
+/** The first app build that shows DISCLAIMER_VERSION; raise it together with DISCLAIMER_VERSION. An older build keeps
+ *  working with the terms it shows (accepted on that phone): the new terms are asked when the person installs the
+ *  new version, never by blocking the old one (decision of Human, problem P-010). */
+const TERMS_MIN_APP = 122;
+async function acceptedNotice(q: Q, pid: string, appVersion: number): Promise<boolean> {
+  const [row] = appVersion >= TERMS_MIN_APP
+    ? await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION])
+    : await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' LIMIT 1", [pid]);
   return !!row;
 }
 
@@ -624,7 +630,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/bp/photo", "/v1/labs", "/v1/web/code"].includes(url.pathname);
-  if (requiresNotice && !(await acceptedNotice(q, pid))) return fail("Accept the current terms first", 403, "notice_required");
+  if (requiresNotice && !(await acceptedNotice(q, pid, Number(req.headers.get("X-App-Version")) || 0))) return fail("Accept the current terms first", 403, "notice_required");
 
   // the photo reading with AI was removed (terms v19): its calls answer "gone", never reach Anthropic
   if (["/v1/bp/scan", "/v1/bp/confirm", "/v1/key", "/v1/key/check", "/v1/credit", "/v1/admin/credit", "/v1/credit/history"].includes(url.pathname))
@@ -650,7 +656,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       email: null,   // never stored: the phone keeps it for itself
       googleOn: !!env.GOOGLE_CLIENT_ID,
       billingMode: await getSetting(q, "billing_mode", "private"),
-      disclaimerOk: await acceptedNotice(q, pid),
+      disclaimerOk: await acceptedNotice(q, pid, Number(req.headers.get("X-App-Version")) || 0),
       ...(ownerHere ? { appMinVersion: (await appGate(q)).min, subscriptionOn: (await getSetting(q, "subscription_on", "0")) === "1" } : {}),
       sub: await subState(q, env, pid, req.headers.get("X-Device") || ""),
     });
@@ -683,14 +689,18 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
   // The notice accepted on the phone: recorded with who, which phone, which text and when. Never changed afterwards.
   if (req.method === "POST" && url.pathname === "/v1/accept") {
-    // an app with older terms cannot accept the current ones: it gets the "install the latest version" screen
-    // (app_disabled), not a generic error (problem P-003)
-    if (data.doc === "disclaimer" && Number(data.version) < Number(DISCLAIMER_VERSION))
+    // an app built before the current terms keeps working with the terms it shows: its acceptance is recorded with
+    // that version and the fingerprint of the text it showed; the new terms come with the update (problem P-010)
+    const build = Number(req.headers.get("X-App-Version")) || 0;
+    const older = data.doc === "disclaimer" && build < TERMS_MIN_APP && /^\d{1,3}$/.test(String(data.version)) &&
+      Number(data.version) < Number(DISCLAIMER_VERSION) && data.healthConsent === true &&
+      typeof data.textSha256 === "string" && /^[0-9a-f]{64}$/.test(data.textSha256);
+    if (!older && data.doc === "disclaimer" && Number(data.version) < Number(DISCLAIMER_VERSION))
       return fail("This version of HINT 365 shows older terms: install the latest one.", 426, "app_disabled");
-    if (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION || data.healthConsent !== true) return fail("Unknown notice version", 400, "bad_version");
+    if (!older && (data.doc !== "disclaimer" || data.version !== DISCLAIMER_VERSION || data.healthConsent !== true)) return fail("Unknown notice version", 400, "bad_version");
     const lang = String(data.lang || "").toLowerCase();
     if (!NOTICE_TEXT[lang]) return fail("Unsupported notice language", 400, "bad_version");
-    const textHash = await sha256Hex(enc.encode(NOTICE_TEXT[lang]));
+    const textHash = older ? data.textSha256 : await sha256Hex(enc.encode(NOTICE_TEXT[lang]));
     if (data.textSha256 !== textHash) return fail("Notice text differs from the current version", 400, "bad_version");
     const now = Date.now();
     const device = [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(person.public_key)))]
@@ -699,7 +709,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     await q(
       "INSERT INTO acceptances (id, person_id, email, device, phone, doc, version, lang, text_sha256, app_version, accepted_at, accepted_at_local) " +
       "VALUES (?1, ?2, ?3, ?4, ?5, 'disclaimer', ?6, ?7, ?8, ?9, ?10, ?11)",
-      [newId("acc_"), pid, null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
+      [newId("acc_"), pid, null, device, str(data.phone, 80), older ? String(data.version) : DISCLAIMER_VERSION, str(data.lang, 8),
        textHash, req.headers.get("X-App-Version"), now, localStamp(now)]
     );
     // the legal proof goes to the backup database at once (the nightly job checks again)
