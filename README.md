@@ -49,7 +49,7 @@ In the repository: Settings → Secrets and variables → Actions → **New repo
 | Name | Value |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | the token from step 2 |
-| `ANTHROPIC_API_KEY` | the key from step 3 |
+| `AI_API_KEY` | the owner's AI key for the photo Scan (today an Anthropic key; the older name `ANTHROPIC_API_KEY` still works) |
 | `FAMILY_CODE` | a code you make up (at least 6 characters), to give only to family members |
 
 A fourth secret, `KEY_ENCRYPTION_KEY`, is created by the build by itself the first time, directly on the server

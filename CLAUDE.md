@@ -62,8 +62,8 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Scan della foto del misuratore con l'AI** (condizioni v21, decisione di Human del 02.10.2026: il lettore senza AI delle
   v20 non leggeva i display veri; far inserire una chiave a tutti sarebbe un deterrente). Pulsante Scan con la bacchetta e le stelline (`ic_ai_wand`):
   **3 Scan al giorno per persona** (prova di 15 giorni, poi abbonamento), pagati dall'owner: la foto del solo display va al Worker (`POST /v1/bp/photo/read`,
-  mai salvata né registrata) e da lì ad Anthropic (`claude-haiku-4-5`, il più economico, chiave nel secret `ANTHROPIC_API_KEY`, impostato dalla
-  pipeline dal secret GitHub omonimo; senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30; prova finita senza abbonamento = `402 scan_locked`.
+  mai salvata né registrata) e da lì ad Anthropic (`claude-haiku-4-5`, il più economico, chiave nel secret `AI_API_KEY`, nome generico perché il fornitore può cambiare, impostato dalla
+  pipeline dal secret GitHub omonimo (vale ancora il vecchio `ANTHROPIC_API_KEY`); senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30; prova finita senza abbonamento = `402 scan_locked`.
   Oltre i 3: «Fino a 30 Scan al giorno con la tua AI» → `AiScreen` (anche da Gestore → Scan con l'AI): la persona incolla la
   propria chiave (Claude, ChatGPT, Gemini, Kimi), verificata e cifrata **solo sul telefono** (`AiScan.kt`); con quella la foto
   va dal telefono al fornitore, fino a 30 al giorno. I numeri si mostrano e si salvano solo dopo la conferma; valori non

@@ -27,7 +27,7 @@ interface Env {
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
   APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
   GITHUB_FIX_TOKEN?: string;     // Security console "Fix": a GitHub token that may open issues in the repository (owner sets it)
-  ANTHROPIC_API_KEY?: string;    // the owner's key for the photo Scan (terms v21): 3 readings a day per person, paid by the owner
+  AI_API_KEY?: string;           // the owner's AI key for the photo Scan (terms v21; today Anthropic): paid by the owner
   GITHUB_REPO?: string;          // owner/name of the repository (default comevava76-web/personalhealthy)
 }
 
@@ -790,7 +790,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   // SCAN_YEAR_USD of AI cost per person in a year, counted from the tokens Anthropic reports. The photo is passed on
   // and never stored or logged; only the three numbers go back to the phone, to be confirmed by the person.
   if (req.method === "POST" && url.pathname === "/v1/bp/photo/read") {
-    if (!env.ANTHROPIC_API_KEY) return fail("The photo Scan is not available now: record by voice.", 503, "scan_off");
+    if (!env.AI_API_KEY) return fail("The photo Scan is not available now: record by voice.", 503, "scan_off");
     const image = typeof data.image === "string" ? data.image : "";
     if (image.length < 1000 || image.length > 4_000_000 || !/^[A-Za-z0-9+/=]+$/.test(image)) return fail("Bad photo", 400, "bad_photo");
     const device = req.headers.get("X-Device") || "";
@@ -806,7 +806,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       for (const k of keys) await q("INSERT OR IGNORE INTO scan_trials (fp, started_at) VALUES (?1, ?2)", [k, start]);
     }
     try {
-      const { answer, microUsd } = await readMonitor(env.ANTHROPIC_API_KEY, image);
+      const { answer, microUsd } = await readMonitor(env.AI_API_KEY, image);
       if (!who?.is_admin) await scanSpend(q, pid, microUsd);
       return json(answer);
     } catch (e) {
