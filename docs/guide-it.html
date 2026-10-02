@@ -35,7 +35,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <table><tr><th>Cosa</th><th>Costo</th><th>A chi va</th></tr>
 <tr><td>HINT 365: app, grafici, report, Web Dashboard, conservazione delle misure</td><td class="free">Oggi gratuita. Quando uscirà sul Play Store: 5 $ all'anno, disdici quando vuoi</td><td>Al proprietario dell'app, tramite Google Play</td></tr>
 </table>
-<p>Non ci sono altri costi: registrazione a voce, Scan e importazione dei referti sono comprese, e non si paga nient'altro a nessuno.</p>
+<p>Non ci sono altri costi di HINT 365: registrazione a voce e importazione dei referti sono comprese. Lo <b>Scan</b> è facoltativo e usa il <b>tuo</b> abbonamento AI: il suo costo lo addebita il tuo fornitore, non HINT 365.</p>
 
 <h2>3. Installazione e aggiornamenti</h2>
 <ol><li>Sul telefono Android apri <b>https://personalhealthy-api.comevava76.workers.dev/download</b> e scarica <b>HINT.apk</b>.</li>
@@ -53,12 +53,13 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>Controlla e tocca <b>Salva misura</b>. Data e ora sono quelle del momento in cui hai parlato.</li></ol>
 <p>L'app rifiuta valori impossibili (per esempio DIA più alta di SYS, un numero mancante) e segnala in arancione quelli insoliti, da ricontrollare.</p>
 <h3>📷 Scan</h3>
+<p>Lo Scan è spento finché non lo sblocchi: il pulsante è grigio con la scritta «Sblocca questa funzionalità». Toccalo (oppure Gestore → <b>Funzionalità AI</b>), scegli il tuo fornitore (Claude, ChatGPT, Gemini o Kimi), incolla la <b>chiave API</b> del tuo abbonamento e tocca <b>Verifica e attiva</b>. Il link «Dove trovo la chiave» apre la pagina del fornitore.</p>
 <ol><li>Tocca <b>Scan</b> e fotografa il display del misuratore: dritto, da vicino, senza riflessi, con <span class="sys">SYS</span>, <span class="dia">DIA</span> e <span class="pul">PUL</span> tutti visibili.</li>
-<li>Il telefono legge i numeri da solo, senza intelligenza artificiale, e ti mostra la foto con i tre valori.</li>
+<li>La foto va direttamente dal telefono al tuo fornitore AI, che legge i numeri; l'app ti mostra la foto con i tre valori.</li>
 <li>Se sono quelli del display tocca <b>Sì, sono giusti: salva</b>. Se sono sbagliati tocca <b>I numeri sono sbagliati: rifai la foto</b>.</li></ol>
-<p>Se la foto non si legge con certezza (scura, sfocata, con un riflesso, storta) l'app non indovina: ti dice il motivo e ti chiede di rifarla, oppure di dire i valori a voce. La foto resta sul telefono, non viene mai inviata e viene cancellata alla fine.</p>
-<h2>5. Niente intelligenza artificiale</h2>
-<p>HINT 365 non usa più l'intelligenza artificiale e non manda dati a fornitori di AI. La vecchia <b>Scan</b> con Anthropic è stata tolta (condizioni d'uso versione 19). La Scan di oggi (condizioni versione 20) legge la foto sul telefono, gratis, e al server arrivano solo i tre numeri che confermi. Se avevi salvato una chiave Anthropic, il server la cancella insieme ai costi e alle letture di quella funzione; se vuoi, cancellala anche dal tuo account su Anthropic.</p>
+<p>Se la foto non si legge con certezza (scura, sfocata, con un riflesso, storta) l'app non indovina: ti dice il motivo e ti chiede di rifarla, oppure di dire i valori a voce. La foto va solo al tuo fornitore, non a HINT 365, e viene cancellata dal telefono alla fine.</p>
+<h2>5. Intelligenza artificiale: solo se la sblocchi tu</h2>
+<p>HINT 365 di per sé non manda dati a fornitori di AI. Lo Scan (condizioni d'uso versione 21) usa la chiave del <b>tuo</b> abbonamento AI: la chiave resta solo sul telefono, cifrata, e HINT 365 non la riceve mai; a ogni Scan la foto del display va dal telefono al fornitore che hai scelto, senza nome né account, e a HINT 365 arrivano solo i tre numeri che confermi. Puoi togliere la chiave quando vuoi (Gestore → Funzionalità AI). Il lettore senza AI della versione 20 è stato tolto perché non leggeva in modo affidabile i display veri.</p>
 
 <h2>6. Le schermate</h2>
 <p>In basso ogni scheda ha un'icona e il suo nome. Solo il proprietario dell'app vede anche <b>Admin</b> (scudo ↗, l'ultima), che apre sul web la sua console: solo i numeri, senza le schede Pressione e Referti.</p>
@@ -82,7 +83,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <h2>10. I tuoi dati</h2>
 <ul><li><b>Cosa viene salvato:</b> le misure con data, ora e fonte (voce o foto del misuratore); del tuo account Google solo un'impronta cifrata, <b>mai l'email</b>, che resta sul telefono.</li>
 <li><b>Voce:</b> la voce viene trascritta dal telefono; al server arrivano solo i tre numeri.</li>
-<li><b>Scan:</b> la foto del misuratore viene letta sul telefono e poi cancellata; al server arrivano solo i tre numeri confermati.</li>
+<li><b>Scan:</b> la foto del misuratore va solo al tuo fornitore AI, con la tua chiave che resta sul telefono, poi viene cancellata; al server arrivano solo i tre numeri confermati.</li>
 <li><b>Dove e per quanto:</b> su <b>Cloudflare</b>, database nell'<b>Unione Europea</b>. Le misure si conservano al massimo <b>365 giorni</b>: quelle più vecchie vengono cancellate ogni notte. Esporta PDF o Excel se vuoi tenerle più a lungo.</li>
 <li><b>Chi li vede:</b> solo tu, e il medico con il link che gli mandi. Il proprietario dell'app vede solo numeri d'uso legati a un codice anonimo (iscrizione, ultimo accesso, quante misure), mai i valori o i report. Gli errori tecnici finiscono in un registro sintetico, senza valori delle misure, conservato 90 giorni, per correggere i problemi.</li>
 <li><b>Cancellazione:</b> in Gestore puoi cancellare una misura, tutte le misure oppure l'account. È immediata e definitiva; resta solo la prova delle condizioni accettate.</li></ul>

@@ -57,7 +57,7 @@ export async function logError(q: Q, e: ErrorEntry): Promise<void> {
 export const EVENTS = new Set(["lab_saved", "lab_duplicate_file", "lab_duplicate_values", "lab_conflict_values", "lab_invalid", "lab_deleted_day", "lab_deleted_all", "lab_deleted_report",
   // the photo Scan of the monitor (read on the phone, no AI): saved, or why not
   "bp_photo_saved", "bp_photo_dark", "bp_photo_glare", "bp_photo_blurry", "bp_photo_not_found", "bp_photo_unclear", "bp_photo_implausible",
-  "bp_photo_wrong"]);
+  "bp_photo_wrong", "bp_photo_ai_key", "bp_photo_ai_quota", "bp_photo_ai_network", "bp_photo_ai_error"]);
 export async function countEvent(q: Q, code: string, place: string, appVersion?: unknown): Promise<void> {
   if (!EVENTS.has(code)) return;
   try {

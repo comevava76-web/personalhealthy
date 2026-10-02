@@ -54,7 +54,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "20"
+const val DISCLAIMER_VERSION = "21"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")

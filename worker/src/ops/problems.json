@@ -119,6 +119,21 @@
    "fix": "A Gradle constraint raises bcprov, bcpkix and bcutil (jdk15to18) to 1.86, same API; build and tests in CI",
    "pr": "",
    "fixedIn": "0.1.120"
+  },
+  {
+   "id": "P-009",
+   "found": "2026-10-02",
+   "title": "The Scan without AI said «not clear» on a sharp photo of a real monitor (Medisana)",
+   "match": {
+    "code": "bp_photo_unclear",
+    "place": "app/Scan"
+   },
+   "versions": "0.1.113-0.1.120",
+   "status": "fixed",
+   "cause": "The on-phone seven-segment reader (MonitorReader) and the ML Kit fallback were tuned on generated photos; on real displays they read 0 of 7 photos, so they asked for a retake even on clear photos",
+   "fix": "Decision of Human: the Scan now uses the person's own AI subscription (Claude, ChatGPT, Gemini or Kimi) with a key kept encrypted on the phone; off until unlocked; terms v21",
+   "pr": "",
+   "fixedIn": "0.1.121"
   }
  ]
 }

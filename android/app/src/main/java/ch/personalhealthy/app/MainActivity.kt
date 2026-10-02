@@ -275,6 +275,7 @@ class MainActivity : FragmentActivity() {
         Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
         ThemeChoice.load(this)
+        AiScan.load(this)
         setContent {
             C.light = ThemeChoice.value == "light"
             // the phone's bars take the background of the theme, with dark icons on the light one
@@ -436,7 +437,7 @@ fun App() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // The photo Scan of the monitor, read on this phone (no AI): the photo stays here and is deleted at the end
+    // The photo Scan of the monitor, read by the person's own AI provider (AiScan): the photo goes only there and is deleted here at the end
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
     var photo by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -454,7 +455,7 @@ fun App() {
             try {
                 val b = MonitorScan.load(photoFile)
                 photo = b
-                val r = MonitorScan.read(b)
+                val r = AiScan.read(ctx, b)
                 photoRead = r
                 if (r is MonitorScan.Result.Retake) photoOutcome(r.reason)
             } catch (e: Exception) {
@@ -573,6 +574,7 @@ fun App() {
                 onFail = { msg -> screen = "tabs"; voiceProblem = msg },
                 onCancel = { screen = "tabs" }
             )
+            screen == "ai" -> AiScreen(onClose = { screen = "tabs" })
             screen == "photo" -> PhotoScreen(
                 photo = photo, result = photoRead, takenAt = photoAt, saving = photoSaving,
                 onSave = { v ->
@@ -668,6 +670,7 @@ fun App() {
                             }.value,
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
+                            onAi = { screen = "ai" },
                             onSignOut = {
                                 val pid = personId ?: return@CreditScreen
                                 scope.launch {
@@ -698,6 +701,7 @@ fun App() {
                             onVoice = { openVoice() },
                             onScan = { openCamera() },
                             onDash = openDash,
+                            onUnlockAi = { screen = "ai" },
                         )
                     }
                     androidx.compose.material3.pulltorefresh.PullToRefreshContainer(
@@ -801,7 +805,7 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 @Composable
 fun BigButton(
     text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true,
-    modifier: Modifier = Modifier, icon: Int? = null, trailing: Int? = null, onClick: () -> Unit
+    modifier: Modifier = Modifier, icon: Int? = null, trailing: Int? = null, sub: String? = null, onClick: () -> Unit
 ) {
     // switched off: clearly faded, background and text alike
     val fg = if (enabled) textColor else textColor.copy(alpha = 0.5f)
@@ -817,8 +821,13 @@ fun BigButton(
                 Spacer(Modifier.width(8.dp))
             }
             // always on one line: a long label is cut with "…" rather than wrapping in the button
-            Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Column {
+                Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                // a short line under the label (the locked Scan: "Unlock this feature")
+                if (sub != null) Text(sub, color = fg, fontSize = 11.sp, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
             if (trailing != null) {
                 // the AI sign stays well visible even when the button is off
                 Spacer(Modifier.width(8.dp))
@@ -1158,7 +1167,7 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit,
-    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
+    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit, onUnlockAi: () -> Unit
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -1192,7 +1201,10 @@ fun HomeScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             BigButton(t(R.string.record_short), color = C.Voice, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
-            BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
+            // the Scan works with the person's own AI subscription: grey, with "Unlock this feature", until a key is saved
+            if (AiScan.active == null) BigButton(t(R.string.scan_short), color = C.Surface2, textColor = C.Muted, modifier = Modifier.weight(1f),
+                icon = R.drawable.ic_camera, sub = t(R.string.ai_unlock_short), onClick = onUnlockAi)
+            else BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
         }
         Spacer(Modifier.height(6.dp))
 
@@ -1538,13 +1550,17 @@ fun PhotoScreen(
             }
             is MonitorScan.Result.Retake -> {
                 Panel {
-                    Text(t(R.string.photo_retake_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(t(if (result.reason.startsWith("ai_")) R.string.photo_ai_title else R.string.photo_retake_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     Text(t(when (result.reason) {
                         "dark" -> R.string.photo_why_dark
                         "glare" -> R.string.photo_why_glare
                         "blurry" -> R.string.photo_why_blurry
                         "implausible" -> R.string.photo_why_implausible
                         "unclear" -> R.string.photo_why_unclear
+                        "ai_key" -> R.string.photo_why_ai_key
+                        "ai_quota" -> R.string.photo_why_ai_quota
+                        "ai_network" -> R.string.photo_why_ai_network
+                        "ai_error" -> R.string.photo_why_ai_error
                         else -> R.string.photo_why_not_found
                     }), color = C.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
                     Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
@@ -1648,7 +1664,7 @@ private fun RowDivider() = Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).
 fun CreditScreen(
     me: Me?, readingsCount: Int, labsCount: Int?,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit, onAi: () -> Unit
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
@@ -1689,6 +1705,14 @@ fun CreditScreen(
                     Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
+        }
+
+        // the AI features: off until the person adds the key of their own AI subscription (the photo Scan)
+        SectionTitle(t(R.string.section_ai))
+        Panel {
+            val ai = AiScan.active
+            if (ai == null) SettingRow(R.drawable.ic_camera, t(R.string.ai_unlock), t(R.string.ai_unlock_row_sub), color = C.Sys, onClick = onAi)
+            else SettingRow(R.drawable.ic_camera, t(R.string.ai_active, ai.label), t(R.string.ai_active_sub), onClick = onAi)
         }
 
         // the account: Google, leaving this phone, deleting it all

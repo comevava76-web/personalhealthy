@@ -35,7 +35,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <table><tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
 <tr><td>HINT 365: the app, charts, reports, Web Dashboard, keeping your readings</td><td class="free">Free today. Once it is on the Play Store: 5 $ a year, cancel any time</td><td>The owner of the app, through Google Play</td></tr>
 </table>
-<p>There are no other costs: voice recording, Scan and lab import are included, and nothing is paid to anyone else.</p>
+<p>HINT 365 has no other costs: voice recording and lab import are included. The <b>Scan</b> is optional and uses <b>your own</b> AI subscription: its cost is charged by your provider, not by HINT 365.</p>
 
 <h2>3. Installing and updating</h2>
 <ol><li>On your Android phone open <b>https://personalhealthy-api.comevava76.workers.dev/download</b> and download <b>HINT.apk</b>.</li>
@@ -53,12 +53,13 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <li>Check them and tap <b>Save reading</b>. Date and time are those of the moment you spoke.</li></ol>
 <p>The app refuses impossible values (for example DIA higher than SYS, a missing number) and marks unusual ones in orange, to check again.</p>
 <h3>📷 Scan</h3>
+<p>The Scan is off until you unlock it: the button is grey with «Unlock this feature». Tap it (or Manage → <b>AI features</b>), choose your provider (Claude, ChatGPT, Gemini or Kimi), paste the <b>API key</b> of your subscription and tap <b>Check and turn on</b>. The link «Where do I find my key?» opens the provider's page.</p>
 <ol><li>Tap <b>Scan</b> and photograph the monitor's display: straight, close, without reflections, with <span class="sys">SYS</span>, <span class="dia">DIA</span> and <span class="pul">PUL</span> all visible.</li>
-<li>The phone reads the numbers by itself, without artificial intelligence, and shows you the photo with the three values.</li>
+<li>The photo goes straight from the phone to your AI provider, which reads the numbers; the app shows you the photo with the three values.</li>
 <li>If they are the ones on the display tap <b>Yes, they are correct: save</b>. If they are wrong tap <b>The numbers are wrong: retake the photo</b>.</li></ol>
-<p>If the photo cannot be read with certainty (dark, blurred, a reflection, crooked) the app does not guess: it says why and asks you to take it again, or to say the values aloud. The photo stays on the phone, is never sent and is deleted at the end.</p>
-<h2>5. No artificial intelligence</h2>
-<p>HINT 365 no longer uses artificial intelligence and sends no data to any AI provider. The former <b>Scan</b> with Anthropic has been removed (terms of use version 19). Today's Scan (terms version 20) reads the photo on the phone, free, and only the three numbers you confirm reach the server. If you had saved an Anthropic key, the server deletes it together with the costs and readings of that feature; if you wish, delete it from your Anthropic account too.</p>
+<p>If the photo cannot be read with certainty (dark, blurred, a reflection, crooked) the app does not guess: it says why and asks you to take it again, or to say the values aloud. The photo goes only to your provider, not to HINT 365, and is deleted from the phone at the end.</p>
+<h2>5. Artificial intelligence: only if you unlock it</h2>
+<p>HINT 365 itself sends no data to AI providers. The Scan (terms of use version 21) uses the key of <b>your own</b> AI subscription: the key stays only on the phone, encrypted, and HINT 365 never receives it; at each Scan the photo of the display goes from the phone to the provider you chose, without name or account, and only the three numbers you confirm reach HINT 365. You can remove the key at any time (Manage → AI features). The on-phone reader of version 20 was removed because it did not read real displays reliably.</p>
 
 <h2>6. The screens</h2>
 <p>At the bottom every tab has an icon and its name. Only the owner of the app also sees <b>Admin</b> (shield ↗, the last one), which opens the owner's console on the web: numbers only, without the Blood pressure and Lab results tabs.</p>
@@ -82,7 +83,7 @@ h2 { break-after:avoid; } .box, .warn, table { break-inside:avoid; }
 <h2>10. Your data</h2>
 <ul><li><b>What is saved:</b> your readings with date, time and source (voice or photo of the monitor); of your Google account only an encrypted fingerprint, <b>never the email</b>, which stays on your phone.</li>
 <li><b>Voice:</b> speech is transcribed by the phone; only the three numbers reach the server.</li>
-<li><b>Scan:</b> the photo of the monitor is read on the phone and then deleted; only the three confirmed numbers reach the server.</li>
+<li><b>Scan:</b> the photo of the monitor goes only to your AI provider, with your key that stays on the phone, then is deleted; only the three confirmed numbers reach the server.</li>
 <li><b>Where and for how long:</b> on <b>Cloudflare</b>, database in the <b>European Union</b>. Readings are kept for at most <b>365 days</b>: older ones are deleted every night. Export PDF or Excel to keep them longer.</li>
 <li><b>Who sees them:</b> only you, and the doctor with the link you send. The owner of the app sees only usage numbers tied to an anonymous code (when you joined, last opened, how many readings), never values or reports. Technical errors go into a short error log, without reading values, kept 90 days, to fix problems.</li>
 <li><b>Deletion:</b> in Manage you can delete one reading, all readings or the account. It is immediate and final; only the proof of the accepted terms remains.</li></ul>

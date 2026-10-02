@@ -344,3 +344,9 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - The Voice button has its own calm blue (`C.Voice` dark #3A76C4 / light #2E66AE, `--voice` in style.css), Scan stays violet: the two ways to record stand apart.
 - Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by CI.
 - Referti: the Web Dashboard button now sits right after the import; «Storico referti caricati» (renamed from «Caricamenti») is last (asked by Human).
+
+### 2026-10-02 — Claude Code — Scan with the person's own AI (terms v21)
+
+- Human tested the Scan without AI on a sharp photo of a Medisana monitor: «not clear». Reproduced locally (MonitorReader → unclear); real photos read so far: 0 of 7 (P-009). Decision of Human: Scan with AI, off by default, unlocked with the person's own key, any provider.
+- App: `AiScan.kt` (providers Claude/ChatGPT/Gemini/Kimi; key checked with the provider's model list, which also picks the vision model; key AES-GCM encrypted with the Android Keystore, only on the phone; photo → provider directly; JSON answer; plausibility check), `AiScreen.kt` (provider chips, «where do I find the key», key field, «Verifica e attiva», remove). Home: Scan grey with «Sblocca questa funzionalità» until unlocked; Gestore: «Funzionalità AI». Retake reasons `ai_key`, `ai_quota`, `ai_network`, `ai_error` (also counted on the server as `bp_photo_ai_*`). The app no longer uses MonitorReader/ML Kit for the Scan (module `android/reader` kept, unused). Claude: `claude-opus-5-5`, effort low, server-side fallbacks; retried without them on a 400.
+- Terms v21 (DISCLAIMER_VERSION 21 in app and server), privacy, home, costs note, compliance C06/C08, gdpr.md, guides IT/EN, architecture, CLAUDE.md, problems P-009. Local harness: functional and labs-security PASS. Kotlin compiled by CI; the AI calls are not tested here (no keys): Human tests them on the phone.
