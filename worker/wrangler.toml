@@ -20,6 +20,13 @@ binding = "DB"
 database_name = "personalhealthy"
 database_id = "D1_DATABASE_ID"
 
+# D1 database "personalhealthy-backup" (EU): only a copy of the acceptances of the terms of use, as legal proof.
+# GitHub creates it on the first build and puts its id here in place of BACKUP_DATABASE_ID.
+[[d1_databases]]
+binding = "BACKUP"
+database_name = "personalhealthy-backup"
+database_id = "BACKUP_DATABASE_ID"
+
 [vars]
 MODEL = "claude-sonnet-5"
 # Claude Sonnet 5 prices in dollars per million tokens (update them if they change)

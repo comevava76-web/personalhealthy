@@ -364,6 +364,8 @@ fun App() {
     val noticeKey = (personId ?: "signed-out") + "@" + DISCLAIMER_VERSION + "@" + BuildConfig.VERSION_CODE
     var noticeLocal by remember { mutableStateOf(prefs.getString("noticeAccepted", null)) }
     var noticeBusy by remember { mutableStateOf(false) }
+    // right after accepting the terms: the offer to keep them as a PDF on the phone (never downloaded by itself)
+    var saveTermsAsk by remember { mutableStateOf(false) }
     val needsNotice = noticeLocal != noticeKey || me?.disclaimerOk == false
 
     // switched off remotely: remembered, so that without a connection the app stays closed too
@@ -550,6 +552,7 @@ fun App() {
                             )
                             prefs.edit().putString("noticeAccepted", noticeKey).apply()
                             noticeLocal = noticeKey
+                            saveTermsAsk = true
                             reload()
                         } catch (e: Exception) { toast(ctx, e.message ?: t(R.string.err_generic)) }
                         noticeBusy = false
@@ -747,6 +750,20 @@ fun App() {
             containerColor = C.Surface
         )
     }
+
+    if (saveTermsAsk) AlertDialog(
+        onDismissRequest = { saveTermsAsk = false },
+        title = { Text(t(R.string.terms_save_title)) },
+        text = { Text(t(R.string.terms_save_text)) },
+        confirmButton = {
+            TextButton(onClick = {
+                saveTermsAsk = false
+                try { downloadPdf(ctx, termsPdf(ctx)) } catch (e: Exception) { ErrorReport.report("Terms/PDF", e); toast(ctx, t(R.string.err_generic)) }
+            }) { Text(t(R.string.terms_save_yes), color = C.Sys) }
+        },
+        dismissButton = { TextButton(onClick = { saveTermsAsk = false }) { Text(t(R.string.terms_save_later), color = C.Muted) } },
+        containerColor = C.Surface
+    )
 
     // link Google to this phone's account: the privacy note first, then Google's account chooser
     if (linkAsk) AlertDialog(
@@ -993,11 +1010,19 @@ fun Colophon(onTerms: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("HINT 365 · HealthyInstantTracker · v$version", color = C.Muted, fontSize = 11.sp)
         Text(t(R.string.colophon_rights, years), color = C.Muted, fontSize = 11.sp)
-        Text(
-            t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp,
-            textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-            modifier = Modifier.clickable(onClick = onTerms).padding(horizontal = 12.dp, vertical = 6.dp)
-        )
+        // the documents, always in the app's language (English for any language the app does not speak):
+        // the terms to read, the terms as a PDF in Downloads, the privacy policy on the web
+        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            val link = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+            val u = androidx.compose.ui.text.style.TextDecoration.Underline
+            Text(t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable(onClick = onTerms).then(link))
+            Text(t(R.string.colophon_terms_pdf), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable {
+                try { downloadPdf(ctx, termsPdf(ctx)) } catch (e: Exception) { ErrorReport.report("Colophon/terms PDF", e) }
+            }.then(link))
+            Text(t(R.string.colophon_privacy), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable {
+                try { openInBrowser(ctx, BuildConfig.API_URL.trimEnd('/') + "/privacy?lang=" + appLocale().language) } catch (e: Exception) { ErrorReport.report("Colophon/privacy", e) }
+            }.then(link))
+        }
     }
 }
 
@@ -1047,7 +1072,7 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             // the same text on the web, where the providers' links can be opened
             val webCtx = LocalContext.current
             TextButton(onClick = {
-                webCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL)))
+                webCtx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TERMS_URL + "?lang=" + appLocale().language)))
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
@@ -1736,19 +1761,7 @@ fun CreditScreen(
             return@Column
         }
 
-        // what is saved: two numbers, then the way to the readings (to delete a wrong one or all of them)
-        SectionTitle(t(R.string.section_db))
-        Panel {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                CountTile("$readingsCount", t(R.string.stat_readings), C.Sys, Modifier.weight(1f))
-                Spacer(Modifier.width(10.dp))
-                CountTile(labsCount?.toString() ?: "…", t(R.string.stat_labs), C.Dia, Modifier.weight(1f))
-            }
-            RowDivider()
-            SettingRow(R.drawable.ic_list, t(R.string.manage_readings), t(R.string.manage_readings_sub), onClick = onManageReadings)
-        }
-
-        // dark (the default) or light; the Web Dashboard opens in the same one
+        // the app theme, first in Gestore (asked by Human): dark (the default) or light; the Web Dashboard opens in the same one
         SectionTitle(t(R.string.section_theme))
         val themeCtx = LocalContext.current
         Row(Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp)).background(C.Surface)
@@ -1766,6 +1779,18 @@ fun CreditScreen(
                     Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
+        }
+
+        // what is saved: two numbers, then the way to the readings (to delete a wrong one or all of them)
+        SectionTitle(t(R.string.section_db))
+        Panel {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                CountTile("$readingsCount", t(R.string.stat_readings), C.Sys, Modifier.weight(1f))
+                Spacer(Modifier.width(10.dp))
+                CountTile(labsCount?.toString() ?: "…", t(R.string.stat_labs), C.Dia, Modifier.weight(1f))
+            }
+            RowDivider()
+            SettingRow(R.drawable.ic_list, t(R.string.manage_readings), t(R.string.manage_readings_sub), onClick = onManageReadings)
         }
 
         // the owner's account on a new phone: the owner's secret code gives this phone the owner's powers back

@@ -72,6 +72,16 @@ jobs:
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
           echo "db=$ID" >> "$GITHUB_OUTPUT"
           npx wrangler d1 execute personalhealthy --remote --file=schema.sql
+          # the backup database: only the acceptances of the terms of use, as legal proof (EU as well)
+          BID=$(curl -s -H "$AUTH" "$API?name=personalhealthy-backup" | jq -r '.result[]? | select(.name=="personalhealthy-backup") | .uuid' | head -1)
+          if [ -z "$BID" ]; then
+            echo "Creating the personalhealthy-backup database in Europe"
+            BID=$(curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$API" \
+                 --data '{"name":"personalhealthy-backup","jurisdiction":"eu"}' | jq -r '.result.uuid // empty')
+          fi
+          if [ -z "$BID" ]; then echo "Backup database not created: check that the token has the D1 Edit permission"; exit 1; fi
+          sed -i "s/BACKUP_DATABASE_ID/$BID/" wrangler.toml
+          npx wrangler d1 execute personalhealthy-backup --remote --file=schema-backup.sql
           # Columns added after the first version: add them to existing tables if missing
           add_col() {
             OUT=$(npx wrangler d1 execute personalhealthy --remote --command "ALTER TABLE $1 ADD COLUMN $2 $3" 2>&1) \

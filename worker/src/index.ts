@@ -15,6 +15,7 @@ type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
 interface Env {
   DB: any; // Cloudflare D1
+  BACKUP?: any; // Cloudflare D1 "personalhealthy-backup": only a copy of the acceptances of the terms
   ASSETS: any; // the static files in public/ (the app, the guides, the My Dash page)
   FAMILY_CODE: string;          // still works as an invite for "family member (I pay)"
   KEY_ENCRYPTION_KEY?: string;  // 32 random bytes in base64: encrypts friends' Anthropic keys in the database
@@ -259,7 +260,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "21";
+const DISCLAIMER_VERSION = "22";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -373,12 +374,37 @@ export async function purgeOld(env: Env) {
 export default {
   async scheduled(_event: unknown, env: Env): Promise<void> {
     await purgeOld(env);
+    // the acceptances of the last 7 days, copied again to the backup database (a copy missed at the time arrives here)
+    await backupAcceptances(env, (t: string, p: unknown[] = []) => env.DB.prepare(t).bind(...p).all().then((r: any) => r.results || []), Date.now() - 7 * 864e5);
   },
 
   async fetch(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
     return secured(await serve(req, env, ctx));
   },
 };
+
+/**
+ * Copies the acceptances of the terms since [since] to the backup database, with the account's Google fingerprint
+ * (never an email). Already copied rows are left as they are. A failure is logged, never shown to the person.
+ */
+async function backupAcceptances(env: Env, q: Q, since: number): Promise<void> {
+  if (!env.BACKUP) return;
+  try {
+    const rows = await q(
+      `SELECT a.id, a.person_id, p.google_sub AS google_fp, a.device, a.phone, a.doc, a.version, a.lang, a.text_sha256, a.app_version,
+              a.accepted_at, a.accepted_at_local
+       FROM acceptances a LEFT JOIN persons p ON p.id = a.person_id WHERE a.accepted_at >= ?1 LIMIT 5000`, [since]);
+    if (!rows.length) return;
+    const now = Date.now();
+    await env.BACKUP.batch(rows.map((r: any) => env.BACKUP.prepare(
+      `INSERT OR IGNORE INTO acceptances_backup (id, person_id, google_fp, device, phone, doc, version, lang, text_sha256, app_version,
+         accepted_at, accepted_at_local, copied_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`)
+      .bind(r.id, r.person_id, r.google_fp ?? null, r.device ?? null, r.phone ?? null, r.doc, r.version, r.lang ?? null,
+        r.text_sha256 ?? null, r.app_version ?? null, r.accepted_at, r.accepted_at_local ?? null, now)));
+  } catch (e) {
+    await logError(q, { source: "server", code: "backup_failed", place: "acceptances backup", message: String(e).slice(0, 120) });
+  }
+}
 
 /** Calls that passed authentication (a verified phone signature or a valid web session). */
 const AUTHENTICATED = new WeakSet<Request>();
@@ -398,7 +424,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     if (url.pathname === "/v1/health") return json({ ok: true });
     // public pages, linked from Google's sign-in screen
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) return homePage();
-    if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "");
+    if (req.method === "GET" && url.pathname === "/privacy") return privacyPage(env.CONTACT_EMAIL || "", url.searchParams.get("lang") || (req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase());
     if (req.method === "GET" && url.pathname === "/terms") return termsPage(url.searchParams.get("lang") || (req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase());
     // the easy address to share: always the latest app
     if (req.method === "GET" && url.pathname === "/download") return Response.redirect(url.origin + "/HINT.apk", 302);
@@ -676,6 +702,8 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       [newId("acc_"), pid, null, device, str(data.phone, 80), DISCLAIMER_VERSION, str(data.lang, 8),
        textHash, req.headers.get("X-App-Version"), now, localStamp(now)]
     );
+    // the legal proof goes to the backup database at once (the nightly job checks again)
+    await backupAcceptances(env, q, now - 60e3);
     return json({ ok: true });
   }
 

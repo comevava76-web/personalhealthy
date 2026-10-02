@@ -61,6 +61,21 @@ for (const r of rows.slice(0, 500))
            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
     [r.kind, cut(r.ref, 120), cut(r.name, 200), cut(r.version, 60), cut(r.location, 200), cut(r.severity, 20), cut(r.rating, 20),
      cut(r.fixed, 80), cut(r.summary, 240), cut(r.source_url, 300), cut(r.plan_url, 300), now]);
+// since when each finding is open (kept from the first night it was seen) and why it is still open, as a short code
+await q(`CREATE TABLE IF NOT EXISTS security_notes (kind TEXT NOT NULL, ref TEXT NOT NULL, name TEXT NOT NULL, location TEXT NOT NULL,
+  first_at INTEGER NOT NULL, reason TEXT, PRIMARY KEY (kind, ref, name, location))`);
+const reasonOf = (r) => {
+  const dec = decisions[r.ref] || decisions[`${r.ref}@${r.name}`] || {};
+  if (dec.reason) return dec.reason;
+  if (/build tools|build plugin|deploy tool|not in the app/i.test(r.location || "")) return "build_tool";
+  if (r.kind === "library" && !r.fixed) return "not_patchable";
+  return "to_fix";
+};
+for (const r of rows.slice(0, 500))
+  await q(`INSERT INTO security_notes (kind, ref, name, location, first_at, reason) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+           ON CONFLICT (kind, ref, name, location) DO UPDATE SET reason = excluded.reason`,
+    [r.kind, cut(r.ref, 120), cut(r.name, 200), cut(r.location, 200), now, reasonOf(r)]);
+await q("DELETE FROM security_notes WHERE NOT EXISTS (SELECT 1 FROM security_snapshot_findings s WHERE s.found_at = ?1 AND s.kind = security_notes.kind AND s.ref = security_notes.ref AND s.name = security_notes.name AND s.location = security_notes.location)", [now]);
 await q("INSERT INTO settings (key, value) VALUES ('security_scan', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [JSON.stringify({ ...summary, snapshot: true })]);
 await q("DELETE FROM settings WHERE key = 'security_scan_attempt'");
 await q("DELETE FROM security_snapshot_findings WHERE found_at <> ?1", [now]);

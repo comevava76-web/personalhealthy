@@ -40,6 +40,7 @@ jobs:
           pair docs/guide-it.html docs/HINT-Guida-IT.pdf
           pair docs/guide-en.html docs/HINT-Guide-EN.pdf
           pair docs/compliance/dossier.html docs/compliance/HINT365-Compliance.pdf
+          pair docs/overview/overview.html docs/HINT365-How-it-works.pdf
           exit $fail
       - name: The compliance dossier matches the controls and the terms (Admin → Observability links into it)
         run: |

@@ -13,7 +13,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   mai misure reali).
 - **Mai diagnosi**, mai giudizi sui valori; etichette sempre SYS, DIA, PUL; pressione e battiti mai nello stesso grafico;
   grafici di 7 giorni con un punto per giorno (la media del giorno, spiegata prima dei grafici) e il valore accanto, sotto solo i numeri dei giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
-- **Tema chiaro e scuro, stessi colori in app e web**: una sola palette (scuro e chiaro) in `MainActivity.kt` (`object C`) e `worker/public/my/style.css` (variabili CSS), valori identici; nel Gestore «Aspetto»: scuro (di base) o chiaro; l'app passa il tema alla Web Dashboard (`&light`/`&dark`), che altrimenti si apre scura. Il Gestore a schede ordinate (numeri, Aspetto, Account, Condividi), mai pulsanti giganti. In Referti il pulsante della Web Dashboard viene subito dopo l'importazione e lo «Storico referti caricati» è l'ultimo, chiuso sotto il numero dei referti finché non lo si tocca. Non salvato nel browser. Ogni colore nuovo va in entrambi i file. In Pressione i due pulsanti per registrare hanno colori diversi: Voce blu calmo (`C.Voice` / `--voice`), Scan viola. Blocco: si usa quello del telefono (nessun PIN dell'app); ogni 14 giorni al massimo un piccolo invito ad attivare impronta/volto o un blocco schermo (`BioNudge`), solo una proposta (scelta di Human).
+- **Tema chiaro e scuro, stessi colori in app e web**: una sola palette (scuro e chiaro) in `MainActivity.kt` (`object C`) e `worker/public/my/style.css` (variabili CSS), valori identici; in cima al Gestore «Tema dell'app»: scuro (di base) o chiaro; l'app passa il tema alla Web Dashboard (`&light`/`&dark`), che altrimenti si apre scura. Il Gestore a schede ordinate (Tema dell'app in cima, numeri, Account, Condividi), mai pulsanti giganti. In Referti il pulsante della Web Dashboard viene subito dopo l'importazione e lo «Storico referti caricati» è l'ultimo, chiuso sotto il numero dei referti finché non lo si tocca. Non salvato nel browser. Ogni colore nuovo va in entrambi i file. In Pressione i due pulsanti per registrare hanno colori diversi: Voce blu calmo (`C.Voice` / `--voice`), Scan viola. Blocco: si usa quello del telefono (nessun PIN dell'app); ogni 14 giorni al massimo un piccolo invito ad attivare impronta/volto o un blocco schermo (`BioNudge`), solo una proposta (scelta di Human).
 - **PDF colorati, mai rosso** (chiesto da Human): pressione con banda viola→verde acqua e riga a tre colori SYS/DIA/PUL,
   ombra leggera sotto le linee, riquadri dei valori tinti col colore della misura, tabella con intestazione colorata e righe
   alterne; referti con banda verde acqua→indaco, tabella con intestazione colorata, righe alterne e colonne divise, al più
@@ -88,6 +88,8 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
   https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
+- **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
+  è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
   stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
@@ -99,5 +101,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   Ogni correzione di un problema aggiorna `problems.json` nella stessa PR; ogni cambio di dati, fornitori o sicurezza
   aggiorna `compliance.json`. I bug sicuri si correggono senza chiedere; a Human solo un riassunto.
 - **Ciclo continuo**: ogni mattina *Error log report* (Actions, 06:30) apre una issue `error-log` se ci sono errori; la routine
-  programmata di Claude (06:48, «HINT 365 · daily error-log check and fix») la legge, corregge i bug piccoli con PR e documenti,
-  unisce dopo *Docs check* e riporta nella issue. Le modifiche grandi o alle condizioni aspettano Human.
+  programmata di Claude (06:48, «HINT 365 · daily defects check, Monday vulnerabilities and patching») la legge, corregge i bug piccoli con PR e documenti,
+  unisce dopo *Docs check* e riporta nella issue. **Vulnerabilità una volta a settimana** (scelta di Human): scansione il lunedì 06:10, correzione
+  il lunedì 06:48; in Observability solo quelle aperte, ognuna con la data «will be fixed by» o un motivo breve (`decisions.json`: build_tool,
+  not_patchable, false_positive, accepted, patch_failed); niente pulsante Fix. Le modifiche grandi o alle condizioni aspettano Human.

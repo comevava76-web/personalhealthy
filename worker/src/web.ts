@@ -229,9 +229,9 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
       const table = scan?.snapshot ? "security_snapshot_findings" : "security_findings";
       const items = await q(
         `SELECT f.kind, f.ref, f.name, f.version, f.location, f.severity, f.rating, f.fixed, f.summary, f.source_url, f.plan_url,
-                x.requested_at AS fix_at, x.issue_url AS fix_url, x.status AS fix_status, x.detail_url AS fix_detail, x.note AS fix_note
-         FROM ${table} f LEFT JOIN security_fixes x
-           ON x.kind = f.kind AND x.ref = f.ref AND x.name = f.name AND x.location = f.location
+                n.first_at, n.reason
+         FROM ${table} f LEFT JOIN security_notes n
+           ON n.kind = f.kind AND n.ref = f.ref AND n.name = f.name AND n.location = f.location
          WHERE ${scan?.snapshot ? "f.found_at = " + Number(scan.at) : "1 = 1"}
          ORDER BY CASE COALESCE(NULLIF(f.rating, ''), f.severity) WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1 WHEN 'MODERATE' THEN 2 WHEN 'LOW' THEN 3 ELSE 4 END,
                   f.kind, f.name LIMIT 500`);
