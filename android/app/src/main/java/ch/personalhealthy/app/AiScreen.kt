@@ -100,7 +100,7 @@ fun AiScreen(onClose: () -> Unit) {
             busy = true
             scope.launch {
                 when (val r = AiScan.activate(ctx, provider, key)) {
-                    is AiScan.Check.Ok -> { key = ""; toast(ctx, t(R.string.ai_done)); onClose() }
+                    is AiScan.Check.Ok -> { key = ""; android.widget.Toast.makeText(ctx, t(R.string.ai_done), android.widget.Toast.LENGTH_LONG).show(); onClose() }
                     is AiScan.Check.Failed -> problem = t(when (r.reason) {
                         "key" -> R.string.ai_err_key
                         "network" -> R.string.ai_err_network
