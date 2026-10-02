@@ -294,9 +294,9 @@
     <string name="bal_none">Es braucht Messungen am Morgen und am Abend.</string>
     <string name="bal_same">Morgen und Abend haben denselben Durchschnitt.</string>
     <string name="bal_diff">Abend - Morgen: SYS %1$s · DIA %2$s mmHg</string>
-    <string name="app_off_title">Diese Version von HINT 365 wurde abgeschaltet</string>
-    <string name="app_off_text">Version %1$s kann nicht mehr verwendet werden. Installiere die neueste: Sie wird über diese installiert und deine Messungen bleiben sicher auf dem Server. Beim Öffnen wirst du gebeten, die Bedingungen erneut zu akzeptieren.</string>
-    <string name="app_off_download">Neueste Version herunterladen</string>
+    <string name="app_off_title">Eine neue Version von HINT 365 ist verfügbar</string>
+    <string name="app_off_text">Version %1$s wird nicht mehr verwendet: HINT 365 behält nur die neueste Version. Aktualisiere, um fortzufahren: Die neue wird über diese installiert und deine Daten bleiben sicher auf dem Server. Beim Öffnen wirst du eventuell gebeten, die Bedingungen erneut zu akzeptieren.</string>
+    <string name="app_off_download">HINT 365 aktualisieren</string>
     <string name="section_versions">App-Versionen</string>
     <string name="versions_state">Diese App: Version %1$s</string>
     <string name="versions_how">„Ältere Versionen abschalten“ stoppt sofort auf jedem Telefon die Apps, die älter sind als diese: Sie zeigen nur den Link zur neuesten. Die Daten bleiben.</string>

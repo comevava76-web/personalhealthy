@@ -445,6 +445,7 @@ S.check("admin", "W19", "web: min version above newest installed -> 400", r.stat
 await call(bob, "GET", "/v1/me", null, { version: 99999 });
 r = await web("GET", "/my/api/admin/overview", { cookie: sessO.cookie });
 S.check("admin", "W20", "newest version cannot be inflated by one user's X-App-Version header", r.json.versions.newest < 99999, `newest = ${r.json.versions.newest}`);
+S.check("admin", "W20b", "version spread: people per app version, adding up to all users", Array.isArray(r.json.versions.spread) && r.json.versions.spread.reduce((a, x) => a + x.n, 0) === r.json.totals.users, JSON.stringify(r.json.versions.spread));
 await call(bob, "GET", "/v1/me");
 run("UPDATE persons SET app_version = '0.1.200' WHERE id = ?", bob.pid);
 

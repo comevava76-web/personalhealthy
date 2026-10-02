@@ -118,9 +118,12 @@ async function trialStart(q: Q, keys: string[]): Promise<number> {
   return Number(r?.s) || 0;
 }
 
-async function appAllowed(q: Q, version: number): Promise<boolean> {
+/** Only one version is kept (decision of Human): every app older than the newest build deployed (APP_VERSION, set by
+ *  the pipeline) gets only the page to install the latest one, at every start. app_min_version, app_blocked and
+ *  app_off still work on top of it, for emergencies (Actions → App versions). */
+async function appAllowed(q: Q, version: number, latest: number): Promise<boolean> {
   const g = await appGate(q);
-  return !g.off && version >= g.min && !g.blocked.includes(version);
+  return !g.off && version >= Math.max(g.min, latest) && !g.blocked.includes(version);
 }
 
 const TZ = "Europe/Zurich";
@@ -439,7 +442,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     try {
       // asked by the app when it opens, before anything else: is this version still allowed?
       if (req.method === "GET" && url.pathname === "/v1/app-status")
-        return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
+        return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0, Number(env.APP_VERSION) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
       const res = (await handleWeb(req, env, q, url, async () => true, () => AUTHENTICATED.add(req)))   // the web is never behind the subscription
         ?? (await handle(req, env, q, url));
@@ -493,7 +496,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   if (!tsn || Math.abs(Date.now() - tsn) > 5 * 60e3)
     return fail("Phone clock is wrong: turn on automatic date and time.", 401, "bad_clock");
   // a version switched off remotely can do nothing at all
-  if (!(await appAllowed(q, Number(req.headers.get("X-App-Version")) || 0)))
+  if (!(await appAllowed(q, Number(req.headers.get("X-App-Version")) || 0, Number(env.APP_VERSION) || 0)))
     return fail("This version of HINT 365 has been switched off: install the latest one.", 426, "app_disabled");
   const message = `${req.method}\n${url.pathname + url.search}\n${ts}\n${await sha256Hex(body)}`;
   let data: any = {};

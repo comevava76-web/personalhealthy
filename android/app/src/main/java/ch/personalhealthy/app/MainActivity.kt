@@ -436,6 +436,8 @@ fun App() {
         val observer = LifecycleEventObserver { _, event ->
             // back in the app: fresh readings (there is no refresh button)
             if (event == Lifecycle.Event.ON_RESUME) checkAppGate()
+            // a newer version on Google Play: Google's own update window, like every app on the store
+            if (event == Lifecycle.Event.ON_RESUME) (ctx as? android.app.Activity)?.let { PlayUpdate.check(it) }
             if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -1117,7 +1119,8 @@ fun SubscribeScreen(expired: Boolean, price: String?, busy: Boolean, onBuy: () -
     if (deleteAsk) AlertDialog(onDismissRequest = { deleteAsk = false }, title = { Text(t(R.string.account_delete_q1)) }, text = { Text(t(R.string.account_delete_t1)) }, confirmButton = { TextButton(onClick = { deleteAsk = false; onDeleteAccount() }) { Text(t(R.string.account_delete_confirm)) } }, dismissButton = { TextButton(onClick = { deleteAsk = false }) { Text(t(R.string.cancel)) } })
 }
 
-/** This version was switched off remotely: nothing works until the latest one is installed. The data stay on the server. */
+/** Only the newest version works (or this one was switched off): from Google Play, Google's update window opens by
+ *  itself and this screen is only behind it; outside Google Play (test phase), the download link. The data stay. */
 @Composable
 fun AppOffScreen() {
     val ctx = LocalContext.current
@@ -1126,11 +1129,10 @@ fun AppOffScreen() {
         Spacer(Modifier.height(24.dp))
         Text(t(R.string.app_off_title), color = C.Ink, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
         Panel { Text(t(R.string.app_off_text, BuildConfig.VERSION_NAME), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp) }
-        BigButton(t(R.string.app_off_download)) {
-            try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(DOWNLOAD_URL))) }
-            catch (_: Exception) { toast(ctx, t(R.string.no_browser)) }
-        }
+        BigButton(t(R.string.app_off_download)) { (ctx as? android.app.Activity)?.let { PlayUpdate.update(it) } }
     }
+    // only one version is kept: from Google Play, Google's update window opens by itself
+    LaunchedEffect(Unit) { (ctx as? android.app.Activity)?.let { PlayUpdate.check(it) } }
 }
 
 @Composable

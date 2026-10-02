@@ -323,9 +323,9 @@
     <string name="credit_how">Only Anthropic sees the exact balance: “Top up” opens your page. Here you see whether there is credit (Anthropic is asked, and Scan follows the answer) and what your photos cost.</string>
     <string name="version_standard">AI features off</string>
     <string name="version_premium">AI features on ✦</string>
-    <string name="app_off_title">This version of HINT 365 has been switched off</string>
-    <string name="app_off_text">Version %1$s can no longer be used. Install the latest one: it goes over this one and your readings stay safe on the server. When it opens, you will be asked to accept the terms again.</string>
-    <string name="app_off_download">Download the latest version</string>
+    <string name="app_off_title">A new version of HINT 365 is available</string>
+    <string name="app_off_text">Version %1$s is no longer used: HINT 365 keeps only the newest version. Update to continue: the new one installs over this one and your data stay safe on the server. When it opens, you may be asked to accept the terms again.</string>
+    <string name="app_off_download">Update HINT 365</string>
     <string name="section_versions">App versions</string>
     <string name="versions_state">This app: version %1$s</string>
     <string name="versions_how">“Switch off older versions” stops at once, on every phone, the apps older than this one: they show only the link to download the latest. Their data stay.</string>

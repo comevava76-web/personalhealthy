@@ -409,3 +409,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Done (server only): `TERMS_MIN_APP = 122` in `index.ts`; builds below it record the acceptance of the terms they show (their version and text fingerprint) and `disclaimerOk`/the save gates accept any earlier acceptance; builds from 122 need v22. Tests T7–T12; P-010 in problems.json; rule in CLAUDE.md; overview release section.
 - Tests: local functional 188 pass / 0 fail; labs-security pass.
 - Next: Human installs 0.1.122 from the download link (the phone was still on 0.1.121).
+
+### 2026-10-02 night — Claude Code — one version only, Google Play in-app update, web terms readable, database diagram
+
+- Human asked: web terms readable on the light theme (text now dark, `--text` in `pages.ts`); explained «Sblocca tutte le versioni» (it removed the minimum-version block) and removed both buttons; only one version must work, updated the way every store app does (no page of ours); the database diagram in the general document.
+- Done: `appAllowed` accepts only the newest build (`APP_VERSION` from the deploy) on top of the emergency settings; `PlayUpdate.kt` (Google Play In-App Updates, immediate flow, `com.google.android.play:app-update:2.1.0`) at start and on every return; fallback screen only outside Google Play (download link); update texts in 4 languages; Admin card shows only the version in use; docs (overview release/patch, architecture, vulnerability management, CLAUDE.md); P-010 updated. General document section 4: database diagram (crow's foot; generator `docs/overview/database-diagram.py`) and a table of what each table holds and how long.
+- Tests: local functional 188 pass / 0 fail; labs-security pass. The APK compiles only in CI (no Android SDK here).
+- Limits: when HINT 365 is on Google Play, the server's "newest version" must follow the version live on the store, not the build just deployed (to set at publication). iOS: App Store equivalent when the iOS app exists.
+- Next: CI green → merge → Build 0.1.123 → Human installs it from the link (0.1.121 on the phone will now show only the update).

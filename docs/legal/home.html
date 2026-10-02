@@ -1,8 +1,8 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>HINT 365 · HealthyInstantTracker</title><style>
-  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; --rule:#2A3F66; color-scheme:dark; }
+  :root { --bg:#0F1D38; --panel:#172B50; --ink:#EAF0FA; --muted:#9AAACA; --accent:#8C7BF2; --rule:#2A3F66; --text:#D6DEEC; color-scheme:dark; }
   /* the device's light setting: the same light colours as the app and the Web Dashboard */
-  @media (prefers-color-scheme: light) { :root { --bg:#F4F6FB; --panel:#FFFFFF; --ink:#13223F; --muted:#5B6B88; --accent:#6D5BD0; --rule:#D9E0EA; color-scheme:light; } }
+  @media (prefers-color-scheme: light) { :root { --bg:#F4F6FB; --panel:#FFFFFF; --ink:#13223F; --muted:#5B6B88; --accent:#6D5BD0; --rule:#D9E0EA; --text:#13223F; color-scheme:light; } }
   * { box-sizing:border-box; }
   table.costs { width:100%; border-collapse:collapse; margin:8px 0 14px; font-size:14px; }
   table.costs th, table.costs td { text-align:left; vertical-align:top; padding:8px; border-bottom:1px solid var(--rule); }
@@ -15,7 +15,7 @@
   header p { margin:0; color:var(--muted); font-size:14px; }
   h2 { font-size:20px; margin:32px 0 8px; }
   h3 { font-size:16px; margin:20px 0 4px; }
-  p, li { color:#D6DEEC; }
+  p, li { color:var(--text); }   /* readable on both themes: dark text on the light page */
   a { color:var(--accent); }
   .box { background:var(--panel); border-radius:14px; padding:4px 20px 16px; margin-top:18px; }
   .muted { color:var(--muted); font-size:14px; }

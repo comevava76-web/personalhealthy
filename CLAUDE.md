@@ -46,10 +46,14 @@ Before closing a session, refresh the handover's current state, append a dated e
   sono in `.github/CODEOWNERS`: ogni modifica richiede l'approvazione di Human (con «Require review from Code Owners» su main).
   Claude non unisce da solo una PR che li tocca: la apre e aspetta l'approvazione.
 - **Condizioni d'uso vincolanti**: mostrate alla prima installazione, a ogni aggiornamento dell'app e quando cambia il testo
-  (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms` e `TERMS_MIN_APP` nel server = prima build con il nuovo testo. Le app più vecchie non si bloccano (decisione di Human): continuano con le condizioni che mostrano (accettazione registrata con quella versione) finché non si aggiorna; le nuove condizioni si chiedono con l'aggiornamento.
-- **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
-  `app_min_version`, quelle in `app_blocked` o tutte con `app_off` (tabella `settings`). Si comanda dall'app (gestore) o da
-  Actions → *App versions*. Non togliere questo controllo.
+  (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms` e `TERMS_MIN_APP` nel server = prima build con il nuovo testo; le nuove condizioni si chiedono subito dopo l'aggiornamento.
+- **Una sola versione** (decisione di Human, per semplicità di gestione): funziona solo l'ultima build (`APP_VERSION`
+  del deploy); ogni app più vecchia non può più usare il server e propone l'aggiornamento. L'aggiornamento si fa come in
+  tutte le app dello store: all'avvio e a ogni ritorno l'app chiede a Google Play e apre la finestra di aggiornamento di
+  Google (in-app update immediato, `PlayUpdate.kt`; su iOS l'equivalente App Store); nessuna pagina nostra, se non come
+  ripiego fuori dal Play Store (APK di prova: link di download). Quando l'app sarà sul Play Store, l'ultima versione per il
+  server deve seguire quella davvero pubblicata, non quella appena compilata. Restano per le emergenze `app_min_version`,
+  `app_blocked`, `app_off` (Actions → *App versions*). Non togliere questo controllo.
 - **Abbonamento alle funzionalità AI** (decisione di Human del 02.10.2026): l'app è gratuita (voce, referti, grafici,
   report, Web Dashboard) a discrezione dell'owner, che nelle condizioni si riserva di cambiare prezzi, togliere il gratuito, mettere
   tutta l'app a pagamento o ritirarla (con nuova versione delle condizioni; nell'app non va scritto altrove). Si pagano solo le funzionalità AI, oggi lo Scan: 4,99 US$ all'anno via Google Play (`hint365_annual`),
@@ -77,7 +81,7 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Nell'app niente menu Report**: i report completi si aprono dal pulsante in fondo a Pressione e a Referti. Lo storico in Referti mostra solo i referti salvati; rifiuti e doppioni solo nei log (`error_log`, `event_log`). Il Gestore mostra quante misure e quanti referti, Google e account; niente costi.
 - **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha
-  nella Web Dashboard la console **Admin** (quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; poi «Conti in breve», quattro riquadri colorati con la palette, mai rosso (incassato, speso in AI, utenti, spesa massima della prova stimata per quegli utenti e ogni 100: il limite vero resta il tetto sulla console del fornitore AI); poi le tabelle **Consumi** (Scan e costo AI per mese) e **Entrate e uscite** (abbonamenti, entrate, dopo Google Play, uscite AI, differenza: stime, da `ai_spend_daily` e `sub_sales_daily`, solo totali); sotto il pulsante a Observability e il blocco versioni; senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
+  nella Web Dashboard la console **Admin** (quattro numeri: vulnerabilità aperte nel codice dell'app e nelle librerie Android/iOS, difetti aperti, compliance non coperta del tutto; poi «Conti in breve», quattro riquadri colorati con la palette, mai rosso (incassato, speso in AI, utenti, spesa massima della prova stimata per quegli utenti e ogni 100: il limite vero resta il tetto sulla console del fornitore AI); poi le tabelle **Consumi** (Scan e costo AI per mese) e **Entrate e uscite** (abbonamenti, entrate, dopo Google Play, uscite AI, differenza: stime, da `ai_spend_daily` e `sub_sales_daily`, solo totali); sotto il pulsante a Observability e la versione in uso (solo l'ultima funziona, nessun pulsante) con una casella per versione e quante persone la hanno (una vecchia = app non più aperta); senza le schede Pressione e Referti), aperta dall'icona **Admin** nell'app (l'ultima, solo owner); il tab dell'account nell'app si chiama **Gestore**:
   mai valori delle misure, report o nomi. L'abbonamento resta pronto ma spento finché l'app non esce sul Play Store.
 - **Poteri dell'owner solo sul suo telefono** (chiesto da Human: l'email da sola non basta): console Admin, versioni e impostazioni
   funzionano solo dal telefono registrato come owner (`owner_key`); chi ruba l'account Google e lo sposta su un altro telefono non li ha.
@@ -91,7 +95,7 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
-  stesso commit i documenti che tocca: architettura (6 pagine, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  stesso commit i documenti che tocca: architettura (7 pagine, la 7 è lo schema del database, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni

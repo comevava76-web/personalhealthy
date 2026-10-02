@@ -102,6 +102,8 @@ dependencies {
     // Sign in with Google (Credential Manager): only to create the account and to recover it on a new phone
     // yearly subscription through Google Play
     implementation("com.android.billingclient:billing-ktx:7.1.1")
+    // updates like every app on Google Play: Google's own update window inside the app (PlayUpdate.kt)
+    implementation("com.google.android.play:app-update:2.1.0")
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")

@@ -321,9 +321,9 @@
     <string name="credit_how">Il saldo esatto lo vede solo Anthropic: «Ricarica» apre la tua pagina. Qui vedi se il credito c’è (lo chiediamo ad Anthropic, e Scan segue la risposta) e quanto costano le tue foto.</string>
     <string name="version_standard">Funzionalità AI non attive</string>
     <string name="version_premium">Funzionalità AI attive ✦</string>
-    <string name="app_off_title">Questa versione di HINT 365 è stata disattivata</string>
-    <string name="app_off_text">La versione %1$s non si può più usare. Installa l\'ultima: si mette sopra questa e le tue misure restano al sicuro sul server. Quando si apre, ti chiederà di accettare di nuovo le condizioni.</string>
-    <string name="app_off_download">Scarica l\'ultima versione</string>
+    <string name="app_off_title">È disponibile una nuova versione di HINT 365</string>
+    <string name="app_off_text">La versione %1$s non si usa più: HINT 365 tiene solo l\'ultima versione. Aggiorna per continuare: la nuova si installa sopra questa e i tuoi dati restano al sicuro sul server. Quando si apre, potrebbe chiederti di accettare di nuovo le condizioni.</string>
+    <string name="app_off_download">Aggiorna HINT 365</string>
     <string name="section_versions">Versioni dell\'app</string>
     <string name="versions_state">Questa app: versione %1$s</string>
     <string name="versions_how">«Disattiva le versioni precedenti» ferma subito, su ogni telefono, le app più vecchie di questa: mostrano solo il link per scaricare l\'ultima. I dati restano.</string>
