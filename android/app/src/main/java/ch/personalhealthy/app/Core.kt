@@ -481,6 +481,10 @@ object Repo {
         Api.call("POST", "/v1/bp/photo", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("takenAt", takenAt), pid)
     }
 
+    /** The free photo Scan (terms v21): the server reads the display with the owner's key and answers the numbers or a retake reason. */
+    suspend fun photoRead(pid: String, jpegB64: String): JSONObject =
+        Api.call("POST", "/v1/bp/photo/read", JSONObject().put("image", jpegB64), pid)
+
     /** How a photo Scan ended when nothing was saved (retake reason, or "wrong"): a code only. Never fails. */
     suspend fun photoOutcome(pid: String, code: String) {
         try { Api.call("POST", "/v1/bp/photo/outcome", JSONObject().put("code", code), pid) } catch (_: Exception) { }

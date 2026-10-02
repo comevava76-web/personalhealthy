@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (photo Scan back without AI, terms v20; dashboard opens on the tab you start from).
+Last updated: 2026-10-02, Europe/Zurich. Last editor: Claude Code (Scan via server, 3/day paid by the owner, up to 30 with own key; PR #131 awaiting Human's go).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -350,3 +350,13 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Human tested the Scan without AI on a sharp photo of a Medisana monitor: «not clear». Reproduced locally (MonitorReader → unclear); real photos read so far: 0 of 7 (P-009). Decision of Human: Scan with AI, off by default, unlocked with the person's own key, any provider.
 - App: `AiScan.kt` (providers Claude/ChatGPT/Gemini/Kimi; key checked with the provider's model list, which also picks the vision model; key AES-GCM encrypted with the Android Keystore, only on the phone; photo → provider directly; JSON answer; plausibility check), `AiScreen.kt` (provider chips, «where do I find the key», key field, «Verifica e attiva», remove). Home: Scan grey with «Sblocca questa funzionalità» until unlocked; Gestore: «Funzionalità AI». Retake reasons `ai_key`, `ai_quota`, `ai_network`, `ai_error` (also counted on the server as `bp_photo_ai_*`). The app no longer uses MonitorReader/ML Kit for the Scan (module `android/reader` kept, unused). Claude: `claude-opus-5-5`, effort low, server-side fallbacks; retried without them on a 400.
 - Terms v21 (DISCLAIMER_VERSION 21 in app and server), privacy, home, costs note, compliance C06/C08, gdpr.md, guides IT/EN, architecture, CLAUDE.md, problems P-009. Local harness: functional and labs-security PASS. Kotlin compiled by CI; the AI calls are not tested here (no keys): Human tests them on the phone.
+
+### 2026-10-02 — Claude Code — Scan works without a key: 3 a day paid by the owner, up to 30 with one's own key (PR #131, not merged)
+
+- Request: Human said people will never paste their own AI key (a deterrent) and chose: 3 Scans a day per person free, upgrade to 30 a day with one's own key or by paying the owner.
+- Server: `POST /v1/bp/photo/read` (signed) sends the display photo to Anthropic (`claude-opus-5-5`, effort low) with the Worker secret `ANTHROPIC_API_KEY`; the photo is never stored or logged. Limit `SCAN_FREE`=3/day per person (owner 30) → `429 scan_quota`; without the secret → `503 scan_off`; provider failure → `502 scan_failed` + event `bp_photo_ai_error`. `build.yml` sets/deletes the Worker secret from the GitHub secret of the same name.
+- App: Scan button always active; `AiScan.read` uses the server by default, the person's own key (Claude/ChatGPT/Gemini/Kimi, encrypted on the phone) when set, with a local 30/day counter. Quota screen offers «Fino a 30 Scan al giorno con la tua AI». Gestore → «Scan con l'AI».
+- Terms v21, privacy (Anthropic as processor, SCC), home, costs, compliance C06/C08, gdpr.md, guides, architecture, CLAUDE.md, P-009 updated; PDFs regenerated.
+- Tests: local harness functional 173 pass / 0 fail; labs-security PASS; sync-notice check OK. App compiled only by CI.
+- Limits: needs the GitHub secret `ANTHROPIC_API_KEY` (Human's key) and acceptance of Anthropic's commercial terms/DPA (C08). «Pay the owner» for more Scans needs Google Play billing, not active yet.
+- Next: CI on PR #131, then merge **only after Human's explicit go** («Fermo» still holds). Parked: Security console fix report (web only), UI review findings.

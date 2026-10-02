@@ -134,6 +134,8 @@ jobs:
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
           # GitHub token that may open issues in this repository: the Security console's Fix button (optional)
           SECURITY_FIX_TOKEN: ${{ secrets.SECURITY_FIX_TOKEN }}
+          # the owner's Anthropic key for the photo Scan (terms v21: 3 readings a day per person, paid by the owner)
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Google Cloud "Web client ID" for Sign in with Google (not a secret: it only names the app to Google).
           # The repository variable GOOGLE_WEB_CLIENT_ID, if set, takes its place.
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
@@ -164,8 +166,14 @@ jobs:
           jq -n --arg f "$FAMILY_CODE" '{FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
-          # the photo reading with AI is gone (terms v19): the Worker no longer keeps an Anthropic key
-          npx wrangler secret delete ANTHROPIC_API_KEY --force >/dev/null 2>&1 || true
+          # the photo Scan reads with the owner's Anthropic key (terms v21); without the GitHub secret the Scan is off
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            ( umask 077; jq -n --arg k "$ANTHROPIC_API_KEY" '{ANTHROPIC_API_KEY:$k}' > ai.json )
+            npx wrangler secret bulk ai.json
+            rm -f ai.json
+          else
+            npx wrangler secret delete ANTHROPIC_API_KEY --force >/dev/null 2>&1 || true
+          fi
           # sent only when the GitHub secret exists: an empty value would switch the subscription check off
           if [ -n "$PLAY_SERVICE_ACCOUNT" ]; then
             ( umask 077; jq -n --arg k "$PLAY_SERVICE_ACCOUNT" '{PLAY_SERVICE_ACCOUNT:$k}' > play.json )

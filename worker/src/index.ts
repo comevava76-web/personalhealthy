@@ -27,6 +27,7 @@ interface Env {
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
   APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
   GITHUB_FIX_TOKEN?: string;     // Security console "Fix": a GitHub token that may open issues in the repository (owner sets it)
+  ANTHROPIC_API_KEY?: string;    // the owner's key for the photo Scan (terms v21): 3 readings a day per person, paid by the owner
   GITHUB_REPO?: string;          // owner/name of the repository (default comevava76-web/personalhealthy)
 }
 
@@ -344,7 +345,7 @@ const AUTHENTICATED = new WeakSet<Request>();
 const ROUTES = new Set([
   "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout",
   "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription",
-  "/v1/bp/voice", "/v1/bp/photo", "/v1/bp/photo/outcome", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
+  "/v1/bp/voice", "/v1/bp/photo", "/v1/bp/photo/outcome", "/v1/bp/photo/read", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
   "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
   "/my/api/admin/app-min-version", "/my/api/admin/observability", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
 ]);
@@ -766,6 +767,25 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
+  // The photo Scan (terms v21): the photo of the monitor display, read by Claude with the owner's key. At most
+  // SCAN_FREE readings a day per person (the owner pays them; the owner's own account has SCAN_PLUS). The photo is
+  // passed on and never stored or logged; only the three numbers go back to the phone, to be confirmed by the person.
+  if (req.method === "POST" && url.pathname === "/v1/bp/photo/read") {
+    if (!env.ANTHROPIC_API_KEY) return fail("The photo Scan is not available now: record by voice.", 503, "scan_off");
+    const image = typeof data.image === "string" ? data.image : "";
+    if (image.length < 1000 || image.length > 4_000_000 || !/^[A-Za-z0-9+/=]+$/.test(image)) return fail("Bad photo", 400, "bad_photo");
+    const [who] = await q("SELECT is_admin FROM persons WHERE id = ?1", [pid]);
+    const limit = who?.is_admin ? SCAN_PLUS : SCAN_FREE;
+    if (await tooMany(q, "scan_ai:" + pid, limit, DAY)) return fail("Daily Scan limit reached", 429, "scan_quota");
+    try {
+      const answer = await readMonitor(env.ANTHROPIC_API_KEY, image);
+      return json(answer);
+    } catch (e) {
+      await countEvent(q, "bp_photo_ai_error", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
+      return fail("The photo could not be read now: try again or record by voice.", 502, "scan_failed");
+    }
+  }
+
   // 3) List of measurements
   if (req.method === "GET" && url.pathname === "/v1/bp") {
     const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 400);
@@ -798,4 +818,49 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   return fail("Not found", 404, "not_found");
+}
+
+/** Free photo Scans a day per person (paid by the owner), and the owner's own allowance (asked by Human, 02.10.2026). */
+const SCAN_FREE = 3, SCAN_PLUS = 30;
+
+const SCAN_PROMPT = "This is a photo of the display of a home blood-pressure monitor. Read the three measured numbers: " +
+  "SYS (systolic, usually the top and largest), DIA (diastolic, below it) and PUL (pulse, the smallest, often next to a " +
+  "heart symbol or PUL/min). Ignore the date, the time, the memory number and any other text. Answer with JSON only, no " +
+  "other words: {\"sys\": <number>, \"dia\": <number>, \"pul\": <number>}. If any of the three numbers cannot be read " +
+  "with certainty, or this is not a monitor display, answer {\"retake\": \"<reason>\"} with reason one of: not_found, " +
+  "unclear, glare, dark, blurry. Never guess a digit.";
+
+/** Asks Claude for the three numbers of the display; the answer is checked like any other input before it goes back. */
+async function readMonitor(key: string, jpegB64: string): Promise<Record<string, unknown>> {
+  const body = (extras: boolean) => JSON.stringify({
+    model: "claude-opus-5-5", max_tokens: 2000,
+    ...(extras ? { output_config: { effort: "low" }, fallbacks: "default" } : {}),
+    messages: [{ role: "user", content: [
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpegB64 } },
+      { type: "text", text: SCAN_PROMPT },
+    ] }],
+  });
+  const ask = (extras: boolean) => fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01",
+      ...(extras ? { "anthropic-beta": "server-side-fallback-2026-07-01" } : {}),
+    },
+    body: body(extras),
+  });
+  let r = await ask(true);
+  if (r.status === 400) r = await ask(false);   // a model or account that does not take effort or fallbacks
+  if (!r.ok) throw new Error("anthropic " + r.status);
+  const m: any = await r.json();
+  if (m.stop_reason === "refusal") return { retake: "unclear" };
+  const text = (m.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
+  const a = text.indexOf("{"), z = text.lastIndexOf("}");
+  if (a < 0 || z <= a) return { retake: "unclear" };
+  let o: any;
+  try { o = JSON.parse(text.slice(a, z + 1)); } catch { return { retake: "unclear" }; }
+  if (o.retake) return { retake: ["not_found", "unclear", "glare", "dark", "blurry"].includes(o.retake) ? o.retake : "unclear" };
+  const sys = Number(o.sys), dia = Number(o.dia), pul = Number(o.pul);
+  const ok = Number.isInteger(sys) && Number.isInteger(dia) && Number.isInteger(pul) &&
+    sys >= 60 && sys <= 260 && dia >= 30 && dia <= 160 && dia < sys && sys - dia >= 10 && pul >= 30 && pul <= 220;
+  return ok ? { sys, dia, pul } : { retake: "implausible" };
 }

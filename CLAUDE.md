@@ -49,15 +49,17 @@ Before closing a session, refresh the handover's current state, append a dated e
   privacy e documento. L'app non usa cookie; la Web Dashboard usa solo il cookie tecnico `hint_s`, salvato solo dopo il consenso
   nell'avviso cookie. Ogni nuovo cookie o dato nel browser va dichiarato nelle condizioni (nuova versione) e nella privacy.
 - **Politica dei costi** (tabella in app, condizioni e home): solo l'app, 5 $/anno al proprietario via Google Play; nessun altro
-  costo di HINT 365. Le funzionalità AI facoltative le paga la persona al proprio fornitore AI, sul proprio abbonamento.
-- **Scan della foto del misuratore con l'AI della persona** (condizioni v21, decisione di Human del 02.10.2026, dopo che il
-  lettore senza AI delle v20 non leggeva i display veri): spento di base; il pulsante Scan è grigio con «Sblocca questa
-  funzionalità» e apre `AiScreen` (anche da Gestore → Funzionalità AI). La persona sceglie il fornitore (Claude, ChatGPT,
-  Gemini, Kimi) e incolla la propria chiave API: verificata con l'elenco dei modelli, conservata **solo sul telefono**, cifrata
-  con il Keystore di Android (`AiScan.kt`). A ogni Scan la foto va **dal telefono al fornitore**, con quella chiave, senza nome
-  né account; mai al server di HINT 365, che non riceve né foto né chiave. I numeri si mostrano e si salvano solo dopo la
-  conferma; valori non plausibili = rifare la foto. Al server solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti
-  (`bp_photo_*`, anche `ai_key`, `ai_quota`, `ai_network`, `ai_error`). Il server di HINT 365 non manda nulla a fornitori AI.
+  costo di HINT 365. I 3 Scan al giorno li paga l'owner (chiave Anthropic nel secret del Worker); oltre, fino a 30, la persona
+  con la propria chiave AI. Il pagamento all'owner per più Scan arriverà con Google Play (non ancora attivo).
+- **Scan della foto del misuratore con l'AI** (condizioni v21, decisione di Human del 02.10.2026: il lettore senza AI delle
+  v20 non leggeva i display veri; far inserire una chiave a tutti sarebbe un deterrente). Pulsante Scan sempre attivo:
+  **3 Scan al giorno per persona gratis**, pagati dall'owner: la foto del solo display va al Worker (`POST /v1/bp/photo/read`,
+  mai salvata né registrata) e da lì ad Anthropic (`claude-opus-5-5`, chiave nel secret `ANTHROPIC_API_KEY`, impostato dalla
+  pipeline dal secret GitHub omonimo; senza secret lo Scan risponde `scan_off`). Limite `SCAN_FREE`=3/giorno, owner 30.
+  Oltre i 3: «Fino a 30 Scan al giorno con la tua AI» → `AiScreen` (anche da Gestore → Scan con l'AI): la persona incolla la
+  propria chiave (Claude, ChatGPT, Gemini, Kimi), verificata e cifrata **solo sul telefono** (`AiScan.kt`); con quella la foto
+  va dal telefono al fornitore, fino a 30 al giorno. I numeri si mostrano e si salvano solo dopo la conferma; valori non
+  plausibili = rifare la foto. Si salvano solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti (`bp_photo_*`).
   Il modulo `android/reader` (MonitorReader) resta nel repository ma l'app non lo usa più.
 - **Nell'app niente menu Report**: i report completi si aprono dal pulsante in fondo a Pressione e a Referti. Lo storico in Referti mostra solo i referti salvati; rifiuti e doppioni solo nei log (`error_log`, `event_log`). Il Gestore mostra quante misure e quanti referti, Google e account; niente costi.
 - **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.

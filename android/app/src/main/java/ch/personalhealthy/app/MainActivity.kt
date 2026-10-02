@@ -455,7 +455,7 @@ fun App() {
             try {
                 val b = MonitorScan.load(photoFile)
                 photo = b
-                val r = AiScan.read(ctx, b)
+                val r = AiScan.read(ctx, personId, b)
                 photoRead = r
                 if (r is MonitorScan.Result.Retake) photoOutcome(r.reason)
             } catch (e: Exception) {
@@ -593,7 +593,8 @@ fun App() {
                 onWrong = { photoOutcome("wrong"); photoFile.delete(); openCamera() },
                 onRetake = { photoFile.delete(); openCamera() },
                 onVoice = { closePhoto(); openVoice() },
-                onCancel = { closePhoto() }
+                onCancel = { closePhoto() },
+                onMoreScans = { closePhoto(); screen = "ai" }
             )
             screen == "voice" && voice != null -> VoiceScreen(
                 values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
@@ -1201,10 +1202,8 @@ fun HomeScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             BigButton(t(R.string.record_short), color = C.Voice, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
-            // the Scan works with the person's own AI subscription: grey, with "Unlock this feature", until a key is saved
-            if (AiScan.active == null) BigButton(t(R.string.scan_short), color = C.Surface2, textColor = C.Muted, modifier = Modifier.weight(1f),
-                icon = R.drawable.ic_camera, sub = t(R.string.ai_unlock_short), onClick = onUnlockAi)
-            else BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
+            // the Scan reads the photo with AI: 3 a day free (paid by the owner), up to 30 with the person's own key
+            BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
         }
         Spacer(Modifier.height(6.dp))
 
@@ -1528,7 +1527,8 @@ private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() ->
 @Composable
 fun PhotoScreen(
     photo: android.graphics.Bitmap?, result: MonitorScan.Result?, takenAt: Long, saving: Boolean,
-    onSave: (MonitorScan.Result.Values) -> Unit, onWrong: () -> Unit, onRetake: () -> Unit, onVoice: () -> Unit, onCancel: () -> Unit
+    onSave: (MonitorScan.Result.Values) -> Unit, onWrong: () -> Unit, onRetake: () -> Unit, onVoice: () -> Unit, onCancel: () -> Unit,
+    onMoreScans: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.new_reading), t(R.string.photo_sub), t(R.string.cancel), onCancel)
@@ -1550,7 +1550,11 @@ fun PhotoScreen(
             }
             is MonitorScan.Result.Retake -> {
                 Panel {
-                    Text(t(if (result.reason.startsWith("ai_")) R.string.photo_ai_title else R.string.photo_retake_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(t(when {
+                        result.reason.startsWith("quota") -> R.string.photo_quota_title
+                        result.reason.startsWith("ai_") -> R.string.photo_ai_title
+                        else -> R.string.photo_retake_title
+                    }), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     Text(t(when (result.reason) {
                         "dark" -> R.string.photo_why_dark
                         "glare" -> R.string.photo_why_glare
@@ -1561,11 +1565,14 @@ fun PhotoScreen(
                         "ai_quota" -> R.string.photo_why_ai_quota
                         "ai_network" -> R.string.photo_why_ai_network
                         "ai_error" -> R.string.photo_why_ai_error
+                        "quota_free" -> R.string.photo_why_quota_free
+                        "quota_own" -> R.string.photo_why_quota_own
                         else -> R.string.photo_why_not_found
                     }), color = C.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
-                    Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                    if (!result.reason.startsWith("quota")) Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
                 }
-                BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
+                if (result.reason == "quota_free") BigButton(t(R.string.photo_more_scans), onClick = onMoreScans)
+                else if (result.reason != "quota_own") BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
                 BigButton(t(R.string.photo_use_voice), color = C.Surface2, textColor = C.Ink, icon = R.drawable.ic_mic, onClick = onVoice)
             }
             is MonitorScan.Result.Values -> {

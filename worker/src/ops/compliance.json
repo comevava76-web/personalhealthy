@@ -70,7 +70,7 @@
    "requirement": "Stored data protected against unauthorised access",
    "law": "GDPR Art. 32 · FADP Art. 8",
    "status": "partial",
-   "evidence": "Only the Worker reaches D1; no third-party API keys stored on the server (the optional AI Scan of terms v21 keeps the person's own key only on the phone, encrypted with the Android Keystore); codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked",
+   "evidence": "Only the Worker reaches D1; the owner's Anthropic key for the Scan is a Worker secret (never in D1 or the repository); a person's own AI key, if added, stays only on the phone, encrypted with the Android Keystore; codes, cookies, links and files as fingerprints. Health values are not field-encrypted and D1 disk encryption is not stated in Cloudflare's documentation we checked",
    "next": "Decide whether to encrypt lab and pressure values per account",
    "doc": "docs/compliance/gdpr.md",
    "declared": [
@@ -96,8 +96,8 @@
    "requirement": "Transfers named, with safeguards",
    "law": "GDPR Art. 13(1)(f), 44–49 · FADP Art. 16",
    "status": "partial",
-   "evidence": "Only Google (sign-in, billing) outside the EU, named with DPF/SCC. The optional photo Scan (terms v21) sends the photo of the monitor display straight from the phone to the AI provider the person chose (Claude/Anthropic, ChatGPT/OpenAI, Gemini/Google or Kimi/Moonshot, possibly outside the EU) with the person's own key, under the person's own contract with that provider; HINT 365 receives neither the photo nor the key, only the three confirmed numbers. Off by default; lab documents are never transferred",
-   "next": "Legal review of the wording (G3), including the person-to-provider transfer of the Scan photo",
+   "evidence": "Google (sign-in, billing) and Anthropic (photo Scan, terms v21) outside the EU, named with DPF/SCC. The free Scan (3 a day) sends the photo of the display alone through the Worker to Anthropic, which reads it as processor and does not train on it; the Worker neither stores nor logs it. With a person's own key (up to 30 a day) the photo goes from the phone straight to the provider they chose, under their own contract. Only the three confirmed numbers are stored; lab documents are never transferred",
+   "next": "Accept Anthropic's commercial terms and DPA on the owner's account; legal review of the wording (G3)",
    "doc": "docs/compliance/gdpr.md",
    "declared": [
     "Account, storage and providers"

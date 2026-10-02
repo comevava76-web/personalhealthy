@@ -87,8 +87,22 @@ object AiScan {
     }
 
     /** Reads SYS, DIA and pulse from the photo of the display with the person's provider. */
-    suspend fun read(ctx: Context, photo: Bitmap): MonitorScan.Result = withContext(Dispatchers.IO) {
+    /** Scans a day with the person's own key (their subscription pays; the app keeps the same daily ceiling). */
+    const val OWN_PER_DAY = 30
+
+    /**
+     * Reads SYS, DIA and pulse from the photo of the display: with the person's own key when they added one (up to
+     * OWN_PER_DAY a day, straight to their provider), otherwise through HINT 365's server with the owner's key
+     * (3 a day, terms v21; the server passes the photo on to Claude and keeps nothing).
+     */
+    suspend fun read(ctx: Context, pid: String?, photo: Bitmap): MonitorScan.Result = withContext(Dispatchers.IO) {
         val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (active == null) return@withContext viaServer(pid, photo)
+        // the person's own key: at most OWN_PER_DAY a day, counted on this phone
+        val today = java.time.LocalDate.now().toString()
+        val used = if (p.getString("aiDay", null) == today) p.getInt("aiCount", 0) else 0
+        if (used >= OWN_PER_DAY) return@withContext MonitorScan.Result.Retake("quota_own")
+        p.edit().putString("aiDay", today).putInt("aiCount", used + 1).apply()
         val provider = Provider.of(p.getString("aiProvider", null)) ?: return@withContext MonitorScan.Result.Retake("ai_key")
         val key = p.getString("aiKey", null)?.let { runCatching { decrypt(it) }.getOrNull() }
             ?: return@withContext MonitorScan.Result.Retake("ai_key")
@@ -105,6 +119,19 @@ object AiScan {
             return@withContext MonitorScan.Result.Retake(when (e.code) { 401, 403 -> "ai_key"; 402, 429 -> "ai_quota"; else -> "ai_error" })
         } catch (e: java.io.IOException) { return@withContext MonitorScan.Result.Retake("ai_network") }
         parse(answer)
+    }
+
+    /** The free Scan: the photo to HINT 365's server, which asks Claude with the owner's key and returns the numbers. */
+    private suspend fun viaServer(pid: String?, photo: Bitmap): MonitorScan.Result {
+        if (pid == null) return MonitorScan.Result.Retake("ai_error")
+        val r = try { Repo.photoRead(pid, jpegBase64(photo)) } catch (e: ApiException) {
+            return MonitorScan.Result.Retake(when (e.code) {
+                "scan_quota" -> "quota_free"
+                "network" -> "ai_network"
+                else -> "ai_error"
+            })
+        }
+        return parse(r.toString())
     }
 
     // ---------- the answer ----------
