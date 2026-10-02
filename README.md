@@ -61,7 +61,7 @@ It is never replaced: a new one would make the stored friend keys unreadable, an
 In the repository open **Actions** → "Build PersonalHealthy" → **Run workflow**. It is ready after 5-8 minutes.
 
 ### 6. Install on the phone
-Anyone can download the latest app from the server: `https://personalhealthy-api.comevava76.workers.dev/download`
+Anyone can download the latest app from the server: `https://personalhealthy-api.hint365.workers.dev/download`
 (the build publishes it there, since the repository is private). The Admin tab has "Share the app", which sends this
 link.
 1. Open the link on the phone and download `HINT.apk`.

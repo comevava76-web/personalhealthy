@@ -1,0 +1,49 @@
+{
+ "f1-bp": {
+  "share": {
+   "x": 237,
+   "y": 32
+  },
+  "pdf": {
+   "x": 363,
+   "y": 32
+  }
+ },
+ "f2-charts": {
+  "chart": {
+   "x": 500,
+   "y": 417
+  }
+ },
+ "f3-hover": {
+  "point": {
+   "x": 610,
+   "y": 383
+  }
+ },
+ "f4-share": {},
+ "f5-labs": {},
+ "u1-admin": {
+  "tiles": {
+   "x": 500,
+   "y": 192
+  },
+  "obs": {
+   "x": 146,
+   "y": 365
+  }
+ },
+ "u2-versions": {},
+ "u3-observability": {
+  "vulns": {
+   "x": 821,
+   "y": 240
+  },
+  "compliance": {
+   "x": 500,
+   "y": 240
+  }
+ },
+ "u4-vulns": {},
+ "u5-compliance": {}
+}

@@ -4,18 +4,19 @@ name: Security tests
 #  - On every pull request that touches the server, the web or the tests: the functional and security suite
 #    (signatures, replay, IDOR, limits, privacy, doctor links, admin rights, purge) and the time-zone checks
 #    against a local copy of the Worker. A failed check blocks the merge.
-#  - Every night: the same, plus a passive probe of the live site (headers, forged credentials, guessed links,
+#  - Every Monday night (02:10 Zurich in summer, 01:10 in winter: when the app is used least): the same, plus a passive probe of the live site (headers, forged credentials, guessed links,
 #    error pages, CORS; read-only, it never signs in), the audit of the server's tools, the vulnerability scan
 #    of every library against OSV.dev (full Android tree), Semgrep on our code and gitleaks on the whole history;
 #    the results go to the owner's Security console (Admin → Security) and are kept as an artifact.
-#  - Every Sunday: also the load test (200 clients) and the browser test at 390 px and 1280 px.
+#    In the same weekly run: also the load test (200 clients) and the browser test at 390 px and 1280 px.
 # A scheduled run that fails opens (or updates) an issue labelled security-test; the developer's daily check
 # (06:48 Zurich) reads it together with the error log, fixes what it can and reports in the issue.
 on:
   pull_request:
     paths: ["android/**", "worker/**", "docs/testing/**", ".github/workflows/security-tests.yml"]
   schedule:
-    - cron: "10 4 * * 1"   # every Monday 06:10 in Zurich in summer (Human: vulnerabilities once a week), before the morning routine
+    - cron: "10 0 * * 1"   # every Monday 00:10 UTC = 02:10 Zurich in summer, 01:10 in winter (Human: once a week, at night,
+                           # when the app is used least); done before the nightly backup (01:40 UTC) and the morning routine
   workflow_dispatch:
     inputs:
       full:
@@ -44,9 +45,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Weekly extras on Sundays
+      - name: Weekly extras (the scheduled run is the weekly one)
         if: github.event_name == 'schedule'
-        run: '[ "$(date -u +%u)" = "7" ] && echo "WEEKLY=1" >> "$GITHUB_ENV" || true'
+        run: echo "WEEKLY=1" >> "$GITHUB_ENV"
       - name: Start a local copy of the Worker (dummy secrets, empty database)
         run: |
           cd worker && npm install --no-audit --no-fund --silent && cd ..

@@ -92,10 +92,12 @@ Before closing a session, refresh the handover's current state, append a dated e
   riserva: Actions → *Owner phone*. Non togliere questo controllo.
 - **Disaster recovery** (chiesto da Human): cartella `DR/` con l'Infrastructure as Code (`DR/infrastructure-as-code/infrastructure.json` dichiara i tre D1 UE, Worker, secret, servizi esterni, RPO/RTO; `rebuild.sh` crea ciò che manca e non cancella mai). Backup: D1 Time Travel (7 giorni sul piano Free) + backup notturno cifrato AES-256 (`BACKUP_PASSPHRASE`) nel D1 `personalhealthy-vault` (UE, 30 notti, gratis, niente carta); mai backup su Git. Actions → *Disaster recovery*: `rebuild` (database + tabelle + restore + Build), `restore`, `time-travel`, `drill` ogni mese. Impegni RPO/RTO basati sul piano Cloudflare in uso, sezione 8 del documento generale e runbook `docs/operations/disaster-recovery.md` con ogni passo manuale. R2 / copia fuori account: al lancio su Google Play. Ogni nuova risorsa va in `infrastructure.json` nello stesso commit.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
+  Indirizzo oggi `personalhealthy-api.hint365.workers.dev` (sottodominio gratuito, dal 02.10.2026, **non definitivo**); il dominio
+  definitivo (GoDaddy, DNS su Cloudflare) segue i passi di `docs/operations/domain.md`: nuova build con il nuovo indirizzo e versione vecchia invalidata.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
-  https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
+  https://personalhealthy-api.hint365.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
 - **Documento generale** `docs/HINT365-How-it-works.pdf` (cinque parti, sempre in quest'ordine: funzionale, architettura applicativa, esercizio con job, log e disaster recovery, processi, riferimenti; un argomento nuovo va nella sua parte) (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
@@ -110,6 +112,6 @@ Before closing a session, refresh the handover's current state, append a dated e
   aggiorna `compliance.json`. I bug sicuri si correggono senza chiedere; a Human solo un riassunto.
 - **Ciclo continuo**: ogni mattina *Error log report* (Actions, 06:30) apre una issue `error-log` se ci sono errori; la routine
   programmata di Claude (06:48, «HINT 365 · daily defects check, Monday vulnerabilities and patching») la legge, corregge i bug piccoli con PR e documenti,
-  unisce dopo *Docs check* e riporta nella issue. **Vulnerabilità una volta a settimana** (scelta di Human): scansione il lunedì 06:10, correzione
+  unisce dopo *Docs check* e riporta nella issue. **Vulnerabilità una volta a settimana** (scelta di Human): scansione il lunedì notte alle 02:10, quando l'app si usa meno, correzione
   il lunedì 06:48; in Observability solo quelle aperte, ognuna con la data «will be fixed by» o un motivo breve (`decisions.json`: build_tool,
   not_patchable, false_positive, accepted, patch_failed); niente pulsante Fix. Le modifiche grandi o alle condizioni aspettano Human.

@@ -56,7 +56,7 @@ account); until then, losing the account means starting with empty databases.
 | Database `personalhealthy` (accounts, readings, lab results, logs, settings) | Cloudflare D1, EU | pipeline (*Disaster recovery*) |
 | Database `personalhealthy-backup` (copy of the acceptances of the terms) | Cloudflare D1, EU | pipeline |
 | Database `personalhealthy-vault` (the nightly backups) | Cloudflare D1, EU | pipeline |
-| Server and Web Dashboard (Worker `personalhealthy-api`, address `personalhealthy-api.comevava76.workers.dev`) | Cloudflare Workers | pipeline (*Build*) |
+| Server and Web Dashboard (Worker `personalhealthy-api`, address `personalhealthy-api.hint365.workers.dev`) | Cloudflare Workers | pipeline (*Build*) |
 | Code, documents, pipelines | GitHub `comevava76-web/personalhealthy` | — (any clone) |
 | Keys and secrets | GitHub secrets; the Worker gets them from *Build* | **BY HAND** (section 6) |
 | Sign in with Google | Google Cloud project, OAuth clients | **BY HAND**, only if the address changes |
@@ -88,7 +88,7 @@ The full list, in machine form: `DR/infrastructure-as-code/infrastructure.json`.
 
 **Step 1 · Cloudflare (BY HAND, 10 min)**
 1. Sign in to Cloudflare (a new account if the old one is lost). Copy the **Account ID** (right column of the home page).
-2. Workers & Pages → choose the subdomain **`comevava76`** (so the address stays `personalhealthy-api.comevava76.workers.dev`).
+2. Workers & Pages → choose the subdomain **`hint365`** (so the address stays `personalhealthy-api.hint365.workers.dev`). Once the owner's own domain is in use, also add it back to Cloudflare (`docs/operations/domain.md`, steps 2 and 4).
    If that name is not available, the address changes: see step 6.
 3. My Profile → API Tokens → Create Token → Custom: permissions *Account · D1 · Edit*, *Account · Workers Scripts · Edit*,
    *Account · Account Settings · Read*; limited to this account. Copy the token.
@@ -137,7 +137,7 @@ address to the Google OAuth web client (Authorized JavaScript origins), and send
 On Google Play, publish the new version (Google review: hours to 3 days).
 
 **Step 7 · Check (BY HAND, 5 min)**
-1. `https://personalhealthy-api.comevava76.workers.dev/v1/health` shows `{"ok":true}`.
+1. `https://personalhealthy-api.hint365.workers.dev/v1/health` shows `{"ok":true}`.
 2. The app opens, sign in with Google: your readings and lab results are there.
 3. Web Dashboard (from the app): the 7 days and the lab table are there.
 4. Admin console: the numbers of users and readings are as expected; Observability opens.

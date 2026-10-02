@@ -398,7 +398,7 @@ async function adminOverview(env: any, q: Q) {
       subUntil: u.sub_until == null ? null : Number(u.sub_until),
     };
   });
-  const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'subscription_on', 'security_scan')");
+  const gate = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'app_live_version', 'subscription_on', 'security_scan')");
   const set: Record<string, string> = {};
   for (const r of gate as any[]) set[r.key] = String(r.value);
   const allUsers = await one("SELECT COUNT(*) AS n FROM persons");

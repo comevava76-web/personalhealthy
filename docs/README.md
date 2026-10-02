@@ -14,6 +14,7 @@ documents are in English; user-facing documents are in Italian and English.
 | Vulnerability check and patching | `security/vulnerability-management.md`, decisions in `security/decisions.json`, process drawing (swimlanes) `security/vulnerability-flow.html` → `.pdf`, `.png` (what is scanned, severity and deadlines, how each kind of fix is made, blocking old app versions, who decides, findings on record) | hand-written | a scan, a tool, a deadline or a role changes; every accepted risk |
 | GDPR and Swiss FADP | `compliance/gdpr.md` (applicability, roles, gaps, record of processing); controls shown in Admin → Observability from `worker/src/ops/compliance.json` | hand-written | data, providers, retention or consent change |
 | Observability | `operations/observability.md`; compliance dossier `compliance/dossier.html` → `compliance/HINT365-Compliance.pdf` (served at `/my/HINT365-Compliance.pdf#C01…`); problem registry `worker/src/ops/problems.json` (cause, fix, PR, version of every real problem) | hand-written; error and event logs in D1 | every fix of a problem met by users; every compliance change |
+| The address of the service: today the free `personalhealthy-api.hint365.workers.dev` (not definitive), the steps to the owner's own domain (GoDaddy, DNS on Cloudflare, new app build, old version invalidated) | `operations/domain.md` | hand-written | the subdomain or the domain changes |
 | Disaster recovery: the backups and how far back they go, RPO/RTO on the Cloudflare plan in use, every manual step, the monthly drill | `operations/disaster-recovery.md`; general document section 8; Infrastructure as Code in `../DR/` (`infrastructure-as-code/infrastructure.json`, `rebuild.sh`), workflows *Database backup* and *Disaster recovery* | hand-written | a resource, a backup, a secret, a provider or a Cloudflare plan changes; after every drill that fails |
 | Owner costs and earnings of the AI features (trial exposure, one subscriber, 200 people) | `business/owner-economics.md` → `business/HINT365-Owner-Economics.pdf` | hand-written Markdown, `node docs/business/render.cjs` | a price, a limit, the trial, the AI model or a provider price changes |
 | Demo material | `demo/` (screenshots, sample PDF) | test data only: `testing/harness/demo-shots.mjs` | the look of the dashboard or of the PDF changes |
@@ -38,7 +39,7 @@ repository is built and set up), `CLAUDE.md` (the working rules) and `DR/` (disa
 
 ## Continuous improvement loop
 
-Every morning: *Security tests* (06:10 Zurich) open or update an issue labelled `security-test` when a check fails;
+Every Monday night: *Security tests* (02:10 Zurich, when the app is used least) open or update an issue labelled `security-test` when a check fails;
 *Error log report* (GitHub Actions, 06:30 Zurich) opens an issue labelled `error-log` when the D1
 error log has rows in the last 24 hours; the developer's scheduled routine (06:48 Zurich) reads both, fixes small bugs
 through pull requests (documents included), merges after *Docs check*, and reports in the issue. Larger changes wait

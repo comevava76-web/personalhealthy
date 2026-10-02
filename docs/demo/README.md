@@ -37,3 +37,14 @@ Per rifare gli screenshot web (automatico, solo dati di prova):
 bash docs/testing/harness/setup-local.sh /tmp/qa
 cd docs/testing/harness && NODE_PATH=<node_modules globali> HINT_WORKER_DIR=/tmp/qa/w node demo-shots.mjs
 ```
+
+## Demo animata (`hint365-demo/`)
+
+Demo «a copione» di circa 30 secondi (HTML leggero, non un video), per il sito Tandem AI e LinkedIn: prima le funzioni
+(accesso, grafici, PDF, invio al medico, referti), poi il dietro le quinte (console Admin: utenti e versioni,
+Observability, vulnerabilità, compliance). Mai la parte dei soldi. Il clic si vede come un'onda luminosa (dito sul
+telefono, cursore sul web). Sotto la demo: anonimo, cifrato e separato per account, in UE.
+
+- `index.html`: pagina da aprire; `markup.html`, `skin.css`, `engine.js`: da inserire in un altro sito.
+- `frames/`: le schermate. Quelle di oggi sono catturate con dati di prova da `testing/harness/demo-tour.mjs`
+  (server locale); Human manderà le sue schermate, che le sostituiranno (stessi nomi, 1000×560, dati di prova).
