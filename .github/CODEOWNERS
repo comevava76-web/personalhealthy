@@ -1,0 +1,8 @@
+# The binding texts of HINT 365: the terms of use the app asks to accept, the privacy policy and the home page,
+# their exported copies and PDFs, and these rules. Every change needs the owner's approval (with "Require review
+# from Code Owners" switched on for main in Settings → Branches / Rules). Nobody else can merge them.
+/worker/src/notices.ts        @comevava76-web
+/worker/src/pages.ts          @comevava76-web
+/docs/legal/                  @comevava76-web
+/android/app/src/main/res/values*/strings.xml  @comevava76-web
+/.github/CODEOWNERS           @comevava76-web

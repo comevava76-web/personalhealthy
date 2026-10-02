@@ -42,6 +42,9 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Lingue**: italiano, tedesco, francese, inglese. Se il telefono o il browser è in un'altra lingua (georgiano, spagnolo,
   bulgaro…) tutto è in inglese: testi (`values/`), date e giorni (`appLocale()` in `Core.kt`, inglese britannico),
   condizioni e risposte del server (`X-Lang`), Web Dashboard (`app.js`).
+- **Testi vincolanti protetti**: condizioni d'uso (`notices.ts`), privacy e home (`pages.ts`), `docs/legal/` e i testi dell'app
+  sono in `.github/CODEOWNERS`: ogni modifica richiede l'approvazione di Human (con «Require review from Code Owners» su main).
+  Claude non unisce da solo una PR che li tocca: la apre e aspetta l'approvazione.
 - **Condizioni d'uso vincolanti**: mostrate alla prima installazione, a ogni aggiornamento dell'app e quando cambia il testo
   (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms`.
 - **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
