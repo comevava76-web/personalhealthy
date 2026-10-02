@@ -21,17 +21,33 @@ interface Env {
   MODEL?: string;
   GOOGLE_CLIENT_ID?: string;
   OWNER_GOOGLE_ID?: string; // explicit owner HMAC; never grant admin to the first public registrant
+  OWNER_CODE?: string;      // the owner's secret code: moves the owner's powers to a new phone (asked in the app)
   CONTACT_EMAIL?: string;      // shown on the privacy page (repository variable; empty = "the support email on Google's screen")   // "Sign in with Google": the Web client ID the app asks tokens for (empty = off)
   PRICE_IN_PER_MTOK?: string;  // dollars per million input tokens
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
   APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
   GITHUB_FIX_TOKEN?: string;     // Security console "Fix": a GitHub token that may open issues in the repository (owner sets it)
+  AI_API_KEY?: string;           // the owner's AI key for the photo Scan (terms v21; today Anthropic): paid by the owner
   GITHUB_REPO?: string;          // owner/name of the repository (default comevava76-web/personalhealthy)
 }
 
 
 /* ---------- credit and settings ---------- */
+/**
+ * The owner's powers (Admin console, versions, invites, settings) work only from the owner's own phone: the account must
+ * be the owner's AND the request signed by the phone key on record as owner_key. A stolen Google account can move the
+ * account to another phone (recovery), but not the owner's powers: on a new phone the app asks for the owner's secret
+ * code (secret OWNER_CODE, kept by the owner in a password manager), POST /v1/owner/claim; the GitHub workflow "Owner
+ * phone" is the spare way. The first owner request after this rule arrived records the phone in use.
+ */
+async function ownerOn(q: Q, person: any): Promise<boolean> {
+  if (!person?.is_admin || !person.public_key) return false;
+  const k = await getSetting(q, "owner_key", "");
+  if (!k) { await q("INSERT INTO settings (key, value) VALUES ('owner_key', ?1) ON CONFLICT (key) DO NOTHING", [person.public_key]); return true; }
+  return k === String(person.public_key);
+}
+
 async function getSetting(q: Q, key: string, def: string): Promise<string> {
   const [r] = await q("SELECT value FROM settings WHERE key = ?1", [key]);
   return r ? String(r.value) : def;
@@ -55,31 +71,51 @@ async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boo
   };
 }
 /* ---------- the yearly subscription (Google Play) ----------
-   Off until the owner switches it on (setting subscription_on = "1", from the app). The owner never pays.
-   Without a valid subscription the app and the Web Dashboard show only the invitation to renew; the data stay,
-   under the usual 365-day rule, and come back as soon as the subscription is renewed. */
-const SUB_RECHECK = 6 * 3600e3;   // an expired subscription is asked to Google Play again at most every 6 hours
-async function subState(q: Q, env: Env, pid: string): Promise<{ required: boolean; active: boolean; until: number | null; state: string }> {
-  const [p] = await q("SELECT is_admin, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
-  if (!p) return { required: false, active: false, until: null, state: "" };
-  const on = (await getSetting(q, "subscription_on", "0")) === "1";
+   Bought on Google Play (the old switch subscription_on no longer blocks anything). The owner never pays. The app stays
+   free for everyone: the subscription unlocks only the AI features, today the photo Scan (asked by Human, 02.10.2026).
+   The Scan is on at once for TRIAL_DAYS days from the first Scan (3 a day, so at most 45 photos); after that it needs
+   the subscription, or the person's own AI key on the phone. The trial is counted per Google account and per phone
+   (scan_trials): another phone or a new account on the same phone does not start it again. */
+const SUB_RECHECK = 6 * 3600e3;
+const TRIAL_DAYS = 15;            // free days of the AI features (the photo Scan), counted from the first Scan   // an expired subscription is asked to Google Play again at most every 6 hours
+async function subState(q: Q, env: Env, pid: string, device = ""): Promise<{ required: boolean; active: boolean; until: number | null; state: string; scan: string; trialUntil: number | null; trialStarted: boolean; scansLeft: number | null; scansUsed: number | null }> {
+  const [p] = await q("SELECT id, is_admin, google_sub, sub_token, sub_until, sub_state, sub_checked_at FROM persons WHERE id = ?1", [pid]);
+  if (!p) return { required: false, active: false, until: null, state: "", scan: "locked", trialUntil: null, trialStarted: false, scansLeft: null, scansUsed: null };
   let until = Number(p.sub_until) || 0, state = String(p.sub_state || "");
   // renewed on Google Play after it ran out here: ask again, now and then
   if (p.sub_token && env.PLAY_SERVICE_ACCOUNT && Date.now() - (Number(p.sub_checked_at) || 0) > SUB_RECHECK) {
     try {
       const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, String(p.sub_token));
-      if (g) { until = g.until; state = g.state; }
+      if (g) { await recordSale(q, Number(p.sub_until) || 0, g.until); until = g.until; state = g.state; }
       await q("UPDATE persons SET sub_until = ?1, sub_state = ?2, sub_checked_at = ?3 WHERE id = ?4", [until, state, Date.now(), pid]);
     } catch (e) { console.error("subscription check failed"); }
   }
-  return { required: on && !p.is_admin, active: !!p.is_admin || subValid(until, state), until: until || null, state };
+  const paid = !!p.is_admin || subValid(until, state);
+  // not tried yet on this account nor on this phone: the 15 days are all there (they start with the first Scan)
+  const started = await trialStart(q, await trialKeys(env, p, device));
+  const trialUntil = (started || Date.now()) + TRIAL_DAYS * 864e5;
+  // scan: "on" (paid, or the owner), "trial" (the free days), "locked" (the Scan needs the subscription)
+  const scan = paid ? "on" : Date.now() < trialUntil ? "trial" : "locked";
+  // required stays false: the app itself is never blocked (older apps read it as "show only the invitation")
+  return { required: false, active: paid, until: until || null, state, scan, trialUntil: scan === "trial" ? trialUntil : null, trialStarted: !!started,
+    // a subscriber sees about how many Scans are left in the year (an estimate: it depends on the provider's cost per
+    // photo); everyone but the owner sees how many they made in the last 12 months
+    ...(p.is_admin ? { scansLeft: null, scansUsed: null } : await (async () => {
+      const u = await scanUsage(q, String(p.id));
+      return { scansLeft: scan === "on" ? u.left : null, scansUsed: u.scans };
+    })()) };
 }
-async function subOk(q: Q, env: Env, pid: string): Promise<boolean> {
-  const s = await subState(q, env, pid);
-  return !s.required || s.active;
+/** The fingerprints the Scan trial is counted on: the Google account (or the account, without Google) and the phone. */
+async function trialKeys(env: Env, p: any, device: string): Promise<string[]> {
+  const keys = [p.google_sub ? "g:" + p.google_sub : "p:" + p.id];
+  if (/^[A-Za-z0-9_-]{4,64}$/.test(device)) keys.push("d:" + await fingerprint(env, "device:" + device));
+  return keys;
 }
-// what still works without a subscription: seeing the invitation, renewing, the terms, leaving, deleting the account
-const SUB_FREE = new Set(["GET /v1/me", "GET /v1/bp", "GET /v1/labs", "POST /v1/web/code", "POST /v1/sub/verify", "POST /v1/accept", "POST /v1/signout", "DELETE /v1/me", "POST /v1/log"]);
+/** When the trial started for any of these fingerprints (0 = never). */
+async function trialStart(q: Q, keys: string[]): Promise<number> {
+  const [r] = await q(`SELECT MIN(started_at) AS s FROM scan_trials WHERE fp IN (${keys.map((_, i) => "?" + (i + 1)).join(",")})`, keys);
+  return Number(r?.s) || 0;
+}
 
 async function appAllowed(q: Q, version: number): Promise<boolean> {
   const g = await appGate(q);
@@ -169,11 +205,16 @@ function b64urlToBytes(s: string): Uint8Array {
  * turn it back into a Google account or an email. No email is ever stored.
  */
 async function googleId(env: Env, sub: string): Promise<string> {
+  return "h1:" + await fingerprint(env, "google-sub:" + sub);
+}
+/** HMAC-SHA-256 of [what] with the server secret, in hex: the same input always gives the same fingerprint, and
+ *  nobody can turn it back (used for Google accounts and, for the Scan trial, phones). */
+async function fingerprint(env: Env, what: string): Promise<string> {
   const raw = env.KEY_ENCRYPTION_KEY ? b64ToBytes(env.KEY_ENCRYPTION_KEY) : new Uint8Array(0);
   if (raw.length !== 32) throw new Error("KEY_ENCRYPTION_KEY missing or not 32 bytes");
   const k = await crypto.subtle.importKey("raw", raw, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode("google-sub:" + sub)));
-  return "h1:" + [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(what)));
+  return [...mac].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** Older rows kept Google's raw id and the email: replaced by the fingerprint, email erased (every night, and at sign-in). */
@@ -218,7 +259,7 @@ async function verifyGoogle(token: string, clientId: string): Promise<{ sub: str
 }
 
 /** Version of the notice every user must accept before using the app. A new version asks everyone again. */
-const DISCLAIMER_VERSION = "20";
+const DISCLAIMER_VERSION = "21";
 async function acceptedNotice(q: Q, pid: string): Promise<boolean> {
   const [row] = await q("SELECT 1 FROM acceptances WHERE person_id = ?1 AND doc = 'disclaimer' AND version = ?2 LIMIT 1", [pid, DISCLAIMER_VERSION]);
   return !!row;
@@ -325,6 +366,7 @@ export async function purgeOld(env: Env) {
     env.DB.prepare("DELETE FROM event_log WHERE last_at < ?1").bind(now - 90 * 864e5),
     env.DB.prepare("DELETE FROM seen_sigs WHERE expires_at < ?1").bind(now),
     env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?1").bind(now - 2 * 864e5),
+    env.DB.prepare("DELETE FROM scan_trials WHERE started_at < ?1").bind(now - 730 * 864e5),
   ]);
 }
 
@@ -342,9 +384,9 @@ export default {
 const AUTHENTICATED = new WeakSet<Request>();
 /** Route names for the error log: a known route, or "unknown" (never a path typed by a stranger). */
 const ROUTES = new Set([
-  "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout",
+  "/v1/me", "/v1/accept", "/v1/web/code", "/v1/signout", "/v1/owner/claim",
   "/v1/admin/settings", "/v1/admin/app-min-version", "/v1/admin/invites", "/v1/admin/subscription",
-  "/v1/bp/voice", "/v1/bp/photo", "/v1/bp/photo/outcome", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
+  "/v1/bp/voice", "/v1/bp/photo", "/v1/bp/photo/outcome", "/v1/bp/photo/read", "/v1/bp", "/v1/labs", "/my/api/labs", "/v1/sub/verify", "/v1/log", "/v1/register", "/v1/auth/google",
   "/my/session", "/my/api/me", "/my/api/data", "/my/api/share", "/my/api/shares", "/my/api/log", "/my/api/admin/overview",
   "/my/api/admin/app-min-version", "/my/api/admin/observability", "/my/api/admin/security", "/my/api/admin/security/fix", "/my/api/admin/security/status", "/hooks/fix-status",
 ]);
@@ -367,7 +409,7 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0), download: url.origin + "/download" });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
-      const res = (await handleWeb(req, env, q, url, (pid: string) => subOk(q, env, pid), () => AUTHENTICATED.add(req)))
+      const res = (await handleWeb(req, env, q, url, async () => true, () => AUTHENTICATED.add(req)))   // the web is never behind the subscription
         ?? (await handle(req, env, q, url));
       // errors met by users go to the error log, grouped (see errors.ts). Logged only for calls that passed
       // authentication, or for server failures (5xx): a stranger cannot write into the log (test report F-03).
@@ -558,9 +600,6 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   const requiresNotice = req.method === "POST" && ["/v1/bp/voice", "/v1/bp/photo", "/v1/labs", "/v1/web/code"].includes(url.pathname);
   if (requiresNotice && !(await acceptedNotice(q, pid))) return fail("Accept the current terms first", 403, "notice_required");
 
-  // no valid subscription: only the invitation to renew
-  if (!SUB_FREE.has(req.method + " " + url.pathname) && !(req.method === "DELETE" && /^\/v1\/(bp|labs)(?:\/[^/]+)?$/.test(url.pathname)) && !(await subOk(q, env, pid)))
-    return fail("The HINT 365 subscription has run out: renew it to use the app again.", 402, "sub_expired");
   // the photo reading with AI was removed (terms v19): its calls answer "gone", never reach Anthropic
   if (["/v1/bp/scan", "/v1/bp/confirm", "/v1/key", "/v1/key/check", "/v1/credit", "/v1/admin/credit", "/v1/credit/history"].includes(url.pathname))
     return fail("The photo reading with AI is no longer available: record by voice.", 410, "ai_removed");
@@ -574,17 +613,20 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const sent = Number(req.headers.get("X-App-Version")) || 0;
     const code = sent > 0 && sent <= (Number(env.APP_VERSION) || Infinity) ? sent : 0;
     await q("UPDATE persons SET last_seen_at = ?1, app_version = COALESCE(?2, app_version) WHERE id = ?3", [Date.now(), code ? "0.1." + code : null, pid]);
+    const ownerHere = await ownerOn(q, person);
     return json({
       personId: pid,
-      isAdmin: !!person.is_admin,
+      isAdmin: ownerHere,
+      // the owner's account on a phone not on record: the app asks for the owner's secret code
+      ownerClaim: !!person.is_admin && !ownerHere && !!env.OWNER_CODE,
       pays: person.pays,
       hasGoogle: !!person.google_sub,
       email: null,   // never stored: the phone keeps it for itself
       googleOn: !!env.GOOGLE_CLIENT_ID,
       billingMode: await getSetting(q, "billing_mode", "private"),
       disclaimerOk: await acceptedNotice(q, pid),
-      ...(person.is_admin ? { appMinVersion: (await appGate(q)).min, subscriptionOn: (await getSetting(q, "subscription_on", "0")) === "1" } : {}),
-      sub: await subState(q, env, pid),
+      ...(ownerHere ? { appMinVersion: (await appGate(q)).min, subscriptionOn: (await getSetting(q, "subscription_on", "0")) === "1" } : {}),
+      sub: await subState(q, env, pid, req.headers.get("X-Device") || ""),
     });
   }
 
@@ -598,14 +640,16 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     const g = await playSubscription(env.PLAY_SERVICE_ACCOUNT, token);
     if (!g) return fail("Google Play does not know this purchase", 400, "sub_invalid");
     if (g.account && g.account !== (await playAccountId(pid))) return fail("This subscription belongs to another account", 409, "sub_other_account");
+    const [before] = await q("SELECT sub_until FROM persons WHERE id = ?1", [pid]);
     const [assigned] = await q("UPDATE persons SET sub_token = ?1, sub_until = ?2, sub_state = ?3, sub_checked_at = ?4 WHERE id = ?5 AND NOT EXISTS (SELECT 1 FROM persons WHERE sub_token = ?1 AND id <> ?5) RETURNING id",
       [token, g.until, g.state, Date.now(), pid]);
     if (!assigned) return fail("This subscription belongs to another account", 409, "sub_other_account");
+    await recordSale(q, Number(before?.sub_until) || 0, g.until);
     return json({ sub: await subState(q, env, pid), package: PLAY_PACKAGE, product: SUB_PRODUCT });
   }
   // The owner switches the subscription on (everyone else must then pay) or off (the app is free for everyone)
   if (req.method === "POST" && url.pathname === "/v1/admin/subscription") {
-    if (!person.is_admin) return fail("Only the app owner can change this", 403, "admin_only");
+    if (!(await ownerOn(q, person))) return fail("Only the app owner can change this", 403, "admin_only");
     const on = data.on === true;
     if (on && !env.PLAY_SERVICE_ACCOUNT) return fail("Subscriptions cannot be checked yet", 503, "sub_unavailable");
     await q("INSERT INTO settings (key, value) VALUES ('subscription_on', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [on ? "1" : "0"]);
@@ -662,7 +706,24 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   // My Dash: a one-time code to open the web dashboard already signed in (see web.ts)
-  if (req.method === "POST" && url.pathname === "/v1/web/code") return newWebCode(q, pid, url.origin);
+  // The owner's account on a new phone: the owner's secret code makes this phone the owner's phone. At most 5 tries a
+  // day; every wrong code is logged (code only). Compared as hashes, so the time taken says nothing about the code.
+  if (req.method === "POST" && url.pathname === "/v1/owner/claim") {
+    if (!person.is_admin) return fail("Only the app owner", 403, "admin_only");
+    if (!env.OWNER_CODE) return fail("The owner's code is not set up", 503, "owner_code_off");
+    if (await tooMany(q, "owner_claim:" + pid, 5, DAY)) return fail("Too many attempts: try again tomorrow", 429, "too_many");
+    const given = await sha256Hex(enc.encode("owner-code:" + String(data.code || "").trim()));
+    const wanted = await sha256Hex(enc.encode("owner-code:" + env.OWNER_CODE.trim()));
+    if (given !== wanted) {
+      await logError(q, { source: "server", code: "owner_code_wrong", place: "POST /v1/owner/claim", message: "wrong owner code", personId: pid });
+      return fail("Wrong code", 403, "owner_code_wrong");
+    }
+    await q("INSERT INTO settings (key, value) VALUES ('owner_key', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [person.public_key]);
+    return json({ ok: true });
+  }
+
+  // the web code carries whether it was asked from the owner's own phone: only then does the browser see the Admin console
+  if (req.method === "POST" && url.pathname === "/v1/web/code") return newWebCode(q, pid, url.origin, await ownerOn(q, person));
 
   // Sign out of this phone: the phone is forgotten, the data stays and comes back with Google on any phone
   if (req.method === "POST" && url.pathname === "/v1/signout") {
@@ -682,6 +743,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
       env.DB.prepare("DELETE FROM measurements WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM scans WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM person_keys WHERE person_id = ?1").bind(pid),
+      env.DB.prepare("DELETE FROM scan_usage WHERE person_id = ?1").bind(pid),
       env.DB.prepare("DELETE FROM ledger WHERE payer = ?1").bind(pid),                     // their own money records
       env.DB.prepare("UPDATE ledger SET person_id = NULL WHERE person_id = ?1").bind(pid),  // photos on the shared credit: kept, without who
       env.DB.prepare("UPDATE error_log SET person_id = NULL WHERE person_id = ?1").bind(pid),
@@ -692,7 +754,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   if (req.method === "POST" && url.pathname === "/v1/admin/settings") {
-    if (!person.is_admin) return fail("Only the app manager can change the settings", 403, "admin_only");
+    if (!(await ownerOn(q, person))) return fail("Only the app manager can change the settings", 403, "admin_only");
     const mode = String(data.billingMode || "");
     if (mode === "per_user") return fail("Per-user payment is not available yet", 400, "mode_unavailable");
     if (mode !== "private") return fail("Invalid mode", 400, "generic");
@@ -702,7 +764,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // Switch off older apps (administrator only): every version below minVersion stops working; 0 lets them all work again
   if (req.method === "POST" && url.pathname === "/v1/admin/app-min-version") {
-    if (!person.is_admin) return fail("Only the app manager can switch versions off", 403, "admin_only");
+    if (!(await ownerOn(q, person))) return fail("Only the app manager can switch versions off", 403, "admin_only");
     const min = Math.max(0, Math.floor(Number(data.minVersion) || 0));
     // never below the administrator's own app, or nobody could switch it back on from the phone
     const own = Number(req.headers.get("X-App-Version")) || 0;
@@ -713,7 +775,7 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
 
   // Invite someone (administrator only): single-use code, valid 7 days
   if (req.method === "POST" && url.pathname === "/v1/admin/invites") {
-    if (!person.is_admin) return fail("Only the app manager can invite", 403, "admin_only");
+    if (!(await ownerOn(q, person))) return fail("Only the app manager can invite", 403, "admin_only");
     const type = data.type === "self_pays" ? "self_pays" : data.type === "owner_pays" ? "owner_pays" : "";
     if (!type) return fail("Invalid invite type", 400, "generic");
     const now = Date.now();
@@ -766,6 +828,43 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
     return json({ ok: true });
   }
 
+  // The photo Scan (terms v21): the photo of the monitor display, read by Claude with the owner's key. At most
+  // SCAN_FREE readings a day per person (the owner pays them; the owner's own account has SCAN_PLUS), and at most
+  // SCAN_YEAR_USD of AI cost per person in a year (table scan_usage), counted from the tokens the provider reports. The photo is passed on
+  // and never stored or logged; only the three numbers go back to the phone, to be confirmed by the person.
+  if (req.method === "POST" && url.pathname === "/v1/bp/photo/read") {
+    if (!env.AI_API_KEY) return fail("The photo Scan is not available now: record by voice.", 503, "scan_off");
+    const image = typeof data.image === "string" ? data.image : "";
+    if (image.length < 1000 || image.length > 4_000_000 || !/^[A-Za-z0-9+/=]+$/.test(image)) return fail("Bad photo", 400, "bad_photo");
+    const device = req.headers.get("X-Device") || "";
+    if ((await subState(q, env, pid, device)).scan === "locked") return fail("The Scan needs the HINT 365 subscription", 402, "scan_locked");
+    const [who] = await q("SELECT is_admin FROM persons WHERE id = ?1", [pid]);
+    const limit = who?.is_admin ? SCAN_PLUS : SCAN_FREE;
+    if (!who?.is_admin && (await scanUsage(q, pid)).microUsd >= SCAN_YEAR_USD * 1e6) return fail("Yearly Scan allowance reached", 429, "scan_budget");
+    if (await tooMany(q, "scan_ai:" + pid, limit, DAY)) return fail("Daily Scan limit reached", 429, "scan_quota");
+    // the trial starts now, or carries over to this account and this phone from where it started before
+    {
+      const keys = await trialKeys(env, person, device);
+      const start = (await trialStart(q, keys)) || Date.now();
+      for (const k of keys) await q("INSERT OR IGNORE INTO scan_trials (fp, started_at) VALUES (?1, ?2)", [k, start]);
+    }
+    try {
+      const { answer, microUsd } = await readMonitor(env.AI_API_KEY, image);
+      if (!who?.is_admin) await scanSpend(q, pid, microUsd);
+      await dayAdd(q, "ai_spend_daily", "scans", "micro_usd", 1, microUsd);
+      return json(answer);
+    } catch (e) {
+      if (e instanceof Error && e.message === "no_credit") {
+        // in the error log: the next morning's error-log issue and the Admin console tell the owner to top up
+        await logError(q, { source: "server", code: "ai_no_credit", place: "POST /v1/bp/photo/read", message: "AI provider refused: credit or spend limit used up" });
+        await countEvent(q, "bp_photo_ai_no_credit", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
+        return fail("The photo Scan is not available now: record by voice.", 503, "scan_no_credit");
+      }
+      await countEvent(q, "bp_photo_ai_error", "POST /v1/bp/photo/read", req.headers.get("X-App-Version"));
+      return fail("The photo could not be read now: try again or record by voice.", 502, "scan_failed");
+    }
+  }
+
   // 3) List of measurements
   if (req.method === "GET" && url.pathname === "/v1/bp") {
     const days = Math.min(Math.max(Number(url.searchParams.get("days")) || 30, 1), 400);
@@ -798,4 +897,92 @@ async function handle(req: Request, env: Env, q: Q, url: URL): Promise<Response>
   }
 
   return fail("Not found", 404, "not_found");
+}
+
+/** Free photo Scans a day per person (paid by the owner), the owner's own allowance, and the most AI cost a person may
+ *  use in a year: 3 US$ of the 4 US$ subscription (asked by Human, 02.10.2026). */
+const SCAN_FREE = 3, SCAN_PLUS = 30, SCAN_YEAR_USD = 2.5;
+/** What one Scan is expected to cost before any is made (micro-US$), to tell how many are left. */
+const SCAN_EST_MICRO_USD = 2000;
+/** Claude Haiku 4.5, the cheapest Claude model that reads a display well; its list price per token in micro-US$. */
+const SCAN_MODEL = "claude-haiku-4-5-20251001", SCAN_IN_MICRO_USD = 1, SCAN_OUT_MICRO_USD = 5;
+const YEAR = 365 * 864e5;
+
+/** The yearly price of the AI features subscription, for the owner's estimate of what came in (Google Play has the real figure). */
+const SUB_PRICE_CENTS = 499;
+/** A new paid year: the end date moved forward by most of a year (a first purchase or a renewal). */
+async function recordSale(q: Q, prevUntil: number, newUntil: number): Promise<void> {
+  if (newUntil - Math.max(prevUntil, 0) < 300 * 864e5) return;
+  await dayAdd(q, "sub_sales_daily", "sales", "gross_cents", 1, SUB_PRICE_CENTS);
+}
+/** Adds to today's totals (Zurich day) of one of the owner's account tables. */
+async function dayAdd(q: Q, table: "ai_spend_daily" | "sub_sales_daily", a: string, b: string, x: number, y: number): Promise<void> {
+  const day = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
+  await q(`INSERT INTO ${table} (day, ${a}, ${b}) VALUES (?1, ?2, ?3) ON CONFLICT (day) DO UPDATE SET ${a} = ${a} + ?2, ${b} = ${b} + ?3`,
+    [day, x, Math.max(0, Math.round(y))]);
+}
+
+/** This person's Scans and AI cost (micro-US$) in the current 12-month window, and about how many Scans are left. */
+async function scanUsage(q: Q, pid: string): Promise<{ scans: number; microUsd: number; left: number }> {
+  const [r] = await q("SELECT window_start, scans, micro_usd FROM scan_usage WHERE person_id = ?1", [pid]);
+  const live = r && Number(r.window_start) >= Date.now() - YEAR;
+  const scans = live ? Number(r.scans) || 0 : 0, microUsd = live ? Number(r.micro_usd) || 0 : 0;
+  const each = scans > 0 && microUsd > 0 ? microUsd / scans : SCAN_EST_MICRO_USD;
+  return { scans, microUsd, left: Math.max(0, Math.floor((SCAN_YEAR_USD * 1e6 - microUsd) / each)) };
+}
+/** One more Scan in this person's yearly allowance; a window older than 12 months starts again. */
+async function scanSpend(q: Q, pid: string, microUsd: number): Promise<void> {
+  const now = Date.now();
+  await q(`INSERT INTO scan_usage (person_id, window_start, scans, micro_usd) VALUES (?1, ?2, 1, ?4)
+     ON CONFLICT (person_id) DO UPDATE SET
+       scans = CASE WHEN window_start < ?3 THEN 1 ELSE scans + 1 END,
+       micro_usd = CASE WHEN window_start < ?3 THEN ?4 ELSE micro_usd + ?4 END,
+       window_start = CASE WHEN window_start < ?3 THEN ?2 ELSE window_start END`,
+    [pid, now, now - YEAR, Math.max(0, Math.round(microUsd))]);
+}
+
+const SCAN_PROMPT = "This is a photo of the display of a home blood-pressure monitor. Read the three measured numbers: " +
+  "SYS (systolic, usually the top and largest), DIA (diastolic, below it) and PUL (pulse, the smallest, often next to a " +
+  "heart symbol or PUL/min). Ignore the date, the time, the memory number and any other text. Answer with JSON only, no " +
+  "other words: {\"sys\": <number>, \"dia\": <number>, \"pul\": <number>}. If any of the three numbers cannot be read " +
+  "with certainty, or this is not a monitor display, answer {\"retake\": \"<reason>\"} with reason one of: not_found, " +
+  "unclear, glare, dark, blurry. Never guess a digit.";
+
+/** Asks Claude for the three numbers of the display; the answer is checked like any other input before it goes back.
+ *  Also returns what the call cost, from the tokens Anthropic counted. */
+async function readMonitor(key: string, jpegB64: string): Promise<{ answer: Record<string, unknown>; microUsd: number }> {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: SCAN_MODEL, max_tokens: 200,
+      messages: [{ role: "user", content: [
+        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpegB64 } },
+        { type: "text", text: SCAN_PROMPT },
+      ] }],
+    }),
+  });
+  if (!r.ok) {
+    // the owner's money ran out or the owner's spend limit was reached: said apart, so the owner hears of it at once
+    const why = await r.text().catch(() => "");
+    if ([400, 402, 403, 429].includes(r.status) && /credit balance|billing|spend limit|usage limit|insufficient|quota/i.test(why)) throw new Error("no_credit");
+    throw new Error("anthropic " + r.status);
+  }
+  const m: any = await r.json();
+  const u = m.usage || {};
+  const microUsd = (Number(u.input_tokens) || 0) * SCAN_IN_MICRO_USD + (Number(u.output_tokens) || 0) * SCAN_OUT_MICRO_USD;
+  return { answer: readAnswer(m), microUsd };
+}
+function readAnswer(m: any): Record<string, unknown> {
+  if (m.stop_reason === "refusal") return { retake: "unclear" };
+  const text = (m.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
+  const a = text.indexOf("{"), z = text.lastIndexOf("}");
+  if (a < 0 || z <= a) return { retake: "unclear" };
+  let o: any;
+  try { o = JSON.parse(text.slice(a, z + 1)); } catch { return { retake: "unclear" }; }
+  if (o.retake) return { retake: ["not_found", "unclear", "glare", "dark", "blurry"].includes(o.retake) ? o.retake : "unclear" };
+  const sys = Number(o.sys), dia = Number(o.dia), pul = Number(o.pul);
+  const ok = Number.isInteger(sys) && Number.isInteger(dia) && Number.isInteger(pul) &&
+    sys >= 60 && sys <= 260 && dia >= 30 && dia <= 160 && dia < sys && sys - dia >= 10 && pul >= 30 && pul <= 220;
+  return ok ? { sys, dia, pul } : { retake: "implausible" };
 }

@@ -137,6 +137,40 @@ object C {
     val Pul: Color get() = pick(0xFFC08A1E, 0xFFB7860B)   // pulse, amber
     val Out: Color get() = pick(0xFFF29A3F, 0xFFC76A12)   // a lab result outside the reference printed on its report (asked by Human), with ↑ or ↓
     val Alert: Color get() = pick(0xFFF0A35E, 0xFFB8641D)   // errors and deleting: warm orange, not red
+    val Voice: Color get() = pick(0xFF3A76C4, 0xFF2E66AE)   // the Voice button: a calm blue, so the two ways to record stand apart
+}
+
+/**
+ * Now and then (at most every 14 days) a small window proposes to protect HINT 365 with the phone's fingerprint or face
+ * (or, on a phone without any screen lock, a PIN): the app uses the phone's own lock, never a separate one. Only a
+ * proposal, asked by Human: "Not now" closes it until next time. Kept on this phone.
+ */
+object BioNudge {
+    private const val EVERY_MS = 14L * 86_400_000L
+    /** "lock" when the phone has no screen lock, "bio" when it has one but no fingerprint or face, null when nothing to propose. */
+    fun what(ctx: Context): String? {
+        val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)
+        if (System.currentTimeMillis() < prefs.getLong("bioNudgeNext", 0L)) return null
+        val secure = (ctx.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager).isDeviceSecure
+        if (!secure) return "lock"
+        val bio = BiometricManager.from(ctx).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        return if (bio == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) "bio" else null
+    }
+    fun later(ctx: Context) {
+        ctx.getSharedPreferences("battito", Context.MODE_PRIVATE).edit().putLong("bioNudgeNext", System.currentTimeMillis() + EVERY_MS).apply()
+    }
+    /** Opens the phone's settings: fingerprint enrolment where Android offers it, otherwise the security settings. */
+    fun open(ctx: Context, kind: String) {
+        val enroll = if (kind == "bio" && android.os.Build.VERSION.SDK_INT >= 30)
+            android.content.Intent(android.provider.Settings.ACTION_BIOMETRIC_ENROLL).putExtra(
+                android.provider.Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED, BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        else null
+        try { ctx.startActivity(enroll ?: android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) }
+        catch (e: Exception) {
+            try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) }
+            catch (e2: Exception) { ErrorReport.report("Lock/settings", e2) }
+        }
+    }
 }
 
 /** The theme chosen in Gestore: "auto" (as the phone), "light" or "dark"; kept on this phone only. */
@@ -241,6 +275,8 @@ class MainActivity : FragmentActivity() {
         Reminders.stopCreditNotifications(this)
         Reminders.schedule(this)
         ThemeChoice.load(this)
+        // the Scan trial is counted once per phone too: the server keeps only an HMAC of this id
+        Api.device = try { android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID) } catch (_: Exception) { null }
         setContent {
             C.light = ThemeChoice.value == "light"
             // the phone's bars take the background of the theme, with dark icons on the light one
@@ -356,6 +392,8 @@ fun App() {
                 val l = if (m.sub.blocked) emptyList() else Repo.list(pid)
                 readings.clear(); readings.addAll(l); message = null
                 if (!m.sub.blocked) AppGate.subExpired = false
+                // the AI trial is running: a notice 2 days before it ends
+                Reminders.aiTrial(ctx, if (m.sub.scan == "trial" && m.sub.trialStarted) m.sub.trialUntil else null)
             } catch (e: Exception) {
                 // this account now lives on another phone (Google sign-in there): back to the sign-in screen (F-10)
                 if (e is ApiException && e.code == "unauthorized") {
@@ -386,9 +424,9 @@ fun App() {
     // the server said it has run out: fetch the account again, the invitation to renew follows from it
     LaunchedEffect(AppGate.subExpired) { if (AppGate.subExpired) reload() }
     // not paid (or run out): read the price and hand the server a renewal already made on Google Play
-    LaunchedEffect(personId, me?.sub?.blocked) {
+    LaunchedEffect(personId, me?.sub?.blocked, me?.sub?.scan) {
         val pid = personId
-        if (pid != null && me?.sub?.blocked == true) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
+        if (pid != null && (me?.sub?.blocked == true || me?.sub?.scan == "locked")) try { Billing.restore(ctx, pid) } catch (_: Exception) { }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -402,7 +440,7 @@ fun App() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // The photo Scan of the monitor, read on this phone (no AI): the photo stays here and is deleted at the end
+    // The photo Scan of the monitor, read with AI through HINT 365's server (AiScan): the photo is deleted here at the end
     val photoFile = remember { File(File(ctx.cacheDir, "photos").apply { mkdirs() }, "scan.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
     var photo by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -420,7 +458,7 @@ fun App() {
             try {
                 val b = MonitorScan.load(photoFile)
                 photo = b
-                val r = MonitorScan.read(b)
+                val r = AiScan.read(personId, b)
                 photoRead = r
                 if (r is MonitorScan.Result.Retake) photoOutcome(r.reason)
             } catch (e: Exception) {
@@ -539,6 +577,12 @@ fun App() {
                 onFail = { msg -> screen = "tabs"; voiceProblem = msg },
                 onCancel = { screen = "tabs" }
             )
+            // the AI features subscription: after the 15 free days it unlocks the Scan (the rest of the app stays free)
+            screen == "scanlock" -> ScanLockScreen(
+                price = Billing.price, busy = Billing.busy,
+                onBuy = { val pid = personId; val act = ctx as? android.app.Activity; if (pid != null && act != null) Billing.buy(act, pid) },
+                onClose = { screen = "tabs" }
+            )
             screen == "photo" -> PhotoScreen(
                 photo = photo, result = photoRead, takenAt = photoAt, saving = photoSaving,
                 onSave = { v ->
@@ -557,7 +601,8 @@ fun App() {
                 onWrong = { photoOutcome("wrong"); photoFile.delete(); openCamera() },
                 onRetake = { photoFile.delete(); openCamera() },
                 onVoice = { closePhoto(); openVoice() },
-                onCancel = { closePhoto() }
+                onCancel = { closePhoto() },
+                onMoreScans = { closePhoto(); screen = "scanlock" }
             )
             screen == "voice" && voice != null -> VoiceScreen(
                 values = voice!!, spokenAt = voiceAt, unusual = voiceUnusual, saving = voiceSaving,
@@ -634,6 +679,15 @@ fun App() {
                             }.value,
                             onLinkGoogle = { linkAsk = true },
                             onManageReadings = { screen = "all" },
+                            onAi = { screen = "scanlock" },
+                            onOwnerClaim = { code ->
+                                val pid = personId
+                                if (pid == null) t(R.string.err_generic) else try {
+                                    Repo.ownerClaim(pid, code); toast(ctx, t(R.string.owner_claim_ok)); reload(); null
+                                } catch (e: ApiException) {
+                                    t(if (e.code == "owner_code_wrong") R.string.owner_claim_wrong else if (e.code == "too_many") R.string.owner_claim_many else R.string.err_generic)
+                                }
+                            },
                             onSignOut = {
                                 val pid = personId ?: return@CreditScreen
                                 scope.launch {
@@ -664,6 +718,7 @@ fun App() {
                             onVoice = { openVoice() },
                             onScan = { openCamera() },
                             onDash = openDash,
+                            onScanLocked = { screen = "scanlock" },
                         )
                     }
                     androidx.compose.material3.pulltorefresh.PullToRefreshContainer(
@@ -767,7 +822,7 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
 @Composable
 fun BigButton(
     text: String, color: Color = C.Sys, textColor: Color = Color.White, enabled: Boolean = true,
-    modifier: Modifier = Modifier, icon: Int? = null, trailing: Int? = null, onClick: () -> Unit
+    modifier: Modifier = Modifier, icon: Int? = null, trailing: Int? = null, sub: String? = null, onClick: () -> Unit
 ) {
     // switched off: clearly faded, background and text alike
     val fg = if (enabled) textColor else textColor.copy(alpha = 0.5f)
@@ -783,8 +838,13 @@ fun BigButton(
                 Spacer(Modifier.width(8.dp))
             }
             // always on one line: a long label is cut with "…" rather than wrapping in the button
-            Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Column {
+                Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                // a short line under the label (the locked Scan: "Unlock this feature")
+                if (sub != null) Text(sub, color = fg, fontSize = 11.sp, maxLines = 1, softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
             if (trailing != null) {
                 // the AI sign stays well visible even when the button is off
                 Spacer(Modifier.width(8.dp))
@@ -857,6 +917,7 @@ fun CostsTable() {
         Text(t(R.string.costs_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
         listOf(
             Triple(R.string.cost_app_what, R.string.cost_app_cost, R.string.cost_app_to),
+            Triple(R.string.cost_ai_what, R.string.cost_ai_cost, R.string.cost_ai_to),
         ).forEach { (what, cost, to) ->
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(1.dp).background(C.Muted.copy(alpha = 0.18f)))
             Text(t(what), color = C.Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
@@ -960,6 +1021,12 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
                 if (lines.size > 1) Text(lines[1], color = C.Ink.copy(alpha = 0.85f), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }
+        // the same text as a PDF in Downloads, to keep: offered before accepting and when reading again
+        val pdfCtx = LocalContext.current
+        Text(t(R.string.terms_pdf_hint), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+        TextButton(onClick = {
+            try { downloadPdf(pdfCtx, termsPdf(pdfCtx)) } catch (e: Exception) { ErrorReport.report("Terms/PDF", e); toast(pdfCtx, t(R.string.err_generic)) }
+        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.terms_pdf), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
         if (onClose == null) {
             Row(
                 Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
@@ -984,6 +1051,21 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** The Scan's 15 free days are over: the subscription brings it back (3 a day, at most 3 US$ of AI a year), or the
+ *  person's own AI key. Everything else in the app stays free. */
+@Composable
+fun ScanLockScreen(price: String?, busy: Boolean, onBuy: () -> Unit, onClose: () -> Unit) {
+    val p = price ?: t(R.string.sub_price_default)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Header(t(R.string.scan_lock_title), null, t(R.string.cancel), onClose)
+        Panel {
+            Text(t(R.string.scan_lock_text, p), color = C.Ink, fontSize = 15.sp, lineHeight = 21.sp)
+            Text(t(R.string.sub_cancel_note), color = C.Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 10.dp))
+        }
+        BigButton(t(R.string.scan_lock_buy, p), enabled = !busy, onClick = onBuy)
     }
 }
 
@@ -1124,7 +1206,8 @@ fun GoogleSetupScreen(onDone: (String) -> Unit) {
 @Composable
 fun HomeScreen(
     readings: List<Reading>, message: String?, me: Me?, onOpenCredit: () -> Unit,
-    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit
+    onVoice: () -> Unit, onScan: () -> Unit, onTerms: () -> Unit, onDash: () -> Unit,
+    onScanLocked: () -> Unit = {}
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -1139,14 +1222,37 @@ fun HomeScreen(
         if (noLock) WarnLine(t(R.string.no_screen_lock)) {
             try { ctx0.startActivity(android.content.Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) } catch (_: Exception) { }
         }
+        // now and then, a small proposal to use the fingerprint or face (or a screen lock) to open HINT 365
+        var nudge by remember { mutableStateOf(BioNudge.what(ctx0)) }
+        nudge?.let { kind ->
+            AlertDialog(
+                onDismissRequest = { BioNudge.later(ctx0); nudge = null },
+                title = { Text(t(R.string.bio_title)) },
+                text = { Text(t(if (kind == "lock") R.string.bio_text_lock else R.string.bio_text_enroll)) },
+                confirmButton = { TextButton(onClick = { BioNudge.later(ctx0); nudge = null; BioNudge.open(ctx0, kind) }) { Text(t(R.string.bio_yes), color = C.Sys) } },
+                dismissButton = { TextButton(onClick = { BioNudge.later(ctx0); nudge = null }) { Text(t(R.string.bio_later), color = C.Muted) } },
+                containerColor = C.Surface
+            )
+        }
         if (message != null) Panel { Text(message, color = C.Alert, fontSize = 14.sp) }
 
         // two ways to record a reading, side by side: say it aloud, or photograph the monitor. Both are read on this
         // phone, without AI, and saved only after the person has checked the numbers.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BigButton(t(R.string.record_short), color = C.Surface2, textColor = C.Ink, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
+            BigButton(t(R.string.record_short), color = C.Voice, modifier = Modifier.weight(1f), icon = R.drawable.ic_mic, onClick = onVoice)
             Spacer(Modifier.width(10.dp))
-            BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, onClick = onScan)
+            // the Scan reads the photo with AI: 3 a day (paid by the owner, free for 15 days, then with the subscription),
+            // up to 30 with the person's own key. Locked: grey, "Unlock this feature".
+            val scan = me?.sub?.scan ?: "on"
+            if (scan == "locked")
+                BigButton(t(R.string.scan_short), color = C.Surface2, textColor = C.Muted, modifier = Modifier.weight(1f), icon = R.drawable.ic_camera,
+                    trailing = R.drawable.ic_ai_wand, sub = t(R.string.ai_unlock_short), onClick = onScanLocked)
+            else {
+                val left = me?.sub?.trialUntil?.let { ((it - System.currentTimeMillis()) / 86_400_000L + 1).coerceAtLeast(1) }
+                BigButton(t(R.string.scan_short), modifier = Modifier.weight(1f), icon = R.drawable.ic_camera, trailing = R.drawable.ic_ai_wand,
+                    sub = if (scan == "trial" && left != null) t(R.string.scan_trial_left, left.toInt())
+                        else me?.sub?.scansLeft?.let { n -> t(R.string.scan_left_year, n) }, onClick = onScan)
+            }
         }
         Spacer(Modifier.height(6.dp))
 
@@ -1338,7 +1444,7 @@ fun WeekPanel(readings: List<Reading>) {
     val cell = Modifier.padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp)
     val labelW = 52.dp
     Panel {
-        Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
+        Row { Text(t(R.string.last7_avg), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(labelW))
@@ -1349,7 +1455,8 @@ fun WeekPanel(readings: List<Reading>) {
                 }
             }
         }
-        WeekRow("mmHg", labelW) {
+        // each box is the day's average, not the last reading: said in the title and, small, under "mmHg"
+        WeekRow("mmHg", labelW, sub = t(R.string.week_avg)) {
             days.forEach { d ->
                 val l = byDay.getValue(d)
                 Column(Modifier.weight(1f).then(cell), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1373,7 +1480,6 @@ fun WeekPanel(readings: List<Reading>) {
                 )
             }
         }
-        Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -1454,9 +1560,12 @@ fun BrandHeader() {
 }
 
 @Composable
-private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() -> Unit) {
+private fun WeekRow(label: String, labelW: Dp, sub: String? = null, cells: @Composable RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.width(labelW))
+        Column(Modifier.width(labelW)) {
+            Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1)
+            if (sub != null) Text(sub, color = C.Muted, fontSize = 9.sp, lineHeight = 10.sp, maxLines = 2)
+        }
         cells()
     }
 }
@@ -1470,7 +1579,8 @@ private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() ->
 @Composable
 fun PhotoScreen(
     photo: android.graphics.Bitmap?, result: MonitorScan.Result?, takenAt: Long, saving: Boolean,
-    onSave: (MonitorScan.Result.Values) -> Unit, onWrong: () -> Unit, onRetake: () -> Unit, onVoice: () -> Unit, onCancel: () -> Unit
+    onSave: (MonitorScan.Result.Values) -> Unit, onWrong: () -> Unit, onRetake: () -> Unit, onVoice: () -> Unit, onCancel: () -> Unit,
+    onMoreScans: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
         Header(t(R.string.new_reading), t(R.string.photo_sub), t(R.string.cancel), onCancel)
@@ -1492,18 +1602,31 @@ fun PhotoScreen(
             }
             is MonitorScan.Result.Retake -> {
                 Panel {
-                    Text(t(R.string.photo_retake_title), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(t(when {
+                        result.reason == "quota_year" -> R.string.photo_quota_year_title
+                        result.reason == "locked" -> R.string.scan_lock_title
+                        result.reason.startsWith("quota") -> R.string.photo_quota_title
+                        result.reason.startsWith("ai_") -> R.string.photo_ai_title
+                        else -> R.string.photo_retake_title
+                    }), color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     Text(t(when (result.reason) {
                         "dark" -> R.string.photo_why_dark
                         "glare" -> R.string.photo_why_glare
                         "blurry" -> R.string.photo_why_blurry
                         "implausible" -> R.string.photo_why_implausible
                         "unclear" -> R.string.photo_why_unclear
+                        "ai_network" -> R.string.photo_why_ai_network
+                        "ai_error" -> R.string.photo_why_ai_error
+                        "quota_free" -> R.string.photo_why_quota_free
+                        "quota_year" -> R.string.photo_why_quota_year
+                        "locked" -> R.string.scan_lock_photo
                         else -> R.string.photo_why_not_found
                     }), color = C.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp))
-                    Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                    if (!result.reason.startsWith("quota") && result.reason != "locked") Text(t(R.string.photo_tips), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
                 }
-                BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
+                // the trial is over: the subscription; today's 3 or the year's allowance used: only voice
+                if (result.reason == "locked") BigButton(t(R.string.scan_lock_title), trailing = R.drawable.ic_ai_wand, onClick = onMoreScans)
+                else if (!result.reason.startsWith("quota")) BigButton(t(R.string.retake), icon = R.drawable.ic_camera, onClick = onRetake)
                 BigButton(t(R.string.photo_use_voice), color = C.Surface2, textColor = C.Ink, icon = R.drawable.ic_mic, onClick = onVoice)
             }
             is MonitorScan.Result.Values -> {
@@ -1602,7 +1725,7 @@ private fun RowDivider() = Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).
 fun CreditScreen(
     me: Me?, readingsCount: Int, labsCount: Int?,
     onLinkGoogle: () -> Unit, onSignOut: () -> Unit, onDeleteAccount: () -> Unit, onManageReadings: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit, onAi: () -> Unit, onOwnerClaim: suspend (String) -> String? = { null }
 ) {
     var signOutAsk by remember { mutableStateOf(false) }
     var deleteStep by remember { mutableIntStateOf(0) }   // delete my account: 0 nothing, 1 question, 2 last confirmation
@@ -1642,6 +1765,46 @@ fun CreditScreen(
                     Spacer(Modifier.width(8.dp))
                     Text(t(label), color = if (on) Color.White else C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
+            }
+        }
+
+        // the owner's account on a new phone: the owner's secret code gives this phone the owner's powers back
+        if (me.ownerClaim) {
+            SectionTitle(t(R.string.owner_claim_title))
+            Panel {
+                var code by remember { mutableStateOf("") }
+                var busy by remember { mutableStateOf(false) }
+                var problem by remember { mutableStateOf<String?>(null) }
+                val claimScope = rememberCoroutineScope()
+                Text(t(R.string.owner_claim_text), color = C.Ink, fontSize = 14.sp, lineHeight = 20.sp)
+                OutlinedTextField(
+                    value = code, singleLine = true, onValueChange = { code = it; problem = null },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password, autoCorrect = false),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = C.Ink, unfocusedTextColor = C.Ink, focusedBorderColor = C.Sys, unfocusedBorderColor = C.Line),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
+                problem?.let { Text(it, color = C.Alert, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
+                BigButton(t(R.string.owner_claim_go), enabled = !busy && code.isNotBlank()) {
+                    busy = true
+                    claimScope.launch { problem = onOwnerClaim(code.trim()); busy = false; if (problem == null) code = "" }
+                }
+            }
+        }
+
+        // the AI features (the photo Scan): how many made, how many left (an estimate) or the trial days; while on trial
+        // or locked, a tap opens the subscription. Never shown to the owner.
+        if (me.sub.scansUsed != null) {
+            SectionTitle(t(R.string.section_ai))
+            Panel {
+                val used = me.sub.scansUsed
+                val days = me.sub.trialUntil?.let { ((it - System.currentTimeMillis()) / 86_400_000L + 1).coerceAtLeast(1).toInt() }
+                val sub = when {
+                    me.sub.scan == "trial" && days != null -> t(R.string.ai_row_trial, used, days)
+                    me.sub.scan == "on" && me.sub.scansLeft != null -> t(R.string.ai_row_on, used, me.sub.scansLeft)
+                    else -> t(R.string.ai_unlock_row_sub)
+                }
+                SettingRow(R.drawable.ic_ai_wand, t(R.string.ai_unlock), sub, color = C.Sys, onClick = if (me.sub.scan == "on") null else onAi)
             }
         }
 

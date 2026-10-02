@@ -42,6 +42,12 @@ import kotlin.math.roundToInt
 
 /* ---------------- Texts in the phone's language ---------------- */
 
+/** The app speaks Italian, German, French or English: any other phone language gets English (texts fall back to
+ *  values/ by themselves; this keeps dates, weekdays and the server's answers in the same language). English dates
+ *  are written the British way (day/month, 24 h). */
+val APP_LANGS = setOf("it", "de", "fr", "en")
+fun appLocale(): Locale = Locale.getDefault().let { if (it.language in APP_LANGS) it else Locale.UK }
+
 object Txt {
     @Volatile var res: Resources? = null
     fun init(ctx: Context) { res = ctx.resources }
@@ -54,7 +60,7 @@ val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
 /** The notice on the web, the same text the app shows before first use. */
 val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
-const val DISCLAIMER_VERSION = "20"
+const val DISCLAIMER_VERSION = "21"
 
 fun shareApp(ctx: Context) {
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -133,8 +139,14 @@ fun parseSpoken(texts: List<String>): Spoken {
 }
 
 /** [hasGoogle]: the account is linked to a Google account ([email]), so it can be found again on a new phone. */
-/** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set. */
-data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "") {
+/** [required]: this account must pay; [active]: paid until [until]. Expired = required, not active, [until] set.
+ *  [scan]: the photo Scan, the only thing the subscription unlocks: "on", "trial" (free until [trialUntil]) or "locked". */
+data class Sub(val required: Boolean = false, val active: Boolean = true, val until: Long? = null, val state: String = "",
+               val scan: String = "on", val trialUntil: Long? = null, val trialStarted: Boolean = false,
+               /** about how many Scans are left in the subscriber's yearly allowance (null: owner, or not subscribed) */
+               val scansLeft: Int? = null,
+               /** Scans made in the last 12 months (null: the owner) */
+               val scansUsed: Int? = null) {
     val blocked: Boolean get() = required && !active
 }
 
@@ -145,7 +157,9 @@ data class Me(
     /** Administrator only: apps below this version are switched off (0 = none). */
     val appMinVersion: Int = 0,
     /** The yearly subscription; [subscriptionOn] (owner only) = everyone else must have one. */
-    val sub: Sub = Sub(), val subscriptionOn: Boolean = false
+    val sub: Sub = Sub(), val subscriptionOn: Boolean = false,
+    /** The owner's account on a phone not on record: the owner's secret code makes it the owner's phone. */
+    val ownerClaim: Boolean = false
 )
 
 /** Amber of the short warning lines (Google not linked, no screen lock). */
@@ -155,7 +169,7 @@ const val WARN_COLOR = 0xFFFFB35C
 
 object Z {
     val zone: ZoneId = ZoneId.of("Europe/Zurich")
-    private fun loc(): Locale = Locale.getDefault()
+    private fun loc(): Locale = appLocale()
 
     fun date(ts: Long): LocalDate = Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
     fun today(): LocalDate = LocalDate.now(zone)
@@ -335,6 +349,9 @@ fun errorText(code: String): String = when (code) {
 
 object Api {
     private val base = BuildConfig.API_URL.trimEnd('/')
+    /** This phone's Android id (same app, same phone): the server keeps only an HMAC of it, to count the Scan trial
+     *  once per phone. Set at start-up. */
+    var device: String? = null
 
     private fun sha256Hex(b: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
@@ -355,9 +372,10 @@ object Api {
                 c.readTimeout = 120000
                 c.setRequestProperty("X-Ts", ts)
                 c.setRequestProperty("X-Sig", sig)
-                c.setRequestProperty("X-Lang", Locale.getDefault().language)
+                c.setRequestProperty("X-Lang", appLocale().language)
                 c.setRequestProperty("X-App-Version", BuildConfig.VERSION_CODE.toString())
                 if (personId != null) c.setRequestProperty("X-Person", personId)
+                device?.let { c.setRequestProperty("X-Device", it) }
                 if (body != null) {
                     c.doOutput = true
                     c.setRequestProperty("Content-Type", "application/json")
@@ -441,13 +459,23 @@ object Repo {
             j.optBoolean("hasGoogle", false), if (j.isNull("email")) null else j.optString("email"), j.optBoolean("googleOn", false),
             j.optBoolean("disclaimerOk", true),
             j.optInt("appMinVersion", 0),
-            parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false)
+            parseSub(j.optJSONObject("sub")), j.optBoolean("subscriptionOn", false),
+            j.optBoolean("ownerClaim", false)
         )
+    }
+
+    /** The owner's secret code, on a new phone: true when accepted. */
+    suspend fun ownerClaim(pid: String, code: String) {
+        Api.call("POST", "/v1/owner/claim", JSONObject().put("code", code), pid)
     }
 
     private fun parseSub(o: JSONObject?): Sub = if (o == null) Sub() else Sub(
         o.optBoolean("required", false), o.optBoolean("active", true),
-        if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", "")
+        if (o.isNull("until") || !o.has("until")) null else o.optLong("until"), o.optString("state", ""),
+        o.optString("scan", "on"), if (o.isNull("trialUntil") || !o.has("trialUntil")) null else o.optLong("trialUntil"),
+        o.optBoolean("trialStarted", false),
+        if (o.isNull("scansLeft") || !o.has("scansLeft")) null else o.optInt("scansLeft"),
+        if (o.isNull("scansUsed") || !o.has("scansUsed")) null else o.optInt("scansUsed")
     )
 
     /** A purchase made in Google Play, checked by the server with Google Play. */
@@ -480,6 +508,10 @@ object Repo {
     suspend fun photo(pid: String, sis: Int, dia: Int, pul: Int, takenAt: Long) {
         Api.call("POST", "/v1/bp/photo", JSONObject().put("sis", sis).put("dia", dia).put("pul", pul).put("takenAt", takenAt), pid)
     }
+
+    /** The free photo Scan (terms v21): the server reads the display with the owner's key and answers the numbers or a retake reason. */
+    suspend fun photoRead(pid: String, jpegB64: String): JSONObject =
+        Api.call("POST", "/v1/bp/photo/read", JSONObject().put("image", jpegB64), pid)
 
     /** How a photo Scan ended when nothing was saved (retake reason, or "wrong"): a code only. Never fails. */
     suspend fun photoOutcome(pid: String, code: String) {

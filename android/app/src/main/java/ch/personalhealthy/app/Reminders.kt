@@ -32,6 +32,7 @@ object Reminders {
     private const val CHANNEL = "reminders"
     private const val ID_MORNING = 2001
     private const val ID_EVENING = 2002
+    private const val ID_AI_TRIAL = 2003
     private val TIMES = mapOf("morning" to LocalTime.of(9, 0), "evening" to LocalTime.of(17, 0), "clear" to LocalTime.MIDNIGHT)
 
     /** Called at every start of the app: REPLACE so a change of the times takes effect at once. */
@@ -45,6 +46,21 @@ object Reminders {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.cancel(1001)
         nm.deleteNotificationChannel("credito")
+    }
+
+    /** The free days of the AI features end at [until]: one notice 2 days before, once (null = not on trial). */
+    fun aiTrial(ctx: Context, until: Long?) {
+        val wm = WorkManager.getInstance(ctx)
+        val prefs = ctx.getSharedPreferences("battito", Context.MODE_PRIVATE)
+        if (until == null || until <= System.currentTimeMillis() || prefs.getLong("aiTrialNotified", 0L) == until) {
+            wm.cancelUniqueWork("ai-trial"); return
+        }
+        val delay = (until - 2 * 86_400_000L - System.currentTimeMillis()).coerceAtLeast(0L)
+        val req = OneTimeWorkRequestBuilder<ReminderWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInputData(workDataOf("which" to "ai_trial", "until" to until))
+            .build()
+        wm.enqueueUniqueWork("ai-trial", ExistingWorkPolicy.REPLACE, req)
     }
 
     /** At midnight: the day's reminders go away, and the badge with them. */
@@ -79,10 +95,11 @@ object Reminders {
             ctx, 1, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val body = t(if (which == "morning") R.string.reminder_morning else R.string.reminder_evening)
+        val trial = which == "ai_trial"
+        val body = t(when (which) { "morning" -> R.string.reminder_morning; "evening" -> R.string.reminder_evening; else -> R.string.ai_trial_body })
         val n = NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_notify)
-            .setContentTitle(t(R.string.reminder_title))
+            .setContentTitle(t(if (trial) R.string.ai_trial_title else R.string.reminder_title))
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(open)
@@ -91,7 +108,7 @@ object Reminders {
             .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
             .build()
         try {
-            NotificationManagerCompat.from(ctx).notify(if (which == "morning") ID_MORNING else ID_EVENING, n)
+            NotificationManagerCompat.from(ctx).notify(when (which) { "morning" -> ID_MORNING; "evening" -> ID_EVENING; else -> ID_AI_TRIAL }, n)
         } catch (e: SecurityException) {
             // notifications not allowed: nothing to do
         }
@@ -101,6 +118,13 @@ object Reminders {
 class ReminderWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
         val which = inputData.getString("which") ?: return Result.success()
+        if (which == "ai_trial") {
+            // the AI trial is about to end: said once, then never again for this end date
+            val prefs = applicationContext.getSharedPreferences("battito", Context.MODE_PRIVATE)
+            if (prefs.getString("personId", null) != null) Reminders.show(applicationContext, which)
+            prefs.edit().putLong("aiTrialNotified", inputData.getLong("until", 0L)).apply()
+            return Result.success()
+        }
         if (which == "clear") {
             Reminders.clear(applicationContext)
         } else if (applicationContext.getSharedPreferences("battito", Context.MODE_PRIVATE).getString("personId", null) != null) {

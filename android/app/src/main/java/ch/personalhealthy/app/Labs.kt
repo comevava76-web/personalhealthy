@@ -338,6 +338,9 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
                 exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
             ) { ImportProgress(status) }
             message?.let { Panel { Text(it, color = C.Alert, fontSize = 14.sp) } }
+            // the full results in the Web Dashboard first; the history of uploads, closed, comes last
+            Spacer(Modifier.height(6.dp))
+            GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
             Text(t(R.string.labs_uploads), color = C.Ink, fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 14.dp, start = 4.dp))
             if (uploads.isEmpty()) Text(t(R.string.labs_empty), color = C.Muted, fontSize = 13.sp,
@@ -369,11 +372,7 @@ fun LabsScreen(pid: String, onDash: () -> Unit) {
                 }
             }
         }
-        item {
-            Spacer(Modifier.height(6.dp))
-            GlowButton(t(R.string.my_dash) + "  ↗", onClick = onDash)
-            Spacer(Modifier.height(24.dp))
-        }
+        item { Spacer(Modifier.height(24.dp)) }
     }
     // deleting a saved report: always asked first; the file can then be imported again
     ask?.let { u ->

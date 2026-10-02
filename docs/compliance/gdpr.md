@@ -23,7 +23,8 @@ the points marked *legal review* should be confirmed by a data-protection lawyer
 |---|---|---|
 | Owner of HINT 365 (Human) | **Controller** (Art. 4(7)) | decides purposes and means |
 | Cloudflare (Worker, D1, logs) | **Processor** (Art. 28) | Cloudflare's Data Processing Addendum is part of its self-serve terms: to check it is accepted on the account |
-| ~~Anthropic (reading the photo)~~ | Removed in terms v19 (01.10.2026): no AI provider; keys, costs and AI readings deleted from D1 by the nightly purge | none |
+| ~~Anthropic (reading the photo, server side)~~ | Removed in terms v19 (01.10.2026); keys, costs and AI readings deleted from D1 by the nightly purge | none |
+| Anthropic (reading the photo of the display, Scan from terms v21: 15-day trial then the AI features subscription, 3 a day, Claude Haiku 4.5) | **Processor** (Art. 28): reads the photo for HINT 365 with the owner's key, no training on API data | Anthropic's commercial terms and DPA, SCC for the US transfer: to accept on the owner's account |
 | Google (Sign in with Google, Play Billing, speech recognition on the phone) | Independent controller for its own services | Google's terms and privacy policy |
 
 ## 3. What is already in place
@@ -53,7 +54,7 @@ the points marked *legal review* should be confirmed by a data-protection lawyer
 | G8 | Record of processing activities | 30 | Draft below (section 5); keep it in `docs/compliance/` | Claude (done as draft) |
 | G9 | Data protection impact assessment: likely needed (health data, new technology, AI) | 35 | Short DPIA from the threat model in `docs/testing/test-report-2026-09-28.md` | Claude drafts, Human signs |
 | G10 | Personal-data breach procedure (72 hours to the authority, then the users if high risk) | 33, 34 | One-page procedure: who notices (error log, security tests), who decides, who notifies (FDPIC / Italian Garante), template text | Claude drafts |
-| G11 | Processor agreements checked and filed | 28 | Confirm Cloudflare DPA accepted on the account; (Anthropic no longer used since terms v19) | Human (account owner) |
+| G11 | Processor agreements checked and filed | 28 | Confirm Cloudflare DPA accepted on the account; accept Anthropic's commercial terms and DPA (used again for the Scan since terms v21) | Human (account owner) |
 | G12 | The acceptance record kept after deletion lacked its legal basis | 17(3)(e), 6(1)(f) | **Done**: legitimate interest, terms v15 and privacy | — |
 
 G2, G3, G4, G6 and G12 were approved by Human ("GDPR e cookie devono stare nel disclaimer") and are in the terms
@@ -66,8 +67,10 @@ every user accepts again at the next opening. Still open: G1, G5, G7, G9, G10, G
 |---|---|---|---|---|---|---|
 | Blood-pressure diary | keep, chart and share one's own readings | app users (18+) | SYS, DIA, PUL, date/time, moment, source | Cloudflare (processor) | 365 days | explicit consent, Art. 9(2)(a) |
 | Lab results | keep one's own lab history, one table across laboratories | app users (18+) | report date; test code or name as printed, value, unit and reference as printed; HMAC fingerprint of the file. **Not**: the document, its text, name, surname, date of birth or any other identifier (the document stays at rest only on the phone; in transit only these fields over HTTPS/TLS, requests signed by the phone key) | Cloudflare (processor) | until the user deletes them (a date, all, a report, the account): the purpose is the complete history, the user controls it (Art. 5(1)(e)); never deleted automatically | explicit consent, Art. 9(2)(a) |
+| Counting the Scan trial once per Google account and per phone | prevent a second free trial on another phone or account | app users who used the Scan | HMAC fingerprints of the Google account and the phone's Android ID with the start date, table `scan_trials` | Cloudflare (EU) | at most 2 years, also after account deletion | legitimate interest (6(1)(f)) |
 | ~~Reading a photo of the display with Anthropic~~ | removed in terms v19 (01.10.2026) | — | — | — | — |
-| Reading a photo of the display on the phone (Scan, terms v20) | record a reading without typing or speaking | app users (18+) | the photo is processed **only on the phone** (own digit reader, bundled ML Kit) and deleted; only the three confirmed numbers are sent, as a voice reading. Retake reasons counted as codes in `event_log` | Cloudflare (processor), for the three numbers | as the readings (365 days); the photo is not kept | explicit consent, Art. 9(2)(a) |
+| ~~Reading a photo of the display on the phone (Scan, terms v20)~~ | replaced in terms v21 (02.10.2026): the on-phone reader was not reliable on real displays | — | — | — | — |
+| Reading a photo of the display with AI (Scan, terms v21) | record a reading without typing or speaking | app users (18+) | trial or subscription (3 a day): the photo of the display alone goes through the Worker (not stored, not logged) to **Anthropic** (processor). Nobody adds an AI key of their own. HINT 365 stores only the three confirmed numbers and, for the yearly allowance (2.50 US$), the Scans made and their AI cost in the last 12 months (`scan_usage`, deleted with the account), as a voice reading. Retake reasons counted as codes in `event_log` | Cloudflare and Anthropic (processors) | as the readings (365 days); the photo is not kept by HINT 365 and is deleted from the phone; Anthropic's API retention per its terms | explicit consent, Art. 9(2)(a) |
 | Account and sign-in | find the diary again, secure access | users | HMAC of Google id, phone public key, consent time | Google (sign-in) | while the account exists | contract, Art. 6(1)(b) |
 | Doctor links and web sessions | show the report to the doctor chosen by the user | users, doctors | token fingerprint, period | the doctor | 7 days | consent / contract |
 | Terms acceptance record | proof | users | code, phone model, versions, text fingerprint, date | — | kept after deletion | Art. 6(1)(f) / legal claims |

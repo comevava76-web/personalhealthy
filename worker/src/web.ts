@@ -85,11 +85,11 @@ const MODULES: Record<string, Module> = {
 };
 
 /* ---------- step 1, from the app (already signed by the phone): a one-time code ---------- */
-export async function newWebCode(q: Q, pid: string, origin: string): Promise<Response> {
+export async function newWebCode(q: Q, pid: string, origin: string, owner = false): Promise<Response> {
   const code = randomToken();
   const now = Date.now();
   await q("DELETE FROM web_codes WHERE expires_at < ?1", [now]);
-  await q("INSERT INTO web_codes (code_hash, person_id, expires_at) VALUES (?1, ?2, ?3)", [await fingerprint(code), pid, now + CODE_TTL]);
+  await q("INSERT INTO web_codes (code_hash, person_id, expires_at, owner) VALUES (?1, ?2, ?3, ?4)", [await fingerprint(code), pid, now + CODE_TTL, owner ? 1 : 0]);
   return json({ url: `${origin}/my/#c=${code}` });
 }
 
@@ -148,13 +148,13 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     let code = "";
     try { code = String((await req.json() as any).code || ""); } catch {}
     const h = await fingerprint(code);
-    const [row] = await q("DELETE FROM web_codes WHERE code_hash = ?1 RETURNING person_id, expires_at", [h]); // atomic redemption
+    const [row] = await q("DELETE FROM web_codes WHERE code_hash = ?1 RETURNING person_id, expires_at, owner", [h]); // atomic redemption
     if (!row || Number(row.expires_at) < Date.now()) return fail("This link has expired: open My Dash again from the app", 401, "code_gone");
     const token = randomToken();
     const now = Date.now();
     await q("DELETE FROM web_sessions WHERE expires_at < ?1", [now]);
-    await q("INSERT INTO web_sessions (id_hash, person_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)",
-      [await fingerprint(token), row.person_id, now, now + SESSION_TTL]);
+    await q("INSERT INTO web_sessions (id_hash, person_id, created_at, expires_at, owner) VALUES (?1, ?2, ?3, ?4, ?5)",
+      [await fingerprint(token), row.person_id, now, now + SESSION_TTL, Number(row.owner) ? 1 : 0]);
     return json({ ok: true }, 200, {
       "set-cookie": `${COOKIE}=${token}; Path=/my; Max-Age=${SESSION_TTL / 1000}; HttpOnly; Secure; SameSite=Strict`,
     });
@@ -163,7 +163,7 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
   // every other /my/ call needs the cookie
   const token = (req.headers.get("cookie") || "").split(/;\s*/).find(c => c.startsWith(COOKIE + "="))?.slice(COOKIE.length + 1) || "";
   const sh = token ? await fingerprint(token) : "";
-  const [sess] = sh ? await q("SELECT person_id, expires_at FROM web_sessions WHERE id_hash = ?1", [sh]) : [];
+  const [sess] = sh ? await q("SELECT person_id, expires_at, owner FROM web_sessions WHERE id_hash = ?1", [sh]) : [];
   if (!sess || Number(sess.expires_at) < Date.now()) return fail("Not signed in", 401, "no_session");
   const pid = String(sess.person_id);
   markAuthenticated();
@@ -172,8 +172,11 @@ export async function handleWeb(req: Request, env: any, q: Q, url: URL, subOk: (
     await q("DELETE FROM web_sessions WHERE id_hash = ?1", [sh]);
     return json({ ok: true }, 200, { "set-cookie": `${COOKIE}=; Path=/my; Max-Age=0; HttpOnly; Secure; SameSite=Strict` });
   }
-  const [who] = await q("SELECT is_admin FROM persons WHERE id = ?1", [pid]);
-  const isOwner = !!who?.is_admin;
+  // the Admin console: the owner's account, in a session opened from the owner's own phone (owner_key), and that
+  // phone is still the one on record (a session from a phone that lost the owner's powers stops at once)
+  const [who] = await q("SELECT is_admin, public_key FROM persons WHERE id = ?1", [pid]);
+  const [ok] = await q("SELECT value FROM settings WHERE key = 'owner_key'");
+  const isOwner = !!who?.is_admin && Number(sess.owner) === 1 && !!ok && String(ok.value) === String(who.public_key);
   if (p === "/my/api/me" && req.method === "GET") {
     const shares = await q("SELECT COUNT(*) AS n FROM web_shares WHERE person_id = ?1 AND expires_at > ?2", [pid, Date.now()]);
     return json({ modules: Object.keys(MODULES), activeShares: Number(shares[0]?.n || 0), isOwner });
@@ -357,6 +360,25 @@ function newestVersion(env: any): number {
   return Number(env.APP_VERSION) || 0;
 }
 
+/**
+ * The owner's accounts at a glance, since the start: what came in (estimate at list price), what the AI cost, how many
+ * users, and the most the trial of all those users could cost (each at most 45 Scans, at the average cost per Scan
+ * seen so far). Whatever the estimate, the ceiling set at the AI provider is the real limit.
+ */
+async function moneyGlance(q: Q) {
+  const [s] = await q("SELECT COALESCE(SUM(scans), 0) AS scans, COALESCE(SUM(micro_usd), 0) AS micro FROM ai_spend_daily");
+  const [g] = await q("SELECT COALESCE(SUM(sales), 0) AS sales, COALESCE(SUM(gross_cents), 0) AS cents FROM sub_sales_daily");
+  const [u] = await q("SELECT COUNT(*) AS n FROM persons WHERE is_admin = 0");
+  const scans = Number(s?.scans || 0), ai = Number(s?.micro || 0) / 1e6, users = Number(u?.n || 0);
+  const perScan = scans > 0 && ai > 0 ? ai / scans : 0.002;      // until the first Scans: the estimate (Claude Haiku)
+  const gross = Number(g?.cents || 0) / 100;
+  return { gross, net: gross * (1 - PLAY_FEE), sales: Number(g?.sales || 0), ai, scans, users,
+    trialMax: users * 45 * perScan, per100: 100 * 45 * perScan };
+}
+
+/** Google Play's fee on subscriptions, for the owner's estimate of what is left after it. */
+const PLAY_FEE = 0.15;
+
 async function adminOverview(env: any, q: Q) {
   const now = Date.now();
   const one = async (sql: string, params: unknown[] = []) => Number((await q(sql, params))[0]?.n || 0);
@@ -380,6 +402,18 @@ async function adminOverview(env: any, q: Q) {
   const set: Record<string, string> = {};
   for (const r of gate as any[]) set[r.key] = String(r.value);
   const allUsers = await one("SELECT COUNT(*) AS n FROM persons");
+  // the owner's accounts, month by month (last 12): AI cost of the Scans and subscriptions sold. Totals only.
+  const spend = await q("SELECT substr(day, 1, 7) AS m, SUM(scans) AS scans, SUM(micro_usd) AS micro FROM ai_spend_daily GROUP BY m ORDER BY m DESC LIMIT 12");
+  const sales = await q("SELECT substr(day, 1, 7) AS m, SUM(sales) AS sales, SUM(gross_cents) AS cents FROM sub_sales_daily GROUP BY m ORDER BY m DESC LIMIT 12");
+  const months = [...new Set([...spend, ...sales].map((r: any) => String(r.m)))].sort().reverse().slice(0, 12);
+  const money = months.map((m) => {
+    const a: any = spend.find((r: any) => r.m === m) || {}, b: any = sales.find((r: any) => r.m === m) || {};
+    const gross = Number(b.cents || 0) / 100, ai = Number(a.micro || 0) / 1e6;
+    return { month: m, scans: Number(a.scans || 0), ai, sales: Number(b.sales || 0), gross, net: gross * (1 - PLAY_FEE), diff: gross * (1 - PLAY_FEE) - ai };
+  });
+  const activeSubs = await one("SELECT COUNT(*) AS n FROM persons WHERE is_admin = 0 AND sub_until > ?1", [now]);
+  // the AI provider refused for lack of credit (or the owner's spend limit) in the last 2 days: top up
+  const noCredit = await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log WHERE code = 'ai_no_credit' AND last_at > ?1", [now - 2 * 864e5]);
   return {
     at: now,
     totals: {
@@ -390,6 +424,7 @@ async function adminOverview(env: any, q: Q) {
       errors: await one("SELECT COALESCE(SUM(count), 0) AS n FROM error_log"),
     },
     storage: { dbBytes, freeLimitBytes: 500 * 1024 * 1024 },
+    money: { months: money, activeSubs, playFee: PLAY_FEE, noCredit, glance: await moneyGlance(q) },
     versions: { min: Number(set.app_min_version) || 0, blocked: set.app_blocked || "", off: set.app_off === "1", newest: newestVersion(env) },
     subscriptionOn: set.subscription_on === "1",
     security: (() => { try { return set.security_scan ? JSON.parse(set.security_scan) : null; } catch { return null; } })(),

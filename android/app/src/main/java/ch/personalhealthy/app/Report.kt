@@ -638,3 +638,61 @@ fun shareFile(ctx: Context, file: File, mime: String) {
     }
     ctx.startActivity(Intent.createChooser(send, t(R.string.share_title)))
 }
+
+/**
+ * The terms of use as an A4 PDF, the very text the app shows and the person accepts (version [DISCLAIMER_VERSION],
+ * in the app's language): a coloured band with the title, then each part with its heading. Made on the phone.
+ */
+fun termsPdf(ctx: Context): File {
+    val w = 595; val h = 842; val margin = 48f; val width = (w - 2 * margin).toInt()
+    val doc = PdfDocument()
+    val head = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12.5f; typeface = Typeface.DEFAULT_BOLD; color = 0xFF6D5BD0.toInt() }
+    val body = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9.5f; color = 0xFF13223F.toInt() }
+    val small = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8f; color = 0xFF5B6B88.toInt() }
+    fun layout(text: String, paint: android.text.TextPaint) =
+        android.text.StaticLayout.Builder.obtain(text, 0, text.length, paint, width).setLineSpacing(0f, 1.25f).build()
+    var pageNo = 0
+    var page: PdfDocument.Page? = null
+    var y = 0f
+    fun newPage() {
+        page?.let { doc.finishPage(it) }
+        pageNo++
+        page = doc.startPage(PdfDocument.PageInfo.Builder(w, h, pageNo).create())
+        val c = page!!.canvas
+        if (pageNo == 1) {
+            // the band: violet to teal, like the reports
+            val band = Paint().apply { shader = android.graphics.LinearGradient(0f, 0f, w.toFloat(), 0f, 0xFF6D5BD0.toInt(), 0xFF0F9C8E.toInt(), android.graphics.Shader.TileMode.CLAMP) }
+            c.drawRect(0f, 0f, w.toFloat(), 64f, band)
+            val title = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 18f; typeface = Typeface.DEFAULT_BOLD; color = android.graphics.Color.WHITE }
+            c.drawText("HINT 365 · " + t(R.string.disc_title), margin, 40f, title)
+            y = 88f
+            val meta = layout(t(R.string.terms_pdf_meta, DISCLAIMER_VERSION, Z.long(Z.today())), small)
+            c.save(); c.translate(margin, y); meta.draw(c); c.restore(); y += meta.height + 14f
+        } else y = margin
+        c.drawText("$pageNo", w - margin, h - 24f, small)
+    }
+    fun put(l: android.text.StaticLayout, gapAfter: Float) {
+        if (y + l.height > h - margin) newPage()
+        val c = page!!.canvas
+        c.save(); c.translate(margin, y); l.draw(c); c.restore()
+        y += l.height + gapAfter
+    }
+    newPage()
+    t(R.string.disc_body).split("\n\n").forEach { part ->
+        val lines = part.split("\n", limit = 2)
+        val hl = layout(lines[0], head)
+        if (y + hl.height + 40f > h - margin) newPage()   // a heading never alone at the bottom of a page
+        put(hl, 4f)
+        if (lines.size > 1) {
+            // long parts go page by page, a paragraph at a time
+            lines[1].split("\n").forEach { para -> put(layout(para, body), 6f) }
+        }
+        y += 6f
+    }
+    page?.let { doc.finishPage(it) }
+    val dir = File(ctx.cacheDir, "pdf").apply { mkdirs() }
+    val file = File(dir, "HINT365-Terms-v$DISCLAIMER_VERSION.pdf")
+    FileOutputStream(file).use { doc.writeTo(it) }
+    doc.close()
+    return file
+}

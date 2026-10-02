@@ -1,6 +1,6 @@
 # HINT 365 — shared handover
 
-Last updated: 2026-10-01, Europe/Zurich. Last editor: Claude Code (photo Scan back without AI, terms v20; dashboard opens on the tab you start from).
+Last updated: 2026-10-02, Europe/Zurich. Last editor: Claude Code (Scan via server, 3/day paid by the owner, up to 30 with own key; PR #131 awaiting Human's go).
 
 Canonical path: `Checkpoint/HANDOVER.md`. This file is shared by Codex/ChatGPT, Claude Code, Kimi and any future developer.
 
@@ -337,3 +337,53 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Error log last 24 h: nothing; event log only normal outcomes. Issue #119 (30.09–01.10): Core.kt:72 crash = P-001, fixed in 0.1.101; `bad_version` = app 0.1.100 below the minimum version (expected) → closed.
 - Security: Bouncy Castle 1.72 inside the app via pdfbox-android (12 advisories, 2 Critical; owner's Fix request #126; the automatic Security fix run stopped at the AI step). Fixed with a Gradle constraint to 1.86 (P-008, vulnerability-management.md §8). Build-tool findings (#112) unchanged: they follow the Android Gradle plugin update (#94, Human decides).
 - Dependabot: zxing 3.5.4 (patch) taken in this PR (#93). Not merged: coroutines 1.11 (#96, needs Kotlin 2) and exifinterface 1.4.2 (#95, needs compileSdk 35): they wait for the Kotlin 2 / AGP 9 / SDK 35 step (#94, #98, Human). Majors #89–#92, #94, #98, #120 proposed, not merged.
+
+### 2026-10-02 — Claude Code — lock proposal and a colour for Voice
+
+- Human chose to keep the phone's own lock (no PIN for the app) and asked for an occasional proposal: `BioNudge` shows a small window at most every 14 days when the phone has no screen lock («lock») or no fingerprint/face enrolled («bio»); «Attiva» opens the phone's enrolment or security settings, «Non ora» waits 14 days. Kept on the phone.
+- The Voice button has its own calm blue (`C.Voice` dark #3A76C4 / light #2E66AE, `--voice` in style.css), Scan stays violet: the two ways to record stand apart.
+- Guides IT/EN (+PDF) and CLAUDE.md updated. Kotlin compiled by CI.
+- Referti: the Web Dashboard button now sits right after the import; «Storico referti caricati» (renamed from «Caricamenti») is last (asked by Human).
+
+### 2026-10-02 — Claude Code — Scan with the person's own AI (terms v21)
+
+- Human tested the Scan without AI on a sharp photo of a Medisana monitor: «not clear». Reproduced locally (MonitorReader → unclear); real photos read so far: 0 of 7 (P-009). Decision of Human: Scan with AI, off by default, unlocked with the person's own key, any provider.
+- App: `AiScan.kt` (providers Claude/ChatGPT/Gemini/Kimi; key checked with the provider's model list, which also picks the vision model; key AES-GCM encrypted with the Android Keystore, only on the phone; photo → provider directly; JSON answer; plausibility check), `AiScreen.kt` (provider chips, «where do I find the key», key field, «Verifica e attiva», remove). Home: Scan grey with «Sblocca questa funzionalità» until unlocked; Gestore: «Funzionalità AI». Retake reasons `ai_key`, `ai_quota`, `ai_network`, `ai_error` (also counted on the server as `bp_photo_ai_*`). The app no longer uses MonitorReader/ML Kit for the Scan (module `android/reader` kept, unused). Claude: `claude-opus-5-5`, effort low, server-side fallbacks; retried without them on a 400.
+- Terms v21 (DISCLAIMER_VERSION 21 in app and server), privacy, home, costs note, compliance C06/C08, gdpr.md, guides IT/EN, architecture, CLAUDE.md, problems P-009. Local harness: functional and labs-security PASS. Kotlin compiled by CI; the AI calls are not tested here (no keys): Human tests them on the phone.
+
+### 2026-10-02 — Claude Code — Scan works without a key: 3 a day paid by the owner, up to 30 with one's own key (PR #131, not merged)
+
+- Request: Human said people will never paste their own AI key (a deterrent) and chose: 3 Scans a day per person free, upgrade to 30 a day with one's own key or by paying the owner.
+- Server: `POST /v1/bp/photo/read` (signed) sends the display photo to Anthropic (`claude-opus-5-5`, effort low) with the Worker secret `ANTHROPIC_API_KEY`; the photo is never stored or logged. Limit `SCAN_FREE`=3/day per person (owner 30) → `429 scan_quota`; without the secret → `503 scan_off`; provider failure → `502 scan_failed` + event `bp_photo_ai_error`. `build.yml` sets/deletes the Worker secret from the GitHub secret of the same name.
+- App: Scan button always active; `AiScan.read` uses the server by default, the person's own key (Claude/ChatGPT/Gemini/Kimi, encrypted on the phone) when set, with a local 30/day counter. Quota screen offers «Fino a 30 Scan al giorno con la tua AI». Gestore → «Scan con l'AI».
+- Terms v21, privacy (Anthropic as processor, SCC), home, costs, compliance C06/C08, gdpr.md, guides, architecture, CLAUDE.md, P-009 updated; PDFs regenerated.
+- Tests: local harness functional 173 pass / 0 fail; labs-security PASS; sync-notice check OK. App compiled only by CI.
+- Limits: needs the GitHub secret `ANTHROPIC_API_KEY` (Human's key) and acceptance of Anthropic's commercial terms/DPA (C08). «Pay the owner» for more Scans needs Google Play billing, not active yet.
+- Next: CI on PR #131, then merge **only after Human's explicit go** («Fermo» still holds). Parked: Security console fix report (web only), UI review findings.
+
+### 2026-10-02 — Claude Code — AI features subscription: app free, Scan 15-day trial then 4 US$ a year (PR #131, not merged)
+
+- Human's decisions, in chat: the app stays free; only the AI features (today the Scan) are paid, 4 US$ a year, after a 15-day trial from the first Scan (3 a day, at most 45 photos); a subscriber uses at most 3 US$ of AI a year; cheaper model; trial once per Google account and per phone; a notification before the trial ends; the upgrade button shown now (no "coming soon"); the terms reserve to the owner the right to change prices, remove free parts, make the app paid or withdraw it.
+- Server: subscription no longer blocks the app or the web (old `sub_expired` gate removed; `required` always false). `subState` returns `scan` (on/trial/locked), `trialUntil`, `trialStarted`. Scan: `402 scan_locked` after the trial without subscription; `429 scan_budget` at 3 US$/year (micro-US$ from Anthropic's token usage, `rate_limits` key `scan_usd:`); model `claude-haiku-4-5-20251001`. New table `scan_trials` (HMAC fingerprints "g:" Google, "d:" phone Android ID via header `X-Device`, "p:" account without Google), purged after 2 years.
+- App: wand-and-sparkles icon `ic_ai_wand` on Scan; label "Prova AI: ancora N giorni"; locked = grey + «Sblocca questa funzionalità» → `ScanLockScreen` (subscribe 4 US$ or own AI key); `Reminders.aiTrial` notifies 2 days before the end, once; costs table rewritten (app free, AI features 15 days then 4 $); `sub_price_default` 4 US$.
+- Terms v21 (still unreleased) updated in 4 languages (costs, trial, fingerprints, owner's discretion clause); privacy, home, guides, architecture, README, CLAUDE.md, compliance C06/C08, gdpr.md, P-009 updated; PDFs regenerated.
+- Tests: local functional 176 pass / 0 fail (subscription tests B2/B2b/B2c/B5b/SH11 rewritten for the new rule); labs-security PASS; sync-notice OK; check-layout OK. App compiled only by CI.
+- Limits: needs GitHub secret `ANTHROPIC_API_KEY`; Play product `hint365_annual` must be priced 4 US$; the buy button errors until the app is on Google Play with `PLAY_SERVICE_ACCOUNT`. Haiku's reading accuracy on real displays not measured yet.
+- Next: CI on PR #131; merge **only after Human's explicit go**.
+
+### 2026-10-02 — Claude Code — no own AI key, 4.99 US$, 2.50 US$ allowance in D1, Admin money tables, owner powers bound to the owner's phone (PR #131)
+
+- Human's decisions, in chat: nobody will paste an AI key, so the own-key path is removed (AiScreen deleted, AiScan server-only); subscription 4.99 US$ a year; yearly AI allowance 2.50 US$ per subscriber tracked in the database with the Scans left shown; Admin shows usage (Scans, AI cost) and income/expenses with the difference; the Admin data must be visible only to the owner, not on the strength of the Google account alone; one owner secret code to remember instead of a GitHub procedure; secret renamed `AI_API_KEY` (provider may change).
+- Server: `scan_usage` (per person, 12-month window, deleted with the account) → `scansLeft` in `/v1/me`, `429 scan_budget`; `ai_spend_daily`, `sub_sales_daily` (totals only) → Admin `money`; `owner_key` setting + `ownerOn()`: owner powers only from the phone on record (TOFU on first owner request); `POST /v1/owner/claim` with secret `OWNER_CODE` (5 tries a day, wrong code logged); web codes/sessions carry `owner`; workflow `owner-phone.yml` as spare. Build keeps a key set straight in Cloudflare (no delete when the GitHub secret is missing).
+- App: Scan button shows trial days or Scans left; lock screen only offers the subscription; Gestore «Abbonamento funzionalità AI» row and «Conferma che sei il proprietario» panel; strings in 4 languages; `(media)` under mmHg; English fallback for any other phone language (dates too).
+- Terms v21 updated (4.99 USD, 2.50 USD allowance recorded in the database, no own key, owner's discretion clause); privacy, home, guides, architecture, README, CLAUDE.md, compliance C06/C08, gdpr.md, P-009, `docs/business/owner-economics.md` updated; PDFs regenerated.
+- Tests: local functional 182 pass / 0 fail (new B5c/B5d allowance, OW1–OW4 owner phone); labs-security PASS; sync-notice and check-layout OK. App compiled only by CI.
+- Owner to do: GitHub secrets `AI_API_KEY` (or keep `ANTHROPIC_API_KEY`) and `OWNER_CODE` (a long phrase in a password manager); price `hint365_annual` at 4.99 US$ when on Google Play.
+- Next: CI green → squash merge PR #131 (Human said «vai») → Build → tell Human with the APK link.
+
+### 2026-10-02 — Claude Code — Admin «Accounts at a glance» and balance; economics PDF; AI credit exhaustion detected (PR #131)
+
+- Human asked: four lean coloured boxes in Admin (came in, spent on AI, users, most the trial can cost for these users and per 100), a balance status (green positive, orange from break-even down), the provider ceiling stated in the costs document and its PDF, and to know when the AI credit runs out.
+- Done: `moneyGlance()` in `web.ts` (totals since the start; average cost per Scan seen so far, 0.002 US$ before any), boxes and balance in `app.js`/`style.css` (palette tints, never red; third colour exception recorded in CLAUDE.md); `ai_no_credit` logged when the provider refuses for credit or spend limit (error-log issue + orange line in Admin); `docs/business/render.cjs` → `HINT365-Owner-Economics.pdf` with the ceiling table (5 → 5, 9 → 9, 10 → 9 for 100 trials).
+- Tests: local functional 182 pass / 0 fail; boxes checked in dark, light and phone width.
+- Next: CI green → squash merge PR #131 → Build → APK link to Human.

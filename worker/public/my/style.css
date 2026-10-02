@@ -3,7 +3,7 @@
   /* the same colours as the app (MainActivity.kt, object C): dark theme */
   --bg: #0F1D38; --panel: #172B50; --panel2: #1C335E; --line: rgba(234,240,250,.10); --ink: #EAF0FA; --muted: #9AAACA;
   --sys: #8C7BF2; --dia: #1FA396; --pul: #C08A1E; --accent: #8C7BF2;
-  --sys-t: #B3A7FF; --dia-t: #5FD3C6; --pul-t: #F2C25A; --out: #F29A3F; --alert: #F0A35E;
+  --sys-t: #B3A7FF; --dia-t: #5FD3C6; --pul-t: #F2C25A; --out: #F29A3F; --alert: #F0A35E; --voice: #3A76C4;
   --head-bg: rgba(15,29,56,.92); --btn-hover: #33476F; --day: #AFC0DC; --grid: #24365C; --row-line: #1E2F52; --newday-line: #2F4470;
   --backdrop: rgba(8,14,28,.72); --ok-t: #7FD9A8; --warn-t: #F2B26B; --open-t: #C9BEFF; --fix-t: #7FD9CF;
   --r: 14px;
@@ -13,7 +13,7 @@
 html[data-theme="light"] {
   --bg: #F4F6FB; --panel: #FFFFFF; --panel2: #EBEFF7; --line: rgba(19,34,63,.12); --ink: #13223F; --muted: #5B6B88;
   --sys: #6D5BD0; --dia: #0F9C8E; --pul: #B7860B; --accent: #6D5BD0;
-  --sys-t: #5543B8; --dia-t: #0B7A6F; --pul-t: #8F6806; --out: #C76A12; --alert: #B8641D;
+  --sys-t: #5543B8; --dia-t: #0B7A6F; --pul-t: #8F6806; --out: #C76A12; --alert: #B8641D; --voice: #2E66AE;
   --head-bg: rgba(244,246,251,.92); --btn-hover: #B9C4D8; --day: #5B6B88; --grid: #E3E8F1; --row-line: #E6EBF3; --newday-line: #C9D3E3;
   --backdrop: rgba(19,34,63,.45); --ok-t: #1E7A4A; --warn-t: #A85A12; --open-t: #5543B8; --fix-t: #0B7A6F;
   color-scheme: light;
@@ -302,3 +302,23 @@ td.pick .st { margin-left: 8px; }
 .tiles.stats .tile .v { font-size: 24px; }
 .tiles.stats .tile .w { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 860px) { .tiles.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiles.stats .tile .v { font-size: 21px; } }
+/* the owner's accounts (Admin): numbers right-aligned, the totals row set apart */
+table.money th.num, table.money td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.money tfoot th, table.money tfoot td { border-top: 1px solid var(--line); font-weight: 600; }
+/* Admin: the AI provider refused for lack of credit (orange, never red) */
+.warn-line { color: var(--warn-t); border: 1px solid var(--warn-t); border-radius: 10px; padding: 8px 12px; margin: 6px 0 10px; font-size: 14px; }
+/* Admin «Accounts at a glance»: four small boxes, each tinted with a colour of the palette (never red) */
+.mg-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 6px 0 8px; }
+.mg { border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); min-width: 0; }
+.mg .l { font-size: 13px; color: var(--muted); }
+.mg .v { font-size: 24px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+.mg .w { font-size: 12px; color: var(--muted); }
+.mg-in { background: color-mix(in srgb, var(--dia) 22%, var(--panel)); }
+.mg-out { background: color-mix(in srgb, var(--pul) 22%, var(--panel)); }
+.mg-users { background: color-mix(in srgb, var(--voice) 24%, var(--panel)); }
+.mg-max { background: color-mix(in srgb, var(--sys) 24%, var(--panel)); }
+@media (max-width: 700px) { .mg-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* the balance box (owner only): green while positive with margin, orange from break-even down (never red) */
+.mg-bal { margin: 0 0 8px; }
+.bal-ok { background: color-mix(in srgb, var(--ok-t) 26%, var(--panel)); border-color: var(--ok-t); }
+.bal-warn { background: color-mix(in srgb, var(--warn-t) 26%, var(--panel)); border-color: var(--warn-t); }

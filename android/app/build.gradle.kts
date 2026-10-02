@@ -74,8 +74,6 @@ android {
 }
 
 dependencies {
-    // reads the blood-pressure monitor from a photo, on the phone (no AI)
-    implementation(project(":reader"))
     testImplementation("junit:junit:4.13.2")
     // Bundled recognizer: no document upload and no runtime model download.
     implementation("com.google.mlkit:text-recognition:16.0.1")

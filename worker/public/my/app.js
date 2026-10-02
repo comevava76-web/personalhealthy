@@ -623,6 +623,16 @@
      Never a value, a report or a name. The server refuses all of it to anyone but the owner. */
   const AD = IT ? {
     tab: "Admin", title: "Area del proprietario", sub: "La vedi solo tu · solo totali: nessuna misura, nessun report, nessun nome",
+    gT: "Conti in breve", gIn: "Incassato", gInU: (n, net) => `${n} abbonamenti · ${net} dopo Google Play`, gOut: "Speso in AI", gOutU: (n) => `${n} Scan`,
+    gUsers: "Utenti", gUsersU: "account, te escluso", gMax: "Spesa massima della prova", gMaxU: (p) => `stima per questi utenti · ${p} ogni 100`,
+    gBal: "Bilancio", gBalS: { ok: "Positivo", even: "In pari", neg: "Negativo" },
+    gBalU: (b, m) => `${b} = incassato dopo Google Play − speso in AI · regge anche la prova di tutti gli utenti se resta sopra ${m}`,
+    gNote: "Stime dall'inizio. Il limite vero è il tetto che metti sulla console del fornitore AI: oltre quello non si spende.",
+    mUseT: "Consumi", mUseN: "Scan con l'AI di tutti gli account, te compreso, e quanto sono costati: dai token contati dal fornitore AI.",
+    mUseCols: ["Mese", "Scan", "Costo AI"],
+    mBalT: "Entrate e uscite", mBalN: (n, f) => `Stima: abbonamenti venduti al prezzo di listino (4,99 $), meno la quota di Google Play (${f}%); uscite = costo AI. Abbonati attivi: ${n}. Le cifre vere sono nella Google Play Console e nella console del fornitore AI.`,
+    mBalCols: ["Mese", "Abbonamenti", "Entrate", "Dopo Google Play", "Uscite AI", "Differenza"], mTot: "Totale", mNone: "Ancora nessun movimento.",
+    mNoCredit: (n) => `Credito AI finito: negli ultimi 2 giorni il fornitore AI ha rifiutato ${n} Scan per credito esaurito o tetto di spesa raggiunto. Ricarica dalla console del fornitore (oggi Anthropic): lo Scan riparte da solo.`,
     upd: "Aggiornato", users: "Utenti", usersU: "in totale", labs: "Referti", labsU: "salvati, di tutti gli utenti",
     rd: "Misure", split: (v, f) => `${v} a voce` + (f ? ` · ${f} con la vecchia Scan` : ""),
     errs: "Errori", errsU: "in totale, ultimi 90 giorni",
@@ -656,6 +666,16 @@
     fixHint: "Seleziona le righe e premi Fix: Claude prepara la correzione seguendo il processo.", triage: "da valutare", ours: "nostro", run: "dettagli dell'esecuzione", noFix: "nessuna correzione",
   } : {
     tab: "Admin", title: "Owner's area", sub: "Only you see it · totals only: no readings, no reports, no names",
+    gT: "Accounts at a glance", gIn: "Came in", gInU: (n, net) => `${n} subscriptions · ${net} after Google Play`, gOut: "Spent on AI", gOutU: (n) => `${n} Scans`,
+    gUsers: "Users", gUsersU: "accounts, you excluded", gMax: "Most the trial can cost", gMaxU: (p) => `estimate for these users · ${p} per 100`,
+    gBal: "Balance", gBalS: { ok: "Positive", even: "Break-even", neg: "Negative" },
+    gBalU: (b, m) => `${b} = came in after Google Play − spent on AI · it also covers every user's trial while above ${m}`,
+    gNote: "Estimates since the start. The real limit is the ceiling you set in the AI provider's console: nothing is spent beyond it.",
+    mUseT: "Usage", mUseN: "Scans with AI of every account, yours included, and what they cost: from the tokens the AI provider counted.",
+    mUseCols: ["Month", "Scans", "AI cost"],
+    mBalT: "Income and expenses", mBalN: (n, f) => `Estimate: subscriptions sold at the list price (4.99 $), less Google Play's share (${f}%); expenses = AI cost. Active subscribers: ${n}. The real figures are in the Google Play Console and the AI provider's console.`,
+    mBalCols: ["Month", "Subscriptions", "Income", "After Google Play", "AI expenses", "Difference"], mTot: "Total", mNone: "No activity yet.",
+    mNoCredit: (n) => `AI credit used up: in the last 2 days the AI provider refused ${n} Scans for lack of credit or the spend limit. Top up in the provider's console (today Anthropic): the Scan starts again by itself.`,
     upd: "Updated", users: "Users", usersU: "in total", labs: "Lab reports", labsU: "saved, all users",
     rd: "Readings", split: (v, f) => `${v} by voice` + (f ? ` · ${f} with the former Scan` : ""),
     errs: "Errors", errsU: "in total, last 90 days",
@@ -691,6 +711,51 @@
   const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const mb = (b) => (b / 1048576).toLocaleString(LOCALE, { maximumFractionDigits: b < 10485760 ? 2 : 0 }) + " MB";
   const ver = (n) => "0.1." + n;
+  // the owner's accounts: usage (Scans and AI cost) and income and expenses, month by month, with the difference
+  const usd = (n) => "$\u00a0" + n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const monthName = (m) => new Date(m + "-15T12:00:00Z").toLocaleDateString(LOCALE, { month: "short", year: "numeric", timeZone: TZ });
+  // four numbers, each on its own colour of the palette (never red): came in, spent on AI, users, the trial's maximum
+  function moneyGlance(g) {
+    if (!g) return "";
+    const box = (cls, l, v, w) => `<div class="mg ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="w">${w}</div></div>`;
+    return `<div class="card"><div class="card-h"><h2>${AD.gT}</h2></div>
+      <section class="mg-row">
+        ${box("mg-in", AD.gIn, usd(g.gross), AD.gInU(g.sales, usd(g.net)))}
+        ${box("mg-out", AD.gOut, usd(g.ai), AD.gOutU(g.scans))}
+        ${box("mg-users", AD.gUsers, g.users, AD.gUsersU)}
+        ${box("mg-max", AD.gMax, usd(g.trialMax), AD.gMaxU(usd(g.per100)))}
+      </section>
+      ${balanceBox(g)}<p class="muted small">${AD.gNote}</p></div>`;
+  }
+
+  // the balance: green while what is left also covers the trial of every user; orange as soon as it is only even
+  // (the margin is below that, or under 10% of what came in) and when it is below zero. Never red.
+  function balanceBox(g) {
+    const bal = g.net - g.ai, guard = Math.max(g.trialMax, g.net * 0.10);
+    const st = bal < -0.005 ? "neg" : bal < guard ? "even" : "ok";
+    return `<div class="mg mg-bal ${st === "ok" ? "bal-ok" : "bal-warn"}"><div class="l">${AD.gBal}</div>
+      <div class="v">${AD.gBalS[st]} · ${usd(bal)}</div><div class="w">${AD.gBalU(usd(bal), usd(guard))}</div></div>`;
+  }
+
+  function moneyCards(mo) {
+    if (!mo) return "";
+    const rows = mo.months, sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+    // cells carry their column name: on a phone each row becomes a small card with labels
+    const tr = (cols, cells, tag = "td") => `<tr>${cells.map((c, i) => `<${tag}${i ? ' class="num"' : ""} data-l="${cols[i]}">${c}</${tag}>`).join("")}</tr>`;
+    const table = (cols, body, foot) => `<div class="tbl"><table class="list money"><thead><tr>${cols.map((c, i) => `<th${i ? ' class="num"' : ""}>${c}</th>`).join("")}</tr></thead>
+      <tbody>${body || `<tr><td colspan="${cols.length}" class="muted">${AD.mNone}</td></tr>`}</tbody>${rows.length ? `<tfoot>${foot}</tfoot>` : ""}</table></div>`;
+    const U = AD.mUseCols, B = AD.mBalCols;
+    const use = table(U,
+      rows.map((r) => tr(U, [monthName(r.month), r.scans, usd(r.ai)])).join(""),
+      tr(U, [AD.mTot, sum("scans"), usd(sum("ai"))]));
+    const bal = table(B,
+      rows.map((r) => tr(B, [monthName(r.month), r.sales, usd(r.gross), usd(r.net), usd(r.ai), "<b>" + usd(r.diff) + "</b>"])).join(""),
+      tr(B, [AD.mTot, sum("sales"), usd(sum("gross")), usd(sum("net")), usd(sum("ai")), "<b>" + usd(sum("diff")) + "</b>"]));
+    const warn = mo.noCredit ? `<p class="warn-line">${AD.mNoCredit(mo.noCredit)}</p>` : "";
+    return `<div class="card"><div class="card-h"><h2>${AD.mUseT}</h2></div>${warn}<p class="muted small">${AD.mUseN}</p>${use}</div>
+      <div class="card"><div class="card-h"><h2>${AD.mBalT}</h2></div><p class="muted small">${AD.mBalN(mo.activeSubs, Math.round(mo.playFee * 100))}</p>${bal}</div>`;
+  }
+
   async function loadAdmin() {
     main.innerHTML = `<div class="loading"><span class="pulse"></span></div>`;
     let d, o;
@@ -710,6 +775,8 @@
         ${tile(AD.kDf, defects, AD.kDfU, defects > 0)}
         ${tile(AD.kCm, cnt("partial") + cnt("open"), AD.kCmU(cnt("partial"), cnt("open")), cnt("open") > 0)}
       </section>
+      ${moneyGlance(d.money && d.money.glance)}
+      ${moneyCards(d.money)}
       <div class="card sec"><div class="card-h"><h2>${AD.obT}</h2></div>
         <p class="muted small">${AD.obSub}</p>
         <div class="send" style="margin:12px 0 6px"><button class="btn glow" type="button" id="adm-obs">${AD.obGo}</button></div>
