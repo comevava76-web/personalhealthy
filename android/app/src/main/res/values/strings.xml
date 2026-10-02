@@ -543,7 +543,7 @@
     <string name="photo_why_quota_free">You used today\'s 3 Scans. With the key of your own AI subscription you get up to 30 a day; or say the values aloud.</string>
     <string name="photo_why_quota_own">You used today\'s 30 Scans. They start again tomorrow; meanwhile you can say the values aloud.</string>
     <string name="photo_more_scans">Up to 30 Scans a day with your AI</string>
-    <string name="photo_quota_year_title">This year's Scans used up</string>
+    <string name="photo_quota_year_title">This year\'s Scans used up</string>
     <string name="photo_why_quota_year">You have used the Scans included this year. With the key of your own AI subscription you get up to 30 a day; or say the values by voice.</string>
     <string name="scan_lock_title">Unlock the Scan</string>
     <string name="scan_lock_text">The free trial of the AI features is over: 15 days, up to 3 Scans a day. The app stays free: voice, lab results and the Web Dashboard do not change. With the AI features subscription, %1$s a year, the Scan comes back, up to 3 photos a day.</string>

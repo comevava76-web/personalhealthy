@@ -541,7 +541,7 @@
     <string name="photo_why_quota_free">Hai usato i 3 Scan di oggi. Con la chiave del tuo abbonamento AI arrivi a 30 al giorno; oppure dì i valori a voce.</string>
     <string name="photo_why_quota_own">Hai usato i 30 Scan di oggi. Domani ricominci; intanto puoi dire i valori a voce.</string>
     <string name="photo_more_scans">Fino a 30 Scan al giorno con la tua AI</string>
-    <string name="photo_quota_year_title">Scan dell'anno finiti</string>
+    <string name="photo_quota_year_title">Scan dell\'anno finiti</string>
     <string name="photo_why_quota_year">Hai usato gli Scan inclusi quest\'anno. Con la chiave del tuo abbonamento AI arrivi a 30 al giorno; oppure dì i valori a voce.</string>
     <string name="scan_lock_title">Sblocca lo Scan</string>
     <string name="scan_lock_text">La prova gratuita delle funzionalità AI è finita: 15 giorni, fino a 3 Scan al giorno. L\'app resta gratuita: voce, referti e Web Dashboard non cambiano. Con l\'abbonamento alle funzionalità AI di %1$s all\'anno lo Scan torna, fino a 3 foto al giorno.</string>
