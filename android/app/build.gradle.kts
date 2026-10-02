@@ -93,7 +93,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     // app lock with the phone's fingerprint, face or screen lock
