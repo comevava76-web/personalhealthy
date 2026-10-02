@@ -554,5 +554,5 @@
     <string name="ai_trial_title">Your AI trial is ending</string>
     <string name="ai_trial_body">Your free trial of the AI features ends in 2 days. To keep using the photo Scan with AI, subscribe for 4 $ a year; otherwise the Scan will be switched off. You can still record by voice and use every other feature of the app.</string>
     <string name="last7_avg">Average values of the last 7 days</string>
-    <string name="week_avg">(average value)</string>
+    <string name="week_avg">(average)</string>
 </resources>
