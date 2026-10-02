@@ -114,7 +114,7 @@
     <string name="max_dia">DIA la plus haute</string>
     <string name="lowest">Valeur la plus basse</string>
     <string name="report_not_yet">Le rapport sur %1$d jours pourra être envoyé dans %2$d jour(s). Voici un aperçu.</string>
-    <string name="send_pdf">Télécharger le rapport de tension (PDF)</string>
+    <string name="send_pdf">Télécharger rapport tension (PDF)</string>
     <string name="send_excel">Envoyer Excel</string>
     <string name="file_failed">Fichier non créé : %s</string>
     <string name="share_title">Envoyer le rapport</string>
@@ -540,7 +540,7 @@
     <string name="owner_claim_many">Trop de tentatives : réessayez demain.</string>
     <string name="ai_row_trial">Essai : %1$d Scans faits · encore %2$d jours</string>
     <string name="ai_row_on">%1$d Scans faits · environ %2$d restants (estimation)</string>
-    <string name="terms_pdf">Télécharger les conditions d\'utilisation (PDF)</string>
+    <string name="terms_pdf">Télécharger conditions d\'utilisation (PDF)</string>
     <string name="terms_pdf_hint">Vous pouvez télécharger ces conditions en PDF et les conserver.</string>
     <string name="terms_pdf_meta">Version %1$s · téléchargé le %2$s</string>
     <string name="terms_save_title">Conserver les conditions d\'utilisation</string>

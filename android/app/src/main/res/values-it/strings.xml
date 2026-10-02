@@ -114,7 +114,7 @@
     <string name="max_dia">DIA più alta</string>
     <string name="lowest">Valore più basso</string>
     <string name="report_not_yet">Il report di %1$d giorni sarà inviabile tra %2$d giorni. Intanto vedi l\'anteprima.</string>
-    <string name="send_pdf">Scarica il report della pressione (PDF)</string>
+    <string name="send_pdf">Scarica report pressione (PDF)</string>
     <string name="send_excel">Invia Excel</string>
     <string name="file_failed">File non creato: %s</string>
     <string name="share_title">Invia il report</string>
@@ -542,7 +542,7 @@
     <string name="owner_claim_many">Troppi tentativi: riprova domani.</string>
     <string name="ai_row_trial">Prova: %1$d Scan fatti · ancora %2$d giorni</string>
     <string name="ai_row_on">%1$d Scan fatti · circa %2$d rimasti (stima)</string>
-    <string name="terms_pdf">Scarica le condizioni d\'uso (PDF)</string>
+    <string name="terms_pdf">Scarica condizioni d\'uso (PDF)</string>
     <string name="terms_pdf_hint">Puoi scaricare queste condizioni in PDF e conservarle.</string>
     <string name="terms_pdf_meta">Versione %1$s · scaricato il %2$s</string>
     <string name="terms_save_title">Salva le condizioni d\'uso</string>

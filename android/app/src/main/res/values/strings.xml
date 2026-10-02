@@ -115,7 +115,7 @@
     <string name="max_dia">Highest DIA</string>
     <string name="lowest">Lowest value</string>
     <string name="report_not_yet">The %1$d-day report can be sent in %2$d day(s). Meanwhile, here is a preview.</string>
-    <string name="send_pdf">Download the blood pressure report (PDF)</string>
+    <string name="send_pdf">Download blood pressure report (PDF)</string>
     <string name="send_excel">Send Excel</string>
     <string name="file_failed">File could not be created: %s</string>
     <string name="share_title">Send report</string>
@@ -544,7 +544,7 @@
     <string name="owner_claim_many">Too many attempts: try again tomorrow.</string>
     <string name="ai_row_trial">Trial: %1$d Scans made · %2$d days left</string>
     <string name="ai_row_on">%1$d Scans made · about %2$d left (estimate)</string>
-    <string name="terms_pdf">Download the terms of use (PDF)</string>
+    <string name="terms_pdf">Download terms of use (PDF)</string>
     <string name="terms_pdf_hint">You can download these terms as a PDF and keep them.</string>
     <string name="terms_pdf_meta">Version %1$s · downloaded on %2$s</string>
     <string name="terms_save_title">Keep the terms of use</string>
