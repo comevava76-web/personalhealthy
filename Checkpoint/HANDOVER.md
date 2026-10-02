@@ -462,3 +462,8 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 
 - Human asked for a five-block flow (phone/browser → Cloudflare DNS+HTTPS, domain to be bought on GoDaddy → Worker → D1 → nightly backup) with explanations, and for documents organised by topic, not scattered.
 - Done: `docs/overview/runtime-diagram.py` → runtime-flow.svg; general document now in five parts (1 functional 1–3; 2 application architecture 4–5 with the five-block flow, Workers explained, database diagram; 3 running the service 6–8: jobs, logs, disaster recovery; 4 processes 9–14: compliance, change, release, patch, vulnerability, defect; 5 reference 15–17), each part on a new page, TOC by parts, cross references renumbered. Architecture document reordered: functional 1–3, application architecture 4–7 (five-block flow on page 5, database page 7), processes 8–10 (roles, release Android, iPhone). CLAUDE.md and docs index updated.
+
+### 2026-10-03 00:25 — Claude Code — functional workflow infographic (marketing quality)
+
+- Human asked for a functional workflow of actions only (sign in, record, import, see, download, share, delete, the doctor), beautiful enough to publish on LinkedIn.
+- Done: `docs/overview/functional-diagram.py` → `functional-flow.svg` (app palette, never red, icons, five stages) in general document section 3, and `docs/overview/HINT365-workflow.png` (1600×900) sent to Human.
