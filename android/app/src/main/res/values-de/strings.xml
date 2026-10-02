@@ -550,5 +550,5 @@
     <string name="ai_trial_title">Ihre KI-Probe endet bald</string>
     <string name="ai_trial_body">Ihre Gratisprobe der KI-Funktionen endet in 2 Tagen. Um den Foto-Scan mit KI weiter zu nutzen, abonnieren Sie für 4 $ pro Jahr; sonst wird der Scan abgeschaltet. Sie können weiterhin per Sprache erfassen und alle anderen Funktionen der App nutzen.</string>
     <string name="last7_avg">Durchschnittswerte der letzten 7 Tage</string>
-    <string name="week_avg">(Mittel)</string>
+    <string name="week_avg">(Mittelwert)</string>
 </resources>
