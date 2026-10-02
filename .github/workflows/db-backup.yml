@@ -3,7 +3,7 @@ name: Database backup (nightly, encrypted, EU)
 # Every night: both D1 databases are exported, packed, encrypted with BACKUP_PASSPHRASE (AES-256, the phrase is
 # known only to the owner and to this secret) and stored in the R2 bucket hint365-backups, bound to the EU.
 # The bucket keeps each backup 30 days (as the privacy policy says) (lifecycle) and nobody can delete one in its first 7 days (bucket lock).
-# Restore: Actions → Disaster recovery (or bash infra/rebuild.sh restore YYYY-MM-DD). Besides this, Cloudflare D1
+# Restore: Actions → Disaster recovery (or bash DR/infrastructure-as-code/rebuild.sh restore YYYY-MM-DD). Besides this, Cloudflare D1
 # Time Travel can put the live database back to any minute of the last days.
 on:
   schedule:

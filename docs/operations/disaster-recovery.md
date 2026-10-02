@@ -9,13 +9,13 @@ Everything is declared in the repository:
 
 | Piece | Declared in | Created / updated by |
 |---|---|---|
-| D1 `personalhealthy` (EU): accounts, readings, lab results, logs, settings | `infra/infrastructure.json`, tables in `worker/schema.sql` | `infra/rebuild.sh apply`; tables and columns by *Build* |
-| D1 `personalhealthy-backup` (EU): copy of the acceptances of the terms | `infra/infrastructure.json`, `worker/schema-backup.sql` | same |
-| R2 bucket `hint365-backups` (EU): nightly encrypted backups, kept 30 days, locked 7 days | `infra/infrastructure.json` | `infra/rebuild.sh apply` |
+| D1 `personalhealthy` (EU): accounts, readings, lab results, logs, settings | `DR/infrastructure-as-code/infrastructure.json`, tables in `worker/schema.sql` | `DR/infrastructure-as-code/rebuild.sh apply`; tables and columns by *Build* |
+| D1 `personalhealthy-backup` (EU): copy of the acceptances of the terms | `DR/infrastructure-as-code/infrastructure.json`, `worker/schema-backup.sql` | same |
+| R2 bucket `hint365-backups` (EU): nightly encrypted backups, kept 30 days, locked 7 days | `DR/infrastructure-as-code/infrastructure.json` | `DR/infrastructure-as-code/rebuild.sh apply` |
 | Worker `personalhealthy-api`: code, Web Dashboard, bindings, crons (03:17 UTC nightly, hourly :07) | `worker/wrangler.toml` | *Build* (`wrangler deploy`) |
-| Worker secrets and variables | names in `infra/infrastructure.json`; values only in GitHub secrets / Cloudflare | *Build* |
-| Workers subdomain `comevava76.workers.dev` | `infra/infrastructure.json` | *Build* |
-| Outside Cloudflare: Google sign-in client, Google Play app and subscription, Anthropic key, Android signing key | `infra/infrastructure.json` (`outside`, `github.secrets`) | by hand, once |
+| Worker secrets and variables | names in `DR/infrastructure-as-code/infrastructure.json`; values only in GitHub secrets / Cloudflare | *Build* |
+| Workers subdomain `comevava76.workers.dev` | `DR/infrastructure-as-code/infrastructure.json` | *Build* |
+| Outside Cloudflare: Google sign-in client, Google Play app and subscription, Anthropic key, Android signing key | `DR/infrastructure-as-code/infrastructure.json` (`outside`, `github.secrets`) | by hand, once |
 
 Why a script and not Terraform: D1's EU jurisdiction can be set only at creation through the API or wrangler,
 the Worker is already declared in `wrangler.toml`, and Terraform would need a state file holding secrets stored
@@ -23,6 +23,9 @@ somewhere. For one service run by one person an idempotent script (it creates wh
 is simpler and safer. `infrastructure.json` plays the role of the Terraform files.
 
 ## The three layers of backup
+
+The backups are never in Git (health data, public repository): see `DR/README.md` for where each one is in the Cloudflare dashboard.
+
 
 | Layer | What it covers | How far back | Where |
 |---|---|---|---|

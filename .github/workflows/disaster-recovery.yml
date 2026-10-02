@@ -1,7 +1,7 @@
 name: Disaster recovery (rebuild the infrastructure, restore the data)
 
-# Run by hand: Actions → Disaster recovery → Run workflow. Infrastructure as Code: infra/infrastructure.json declares
-# what exists, infra/rebuild.sh creates what is missing (never deletes). Then Actions → Build deploys server and app.
+# Run by hand: Actions → Disaster recovery → Run workflow. Infrastructure as Code: DR/infrastructure-as-code/infrastructure.json declares
+# what exists, DR/infrastructure-as-code/rebuild.sh creates what is missing (never deletes). Then Actions → Build deploys server and app.
 on:
   workflow_dispatch:
     inputs:
@@ -43,9 +43,9 @@ jobs:
         run: |
           set -euo pipefail
           case "$ACTION" in
-            check|apply|list-backups) bash infra/rebuild.sh "$ACTION" ;;
+            check|apply|list-backups) bash DR/infrastructure-as-code/rebuild.sh "$ACTION" ;;
             restore|time-travel)
               [ "$CONFIRM" = "RESTORE" ] || { echo "Not confirmed: type RESTORE"; exit 1; }
-              bash infra/rebuild.sh "$ACTION" "$VALUE" ;;
+              bash DR/infrastructure-as-code/rebuild.sh "$ACTION" "$VALUE" ;;
             *) echo "Unknown action: $ACTION"; exit 1 ;;
           esac

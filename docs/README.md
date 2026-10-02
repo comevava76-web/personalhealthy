@@ -14,13 +14,13 @@ documents are in English; user-facing documents are in Italian and English.
 | Vulnerability check and patching | `security/vulnerability-management.md`, decisions in `security/decisions.json`, process drawing (swimlanes) `security/vulnerability-flow.html` → `.pdf`, `.png` (what is scanned, severity and deadlines, how each kind of fix is made, blocking old app versions, who decides, findings on record) | hand-written | a scan, a tool, a deadline or a role changes; every accepted risk |
 | GDPR and Swiss FADP | `compliance/gdpr.md` (applicability, roles, gaps, record of processing); controls shown in Admin → Observability from `worker/src/ops/compliance.json` | hand-written | data, providers, retention or consent change |
 | Observability | `operations/observability.md`; compliance dossier `compliance/dossier.html` → `compliance/HINT365-Compliance.pdf` (served at `/my/HINT365-Compliance.pdf#C01…`); problem registry `worker/src/ops/problems.json` (cause, fix, PR, version of every real problem) | hand-written; error and event logs in D1 | every fix of a problem met by users; every compliance change |
-| Infrastructure as Code, backups and disaster recovery: what exists, the three backup layers, what to do in each case (RPO/RTO), security layers | `operations/disaster-recovery.md`; inventory `../infra/infrastructure.json`, script `../infra/rebuild.sh`, workflows *Database backup* and *Disaster recovery* | hand-written | a resource, a backup, a secret or a provider changes; after every recovery test |
+| Infrastructure as Code, backups and disaster recovery: what exists, the three backup layers, what to do in each case (RPO/RTO), security layers | `operations/disaster-recovery.md`; inventory `../DR/infrastructure-as-code/infrastructure.json`, script `../DR/infrastructure-as-code/rebuild.sh`, workflows *Database backup* and *Disaster recovery* | hand-written | a resource, a backup, a secret or a provider changes; after every recovery test |
 | Owner costs and earnings of the AI features (trial exposure, one subscriber, 200 people) | `business/owner-economics.md` → `business/HINT365-Owner-Economics.pdf` | hand-written Markdown, `node docs/business/render.cjs` | a price, a limit, the trial, the AI model or a provider price changes |
 | Demo material | `demo/` (screenshots, sample PDF) | test data only: `testing/harness/demo-shots.mjs` | the look of the dashboard or of the PDF changes |
 | Mock-ups | `mockups/` | design drafts | kept as history |
 
 Outside this folder, only because the tools need them at the top of the repository: `README.md` (how the
-repository is built and set up) and `CLAUDE.md` (the working rules).
+repository is built and set up), `CLAUDE.md` (the working rules) and `DR/` (disaster recovery: the Infrastructure as Code and where the backups are; the backups themselves are never in Git).
 
 ## Who does what, and when
 

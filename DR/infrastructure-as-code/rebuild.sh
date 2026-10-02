@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # HINT 365 · Infrastructure as Code and disaster recovery.
-# Reads infra/infrastructure.json and makes Cloudflare match it. It only creates what is missing: it never deletes.
+# Reads DR/infrastructure-as-code/infrastructure.json and makes Cloudflare match it. It only creates what is missing: it never deletes.
 #
-#   bash infra/rebuild.sh check                    what exists and what is missing (changes nothing)
-#   bash infra/rebuild.sh apply                    creates the missing databases (EU) and the backup bucket (EU),
+#   bash DR/infrastructure-as-code/rebuild.sh check                    what exists and what is missing (changes nothing)
+#   bash DR/infrastructure-as-code/rebuild.sh apply                    creates the missing databases (EU) and the backup bucket (EU),
 #                                                  with its expiry (30 days, as in the privacy policy) and its lock (7 days, nobody can delete)
-#   bash infra/rebuild.sh list-backups             the nightly backups kept in the bucket
-#   bash infra/rebuild.sh restore YYYY-MM-DD       puts a nightly backup back into an EMPTY database (a new account,
+#   bash DR/infrastructure-as-code/rebuild.sh list-backups             the nightly backups kept in the bucket
+#   bash DR/infrastructure-as-code/rebuild.sh restore YYYY-MM-DD       puts a nightly backup back into an EMPTY database (a new account,
 #                                                  a lost database): refuses if the database already holds accounts
-#   bash infra/rebuild.sh time-travel TIMESTAMP    puts the live database back to a minute of the last days
+#   bash DR/infrastructure-as-code/rebuild.sh time-travel TIMESTAMP    puts the live database back to a minute of the last days
 #                                                  (Cloudflare D1 Time Travel, e.g. 2026-10-02T21:00:00Z)
 # After apply/restore: run Actions → Build (it applies the schema, sets the secrets and deploys the Worker and the app).
 #
 # Needs: CLOUDFLARE_API_TOKEN (and BACKUP_PASSPHRASE for restore), jq, curl, openssl, node + npm (wrangler).
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CFG="$ROOT/infra/infrastructure.json"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+CFG="$ROOT/DR/infrastructure-as-code/infrastructure.json"
 ACC=$(jq -r .cloudflare.account_id "$CFG")
 export CLOUDFLARE_ACCOUNT_ID="$ACC" WRANGLER_SEND_METRICS=false
 : "${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN}"

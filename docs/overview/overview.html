@@ -545,8 +545,8 @@ The tables at the bottom have no relations.</p></div>
   <tr><td><code>ai_spend_daily, sub_sales_daily</code></td><td>totals per day: Scans and AI cost, subscriptions sold</td><td>for the accounts</td></tr>
 </table>
 <h3>Backups and disaster recovery</h3>
-<p>The whole infrastructure is written down in the repository (<code>infra/infrastructure.json</code>: databases, backup
-bucket, Worker, secrets, outside services) and one script, <code>infra/rebuild.sh</code>, recreates what is missing. If
+<p>The whole infrastructure is written down in the repository, folder <code>DR/</code> (disaster recovery) (<code>DR/infrastructure-as-code/infrastructure.json</code>: databases, backup
+bucket, Worker, secrets, outside services) and one script, <code>DR/infrastructure-as-code/rebuild.sh</code>, recreates what is missing. If
 something is lost, Actions → <i>Disaster recovery</i> rebuilds it and puts the data back; then <i>Build</i> deploys server and app.</p>
 <table>
   <tr><th>Backup layer</th><th>How far back</th><th>Where</th></tr>
@@ -561,7 +561,7 @@ something is lost, Actions → <i>Disaster recovery</i> rebuilds it and puts the
   <tr><td>the Cloudflare account lost</td><td>new account and token, then the same three steps</td><td>up to 1 day</td><td>~1 hour</td></tr>
   <tr><td>the Worker broken</td><td><i>Build</i></td><td>nothing</td><td>~12 min</td></tr>
 </table>
-<p class="small">Restore tested on 02.10.2026 on a local copy (same counts as the original). Details, security layers and the owner's one-time steps: <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>.</p>
+<p class="small">The backups themselves are never in the repository (health data): they stay at Cloudflare, in the EU — R2 bucket <code>hint365-backups</code> (folder <code>d1/</code>, one file a night) and D1 → <code>personalhealthy</code> → Time Travel. Restore tested on 02.10.2026 on a local copy (same counts as the original). Details, security layers and the owner's one-time steps: <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/operations/disaster-recovery.md">docs/operations/disaster-recovery.md</a>.</p>
 
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret

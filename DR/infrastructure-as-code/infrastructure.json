@@ -1,5 +1,5 @@
 {
-  "_what": "HINT 365: everything the service needs outside the code, declared once. infra/rebuild.sh reads this file and creates what is missing (it never deletes). The Worker itself (code, bindings, cron, static files) is declared in worker/wrangler.toml and deployed by .github/workflows/build.yml.",
+  "_what": "HINT 365: everything the service needs outside the code, declared once. DR/infrastructure-as-code/rebuild.sh reads this file and creates what is missing (it never deletes). The Worker itself (code, bindings, cron, static files) is declared in worker/wrangler.toml and deployed by .github/workflows/build.yml.",
   "cloudflare": {
     "account_id": "6c6de5312c59db866e1a8e07d3c21c63",
     "workers_subdomain": "comevava76",
