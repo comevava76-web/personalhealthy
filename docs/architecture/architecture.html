@@ -125,7 +125,7 @@
       <table>
         <tr><th>What</th><th>Cost</th><th>Paid to</th></tr>
         <tr><td>HINT 365 app, Web Dashboard, readings</td><td>Free</td><td>Nobody</td></tr>
-        <tr><td>AI features: the Scan, up to 3 a day</td><td>15 days free, then 4 $ a year</td><td>The app's owner, through Google Play</td></tr>
+        <tr><td>AI features (Scan)</td><td>15 days free, then 4 $ a year</td><td>The app's owner, through Google Play</td></tr>
       </table>
       <p style="margin-top:1.5mm">The app is free; only the AI features are paid (2.50 $ of AI a year per subscriber).</p>
       <h2>Fixed rules</h2>
@@ -135,8 +135,8 @@
         <li>Charts: 7 days, one dot per day = the mean of that day's readings (explained before the charts), value next to it, axis with day numbers only. Tables show AM/PM.</li>
         <li>The same A4 PDF from the app and from the web.</li>
         <li>No red anywhere: SYS violet, DIA teal, PUL amber. No colour means “good” or “bad”.</li>
-        <li>Scan (terms v21): an AI feature, free for 15 days from the first Scan (once per Google account and per phone, HMAC fingerprints in <code>scan_trials</code>), then with the 4.99 $ yearly subscription (yearly allowance 2.50 $ of AI per person, Scans and cost from the provider's token usage recorded in <code>scan_usage</code>; the app shows the Scans left); 3 a day per person through the Worker to Anthropic (Claude Haiku 4.5) with the owner's key (secret <code>AI_API_KEY</code>; photo passed on, never stored or logged). No key on the phone: the owner's key only. Only the three confirmed numbers are stored.</li>
-        <li>Owner's powers (Admin console, versions, settings) only from the owner's phone on record (<code>owner_key</code>); a new phone needs the secret owner code (<code>OWNER_CODE</code>, 5 tries a day) or the GitHub workflow <i>Owner phone</i>. Admin shows Accounts at a glance (came in, spent on AI, users, most the trial can cost: 45 Scans each, capped in fact by the provider's ceiling) and a Balance box (green while it also covers every user's trial, orange from break-even down), then Usage and Income and expenses month by month (<code>ai_spend_daily</code>, <code>sub_sales_daily</code>, totals only).</li>
+        <li>Scan with AI (terms v21): 15-day trial, then 4.99 $ a year (2.50 $ of AI a year); the owner's key only, photo never stored.</li>
+        <li>Owner's powers only from the owner's phone (<code>owner_key</code>; new phone: <code>OWNER_CODE</code>).</li>
         <li>Readings kept at most 365 days, deleted nightly; acceptances stay as proof.</li>
         <li>The app stays simple: the owner's controls are only in the web Admin area.</li>
       </ul>
