@@ -402,3 +402,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Tests: local functional 182 pass / 0 fail, labs-security pass; backup checked locally (main = backup rows, version 22); layout and sync-notice checks pass.
 - Limits: users re-accept terms v22 at the update; OWNER_CODE secret still empty; the 59 build-tool vulnerabilities wait for the AGP major update (#94, Human's go); "Require review from Code Owners" on main still to be enabled by Human.
 - Next: CI green → squash merge PR #132 → Build → APK link to Human; then Play Console upload of the AAB (internal testing).
+
+### 2026-10-02 evening — Claude Code — old app versions never blocked by new terms (P-010)
+
+- Human reported that the installed app (still 0.1.121) asked to accept the terms at every start. Cause: the server accepted only terms v22, so 0.1.121 could not record its v21 acceptance. Human decided: never block old versions for new terms; people get the new terms when they update.
+- Done (server only): `TERMS_MIN_APP = 122` in `index.ts`; builds below it record the acceptance of the terms they show (their version and text fingerprint) and `disclaimerOk`/the save gates accept any earlier acceptance; builds from 122 need v22. Tests T7–T12; P-010 in problems.json; rule in CLAUDE.md; overview release section.
+- Tests: local functional 188 pass / 0 fail; labs-security pass.
+- Next: Human installs 0.1.122 from the download link (the phone was still on 0.1.121).

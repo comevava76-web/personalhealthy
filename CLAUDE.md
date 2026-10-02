@@ -46,7 +46,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   sono in `.github/CODEOWNERS`: ogni modifica richiede l'approvazione di Human (con «Require review from Code Owners» su main).
   Claude non unisce da solo una PR che li tocca: la apre e aspetta l'approvazione.
 - **Condizioni d'uso vincolanti**: mostrate alla prima installazione, a ogni aggiornamento dell'app e quando cambia il testo
-  (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms`.
+  (`DISCLAIMER_VERSION` in app e server); se il testo cambia, nuova versione anche su `/terms` e `TERMS_MIN_APP` nel server = prima build con il nuovo testo. Le app più vecchie non si bloccano (decisione di Human): continuano con le condizioni che mostrano (accettazione registrata con quella versione) finché non si aggiorna; le nuove condizioni si chiedono con l'aggiornamento.
 - **Disattivazione a distanza**: ogni richiesta dell'app porta `X-App-Version`; il server blocca le versioni sotto
   `app_min_version`, quelle in `app_blocked` o tutte con `app_off` (tabella `settings`). Si comanda dall'app (gestore) o da
   Actions → *App versions*. Non togliere questo controllo.
