@@ -96,7 +96,7 @@ is about 22 subscribers at typical use.
 3. At most 2.50 US$ of AI per subscriber a year, recorded in D1 from the provider's token count.
 4. The AI provider's own ceiling: prepaid credit with **auto-reload off**, and the monthly spend limit (Anthropic Console →
    Settings → Limits). Above it the provider refuses and the Scan says to use voice: nothing more can be spent. When this
-   happens the server logs `ai_no_credit`: it appears in the next morning's error-log issue and in red-free orange in the
+   happens the server logs `ai_no_credit`: it appears in the next morning's error-log issue and, in orange, in the
    Admin console, with the advice to top up. The provider has no API that tells the remaining prepaid credit, so the
    Admin console shows what the Scans cost (counted by HINT 365) and the provider's console shows the balance.
    Every other AI provider used in the future needs the same ceiling set at the provider.
