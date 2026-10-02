@@ -133,7 +133,7 @@ jobs:
           HINT_WORKER_DIR="$QA/w" HINT_SHOTS="$QA/shots" HINT_OUT="$QA/ui.json" node ui.mjs
       - name: Keep the results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: security-tests-${{ github.run_number }}
           path: |

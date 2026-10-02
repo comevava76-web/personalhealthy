@@ -284,7 +284,7 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk "HealthyInstantTracker-0.1.${{ github.run_number }}.apk"
           # the same version as an App Bundle, the file Google Play asks for
           cp android/app/build/outputs/bundle/release/app-release.aab "HINT365-0.1.${{ github.run_number }}.aab"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: HealthyInstantTracker-apk
           path: |
