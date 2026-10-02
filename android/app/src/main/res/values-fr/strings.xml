@@ -14,7 +14,9 @@
     <string name="activate">Activer</string>
     <string name="activating">Activation…</string>
     <string name="setup_privacy">Ni nom ni e-mail : le téléphone reçoit un code anonyme, protégé dans le téléphone lui-même.</string>
-    <string name="disc_scroll_hint">Faites défiler pour tout lire et accepter</string>
+    <string name="disc_scroll_hint">Faites défiler pour tout lire</string>
+    <string name="disc_read_first">Lisez tout le texte jusqu\'au bout pour pouvoir accepter</string>
+    <string name="disc_read_done">Lu jusqu\'au bout</string>
     <string name="share_app">Recommander HINT 365</string>
     <string name="share_app_text">J\'utilise HINT 365, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
@@ -112,7 +114,7 @@
     <string name="max_dia">DIA la plus haute</string>
     <string name="lowest">Valeur la plus basse</string>
     <string name="report_not_yet">Le rapport sur %1$d jours pourra être envoyé dans %2$d jour(s). Voici un aperçu.</string>
-    <string name="send_pdf">Télécharger le PDF</string>
+    <string name="send_pdf">Télécharger rapport tension (PDF)</string>
     <string name="send_excel">Envoyer Excel</string>
     <string name="file_failed">Fichier non créé : %s</string>
     <string name="share_title">Envoyer le rapport</string>
@@ -538,13 +540,12 @@
     <string name="owner_claim_many">Trop de tentatives : réessayez demain.</string>
     <string name="ai_row_trial">Essai : %1$d Scans faits · encore %2$d jours</string>
     <string name="ai_row_on">%1$d Scans faits · environ %2$d restants (estimation)</string>
-    <string name="terms_pdf">Télécharger les conditions d\'utilisation (PDF)</string>
+    <string name="terms_pdf">Télécharger conditions d\'utilisation (PDF)</string>
     <string name="terms_pdf_hint">Vous pouvez télécharger ces conditions en PDF et les conserver.</string>
     <string name="terms_pdf_meta">Version %1$s · téléchargé le %2$s</string>
     <string name="terms_save_title">Conserver les conditions d\'utilisation</string>
     <string name="terms_save_text">Vous avez accepté les conditions d\'utilisation. Voulez-vous en garder une copie PDF sur le téléphone, dans Téléchargements ? Vous pouvez aussi le faire plus tard, à la fin des conditions.</string>
     <string name="terms_save_yes">Enregistrer le PDF</string>
     <string name="terms_save_later">Plus tard</string>
-    <string name="colophon_terms_pdf">Télécharger le PDF</string>
     <string name="colophon_privacy">Confidentialité</string>
 </resources>

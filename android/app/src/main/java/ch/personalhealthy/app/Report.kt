@@ -594,10 +594,8 @@ fun downloadPdf(ctx: Context, file: File) {
     val resolver = ctx.contentResolver
     val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: error("download_failed")
     resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("download_failed")
+    // only saved, never opened by itself (asked by Human: no "Open with" window); it is in Downloads
     android.widget.Toast.makeText(ctx, t(R.string.pdf_saved), android.widget.Toast.LENGTH_LONG).show()
-    try {
-        ctx.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/pdf").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
-    } catch (_: android.content.ActivityNotFoundException) { }   // no PDF viewer: the file is in Downloads anyway
 }
 
 /**

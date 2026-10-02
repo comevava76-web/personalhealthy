@@ -14,7 +14,9 @@
     <string name="activate">Attiva</string>
     <string name="activating">Attivo…</string>
     <string name="setup_privacy">Nessun nome e nessuna email: il telefono riceve un codice anonimo, protetto dentro il telefono stesso.</string>
-    <string name="disc_scroll_hint">Scorri in basso per leggere tutto e accettare</string>
+    <string name="disc_scroll_hint">Scorri per leggere tutto</string>
+    <string name="disc_read_first">Leggi tutto il testo fino in fondo per poter accettare</string>
+    <string name="disc_read_done">Letto fino in fondo</string>
     <string name="share_app">Consiglia HINT 365</string>
     <string name="share_app_text">Uso HINT 365, un diario della pressione: fotografi il misuratore o detti i valori, e prepara il report per il medico. Scaricala per Android: %1$s — apri il file, consenti l\'installazione, poi tocca \"Accedi con Google\".</string>
     <string name="google_intro">Accedi con il tuo account Google. Serve solo per creare il tuo diario e per ritrovarlo se cambi telefono. Ogni giorno l\'app si apre con impronta o volto.</string>
@@ -112,7 +114,7 @@
     <string name="max_dia">DIA più alta</string>
     <string name="lowest">Valore più basso</string>
     <string name="report_not_yet">Il report di %1$d giorni sarà inviabile tra %2$d giorni. Intanto vedi l\'anteprima.</string>
-    <string name="send_pdf">Scarica PDF</string>
+    <string name="send_pdf">Scarica report pressione (PDF)</string>
     <string name="send_excel">Invia Excel</string>
     <string name="file_failed">File non creato: %s</string>
     <string name="share_title">Invia il report</string>
@@ -540,13 +542,12 @@
     <string name="owner_claim_many">Troppi tentativi: riprova domani.</string>
     <string name="ai_row_trial">Prova: %1$d Scan fatti · ancora %2$d giorni</string>
     <string name="ai_row_on">%1$d Scan fatti · circa %2$d rimasti (stima)</string>
-    <string name="terms_pdf">Scarica le condizioni d\'uso (PDF)</string>
+    <string name="terms_pdf">Scarica condizioni d\'uso (PDF)</string>
     <string name="terms_pdf_hint">Puoi scaricare queste condizioni in PDF e conservarle.</string>
     <string name="terms_pdf_meta">Versione %1$s · scaricato il %2$s</string>
     <string name="terms_save_title">Salva le condizioni d\'uso</string>
     <string name="terms_save_text">Hai accettato le condizioni d\'uso. Vuoi salvarne una copia in PDF sul telefono, nella cartella Download? Puoi farlo anche più tardi, in fondo al testo delle condizioni.</string>
     <string name="terms_save_yes">Salva il PDF</string>
     <string name="terms_save_later">Più tardi</string>
-    <string name="colophon_terms_pdf">Scarica il PDF</string>
     <string name="colophon_privacy">Privacy</string>
 </resources>

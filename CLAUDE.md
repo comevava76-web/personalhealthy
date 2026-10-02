@@ -80,6 +80,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   Cloudflare (Worker → Settings → Variables and Secrets): il deploy non la cancella. I numeri si mostrano e si salvano solo dopo la conferma; valori non
   plausibili = rifare la foto. Si salvano solo i tre numeri (`/v1/bp/photo`) e i codici degli esiti (`bp_photo_*`).
   Il modulo `android/reader` (MonitorReader) resta nel repository ma l'app non lo usa più.
+- **Pulsanti ed etichette sempre su una riga** (chiesto da Human): mai a capo e mai tagliati con «…»; se non ci stanno il testo si rimpicciolisce (`FitText`, fino a 11 sp) e, se serve, si accorcia il nome. Report: «Scarica report pressione (PDF)», condizioni: «Scarica condizioni d'uso (PDF)».
 - **Nell'app niente menu Report**: i report completi si aprono dal pulsante in fondo a Pressione e a Referti. Lo storico in Referti mostra solo i referti salvati; rifiuti e doppioni solo nei log (`error_log`, `event_log`). Il Gestore mostra quante misure e quanti referti, Google e account; niente costi.
 - **Link alla Web Dashboard dall'app**: apre solo la pagina da cui si parte (`&bp` pressione, `&labs` referti, `&admin` console), senza le schede per passare all'altra.
 - **App semplice, controlli del proprietario solo sul web**: nell'app nessun pulsante che oggi non si usa. L'owner ha

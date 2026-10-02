@@ -84,6 +84,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.geometry.Offset
@@ -857,10 +858,9 @@ fun BigButton(
                 Icon(painterResource(icon), contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            // always on one line: a long label is cut with "…" rather than wrapping in the button
-            Column {
-                Text(text, color = fg, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // always on one line, never cut (asked by Human): a long label gets a slightly smaller font instead
+            Column(Modifier.padding(horizontal = 12.dp)) {
+                FitText(text, fg, 17f, FontWeight.SemiBold)
                 // a short line under the label (the locked Scan: "Unlock this feature")
                 if (sub != null) Text(sub, color = fg, fontSize = 11.sp, maxLines = 1, softWrap = false,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
@@ -894,8 +894,19 @@ fun GlowButton(text: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = C.Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        FitText(text, C.Ink, 17f, FontWeight.SemiBold, Modifier.padding(horizontal = 12.dp))
     }
+}
+
+/** A label always on one line: if it does not fit, the font gets smaller step by step (down to 11 sp), never "…" and
+ *  never a second line. Used by every button. */
+@Composable
+fun FitText(text: String, color: Color, maxSp: Float, weight: FontWeight, modifier: Modifier = Modifier) {
+    var size by remember(text, maxSp) { mutableStateOf(maxSp) }
+    var ready by remember(text, maxSp) { mutableStateOf(false) }
+    Text(text, color = color, fontSize = size.sp, fontWeight = weight, maxLines = 1, softWrap = false,
+        modifier = modifier.drawWithContent { if (ready) drawContent() },
+        onTextLayout = { if (it.hasVisualOverflow && size > 11f) size -= 0.5f else ready = true })
 }
 
 @Composable
@@ -1014,14 +1025,11 @@ fun Colophon(onTerms: () -> Unit) {
         Text("HINT 365 · HealthyInstantTracker · v$version", color = C.Muted, fontSize = 11.sp)
         Text(t(R.string.colophon_rights, years), color = C.Muted, fontSize = 11.sp)
         // the documents, always in the app's language (English for any language the app does not speak):
-        // the terms to read, the terms as a PDF in Downloads, the privacy policy on the web
+        // the terms to read (their PDF is downloaded from there), the privacy policy on the web
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             val link = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
             val u = androidx.compose.ui.text.style.TextDecoration.Underline
             Text(t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable(onClick = onTerms).then(link))
-            Text(t(R.string.colophon_terms_pdf), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable {
-                try { downloadPdf(ctx, termsPdf(ctx)) } catch (e: Exception) { ErrorReport.report("Colophon/terms PDF", e) }
-            }.then(link))
             Text(t(R.string.colophon_privacy), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable {
                 try { openInBrowser(ctx, BuildConfig.API_URL.trimEnd('/') + "/privacy?lang=" + appLocale().language) } catch (e: Exception) { ErrorReport.report("Colophon/privacy", e) }
             }.then(link))
@@ -1035,8 +1043,16 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
     var read by remember { mutableStateOf(false) }
     var healthConsent by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
-    val hintScope = rememberCoroutineScope()
-    Box(Modifier.fillMaxSize()) {
+    // the box and Accept work only once the whole text has been scrolled through (at the start; reading again later: free)
+    var reachedEnd by remember { mutableStateOf(onClose != null) }
+    LaunchedEffect(scroll.value, scroll.maxValue) {
+        if (scroll.maxValue == Int.MAX_VALUE) return@LaunchedEffect
+        if (scroll.value >= scroll.maxValue - 4) reachedEnd = true
+    }
+    Column(Modifier.fillMaxSize()) {
+    // at the start: a reading bar that fills while scrolling, always visible above the text (no button to press)
+    if (onClose == null) ReadingBar(if (scroll.maxValue <= 0 || scroll.maxValue == Int.MAX_VALUE) (if (reachedEnd) 1f else 0f) else scroll.value.toFloat() / scroll.maxValue, reachedEnd)
+    Box(Modifier.fillMaxWidth().weight(1f)) {
     Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 18.dp, vertical = 12.dp)) {
         // read again later (onClose): only the text and Close; at the start: the text, the box and the two buttons
         if (onClose != null) Header(t(R.string.disc_title), null, t(R.string.close), onClose, titleSize = 22)
@@ -1057,20 +1073,21 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
         Text(t(R.string.terms_pdf_hint), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
         TextButton(onClick = {
             try { downloadPdf(pdfCtx, termsPdf(pdfCtx)) } catch (e: Exception) { ErrorReport.report("Terms/PDF", e); toast(pdfCtx, t(R.string.err_generic)) }
-        }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.terms_pdf), color = C.Sys, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+        }, modifier = Modifier.fillMaxWidth()) { FitText(t(R.string.terms_pdf), C.Sys, 14f, FontWeight.SemiBold) }
         if (onClose == null) {
             Row(
-                Modifier.fillMaxWidth().padding(top = 8.dp).clickable { read = !read },
+                Modifier.fillMaxWidth().padding(top = 8.dp).clickable(enabled = reachedEnd) { read = !read },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Checkbox(checked = read, onCheckedChange = { read = it }, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
+                Checkbox(checked = read, onCheckedChange = { read = it }, enabled = reachedEnd, colors = CheckboxDefaults.colors(checkedColor = C.Sys, uncheckedColor = C.Muted))
                 Text(t(R.string.disc_check), color = C.Ink, fontSize = 14.sp)
             }
-            Row(Modifier.fillMaxWidth().clickable { healthConsent = !healthConsent }, verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = healthConsent, onCheckedChange = { healthConsent = it })
+            Row(Modifier.fillMaxWidth().clickable(enabled = reachedEnd) { healthConsent = !healthConsent }, verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = healthConsent, onCheckedChange = { healthConsent = it }, enabled = reachedEnd)
                 Text(t(R.string.disc_health_consent), color = C.Ink, fontSize = 14.sp)
             }
-            BigButton(t(R.string.disc_accept), enabled = read && healthConsent && !busy, onClick = onAccept)
+            if (!reachedEnd) Text(t(R.string.disc_read_first), color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+            BigButton(t(R.string.disc_accept), enabled = reachedEnd && read && healthConsent && !busy, onClick = onAccept)
             TextButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) {
                 Text(t(R.string.disc_decline), color = C.Muted, fontSize = 13.sp)
             }
@@ -1083,27 +1100,41 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
         }
         Spacer(Modifier.height(24.dp))
     }
-    // the box and Accept are at the end: a small tab with a moving arrow says to scroll down and read it all
-    // (shown until the end is reached; a tap scrolls there)
-    if (onClose == null && scroll.canScrollForward) ScrollDownHint(Modifier.align(Alignment.BottomCenter)) {
-        hintScope.launch { scroll.animateScrollTo(scroll.maxValue) }
+    // while there is more below: the text fades out at the bottom (nothing to tap) and a slim bar on the right shows
+    // where you are in the text
+    if (scroll.canScrollForward) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(56.dp)
+        .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.Transparent, C.Bg))))
+    ScrollThumb(scroll, Modifier.align(Alignment.CenterEnd))
     }
     }
 }
 
+/** The reading bar at the top of the terms: fills while the text is scrolled, then says it has all been read. */
 @Composable
-private fun ScrollDownHint(modifier: Modifier, onClick: () -> Unit) {
-    val bounce by rememberInfiniteTransition(label = "hint").animateFloat(
-        0f, 6f, infiniteRepeatable(tween(700, easing = LinearEasing), androidx.compose.animation.core.RepeatMode.Reverse), label = "bounce")
-    Row(
-        modifier.padding(bottom = 18.dp).clip(RoundedCornerShape(50)).background(C.Sys).clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("↓", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.offset(y = bounce.dp))
-        Text(t(R.string.disc_scroll_hint), color = androidx.compose.ui.graphics.Color.White, fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp))
+private fun ReadingBar(progress: Float, done: Boolean) {
+    val p = progress.coerceIn(0f, 1f)
+    Column(Modifier.fillMaxWidth().background(C.Bg).padding(horizontal = 18.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (done) t(R.string.disc_read_done) else t(R.string.disc_scroll_hint), color = if (done) C.Dia else C.Muted,
+                fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(if (done) "✓" else "${(p * 100).toInt()}%", color = if (done) C.Dia else C.Muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Box(Modifier.padding(top = 6.dp).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(C.Muted.copy(alpha = 0.25f))) {
+            Box(Modifier.fillMaxWidth(if (done) 1f else p).height(4.dp).clip(RoundedCornerShape(2.dp)).background(if (done) C.Dia else C.Sys))
+        }
+    }
+}
+
+/** A slim scrollbar on the right edge: where you are in the text and how much is left. Not touchable. */
+@Composable
+private fun ScrollThumb(scroll: androidx.compose.foundation.ScrollState, modifier: Modifier) {
+    if (scroll.maxValue <= 0 || scroll.maxValue == Int.MAX_VALUE) return
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.fillMaxHeight().width(10.dp).padding(vertical = 6.dp, horizontal = 3.dp)) {
+        val track = maxHeight
+        val thumb = (track * 0.18f).coerceAtLeast(28.dp)
+        val y = (track - thumb) * (scroll.value.toFloat() / scroll.maxValue)
+        Box(Modifier.fillMaxHeight().width(4.dp).clip(RoundedCornerShape(2.dp)).background(C.Muted.copy(alpha = 0.15f)))
+        Box(Modifier.offset(y = y).width(4.dp).height(thumb).clip(RoundedCornerShape(2.dp)).background(C.Sys.copy(alpha = 0.8f)))
     }
 }
 

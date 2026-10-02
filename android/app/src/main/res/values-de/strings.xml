@@ -14,7 +14,9 @@
     <string name="activate">Aktivieren</string>
     <string name="activating">Wird aktiviert…</string>
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
-    <string name="disc_scroll_hint">Nach unten scrollen, alles lesen und akzeptieren</string>
+    <string name="disc_scroll_hint">Scrollen, um alles zu lesen</string>
+    <string name="disc_read_first">Lies den ganzen Text bis zum Ende, um zu akzeptieren</string>
+    <string name="disc_read_done">Bis zum Ende gelesen</string>
     <string name="share_app">HINT 365 empfehlen</string>
     <string name="share_app_text">Ich nutze HINT 365, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
@@ -112,7 +114,7 @@
     <string name="max_dia">Höchster DIA</string>
     <string name="lowest">Niedrigster Wert</string>
     <string name="report_not_yet">Der %1$d-Tage-Bericht kann in %2$d Tag(en) gesendet werden. Hier schon eine Vorschau.</string>
-    <string name="send_pdf">PDF herunterladen</string>
+    <string name="send_pdf">Blutdruckbericht herunterladen (PDF)</string>
     <string name="send_excel">Excel senden</string>
     <string name="file_failed">Datei konnte nicht erstellt werden: %s</string>
     <string name="share_title">Bericht senden</string>
@@ -545,6 +547,5 @@
     <string name="terms_save_text">Sie haben die Nutzungsbedingungen angenommen. Möchten Sie eine PDF-Kopie auf dem Telefon speichern, im Ordner Download? Das geht auch später, am Ende der Bedingungen.</string>
     <string name="terms_save_yes">PDF speichern</string>
     <string name="terms_save_later">Später</string>
-    <string name="colophon_terms_pdf">PDF herunterladen</string>
     <string name="colophon_privacy">Datenschutz</string>
 </resources>
