@@ -6,10 +6,10 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 W="${1:?scratch dir}/w"
 rm -rf "$W" && mkdir -p "$W"
-cp -r "$REPO/worker/src" "$REPO/worker/public" "$REPO/worker/schema.sql" "$REPO/worker/package.json" "$W/"
+cp -r "$REPO/worker/src" "$REPO/worker/public" "$REPO/worker/schema.sql" "$REPO/worker/schema-backup.sql" "$REPO/worker/package.json" "$W/"
 [ -d "$REPO/worker/node_modules" ] || (cd "$REPO/worker" && npm install --no-audit --no-fund)
 ln -s "$REPO/worker/node_modules" "$W/node_modules"
-sed 's/D1_DATABASE_ID/00000000-0000-0000-0000-000000000000/' "$REPO/worker/wrangler.toml" > "$W/wrangler.toml"
+sed -e 's/D1_DATABASE_ID/00000000-0000-0000-0000-000000000000/' -e 's/BACKUP_DATABASE_ID/00000000-0000-0000-0000-000000000001/' "$REPO/worker/wrangler.toml" > "$W/wrangler.toml"
 cat > "$W/.dev.vars" <<EOF
 FAMILY_CODE=QA-FAMILY-CODE-DUMMY
 KEY_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
@@ -17,6 +17,7 @@ EOF
 cd "$W"
 export WRANGLER_SEND_METRICS=false
 npx wrangler d1 execute personalhealthy --local --file=schema.sql >/dev/null
+npx wrangler d1 execute personalhealthy-backup --local --file=schema-backup.sql >/dev/null
 # the columns .github/workflows/build.yml adds with add_col (errors for columns already in schema.sql are ignored)
 for c in "persons created_at_local TEXT" "scans taken_at_local TEXT" "scans created_at_local TEXT" \
          "measurements taken_at_local TEXT" "measurements created_at_local TEXT" "ledger created_at_local TEXT" \
