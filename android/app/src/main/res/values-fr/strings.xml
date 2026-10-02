@@ -57,7 +57,7 @@
     <string name="scan_needs_key_add">Activer l\'IA</string>
     <string name="scan_needs_key_voice">Utiliser la voix</string>
     <string name="last7">7 derniers jours</string>
-    <string name="week_hint">Une valeur par jour : la moyenne de toutes les mesures du jour. SYS en haut, DIA en bas.</string>
+    <string name="week_hint">Chaque case est la moyenne de toutes les mesures du jour, pas la dernière mesure : elle coïncide avec la dernière seulement si c\'est la première du jour. SYS en haut, DIA en bas.</string>
     <string name="summary_title">Résumé sur 7 jours</string>
     <string name="summary_highest">Plus élevées</string>
     <string name="summary_avg">Moyenne</string>
@@ -549,4 +549,5 @@
     <string name="scan_trial_left">Essai IA : encore %1$d jours</string>
     <string name="ai_trial_title">Votre essai IA se termine</string>
     <string name="ai_trial_body">Votre essai gratuit des fonctions IA se termine dans 2 jours. Pour continuer à utiliser le Scan photo avec l\'IA, abonnez-vous pour 4 $ par an ; sinon le Scan sera désactivé. Vous pourrez toujours enregistrer à la voix et utiliser toutes les autres fonctions de l\'app.</string>
+    <string name="last7_avg">7 derniers jours · moyenne du jour</string>
 </resources>

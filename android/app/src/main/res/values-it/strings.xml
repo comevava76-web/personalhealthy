@@ -57,7 +57,7 @@
     <string name="scan_needs_key_add">Attiva AI</string>
     <string name="scan_needs_key_voice">Usa la voce</string>
     <string name="last7">Ultimi 7 giorni</string>
-    <string name="week_hint">Un valore per giorno: la media di tutte le misure di quel giorno. SYS sopra, DIA sotto.</string>
+    <string name="week_hint">Ogni casella è la media di tutte le misure di quel giorno, non l\'ultima misura: coincide con l\'ultima solo se è la prima del giorno. SYS sopra, DIA sotto.</string>
     <string name="summary_title">Riepilogo 7 giorni</string>
     <string name="summary_highest">Più alti</string>
     <string name="summary_avg">Media</string>
@@ -551,4 +551,5 @@
     <string name="scan_trial_left">Prova AI: ancora %1$d giorni</string>
     <string name="ai_trial_title">La prova AI sta per finire</string>
     <string name="ai_trial_body">Il tuo periodo di prova delle funzionalità AI finisce tra 2 giorni. Per continuare a usare lo Scan con foto e AI abbonati a 4 $ all\'anno; altrimenti lo Scan verrà disattivato. Potrai comunque continuare a registrare a voce e a usare tutte le altre funzioni dell\'app.</string>
+    <string name="last7_avg">Ultimi 7 giorni · media del giorno</string>
 </resources>

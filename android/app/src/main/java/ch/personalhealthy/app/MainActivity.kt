@@ -1435,8 +1435,9 @@ fun WeekPanel(readings: List<Reading>) {
     val cell = Modifier.padding(horizontal = 1.dp).clip(RoundedCornerShape(6.dp)).background(C.Surface2).padding(vertical = 4.dp)
     val labelW = 52.dp
     Panel {
-        Row { Text(t(R.string.last7), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
-        Spacer(Modifier.height(8.dp))
+        Row { Text(t(R.string.last7_avg), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
+        // said before the numbers: each box is the day's average, so it matches the last reading only when it is the first of the day
+        Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(labelW))
             days.forEach { d ->
@@ -1470,7 +1471,6 @@ fun WeekPanel(readings: List<Reading>) {
                 )
             }
         }
-        Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
     }
 }
 

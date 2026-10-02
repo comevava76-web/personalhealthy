@@ -57,7 +57,7 @@
     <string name="scan_needs_key_add">KI aktivieren</string>
     <string name="scan_needs_key_voice">Stimme nutzen</string>
     <string name="last7">Letzte 7 Tage</string>
-    <string name="week_hint">Ein Wert pro Tag: der Durchschnitt aller Messungen dieses Tages. SYS oben, DIA unten.</string>
+    <string name="week_hint">Jedes Feld ist der Durchschnitt aller Messungen dieses Tages, nicht die letzte Messung: Es stimmt mit der letzten nur überein, wenn sie die erste des Tages ist. SYS oben, DIA unten.</string>
     <string name="summary_title">Übersicht 7 Tage</string>
     <string name="summary_highest">Höchste</string>
     <string name="summary_avg">Durchschnitt</string>
@@ -549,4 +549,5 @@
     <string name="scan_trial_left">KI-Probe: noch %1$d Tage</string>
     <string name="ai_trial_title">Ihre KI-Probe endet bald</string>
     <string name="ai_trial_body">Ihre Gratisprobe der KI-Funktionen endet in 2 Tagen. Um den Foto-Scan mit KI weiter zu nutzen, abonnieren Sie für 4 $ pro Jahr; sonst wird der Scan abgeschaltet. Sie können weiterhin per Sprache erfassen und alle anderen Funktionen der App nutzen.</string>
+    <string name="last7_avg">Letzte 7 Tage · Tagesdurchschnitt</string>
 </resources>
