@@ -25,6 +25,13 @@
         "binding": "BACKUP",
         "schema": "worker/schema-backup.sql",
         "holds": "copy of the acceptances of the terms (legal proof)"
+      },
+      {
+        "name": "personalhealthy-vault",
+        "jurisdiction": "eu",
+        "binding": null,
+        "schema": "worker/schema-vault.sql",
+        "holds": "nightly encrypted backups of the other two databases, 30 days (no card needed)"
       }
     ],
     "r2": [
@@ -33,7 +40,8 @@
         "jurisdiction": "eu",
         "expire_days": 30,
         "lock_days": 7,
-        "holds": "nightly encrypted export of both databases (d1/YYYY-MM-DD/hint365-db.tar.gz.enc)"
+        "holds": "later (Google Play launch): an extra copy of the backups; needs R2 enabled (payment method) — not used yet",
+        "enabled": false
       }
     ],
     "worker_secrets": [
@@ -84,5 +92,11 @@
     "google_cloud": "OAuth client for Sign in with Google (web + Android, SHA-1 of the signing key); service account for Google Play",
     "google_play_console": "the app ch.personalhealthy.app, the subscription hint365_annual, the AAB of every release",
     "anthropic_console": "the AI key and its monthly spend limit"
+  },
+  "recovery": {
+    "rpo": "24 hours (nightly backup); minutes within the last 7 days with D1 Time Travel",
+    "rto": "1 hour for a full rebuild from zero (measured by the drill: about 10–20 minutes of pipeline)",
+    "backup_time_utc": "01:40",
+    "backup_keep_days": 30
   }
 }
