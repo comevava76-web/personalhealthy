@@ -36,6 +36,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -1033,7 +1034,10 @@ fun Colophon(onTerms: () -> Unit) {
 fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit, onClose: (() -> Unit)? = null) {
     var read by remember { mutableStateOf(false) }
     var healthConsent by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {
+    val scroll = rememberScrollState()
+    val hintScope = rememberCoroutineScope()
+    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 18.dp, vertical = 12.dp)) {
         // read again later (onClose): only the text and Close; at the start: the text, the box and the two buttons
         if (onClose != null) Header(t(R.string.disc_title), null, t(R.string.close), onClose, titleSize = 22)
         else {
@@ -1078,6 +1082,28 @@ fun DisclaimerScreen(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit,
             }, modifier = Modifier.fillMaxWidth()) { Text(t(R.string.disc_web), color = C.Sys, fontSize = 13.sp) }
         }
         Spacer(Modifier.height(24.dp))
+    }
+    // the box and Accept are at the end: a small tab with a moving arrow says to scroll down and read it all
+    // (shown until the end is reached; a tap scrolls there)
+    if (onClose == null && scroll.canScrollForward) ScrollDownHint(Modifier.align(Alignment.BottomCenter)) {
+        hintScope.launch { scroll.animateScrollTo(scroll.maxValue) }
+    }
+    }
+}
+
+@Composable
+private fun ScrollDownHint(modifier: Modifier, onClick: () -> Unit) {
+    val bounce by rememberInfiniteTransition(label = "hint").animateFloat(
+        0f, 6f, infiniteRepeatable(tween(700, easing = LinearEasing), androidx.compose.animation.core.RepeatMode.Reverse), label = "bounce")
+    Row(
+        modifier.padding(bottom = 18.dp).clip(RoundedCornerShape(50)).background(C.Sys).clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("↓", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.offset(y = bounce.dp))
+        Text(t(R.string.disc_scroll_hint), color = androidx.compose.ui.graphics.Color.White, fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp))
     }
 }
 

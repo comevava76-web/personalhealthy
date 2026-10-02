@@ -13,7 +13,7 @@ Before closing a session, refresh the handover's current state, append a dated e
   mai misure reali).
 - **Mai diagnosi**, mai giudizi sui valori; etichette sempre SYS, DIA, PUL; pressione e battiti mai nello stesso grafico;
   grafici di 7 giorni con un punto per giorno (la media del giorno, spiegata prima dei grafici) e il valore accanto, sotto solo i numeri dei giorni, senza scorrimento orizzontale; stesso PDF A4 dall'app e dal web.
-- **Tema chiaro e scuro, stessi colori in app e web**: una sola palette (scuro e chiaro) in `MainActivity.kt` (`object C`) e `worker/public/my/style.css` (variabili CSS), valori identici; in cima al Gestore «Tema dell'app»: scuro (di base) o chiaro; l'app passa il tema alla Web Dashboard (`&light`/`&dark`), che altrimenti si apre scura. Il Gestore a schede ordinate (Tema dell'app in cima, numeri, Account, Condividi), mai pulsanti giganti. In Referti il pulsante della Web Dashboard viene subito dopo l'importazione e lo «Storico referti caricati» è l'ultimo, chiuso sotto il numero dei referti finché non lo si tocca. Non salvato nel browser. Ogni colore nuovo va in entrambi i file. In Pressione i due pulsanti per registrare hanno colori diversi: Voce blu calmo (`C.Voice` / `--voice`), Scan viola. Blocco: si usa quello del telefono (nessun PIN dell'app); ogni 14 giorni al massimo un piccolo invito ad attivare impronta/volto o un blocco schermo (`BioNudge`), solo una proposta (scelta di Human).
+- **Tema chiaro e scuro, stessi colori in app e web**: una sola palette (scuro e chiaro) in `MainActivity.kt` (`object C`) e `worker/public/my/style.css` (variabili CSS), valori identici; in cima al Gestore «Tema dell'app»: scuro (di base) o chiaro; l'app passa il tema alla Web Dashboard (`&light`/`&dark`), che altrimenti si apre scura. Il Gestore a schede ordinate (Tema dell'app in cima, numeri, Account, Consiglia HINT 365), mai pulsanti giganti. In Referti il pulsante della Web Dashboard viene subito dopo l'importazione e lo «Storico referti caricati» è l'ultimo, chiuso sotto il numero dei referti finché non lo si tocca. Non salvato nel browser. Ogni colore nuovo va in entrambi i file. In Pressione i due pulsanti per registrare hanno colori diversi: Voce blu calmo (`C.Voice` / `--voice`), Scan viola. Blocco: si usa quello del telefono (nessun PIN dell'app); ogni 14 giorni al massimo un piccolo invito ad attivare impronta/volto o un blocco schermo (`BioNudge`), solo una proposta (scelta di Human).
 - **PDF colorati, mai rosso** (chiesto da Human): pressione con banda viola→verde acqua e riga a tre colori SYS/DIA/PUL,
   ombra leggera sotto le linee, riquadri dei valori tinti col colore della misura, tabella con intestazione colorata e righe
   alterne; referti con banda verde acqua→indaco, tabella con intestazione colorata, righe alterne e colonne divise, al più
@@ -51,8 +51,10 @@ Before closing a session, refresh the handover's current state, append a dated e
   del deploy); ogni app più vecchia non può più usare il server e propone l'aggiornamento. L'aggiornamento si fa come in
   tutte le app dello store: all'avvio e a ogni ritorno l'app chiede a Google Play e apre la finestra di aggiornamento di
   Google (in-app update immediato, `PlayUpdate.kt`; su iOS l'equivalente App Store); nessuna pagina nostra, se non come
-  ripiego fuori dal Play Store (APK di prova: link di download). Quando l'app sarà sul Play Store, l'ultima versione per il
-  server deve seguire quella davvero pubblicata, non quella appena compilata. Restano per le emergenze `app_min_version`,
+  ripiego fuori dal Play Store (APK di prova: link di download). Sul Play Store la versione richiesta è quella che Google ha
+  davvero pubblicato a tutti (track production, «completed»): il Worker la legge ogni ora (cron `7 * * * *`, `playLiveVersion`,
+  setting `app_live_version`); una versione ancora in revisione o al 20% non ferma nessuno. Prima del Play Store vale la build
+  appena pubblicata sul link. Processo disegnato: architettura pagine 8-9, documento generale sezione 13. Restano per le emergenze `app_min_version`,
   `app_blocked`, `app_off` (Actions → *App versions*). Non togliere questo controllo.
 - **Abbonamento alle funzionalità AI** (decisione di Human del 02.10.2026): l'app è gratuita (voce, referti, grafici,
   report, Web Dashboard) a discrezione dell'owner, che nelle condizioni si riserva di cambiare prezzi, togliere il gratuito, mettere
@@ -95,7 +97,7 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Documento generale** `docs/HINT365-How-it-works.pdf` (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello
-  stesso commit i documenti che tocca: architettura (7 pagine, la 7 è lo schema del database, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
+  stesso commit i documenti che tocca: architettura (9 pagine: la 7 è lo schema del database, la 8 e la 9 il rilascio Android e iPhone, generati da `docs/overview/*-diagram.py`, `node docs/check-layout.cjs`), guide IT/EN con i loro PDF (`node docs/render-guides.cjs`),
   condizioni/privacy/home in `docs/legal/` (`cd worker && node scripts/export-docs.mjs`, poi i PDF con `node docs/legal/render.cjs`); costi e guadagni dell'owner in `docs/business/` (`node docs/business/render.cjs`). Tutti i documenti stanno nella cartella `docs/` del repository (chiesto da Human). Il workflow *Docs check* lo verifica.
 - **Registro errori** (`error_log`, `worker/src/errors.ts`, `ErrorReport` nell'app, `app.js` sul web): sintetico, raggruppato per
   giorno/punto/versione con contatore, senza valori delle misure, 90 giorni. Va letto a ogni sessione di lavoro e dopo ogni

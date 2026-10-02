@@ -38,6 +38,33 @@ async function googleToken(serviceAccountJson: string): Promise<string> {
   return cached.token;
 }
 
+/**
+ * The newest version of the app that Google Play has really published to everyone: the production track's releases
+ * that are "completed" (reviewed and rolled out to 100%). 0 = none yet (the app is not on Google Play).
+ * A version still in review, or rolled out only to part of the people, does not count: nobody may be asked to update
+ * before Google can give them the update.
+ */
+export async function playLiveVersion(serviceAccountJson: string): Promise<number> {
+  const at = await googleToken(serviceAccountJson);
+  const base = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PLAY_PACKAGE}/edits`;
+  const h = { authorization: `Bearer ${at}` };
+  const e = await fetch(base, { method: "POST", headers: h });
+  if (e.status === 404) return 0;
+  if (!e.ok) throw new Error("Google Play edits " + e.status);
+  const id = ((await e.json()) as any).id;
+  try {
+    const t = await fetch(`${base}/${id}/tracks/production`, { headers: h });
+    if (t.status === 404) return 0;
+    if (!t.ok) throw new Error("Google Play track " + t.status);
+    const j: any = await t.json();
+    let live = 0;
+    for (const r of j.releases || []) if (r.status === "completed") for (const v of r.versionCodes || []) live = Math.max(live, Number(v) || 0);
+    return live;
+  } finally {
+    await fetch(`${base}/${id}`, { method: "DELETE", headers: h }).catch(() => {});
+  }
+}
+
 export type PlaySub = { until: number; state: string; account: string };
 
 /** What Google Play says about a purchase token; null = unknown token. */

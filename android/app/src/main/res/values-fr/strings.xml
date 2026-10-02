@@ -14,7 +14,8 @@
     <string name="activate">Activer</string>
     <string name="activating">Activation…</string>
     <string name="setup_privacy">Ni nom ni e-mail : le téléphone reçoit un code anonyme, protégé dans le téléphone lui-même.</string>
-    <string name="share_app">Partager l\'app</string>
+    <string name="disc_scroll_hint">Faites défiler pour tout lire et accepter</string>
+    <string name="share_app">Recommander HINT 365</string>
     <string name="share_app_text">J\'utilise HINT 365, un journal de tension : on photographie le tensiomètre ou on dicte les valeurs, et il prépare le rapport pour le médecin. À télécharger pour Android : %1$s — ouvrez le fichier, autorisez l\'installation, puis touchez \"Se connecter avec Google\".</string>
     <string name="google_intro">Connectez-vous avec votre compte Google. Il sert seulement à créer votre journal et à le retrouver si vous changez de téléphone. Chaque jour, l\'app s\'ouvre avec votre empreinte ou votre visage.</string>
     <string name="privacy_title">Vos données</string>

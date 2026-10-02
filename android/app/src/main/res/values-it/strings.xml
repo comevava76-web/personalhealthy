@@ -14,7 +14,8 @@
     <string name="activate">Attiva</string>
     <string name="activating">Attivo…</string>
     <string name="setup_privacy">Nessun nome e nessuna email: il telefono riceve un codice anonimo, protetto dentro il telefono stesso.</string>
-    <string name="share_app">Condividi l\'app</string>
+    <string name="disc_scroll_hint">Scorri in basso per leggere tutto e accettare</string>
+    <string name="share_app">Consiglia HINT 365</string>
     <string name="share_app_text">Uso HINT 365, un diario della pressione: fotografi il misuratore o detti i valori, e prepara il report per il medico. Scaricala per Android: %1$s — apri il file, consenti l\'installazione, poi tocca \"Accedi con Google\".</string>
     <string name="google_intro">Accedi con il tuo account Google. Serve solo per creare il tuo diario e per ritrovarlo se cambi telefono. Ogni giorno l\'app si apre con impronta o volto.</string>
     <string name="privacy_title">I tuoi dati</string>

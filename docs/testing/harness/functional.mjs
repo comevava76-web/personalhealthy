@@ -260,6 +260,13 @@ r = await call(alice, "GET", "/v1/me");
 S.check("gate", "G7", "app_off = 1 blocks every version", r.status === 426, r.text);
 run("UPDATE settings SET value = '0' WHERE key = 'app_off'");
 await call(owner, "POST", "/v1/admin/app-min-version", { minVersion: 0 });
+// on Google Play the version required is the one Google has published to everyone (app_live_version, hourly)
+run("INSERT INTO settings (key, value) VALUES ('app_live_version', '180') ON CONFLICT (key) DO UPDATE SET value = excluded.value");
+r = await web("GET", "/v1/app-status?v=179");
+S.check("gate", "G8", "older than the version live on Google Play (179 < 180) -> must update", r.json?.ok === false, r.text);
+r = await web("GET", "/v1/app-status?v=180");
+S.check("gate", "G9", "the version live on Google Play (180) -> ok", r.json?.ok === true, r.text);
+run("DELETE FROM settings WHERE key = 'app_live_version'");
 
 // ---------------------------------------------------------------- subscription gate
 run("INSERT INTO settings (key, value) VALUES ('subscription_on', '1') ON CONFLICT (key) DO UPDATE SET value = excluded.value");

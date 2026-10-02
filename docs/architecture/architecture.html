@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>HINT 365 · Functional and architecture document</title>
 <!--
-  Functional (page 1), voice and camera input (page 2), architecture (page 3), hosting and runtime flow (page 4), roles and delivery (page 5), flows and permissions (page 6), database (page 7) document of HINT 365 · HealthyInstantTracker. Always in English.
+  Functional (page 1), voice and camera input (page 2), architecture (page 3), hosting and runtime flow (page 4), roles and delivery (page 5), flows and permissions (page 6), database (page 7), release and deployment (pages 8 and 9) document of HINT 365 · HealthyInstantTracker. Always in English.
   Update it with every change to a flow, a technology or a rule; then rebuild the PDF:
   node docs/architecture/render.cjs   →   docs/architecture/HINT-Architecture.pdf
 -->
@@ -44,7 +44,7 @@
 <!-- ======================= PAGE 1: FUNCTIONAL OVERVIEW ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 1 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 1 OF 9</div>
     <h1>Functional overview</h1>
     <p>What the app does, who does what and in which order. A blood-pressure diary for Android, with a web dashboard and reports for the doctor.</p>
   </div>
@@ -142,13 +142,13 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>1 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>1 / 9</span></div>
 </section>
 
 <!-- ======================= PAGE 2: TWO WAYS IN, VOICE AND LAB REPORTS ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 2 OF 9</div>
     <h1>Input: voice and lab reports</h1>
     <p>How data enters HINT 365: blood pressure by voice or by a photo of the monitor (Scan), lab results from a report. Voice and lab reports are read on the phone; the Scan is read with AI (terms v21): through the Worker to Anthropic with the owner's key.</p>
   </div>
@@ -218,13 +218,13 @@
   </table>
   <p class="muted"><b>Scan (photo of the monitor)</b>: camera → <code>POST /v1/bp/photo/read</code> (trial or subscription, else <code>402 scan_locked</code>; 3 a day, and the 2.50 $ yearly allowance in <code>scan_usage</code>, else <code>429 scan_budget</code>; Claude Haiku 4.5 with the owner's key; photo not stored) → Claude answers JSON only → plausibility check → the photo and the numbers on screen → the person confirms → <code>POST /v1/bp/photo</code> (3 numbers only); the photo is deleted. A retake reason or "numbers wrong" is counted in <code>event_log</code> (<code>bp_photo_*</code>, code only). Code: <code>AiScan.kt</code>, <code>MonitorScan.kt</code>.</p>
   <p class="muted">Neither way judges the values. Readings feed the charts, reports and the doctor's link; lab results feed the table in the Web Dashboard.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.113</span><span>2 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 01.10.2026 · app version 0.1.113</span><span>2 / 9</span></div>
 </section>
 
 <!-- ======================= PAGE 3: TECHNOLOGY ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 3 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 3 OF 9</div>
     <h1>Architecture and technology</h1>
     <p>The components, how they talk, where the data live and how a new version is released.</p>
   </div>
@@ -313,12 +313,12 @@
 
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>3 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>3 / 9</span></div>
 </section>
 <!-- ======================= PAGE 4: HOSTING, RUNTIME FLOW, ERROR LOG ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 4 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 4 OF 9</div>
     <h1>Hosting and runtime flow</h1>
     <p>Where every part runs, who talks to whom at run time, and how errors met by users are recorded.</p>
   </div>
@@ -406,13 +406,13 @@
       </ul>
     </div>
   </div>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>4 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>4 / 9</span></div>
 </section>
 
 <!-- ======================= PAGE 5: ROLES AND DELIVERY ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 5 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 5 OF 9</div>
     <h1>Roles and delivery</h1>
     <p>Who does what — the architect, the developer, the repository and the hosting — and how a change goes from the chat to the phone.</p>
   </div>
@@ -504,13 +504,13 @@
     <text x="70" y="98" class="x5">the next day, with the fixed version in use</text>
   </svg>
   <p class="muted">Security tests, vulnerability scan, Dependabot and who pays for the loop: page 4. Larger fixes wait for the human.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>5 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>5 / 9</span></div>
 </section>
 
 <!-- ======================= PAGE 6: APPLICATION FLOWS AND PERMISSIONS ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 6 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 6 OF 9</div>
     <h1>Application flows and permissions</h1>
     <p>Every flow of the application, step by step, and who is allowed to do what.</p>
   </div>
@@ -547,13 +547,13 @@
     <tr><td>See keys and secrets</td><td>—</td><td>—</td><td>—</td><td>✓ owns them</td><td><b>never</b></td></tr>
   </table>
   <p class="muted">Enforced by the server: signed app calls, web session cookie, owner account, read-only expiring doctor links.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>6 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 28.09.2026 · app version 0.1.91</span><span>6 / 9</span></div>
 </section>
 
 <!-- ======================= PAGE 7: DATABASE ======================= -->
 <section class="page">
   <div class="band">
-    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 7 OF 7</div>
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 7 OF 9</div>
     <h1>Database: tables and relations</h1>
     <p>Cloudflare D1 in the EU: <b>personalhealthy</b>, plus <b>personalhealthy-backup</b> for the copy of the acceptances. Only the Worker reads and writes them.</p>
   </div>
@@ -856,7 +856,251 @@
 </svg>
   <p class="muted"><b>PK</b> key of the row · <b>FK</b> foreign key declared in the database (solid line, deleted with the account) · <b>~</b> same id kept by the Worker, no constraint (dashed line).
   Line ends: two bars = exactly one, crow's foot = many. Deleting an account removes every personal row except the acceptances (proof). Contents and retention of each table: general document, section 4.</p>
-  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.123</span><span>7 / 7</span></div>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>7 / 9</span></div>
+</section>
+
+<!-- ======================= PAGE 8: RELEASE AND DEPLOYMENT, ANDROID ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 8 OF 9</div>
+    <h1>Release and deployment · Android</h1>
+    <p>Who does what, and when, from the owner's request to the person working on the new version. Server and Web Dashboard are live minutes after the merge; the app waits for Google's review.</p>
+  </div>
+  <svg viewBox="0 0 744 924" width="100%" style="display:block;margin:2mm auto 0;max-height:218mm" font-family="Arial" font-size="7.4">
+<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="80" y="38" width="106" height="882" fill="#FFF4DE" opacity=".35" rx="4"/>
+<rect x="80" y="4" width="106" height="26" rx="5" fill="#FFF4DE" stroke="#B7860B"/>
+<text x="133.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Owner (Human)</text>
+<rect x="190" y="38" width="106" height="882" fill="#E2F5F2" opacity=".35" rx="4"/>
+<rect x="190" y="4" width="106" height="26" rx="5" fill="#E2F5F2" stroke="#0F9C8E"/>
+<text x="243.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Developer (Claude)</text>
+<rect x="300" y="38" width="106" height="882" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="300" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="353.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">GitHub</text>
+<rect x="410" y="38" width="106" height="882" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="410" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="463.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Cloudflare</text>
+<rect x="520" y="38" width="106" height="882" fill="#EEF1F5" opacity=".35" rx="4"/>
+<rect x="520" y="4" width="106" height="26" rx="5" fill="#EEF1F5" stroke="#5B6B88"/>
+<text x="573.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Google Play</text>
+<rect x="630" y="38" width="106" height="882" fill="#EDE9FB" opacity=".35" rx="4"/>
+<rect x="630" y="4" width="106" height="26" rx="5" fill="#EDE9FB" stroke="#6D5BD0"/>
+<text x="683.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Phone of the person</text>
+<text x="4" y="20.5" font-weight="bold" font-size="8" fill="#13223F">When</text>
+<rect x="85" y="44" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="44" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="63.0" text-anchor="middle" font-weight="bold" fill="#13223F">Asks for a change</text>
+<text x="135.0" y="72.2" text-anchor="middle" fill="#13223F">in the chat</text>
+<text x="4" y="64.0" font-size="7" font-weight="bold" fill="#13223F">Day 0</text>
+<text x="4" y="73.0" font-size="6.6" fill="#5B6B88">start</text>
+<path d="M133.0 86 L133.0 94.0 L243.0 94.0 L243.0 101" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="195" y="102" width="96" height="42" rx="5" fill="#fff" stroke="#0F9C8E" stroke-width="1.2"/>
+<rect x="195" y="102" width="4" height="42" rx="2" fill="#0F9C8E"/>
+<text x="245.0" y="121.0" text-anchor="middle" font-weight="bold" fill="#13223F">Code, tests, docs</text>
+<text x="245.0" y="130.2" text-anchor="middle" fill="#13223F">on a branch, PR</text>
+<text x="4" y="122.0" font-size="7" font-weight="bold" fill="#13223F">+ min to hours</text>
+<text x="4" y="131.0" font-size="6.6" fill="#5B6B88">size of the change</text>
+<path d="M243.0 144 L243.0 152.0 L353.0 152.0 L353.0 159" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="160" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="160" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="179.0" text-anchor="middle" font-weight="bold" fill="#13223F">Checks on the PR</text>
+<text x="355.0" y="188.2" text-anchor="middle" fill="#13223F">tests · app · docs</text>
+<circle cx="398" cy="163" r="8" fill="#0F9C8E"/><path d="M394 163 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="180.0" font-size="7" font-weight="bold" fill="#13223F">+ 10 min</text>
+<text x="4" y="189.0" font-size="6.6" fill="#5B6B88">all green</text>
+<path d="M353.0 202 L353.0 210.0 L133.0 210.0 L133.0 217" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="218" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="218" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="237.0" text-anchor="middle" font-weight="bold" fill="#13223F">Says "go"</text>
+<text x="135.0" y="246.2" text-anchor="middle" fill="#13223F">approves terms text</text>
+<text x="4" y="238.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="247.0" font-size="6.6" fill="#5B6B88">binding texts: owner</text>
+<path d="M133.0 260 L133.0 268.0 L243.0 268.0 L243.0 275" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="195" y="276" width="96" height="42" rx="5" fill="#fff" stroke="#0F9C8E" stroke-width="1.2"/>
+<rect x="195" y="276" width="4" height="42" rx="2" fill="#0F9C8E"/>
+<text x="245.0" y="299.6" text-anchor="middle" font-weight="bold" fill="#13223F">Merges into main</text>
+<text x="4" y="296.0" font-size="7" font-weight="bold" fill="#13223F">+ 1 min</text>
+<text x="4" y="305.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M243.0 318 L243.0 326.0 L353.0 326.0 L353.0 333" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="334" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="334" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="353.0" text-anchor="middle" font-weight="bold" fill="#13223F">Build</text>
+<text x="355.0" y="362.2" text-anchor="middle" fill="#13223F">tests, signed APK + AAB</text>
+<text x="4" y="354.0" font-size="7" font-weight="bold" fill="#13223F">+ 12 min</text>
+<text x="4" y="363.0" font-size="6.6" fill="#5B6B88">release v0.1.N kept</text>
+<path d="M353.0 376 L353.0 384.0 L463.0 384.0 L463.0 391" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="392" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="392" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="411.0" text-anchor="middle" font-weight="bold" fill="#13223F">Server + Web live</text>
+<text x="465.0" y="420.2" text-anchor="middle" fill="#13223F">web done: no update</text>
+<circle cx="508" cy="395" r="8" fill="#0F9C8E"/><path d="M504 395 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="412.0" font-size="7" font-weight="bold" fill="#13223F">same minute</text>
+<text x="4" y="421.0" font-size="6.6" fill="#5B6B88">web users: nothing to do</text>
+<path d="M463.0 434 L463.0 442.0 L133.0 442.0 L133.0 449" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="450" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="450" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="469.0" text-anchor="middle" font-weight="bold" fill="#13223F">Uploads the AAB</text>
+<text x="135.0" y="478.2" text-anchor="middle" fill="#13223F">Play Console: production</text>
+<text x="4" y="470.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="479.0" font-size="6.6" fill="#5B6B88">after testing it</text>
+<path d="M133.0 492 L133.0 500.0 L573.0 500.0 L573.0 507" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="508" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="508" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="527.0" text-anchor="middle" font-weight="bold" fill="#13223F">Google review</text>
+<text x="575.0" y="536.2" text-anchor="middle" fill="#13223F">Google Play checks it</text>
+<circle cx="618" cy="511" r="8" fill="#0F9C8E"/><path d="M614 511 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="528.0" font-size="7" font-weight="bold" fill="#13223F">+ hours to 3 days</text>
+<text x="4" y="537.0" font-size="6.6" fill="#5B6B88">decided by Google</text>
+<path d="M573.0 550 L573.0 565" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="566" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="566" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="585.0" text-anchor="middle" font-weight="bold" fill="#13223F">Published to all</text>
+<text x="575.0" y="594.2" text-anchor="middle" fill="#13223F">rollout 20% → 100%</text>
+<text x="4" y="586.0" font-size="7" font-weight="bold" fill="#13223F">+ 1-2 days</text>
+<text x="4" y="595.0" font-size="6.6" fill="#5B6B88">owner raises %</text>
+<path d="M573.0 608 L573.0 616.0 L463.0 616.0 L463.0 623" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="624" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="624" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="643.0" text-anchor="middle" font-weight="bold" fill="#13223F">Version N required</text>
+<text x="465.0" y="652.2" text-anchor="middle" fill="#13223F">read from Google Play</text>
+<text x="4" y="644.0" font-size="7" font-weight="bold" fill="#13223F">within 1 hour</text>
+<text x="4" y="653.0" font-size="6.6" fill="#5B6B88">hourly check</text>
+<path d="M463.0 666 L463.0 674.0 L683.0 674.0 L683.0 681" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="682" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="682" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="701.0" text-anchor="middle" font-weight="bold" fill="#13223F">Opens the app</text>
+<text x="685.0" y="710.2" text-anchor="middle" fill="#13223F">Google update window</text>
+<text x="4" y="702.0" font-size="7" font-weight="bold" fill="#13223F">next time</text>
+<text x="4" y="711.0" font-size="6.6" fill="#5B6B88">opened by the person</text>
+<path d="M683.0 724 L683.0 739" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="740" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="740" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="759.0" text-anchor="middle" font-weight="bold" fill="#13223F">Update and install</text>
+<text x="685.0" y="768.2" text-anchor="middle" fill="#13223F">data stay</text>
+<text x="4" y="760.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="769.0" font-size="6.6" fill="#5B6B88">Wi-Fi or mobile</text>
+<path d="M683.0 782 L683.0 797" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="798" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="798" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="817.0" text-anchor="middle" font-weight="bold" fill="#13223F">Accepts the terms</text>
+<text x="685.0" y="826.2" text-anchor="middle" fill="#13223F">if they changed (scroll)</text>
+<text x="4" y="818.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="827.0" font-size="6.6" fill="#5B6B88">recorded + backup</text>
+<path d="M683.0 840 L683.0 855" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="856" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="856" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="879.6" text-anchor="middle" font-weight="bold" fill="#13223F">Works on version N</text>
+<circle cx="728" cy="859" r="8" fill="#0F9C8E"/><path d="M724 859 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="876.0" font-size="7" font-weight="bold" fill="#13223F">done</text>
+<text x="4" y="885.0" font-size="6.6" fill="#5B6B88"></text>
+</svg>
+  <p class="muted">✓ = check passed. The Worker reads every hour the newest version Google Play has published to everyone (production track, status completed) and only then requires it (<code>app_live_version</code>); before Google Play, the build just deployed. Phones with automatic updates get it from Google Play without opening the app.</p>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>8 / 9</span></div>
+</section>
+
+<!-- ======================= PAGE 9: RELEASE AND DEPLOYMENT, IPHONE AND ROLES ======================= -->
+<section class="page">
+  <div class="band">
+    <div class="k">HINT 365 · HEALTHYINSTANTTRACKER · DOCUMENT 9 OF 9</div>
+    <h1>Release and deployment · iPhone and roles</h1>
+    <p>The same release through the Apple App Store, when the iOS app exists (today there is none), and the part each actor plays.</p>
+  </div>
+  <svg viewBox="0 0 744 576" width="100%" style="display:block;margin:2mm auto 0;max-height:135mm" font-family="Arial" font-size="7.4">
+<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="80" y="38" width="106" height="534" fill="#FFF4DE" opacity=".35" rx="4"/>
+<rect x="80" y="4" width="106" height="26" rx="5" fill="#FFF4DE" stroke="#B7860B"/>
+<text x="133.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Owner (Human)</text>
+<rect x="190" y="38" width="106" height="534" fill="#E2F5F2" opacity=".35" rx="4"/>
+<rect x="190" y="4" width="106" height="26" rx="5" fill="#E2F5F2" stroke="#0F9C8E"/>
+<text x="243.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Developer (Claude)</text>
+<rect x="300" y="38" width="106" height="534" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="300" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="353.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">GitHub</text>
+<rect x="410" y="38" width="106" height="534" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="410" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="463.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Cloudflare</text>
+<rect x="520" y="38" width="106" height="534" fill="#EEF1F5" opacity=".35" rx="4"/>
+<rect x="520" y="4" width="106" height="26" rx="5" fill="#EEF1F5" stroke="#5B6B88"/>
+<text x="573.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Apple App Store</text>
+<rect x="630" y="38" width="106" height="534" fill="#EDE9FB" opacity=".35" rx="4"/>
+<rect x="630" y="4" width="106" height="26" rx="5" fill="#EDE9FB" stroke="#6D5BD0"/>
+<text x="683.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Phone of the person</text>
+<text x="4" y="20.5" font-weight="bold" font-size="8" fill="#13223F">When</text>
+<rect x="85" y="44" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="44" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="63.0" text-anchor="middle" font-weight="bold" fill="#13223F">Says "go"</text>
+<text x="135.0" y="72.2" text-anchor="middle" fill="#13223F">same as Android</text>
+<text x="4" y="64.0" font-size="7" font-weight="bold" fill="#13223F">Day 0</text>
+<text x="4" y="73.0" font-size="6.6" fill="#5B6B88">after the checks</text>
+<path d="M133.0 86 L133.0 94.0 L353.0 94.0 L353.0 101" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="102" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="102" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="121.0" text-anchor="middle" font-weight="bold" fill="#13223F">Build for iPhone</text>
+<text x="355.0" y="130.2" text-anchor="middle" fill="#13223F">signed IPA</text>
+<text x="4" y="122.0" font-size="7" font-weight="bold" fill="#13223F">+ 15 min</text>
+<text x="4" y="131.0" font-size="6.6" fill="#5B6B88">(no iOS app yet)</text>
+<path d="M353.0 144 L353.0 152.0 L133.0 152.0 L133.0 159" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="160" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="160" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="179.0" text-anchor="middle" font-weight="bold" fill="#13223F">Uploads the build</text>
+<text x="135.0" y="188.2" text-anchor="middle" fill="#13223F">App Store Connect</text>
+<text x="4" y="180.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="189.0" font-size="6.6" fill="#5B6B88">TestFlight test</text>
+<path d="M133.0 202 L133.0 210.0 L573.0 210.0 L573.0 217" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="218" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="218" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="237.0" text-anchor="middle" font-weight="bold" fill="#13223F">Apple review</text>
+<text x="575.0" y="246.2" text-anchor="middle" fill="#13223F">App Store checks it</text>
+<circle cx="618" cy="221" r="8" fill="#0F9C8E"/><path d="M614 221 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="238.0" font-size="7" font-weight="bold" fill="#13223F">+ 1-2 days</text>
+<text x="4" y="247.0" font-size="6.6" fill="#5B6B88">decided by Apple</text>
+<path d="M573.0 260 L573.0 275" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="276" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="276" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="295.0" text-anchor="middle" font-weight="bold" fill="#13223F">Published to all</text>
+<text x="575.0" y="304.2" text-anchor="middle" fill="#13223F">phased release</text>
+<text x="4" y="296.0" font-size="7" font-weight="bold" fill="#13223F">+ up to 7 days</text>
+<text x="4" y="305.0" font-size="6.6" fill="#5B6B88">Apple: 1% → 100%</text>
+<path d="M573.0 318 L573.0 326.0 L463.0 326.0 L463.0 333" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="334" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="334" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="353.0" text-anchor="middle" font-weight="bold" fill="#13223F">Version N required</text>
+<text x="465.0" y="362.2" text-anchor="middle" fill="#13223F">read from App Store</text>
+<text x="4" y="354.0" font-size="7" font-weight="bold" fill="#13223F">within 1 hour</text>
+<text x="4" y="363.0" font-size="6.6" fill="#5B6B88">to be built</text>
+<path d="M463.0 376 L463.0 384.0 L683.0 384.0 L683.0 391" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="392" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="392" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="411.0" text-anchor="middle" font-weight="bold" fill="#13223F">Opens the app</text>
+<text x="685.0" y="420.2" text-anchor="middle" fill="#13223F">App Store update</text>
+<text x="4" y="412.0" font-size="7" font-weight="bold" fill="#13223F">next time</text>
+<text x="4" y="421.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M683.0 434 L683.0 449" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="450" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="450" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="469.0" text-anchor="middle" font-weight="bold" fill="#13223F">Accepts the terms</text>
+<text x="685.0" y="478.2" text-anchor="middle" fill="#13223F">if they changed</text>
+<text x="4" y="470.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="479.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M683.0 492 L683.0 507" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="508" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="508" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="531.6" text-anchor="middle" font-weight="bold" fill="#13223F">Works on version N</text>
+<circle cx="728" cy="511" r="8" fill="#0F9C8E"/><path d="M724 511 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="528.0" font-size="7" font-weight="bold" fill="#13223F">done</text>
+<text x="4" y="537.0" font-size="6.6" fill="#5B6B88"></text>
+</svg>
+  <h2>Who does what</h2>
+  <table>
+    <tr><th>Actor</th><th>In a release</th><th>Time</th></tr>
+    <tr><td><b>Owner</b></td><td>asks, says "go", approves terms changes, uploads AAB / iOS build, raises the rollout</td><td>when ready</td></tr>
+    <tr><td><b>Developer</b></td><td>code, tests, docs, pull request, merge, deploy check, link in the chat</td><td>minutes to hours</td></tr>
+    <tr><td><b>GitHub</b></td><td>checks on every PR; Build: signed APK + AAB, release v0.1.N</td><td>~10 + 12 min</td></tr>
+    <tr><td><b>Cloudflare</b></td><td>server and Web Dashboard live; hourly: version live on the store becomes the only one accepted</td><td>same minute; ≤ 1 h</td></tr>
+    <tr><td><b>Google · Apple</b></td><td>review ✓, then publish to a share of people, then to all</td><td>hours–3 days · 1–2 days; Apple up to 7 days</td></tr>
+    <tr><td><b>Person</b></td><td>opens the app, updates in the store's window, accepts the new terms (scroll to the end), goes on</td><td>~2 min</td></tr>
+  </table>
+  <div class="foot"><span>HINT 365 · Functional and architecture document · updated 02.10.2026 · app version 0.1.125</span><span>9 / 9</span></div>
 </section>
 </body>
 </html>
