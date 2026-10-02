@@ -11,7 +11,7 @@ binding = "ASSETS"
 
 # Every day at 03:17 UTC: readings older than 365 days are deleted (see purgeOld in src/index.ts)
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["17 3 * * *", "7 * * * *"]   # nightly clean-up; hourly: the version live on Google Play
 
 # D1 database "personalhealthy", with data bound to the European Union.
 # GitHub creates it on the first build and puts its id here in place of D1_DATABASE_ID.

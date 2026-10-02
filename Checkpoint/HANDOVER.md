@@ -417,3 +417,10 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Tests: local functional 188 pass / 0 fail; labs-security pass. The APK compiles only in CI (no Android SDK here).
 - Limits: when HINT 365 is on Google Play, the server's "newest version" must follow the version live on the store, not the build just deployed (to set at publication). iOS: App Store equivalent when the iOS app exists.
 - Next: CI green → merge → Build 0.1.123 → Human installs it from the link (0.1.121 on the phone will now show only the update).
+
+### 2026-10-02 late — Claude Code — release process drawn; version required follows Google Play; «Consiglia HINT 365»; scroll hint
+
+- Human asked: prepare today the Play Store behaviour (the update is required only once Google has published it), draw the release/deployment process (who, what, typical times, Android and iPhone, web goes live by itself), rename «Condividi l'app» to «Consiglia HINT 365», a moving arrow on the terms screen that says to scroll to the end.
+- Done: `playLiveVersion` (billing.ts: production track, releases "completed" only) read hourly by a second Worker cron (`7 * * * *`) into `settings.app_live_version`; `appAllowed` requires that version when set, else the deployed build; error code `play_live_failed`; Admin shows the live version as newest. App: `share_app` renamed in 4 languages; `ScrollDownHint` on the terms (tap scrolls to the end). Docs: swimlane diagrams (`docs/overview/deploy-diagram.py` → deploy-android.svg, deploy-ios.svg) in architecture pages 8–9 and general document section 13 with the who/what/time table; crontab row; CLAUDE.md.
+- Tests: local functional 191 pass / 0 fail (G8, G9 on the live version); labs-security pass; layout ok.
+- Next: when publishing on Google Play, give the service account in PLAY_SERVICE_ACCOUNT the "View app information" permission in Play Console (needed to read the track); iOS app and its App Store check still to be built.

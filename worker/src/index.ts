@@ -9,7 +9,7 @@ import { homePage, privacyPage, termsPage } from "./pages";
 import { handleWeb, newWebCode, endWebAccess } from "./web";
 import { logError, countEvent, EVENTS } from "./errors";
 import { tooMany, ipKey, HOUR, DAY } from "./limits";
-import { playSubscription, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
+import { playSubscription, playLiveVersion, subValid, playAccountId, PLAY_PACKAGE, SUB_PRODUCT } from "./billing";
 
 type Q = (text: string, params?: unknown[]) => Promise<any[]>;
 
@@ -61,14 +61,15 @@ async function getSetting(q: Q, key: string, def: string): Promise<string> {
    app_off          "1" = every version off, an emergency stop
    A switched-off app gets "app_disabled" on every request and shows only the page to update it.
    Apps from before 0.1.75 send no version: they count as version 0. */
-async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boolean }> {
-  const rows = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off')");
+async function appGate(q: Q): Promise<{ min: number; blocked: number[]; off: boolean; live: number }> {
+  const rows = await q("SELECT key, value FROM settings WHERE key IN ('app_min_version', 'app_blocked', 'app_off', 'app_live_version')");
   const v: Record<string, string> = {};
   for (const r of rows as any[]) v[r.key] = String(r.value);
   return {
     min: Number(v.app_min_version) || 0,
     blocked: (v.app_blocked || "").split(/[\s,]+/).map(Number).filter((n) => n > 0),
     off: v.app_off === "1",
+    live: Number(v.app_live_version) || 0,
   };
 }
 /* ---------- the yearly subscription (Google Play) ----------
@@ -118,12 +119,29 @@ async function trialStart(q: Q, keys: string[]): Promise<number> {
   return Number(r?.s) || 0;
 }
 
-/** Only one version is kept (decision of Human): every app older than the newest build deployed (APP_VERSION, set by
- *  the pipeline) gets only the page to install the latest one, at every start. app_min_version, app_blocked and
- *  app_off still work on top of it, for emergencies (Actions → App versions). */
+/** Only one version is kept (decision of Human): every older app must update before it can do anything.
+ *  The version required is the one people can really get:
+ *  - on Google Play, the newest one Google has published to everyone (app_live_version, read every hour from Google
+ *    Play by the Worker): a version still in review never stops anybody;
+ *  - before Google Play (APK from the download link), the build just deployed (APP_VERSION), served by /download at
+ *    the same moment.
+ *  app_min_version, app_blocked and app_off still work on top of it, for emergencies (Actions → App versions). */
 async function appAllowed(q: Q, version: number, latest: number): Promise<boolean> {
   const g = await appGate(q);
-  return !g.off && version >= Math.max(g.min, latest) && !g.blocked.includes(version);
+  const required = g.live > 0 ? g.live : latest;
+  return !g.off && version >= Math.max(g.min, required) && !g.blocked.includes(version);
+}
+
+/** Every hour: asks Google Play which version is published to everyone and records it (nothing before Google Play). */
+async function refreshLiveVersion(env: Env): Promise<void> {
+  if (!env.PLAY_SERVICE_ACCOUNT) return;
+  const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
+  try {
+    const live = await playLiveVersion(env.PLAY_SERVICE_ACCOUNT);
+    if (live > 0) await q("INSERT INTO settings (key, value) VALUES ('app_live_version', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [String(live)]);
+  } catch (e) {
+    await logError(q, { source: "server", code: "play_live_failed", place: "Google Play version", message: String(e).slice(0, 120) });
+  }
 }
 
 const TZ = "Europe/Zurich";
@@ -380,8 +398,14 @@ export async function purgeOld(env: Env) {
   ]);
 }
 
+/** The hourly cron of wrangler.toml (the other one is the nightly clean-up). */
+const HOURLY = "7 * * * *";
+
 export default {
-  async scheduled(_event: unknown, env: Env): Promise<void> {
+  async scheduled(event: { cron?: string } | undefined, env: Env): Promise<void> {
+    // every hour: the version published on Google Play (the nightly run does it too)
+    await refreshLiveVersion(env);
+    if (event?.cron === HOURLY) return;
     await purgeOld(env);
     // the acceptances of the last 7 days, copied again to the backup database (a copy missed at the time arrives here)
     await backupAcceptances(env, (t: string, p: unknown[] = []) => env.DB.prepare(t).bind(...p).all().then((r: any) => r.results || []), Date.now() - 7 * 864e5);

@@ -14,7 +14,8 @@
     <string name="activate">Aktivieren</string>
     <string name="activating">Wird aktiviert…</string>
     <string name="setup_privacy">Kein Name und keine E-Mail: Das Telefon erhält einen anonymen Code, der im Telefon selbst geschützt ist.</string>
-    <string name="share_app">App teilen</string>
+    <string name="disc_scroll_hint">Nach unten scrollen, alles lesen und akzeptieren</string>
+    <string name="share_app">HINT 365 empfehlen</string>
     <string name="share_app_text">Ich nutze HINT 365, ein Blutdrucktagebuch: Messgerät fotografieren oder Werte ansagen, und es erstellt den Bericht für den Arzt. Für Android herunterladen: %1$s — Datei öffnen, Installation erlauben, dann \"Mit Google anmelden\" tippen.</string>
     <string name="google_intro">Melde dich mit deinem Google-Konto an. Es dient nur dazu, dein Tagebuch anzulegen und es bei einem neuen Telefon wiederzufinden. Täglich öffnet sich die App mit Fingerabdruck oder Gesicht.</string>
     <string name="privacy_title">Deine Daten</string>

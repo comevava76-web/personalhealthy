@@ -629,6 +629,7 @@ stole the owner's Google account and signed in on another phone, they would see 
   <tr><th>When (Zurich / UTC, summer)</th><th>Job</th><th>Who runs it</th><th>What it does</th><th>Goal</th></tr>
   <tr><td>every night 05:17 / 03:17</td><td>Nightly clean-up</td><td>Cloudflare (Worker cron)</td><td>deletes readings older than 365 days, expired codes, sessions
     and doctor links, error codes older than 90 days, trial fingerprints older than 2 years; replaces any old Google id with its fingerprint; copies the acceptances of the last 7 days into the backup database</td><td>keep only what the rules allow</td></tr>
+  <tr><td>every hour, at minute 7</td><td>Version live on Google Play</td><td>Cloudflare (Worker cron)</td><td>asks Google Play which version is published to everyone; from then on only that one is accepted (nothing before Google Play)</td><td>ask for the update only when Google can give it</td></tr>
   <tr><td>every Monday 06:10 / 04:10</td><td>Security tests (vulnerability scan)</td><td>GitHub Actions</td><td>vulnerability scan of every library, code scan (Semgrep), secret scan (gitleaks),
     probe of the live site; results to Admin → Observability; opens an issue if something is found</td><td>find weaknesses once a week</td></tr>
   <tr><td>every day 06:30 / 04:30</td><td>Error log report</td><td>GitHub Actions</td><td>reads the errors users met in the last 24 hours; opens an issue if there are any</td><td>see problems before users report them</td></tr>
@@ -907,53 +908,233 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
 </ol>
 
 <h2>13. Release management: how a new version reaches people</h2>
-<div class="fig"><svg viewBox="0 0 520 170" width="100%" style="margin:4pt 0 2pt" font-family="Arial" font-size="7.6">
-<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
-<rect x="10.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="54.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Build</text>
-<text x="54.0" y="37.0" text-anchor="middle" fill="#3B4A66">tests on the exact</text>
-<text x="54.0" y="45.5" text-anchor="middle" fill="#3B4A66">code</text>
-<rect x="113.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="157.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Server</text>
-<text x="157.0" y="37.0" text-anchor="middle" fill="#3B4A66">Worker online, tables,</text>
-<text x="157.0" y="45.5" text-anchor="middle" fill="#3B4A66">secrets</text>
-<rect x="216.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="260.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">App</text>
-<text x="260.0" y="37.0" text-anchor="middle" fill="#3B4A66">APK and AAB signed</text>
-<rect x="319.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="363.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Saved</text>
-<text x="363.0" y="37.0" text-anchor="middle" fill="#3B4A66">GitHub Release v0.1.N</text>
-<rect x="422.0" y="10" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="466.0" y="26" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Check</text>
-<text x="466.0" y="37.0" text-anchor="middle" fill="#3B4A66">download link serves</text>
-<text x="466.0" y="45.5" text-anchor="middle" fill="#3B4A66">it</text>
-<rect x="10.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="54.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Test</text>
-<text x="54.0" y="119.0" text-anchor="middle" fill="#3B4A66">the owner installs and</text>
-<text x="54.0" y="127.5" text-anchor="middle" fill="#3B4A66">tries</text>
-<rect x="113.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="157.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Play internal</text>
-<text x="157.0" y="119.0" text-anchor="middle" fill="#3B4A66">upload AAB, testers</text>
-<rect x="216.0" y="92" width="88" height="48" rx="6" fill="#FFF4DE" stroke="#B7860B" stroke-width="1.2"/>
-<text x="260.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Rollout</text>
-<text x="260.0" y="119.0" text-anchor="middle" fill="#3B4A66">20% then 100%</text>
-<rect x="319.0" y="92" width="88" height="48" rx="6" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1.2"/>
-<text x="363.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Google review</text>
-<text x="363.0" y="119.0" text-anchor="middle" fill="#3B4A66">hours to days</text>
-<rect x="422.0" y="92" width="88" height="48" rx="6" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1.2"/>
-<text x="466.0" y="108" text-anchor="middle" font-weight="bold" fill="#13223F" font-size="8">Update</text>
-<text x="466.0" y="119.0" text-anchor="middle" fill="#3B4A66">phones update by</text>
-<text x="466.0" y="127.5" text-anchor="middle" fill="#3B4A66">themselves</text>
-<path d="M98.0,34.0 L111.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,34.0 L214.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,34.0 L317.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,34.0 L420.0,34.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M466.0,58 L466.0,75.0 L54.0,75.0 L54.0,90" fill="none" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M98.0,116.0 L111.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M201.0,116.0 L214.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M304.0,116.0 L317.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-<path d="M407.0,116.0 L420.0,116.0" stroke="#5B6B88" stroke-width="1.2" marker-end="url(#a)"/>
-</svg><p class="cap">Figure: Release management: from the merge to the app on the phone.</p></div>
+<p>Three things are released: the <b>server and the Web Dashboard</b> (Cloudflare), the <b>Android app</b> (Google Play) and, later,
+the <b>iPhone app</b> (Apple App Store). The server and the web are live a few minutes after the merge and nobody has to do anything.
+The app needs the store's review first; only when the store has published it to everyone does the server ask for it, and then
+every phone updates the next time the app is opened. Times are typical, not promises: the store review is decided by Google or Apple.</p>
+<div class="fig"><svg viewBox="0 0 744 924" width="100%" style="max-height:200mm" font-family="Arial" font-size="7.4">
+<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="80" y="38" width="106" height="882" fill="#FFF4DE" opacity=".35" rx="4"/>
+<rect x="80" y="4" width="106" height="26" rx="5" fill="#FFF4DE" stroke="#B7860B"/>
+<text x="133.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Owner (Human)</text>
+<rect x="190" y="38" width="106" height="882" fill="#E2F5F2" opacity=".35" rx="4"/>
+<rect x="190" y="4" width="106" height="26" rx="5" fill="#E2F5F2" stroke="#0F9C8E"/>
+<text x="243.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Developer (Claude)</text>
+<rect x="300" y="38" width="106" height="882" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="300" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="353.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">GitHub</text>
+<rect x="410" y="38" width="106" height="882" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="410" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="463.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Cloudflare</text>
+<rect x="520" y="38" width="106" height="882" fill="#EEF1F5" opacity=".35" rx="4"/>
+<rect x="520" y="4" width="106" height="26" rx="5" fill="#EEF1F5" stroke="#5B6B88"/>
+<text x="573.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Google Play</text>
+<rect x="630" y="38" width="106" height="882" fill="#EDE9FB" opacity=".35" rx="4"/>
+<rect x="630" y="4" width="106" height="26" rx="5" fill="#EDE9FB" stroke="#6D5BD0"/>
+<text x="683.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Phone of the person</text>
+<text x="4" y="20.5" font-weight="bold" font-size="8" fill="#13223F">When</text>
+<rect x="85" y="44" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="44" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="63.0" text-anchor="middle" font-weight="bold" fill="#13223F">Asks for a change</text>
+<text x="135.0" y="72.2" text-anchor="middle" fill="#13223F">in the chat</text>
+<text x="4" y="64.0" font-size="7" font-weight="bold" fill="#13223F">Day 0</text>
+<text x="4" y="73.0" font-size="6.6" fill="#5B6B88">start</text>
+<path d="M133.0 86 L133.0 94.0 L243.0 94.0 L243.0 101" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="195" y="102" width="96" height="42" rx="5" fill="#fff" stroke="#0F9C8E" stroke-width="1.2"/>
+<rect x="195" y="102" width="4" height="42" rx="2" fill="#0F9C8E"/>
+<text x="245.0" y="121.0" text-anchor="middle" font-weight="bold" fill="#13223F">Code, tests, docs</text>
+<text x="245.0" y="130.2" text-anchor="middle" fill="#13223F">on a branch, PR</text>
+<text x="4" y="122.0" font-size="7" font-weight="bold" fill="#13223F">+ min to hours</text>
+<text x="4" y="131.0" font-size="6.6" fill="#5B6B88">size of the change</text>
+<path d="M243.0 144 L243.0 152.0 L353.0 152.0 L353.0 159" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="160" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="160" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="179.0" text-anchor="middle" font-weight="bold" fill="#13223F">Checks on the PR</text>
+<text x="355.0" y="188.2" text-anchor="middle" fill="#13223F">tests · app · docs</text>
+<circle cx="398" cy="163" r="8" fill="#0F9C8E"/><path d="M394 163 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="180.0" font-size="7" font-weight="bold" fill="#13223F">+ 10 min</text>
+<text x="4" y="189.0" font-size="6.6" fill="#5B6B88">all green</text>
+<path d="M353.0 202 L353.0 210.0 L133.0 210.0 L133.0 217" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="218" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="218" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="237.0" text-anchor="middle" font-weight="bold" fill="#13223F">Says "go"</text>
+<text x="135.0" y="246.2" text-anchor="middle" fill="#13223F">approves terms text</text>
+<text x="4" y="238.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="247.0" font-size="6.6" fill="#5B6B88">binding texts: owner</text>
+<path d="M133.0 260 L133.0 268.0 L243.0 268.0 L243.0 275" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="195" y="276" width="96" height="42" rx="5" fill="#fff" stroke="#0F9C8E" stroke-width="1.2"/>
+<rect x="195" y="276" width="4" height="42" rx="2" fill="#0F9C8E"/>
+<text x="245.0" y="299.6" text-anchor="middle" font-weight="bold" fill="#13223F">Merges into main</text>
+<text x="4" y="296.0" font-size="7" font-weight="bold" fill="#13223F">+ 1 min</text>
+<text x="4" y="305.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M243.0 318 L243.0 326.0 L353.0 326.0 L353.0 333" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="334" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="334" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="353.0" text-anchor="middle" font-weight="bold" fill="#13223F">Build</text>
+<text x="355.0" y="362.2" text-anchor="middle" fill="#13223F">tests, signed APK + AAB</text>
+<text x="4" y="354.0" font-size="7" font-weight="bold" fill="#13223F">+ 12 min</text>
+<text x="4" y="363.0" font-size="6.6" fill="#5B6B88">release v0.1.N kept</text>
+<path d="M353.0 376 L353.0 384.0 L463.0 384.0 L463.0 391" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="392" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="392" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="411.0" text-anchor="middle" font-weight="bold" fill="#13223F">Server + Web live</text>
+<text x="465.0" y="420.2" text-anchor="middle" fill="#13223F">web done: no update</text>
+<circle cx="508" cy="395" r="8" fill="#0F9C8E"/><path d="M504 395 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="412.0" font-size="7" font-weight="bold" fill="#13223F">same minute</text>
+<text x="4" y="421.0" font-size="6.6" fill="#5B6B88">web users: nothing to do</text>
+<path d="M463.0 434 L463.0 442.0 L133.0 442.0 L133.0 449" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="450" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="450" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="469.0" text-anchor="middle" font-weight="bold" fill="#13223F">Uploads the AAB</text>
+<text x="135.0" y="478.2" text-anchor="middle" fill="#13223F">Play Console: production</text>
+<text x="4" y="470.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="479.0" font-size="6.6" fill="#5B6B88">after testing it</text>
+<path d="M133.0 492 L133.0 500.0 L573.0 500.0 L573.0 507" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="508" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="508" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="527.0" text-anchor="middle" font-weight="bold" fill="#13223F">Google review</text>
+<text x="575.0" y="536.2" text-anchor="middle" fill="#13223F">Google Play checks it</text>
+<circle cx="618" cy="511" r="8" fill="#0F9C8E"/><path d="M614 511 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="528.0" font-size="7" font-weight="bold" fill="#13223F">+ hours to 3 days</text>
+<text x="4" y="537.0" font-size="6.6" fill="#5B6B88">decided by Google</text>
+<path d="M573.0 550 L573.0 565" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="566" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="566" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="585.0" text-anchor="middle" font-weight="bold" fill="#13223F">Published to all</text>
+<text x="575.0" y="594.2" text-anchor="middle" fill="#13223F">rollout 20% → 100%</text>
+<text x="4" y="586.0" font-size="7" font-weight="bold" fill="#13223F">+ 1-2 days</text>
+<text x="4" y="595.0" font-size="6.6" fill="#5B6B88">owner raises %</text>
+<path d="M573.0 608 L573.0 616.0 L463.0 616.0 L463.0 623" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="624" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="624" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="643.0" text-anchor="middle" font-weight="bold" fill="#13223F">Version N required</text>
+<text x="465.0" y="652.2" text-anchor="middle" fill="#13223F">read from Google Play</text>
+<text x="4" y="644.0" font-size="7" font-weight="bold" fill="#13223F">within 1 hour</text>
+<text x="4" y="653.0" font-size="6.6" fill="#5B6B88">hourly check</text>
+<path d="M463.0 666 L463.0 674.0 L683.0 674.0 L683.0 681" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="682" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="682" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="701.0" text-anchor="middle" font-weight="bold" fill="#13223F">Opens the app</text>
+<text x="685.0" y="710.2" text-anchor="middle" fill="#13223F">Google update window</text>
+<text x="4" y="702.0" font-size="7" font-weight="bold" fill="#13223F">next time</text>
+<text x="4" y="711.0" font-size="6.6" fill="#5B6B88">opened by the person</text>
+<path d="M683.0 724 L683.0 739" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="740" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="740" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="759.0" text-anchor="middle" font-weight="bold" fill="#13223F">Update and install</text>
+<text x="685.0" y="768.2" text-anchor="middle" fill="#13223F">data stay</text>
+<text x="4" y="760.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="769.0" font-size="6.6" fill="#5B6B88">Wi-Fi or mobile</text>
+<path d="M683.0 782 L683.0 797" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="798" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="798" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="817.0" text-anchor="middle" font-weight="bold" fill="#13223F">Accepts the terms</text>
+<text x="685.0" y="826.2" text-anchor="middle" fill="#13223F">if they changed (scroll)</text>
+<text x="4" y="818.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="827.0" font-size="6.6" fill="#5B6B88">recorded + backup</text>
+<path d="M683.0 840 L683.0 855" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="856" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="856" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="879.6" text-anchor="middle" font-weight="bold" fill="#13223F">Works on version N</text>
+<circle cx="728" cy="859" r="8" fill="#0F9C8E"/><path d="M724 859 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="876.0" font-size="7" font-weight="bold" fill="#13223F">done</text>
+<text x="4" y="885.0" font-size="6.6" fill="#5B6B88"></text>
+</svg><p class="cap">Figure: release of a new version with Google Play, from the owner's request to the person working on the new version.
+The green check marks a check passed. Web: done at the "Server + Web live" step. Phones with automatic updates on get the new version from Google Play even before the app is opened.</p></div>
+<table>
+  <tr><th>Who</th><th>What they do in a release</th><th>How long</th></tr>
+  <tr><td><b>Owner</b> (Human)</td><td>asks for the change, says "go", approves any change to the terms, uploads the AAB to the Play Console, raises the rollout from 20% to 100%</td><td>minutes of work; when ready</td></tr>
+  <tr><td><b>Developer</b> (Claude)</td><td>writes code, tests and documents, opens the pull request, merges after the "go", checks the deploy, sends the link</td><td>minutes to hours</td></tr>
+  <tr><td><b>GitHub</b></td><td>runs the checks on every pull request; after the merge builds the signed APK and AAB and keeps them in a release</td><td>about 10 + 12 minutes</td></tr>
+  <tr><td><b>Cloudflare</b></td><td>puts the new server and Web Dashboard online; every hour asks Google Play which version is published to everyone and from then on accepts only that one</td><td>same minute; within 1 hour</td></tr>
+  <tr><td><b>Google Play</b></td><td>reviews the app (✓), then publishes it to a share of people, then to all</td><td>hours to 3 days; then 1–2 days</td></tr>
+  <tr><td><b>The person</b></td><td>opens the app, taps Update in Google's window, waits for the install, accepts the new terms if they changed (scrolling to the end), and goes on</td><td>about 2 minutes</td></tr>
+</table>
+<div class="fig"><svg viewBox="0 0 744 576" width="100%" style="max-height:150mm" font-family="Arial" font-size="7.4">
+<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5B6B88"/></marker></defs>
+<rect x="80" y="38" width="106" height="534" fill="#FFF4DE" opacity=".35" rx="4"/>
+<rect x="80" y="4" width="106" height="26" rx="5" fill="#FFF4DE" stroke="#B7860B"/>
+<text x="133.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Owner (Human)</text>
+<rect x="190" y="38" width="106" height="534" fill="#E2F5F2" opacity=".35" rx="4"/>
+<rect x="190" y="4" width="106" height="26" rx="5" fill="#E2F5F2" stroke="#0F9C8E"/>
+<text x="243.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Developer (Claude)</text>
+<rect x="300" y="38" width="106" height="534" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="300" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="353.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">GitHub</text>
+<rect x="410" y="38" width="106" height="534" fill="#E6EEFA" opacity=".35" rx="4"/>
+<rect x="410" y="4" width="106" height="26" rx="5" fill="#E6EEFA" stroke="#2E66AE"/>
+<text x="463.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Cloudflare</text>
+<rect x="520" y="38" width="106" height="534" fill="#EEF1F5" opacity=".35" rx="4"/>
+<rect x="520" y="4" width="106" height="26" rx="5" fill="#EEF1F5" stroke="#5B6B88"/>
+<text x="573.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Apple App Store</text>
+<rect x="630" y="38" width="106" height="534" fill="#EDE9FB" opacity=".35" rx="4"/>
+<rect x="630" y="4" width="106" height="26" rx="5" fill="#EDE9FB" stroke="#6D5BD0"/>
+<text x="683.0" y="20.5" text-anchor="middle" font-weight="bold" font-size="8" fill="#13223F">Phone of the person</text>
+<text x="4" y="20.5" font-weight="bold" font-size="8" fill="#13223F">When</text>
+<rect x="85" y="44" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="44" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="63.0" text-anchor="middle" font-weight="bold" fill="#13223F">Says "go"</text>
+<text x="135.0" y="72.2" text-anchor="middle" fill="#13223F">same as Android</text>
+<text x="4" y="64.0" font-size="7" font-weight="bold" fill="#13223F">Day 0</text>
+<text x="4" y="73.0" font-size="6.6" fill="#5B6B88">after the checks</text>
+<path d="M133.0 86 L133.0 94.0 L353.0 94.0 L353.0 101" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="305" y="102" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="305" y="102" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="355.0" y="121.0" text-anchor="middle" font-weight="bold" fill="#13223F">Build for iPhone</text>
+<text x="355.0" y="130.2" text-anchor="middle" fill="#13223F">signed IPA</text>
+<text x="4" y="122.0" font-size="7" font-weight="bold" fill="#13223F">+ 15 min</text>
+<text x="4" y="131.0" font-size="6.6" fill="#5B6B88">(no iOS app yet)</text>
+<path d="M353.0 144 L353.0 152.0 L133.0 152.0 L133.0 159" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="85" y="160" width="96" height="42" rx="5" fill="#fff" stroke="#B7860B" stroke-width="1.2"/>
+<rect x="85" y="160" width="4" height="42" rx="2" fill="#B7860B"/>
+<text x="135.0" y="179.0" text-anchor="middle" font-weight="bold" fill="#13223F">Uploads the build</text>
+<text x="135.0" y="188.2" text-anchor="middle" fill="#13223F">App Store Connect</text>
+<text x="4" y="180.0" font-size="7" font-weight="bold" fill="#13223F">when ready</text>
+<text x="4" y="189.0" font-size="6.6" fill="#5B6B88">TestFlight test</text>
+<path d="M133.0 202 L133.0 210.0 L573.0 210.0 L573.0 217" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="218" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="218" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="237.0" text-anchor="middle" font-weight="bold" fill="#13223F">Apple review</text>
+<text x="575.0" y="246.2" text-anchor="middle" fill="#13223F">App Store checks it</text>
+<circle cx="618" cy="221" r="8" fill="#0F9C8E"/><path d="M614 221 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="238.0" font-size="7" font-weight="bold" fill="#13223F">+ 1-2 days</text>
+<text x="4" y="247.0" font-size="6.6" fill="#5B6B88">decided by Apple</text>
+<path d="M573.0 260 L573.0 275" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="525" y="276" width="96" height="42" rx="5" fill="#fff" stroke="#5B6B88" stroke-width="1.2"/>
+<rect x="525" y="276" width="4" height="42" rx="2" fill="#5B6B88"/>
+<text x="575.0" y="295.0" text-anchor="middle" font-weight="bold" fill="#13223F">Published to all</text>
+<text x="575.0" y="304.2" text-anchor="middle" fill="#13223F">phased release</text>
+<text x="4" y="296.0" font-size="7" font-weight="bold" fill="#13223F">+ up to 7 days</text>
+<text x="4" y="305.0" font-size="6.6" fill="#5B6B88">Apple: 1% → 100%</text>
+<path d="M573.0 318 L573.0 326.0 L463.0 326.0 L463.0 333" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="415" y="334" width="96" height="42" rx="5" fill="#fff" stroke="#2E66AE" stroke-width="1.2"/>
+<rect x="415" y="334" width="4" height="42" rx="2" fill="#2E66AE"/>
+<text x="465.0" y="353.0" text-anchor="middle" font-weight="bold" fill="#13223F">Version N required</text>
+<text x="465.0" y="362.2" text-anchor="middle" fill="#13223F">read from App Store</text>
+<text x="4" y="354.0" font-size="7" font-weight="bold" fill="#13223F">within 1 hour</text>
+<text x="4" y="363.0" font-size="6.6" fill="#5B6B88">to be built</text>
+<path d="M463.0 376 L463.0 384.0 L683.0 384.0 L683.0 391" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="392" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="392" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="411.0" text-anchor="middle" font-weight="bold" fill="#13223F">Opens the app</text>
+<text x="685.0" y="420.2" text-anchor="middle" fill="#13223F">App Store update</text>
+<text x="4" y="412.0" font-size="7" font-weight="bold" fill="#13223F">next time</text>
+<text x="4" y="421.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M683.0 434 L683.0 449" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="450" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="450" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="469.0" text-anchor="middle" font-weight="bold" fill="#13223F">Accepts the terms</text>
+<text x="685.0" y="478.2" text-anchor="middle" fill="#13223F">if they changed</text>
+<text x="4" y="470.0" font-size="7" font-weight="bold" fill="#13223F">~ 1 minute</text>
+<text x="4" y="479.0" font-size="6.6" fill="#5B6B88"></text>
+<path d="M683.0 492 L683.0 507" stroke="#5B6B88" fill="none" marker-end="url(#ar)"/>
+<rect x="635" y="508" width="96" height="42" rx="5" fill="#fff" stroke="#6D5BD0" stroke-width="1.2"/>
+<rect x="635" y="508" width="4" height="42" rx="2" fill="#6D5BD0"/>
+<text x="685.0" y="531.6" text-anchor="middle" font-weight="bold" fill="#13223F">Works on version N</text>
+<circle cx="728" cy="511" r="8" fill="#0F9C8E"/><path d="M724 511 l3 3.4 l5.5 -6.4" stroke="#fff" stroke-width="1.8" fill="none"/>
+<text x="4" y="528.0" font-size="7" font-weight="bold" fill="#13223F">done</text>
+<text x="4" y="537.0" font-size="6.6" fill="#5B6B88"></text>
+</svg><p class="cap">Figure: the same release for iPhone, when the iOS app exists (today there is none): Apple reviews the app (about 1–2 days) and can publish it in phases over 7 days; the version check against the App Store is still to be built.</p></div>
 <h3>Today (download link)</h3>
 <ol class="steps">
   <li>Merge into the main code starts the <i>Build</i> pipeline on GitHub.</li>
@@ -972,7 +1153,7 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
   <li>The owner promotes it to <b>production</b>, with a <b>staged rollout</b> (for example 20% of users, then 100% after a day without new errors).</li>
   <li>Google reviews the version (from a few hours to a few days); then phones update by themselves.</li>
   <li><b>Only one version is kept.</b> The app asks Google Play at every start: when a newer version exists, Google's own update window opens inside the app (the standard "in-app update" of Google Play; the App Store equivalent on iPhone later), and the person updates without leaving the app. The server, too, accepts only the newest version: an older app cannot save anything until it is updated. After the update the new terms of use are asked, if they changed.</li>
-  <li>On Google Play the server's newest version must follow the version really live on the store (not the one just built), so that nobody is stopped before Google offers the update: this switch is to be set when HINT 365 is published.</li>
+  <li>The server asks for a new version only when Google has published it to everyone: every hour the server reads the version live on Google Play (a version still in review or rolled out to part of the people does not count). Nobody is stopped before Google can give them the update.</li>
 </ol>
 <h3>If something goes wrong</h3>
 <ul>
@@ -997,7 +1178,7 @@ spent on the Scan month by month.</p>
 <h2>15. Where to find the rest</h2>
 <table>
   <tr><th>Document</th><th>File</th></tr>
-  <tr><td>Technical architecture, drawings, flows and the database diagram (7 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
+  <tr><td>Technical architecture, drawings, flows and the database diagram (9 pages)</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/architecture/HINT-Architecture.pdf">docs/architecture/HINT-Architecture.pdf</a></td></tr>
   <tr><td>User guides, Italian and English</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guida-IT.pdf">docs/HINT-Guida-IT.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/HINT-Guide-EN.pdf">docs/HINT-Guide-EN.pdf</a></td></tr>
   <tr><td>Terms of use and privacy policy</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Terms.pdf">docs/legal/HINT365-Terms.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/legal/HINT365-Privacy.pdf">docs/legal/HINT365-Privacy.pdf</a></td></tr>
   <tr><td>Compliance dossier and GDPR record</td><td><a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/HINT365-Compliance.pdf">docs/compliance/HINT365-Compliance.pdf</a>, <a href="https://github.com/comevava76-web/personalhealthy/blob/main/docs/compliance/gdpr.md">docs/compliance/gdpr.md</a></td></tr>
