@@ -298,7 +298,7 @@
         <li><b>Limits</b>: hourly/daily caps on sign-ups, sign-ins, links, logs, voice (<code>rate_limits</code>, IP only as SHA-256). CSP and anti-framing headers; <code>robots.txt</code>.</li>
         <li><b>Web</b>: a 60 s atomically redeemed code in the <code>#</code> part of the address becomes the only cookie, <code>hint_s</code> (technical, 7 days, HttpOnly, Secure, SameSite=Strict), set only after consent. The app uses no cookies.</li>
         <li><b>Doctor links</b>: read-only, fixed period, expire after 7 days, withdrawable; no sign-in or cookie.</li>
-        <li><b>Remote switch-off</b>: the app version travels with every request; <code>settings</code> holds <code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>. Owner only, from the web Admin area.</li>
+        <li><b>One version only</b>: the app version travels with every request; the server accepts only the newest build (<code>APP_VERSION</code>); the app offers Google Play's in-app update. <code>settings</code> (<code>app_min_version</code>, <code>app_blocked</code>, <code>app_off</code>) stay for emergencies (Actions).</li>
         <li><b>Owner's area</b> (web, owner only): four numbers only (open vulnerabilities in the app code and in the Android/iOS libraries, open defects, compliance not fully covered), the way to Observability and the version switch-off. Never values or names.</li>
         <li><b>Subscription</b> (ready, off until Google Play): Play Billing, checked with the Play Developer API.</li>
                 <li><b>Retention</b>: readings older than 365 days deleted every night; acceptances in an acceptance register.</li>

@@ -146,7 +146,7 @@
    "versions": "0.1.121 and older",
    "status": "fixed",
    "cause": "The server accepted only the newest terms: an app built with older terms could not record its acceptance (app_disabled), and at the next start it showed its terms again",
-   "fix": "Decision of Human: old versions are never blocked for new terms. An app built before the current terms (TERMS_MIN_APP = 122) records the acceptance of the terms it shows (their version and text fingerprint) and keeps working; the new terms are asked when the person installs the new version",
+   "fix": "Decision of Human: only one version is kept. The server accepts only the newest build (APP_VERSION); an older app offers the update (Google Play in-app update when installed from the store, the download link for test APKs) and, once updated, asks the new terms. Builds that show older terms can still record them (TERMS_MIN_APP), so no acceptance loop is possible",
    "pr": "",
    "fixedIn": "server (0.1.123)"
   }

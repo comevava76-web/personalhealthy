@@ -294,9 +294,9 @@
     <string name="bal_none">Il faut des mesures le matin et le soir.</string>
     <string name="bal_same">Le matin et le soir ont la même moyenne.</string>
     <string name="bal_diff">Soir - matin : SYS %1$s · DIA %2$s mmHg</string>
-    <string name="app_off_title">Cette version de HINT 365 a été désactivée</string>
-    <string name="app_off_text">La version %1$s ne peut plus être utilisée. Installez la dernière : elle s\'installe par-dessus celle-ci et vos mesures restent en sécurité sur le serveur. À l\'ouverture, il vous sera demandé d\'accepter à nouveau les conditions.</string>
-    <string name="app_off_download">Télécharger la dernière version</string>
+    <string name="app_off_title">Une nouvelle version de HINT 365 est disponible</string>
+    <string name="app_off_text">La version %1$s n\'est plus utilisée : HINT 365 ne garde que la dernière version. Mettez à jour pour continuer : la nouvelle s\'installe par-dessus celle-ci et vos données restent en sécurité sur le serveur. À l\'ouverture, il pourra vous être demandé d\'accepter à nouveau les conditions.</string>
+    <string name="app_off_download">Mettre à jour HINT 365</string>
     <string name="section_versions">Versions de l\'app</string>
     <string name="versions_state">Cette app : version %1$s</string>
     <string name="versions_how">« Désactiver les anciennes versions » arrête aussitôt, sur chaque téléphone, les apps plus anciennes que celle-ci : elles n\'affichent que le lien vers la dernière. Les données restent.</string>

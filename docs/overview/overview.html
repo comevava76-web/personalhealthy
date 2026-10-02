@@ -219,6 +219,331 @@ one only explains.</p>
     the charts and the PDF in the browser.</li>
 </ol>
 
+<h3 class="brk">The database: tables and relations</h3>
+<p>One database, Cloudflare D1 in the EU (<code>personalhealthy</code>), and a second one only for the backup of the acceptances
+(<code>personalhealthy-backup</code>). Only the server reads and writes them. Every personal table hangs from <code>persons</code>
+(one account): deleting the account deletes all its rows, except the acceptances of the terms, kept as proof.</p>
+<div class="fig"><svg viewBox="0 0 720 860" width="100%" style="margin:4pt 0 2pt;max-height:198mm" font-family="Arial" font-size="7.2">
+<text x="8" y="24" font-size="9" font-weight="bold" fill="#13223F">Personal data: every table linked to persons (one account)</text>
+<text x="8" y="548.4" font-size="9" font-weight="bold" fill="#13223F">Backup database · Security (Observability)</text>
+<text x="8" y="721.4" font-size="9" font-weight="bold" fill="#13223F">Tables without relations</text>
+<rect x="275" y="40" width="170" height="188.6" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M275 44 a4 4 0 0 1 4 -4 h162 a4 4 0 0 1 4 4 v11 h-170 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="281" y="50.5" font-weight="bold" font-size="7.8" fill="#13223F">persons</text>
+<text x="281" y="63.0" fill="#6D5BD0">id PK</text>
+<text x="281" y="73.6" fill="#3B4A66">public_key</text>
+<text x="281" y="84.2" fill="#3B4A66">google_sub (fingerprint)</text>
+<text x="281" y="94.8" fill="#3B4A66">email (always empty)</text>
+<text x="281" y="105.4" fill="#3B4A66">birth_date</text>
+<text x="281" y="116.0" fill="#3B4A66">sex</text>
+<text x="281" y="126.6" fill="#3B4A66">is_admin</text>
+<text x="281" y="137.2" fill="#3B4A66">pays</text>
+<text x="281" y="147.8" fill="#3B4A66">consent_at</text>
+<text x="281" y="158.39999999999998" fill="#3B4A66">sub_token</text>
+<text x="281" y="169.0" fill="#3B4A66">sub_until</text>
+<text x="281" y="179.6" fill="#3B4A66">sub_state</text>
+<text x="281" y="190.2" fill="#3B4A66">sub_checked_at</text>
+<text x="281" y="200.79999999999998" fill="#3B4A66">last_seen_at</text>
+<text x="281" y="211.4" fill="#3B4A66">app_version</text>
+<text x="281" y="222.0" fill="#3B4A66">created_at</text>
+<rect x="14" y="40" width="160" height="114.39999999999999" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M14 44 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="20" y="50.5" font-weight="bold" font-size="7.8" fill="#13223F">measurements</text>
+<text x="20" y="63.0" fill="#6D5BD0">id PK</text>
+<text x="20" y="73.6" fill="#0F9C8E">person_id FK</text>
+<text x="20" y="84.2" fill="#3B4A66">kind (bp / lab)</text>
+<text x="20" y="94.8" fill="#3B4A66">taken_at, tz, period</text>
+<text x="20" y="105.4" fill="#3B4A66">data (the values)</text>
+<text x="20" y="116.0" fill="#3B4A66">source</text>
+<text x="20" y="126.6" fill="#0F9C8E">scan_id ~</text>
+<text x="20" y="137.2" fill="#3B4A66">lab, city</text>
+<text x="20" y="147.8" fill="#3B4A66">created_at</text>
+<rect x="14" y="188.39999999999998" width="160" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M14 192.39999999999998 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="20" y="198.89999999999998" font-weight="bold" font-size="7.8" fill="#13223F">lab_files</text>
+<text x="20" y="211.39999999999998" fill="#0F9C8E">person_id FK</text>
+<text x="20" y="221.99999999999997" fill="#3B4A66">file_hash (HMAC)</text>
+<text x="20" y="232.59999999999997" fill="#0F9C8E">measurement_id ~</text>
+<text x="20" y="243.2" fill="#3B4A66">created_at</text>
+<rect x="14" y="283.79999999999995" width="160" height="82.6" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M14 287.79999999999995 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="20" y="294.29999999999995" font-weight="bold" font-size="7.8" fill="#13223F">scans</text>
+<text x="20" y="306.79999999999995" fill="#6D5BD0">id PK</text>
+<text x="20" y="317.4" fill="#0F9C8E">person_id FK</text>
+<text x="20" y="327.99999999999994" fill="#3B4A66">kind, result</text>
+<text x="20" y="338.59999999999997" fill="#3B4A66">taken_at</text>
+<text x="20" y="349.19999999999993" fill="#3B4A66">used</text>
+<text x="20" y="359.79999999999995" fill="#3B4A66">created_at</text>
+<rect x="540" y="40" width="160" height="103.8" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M540 44 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="546" y="50.5" font-weight="bold" font-size="7.8" fill="#13223F">acceptances</text>
+<text x="546" y="63.0" fill="#6D5BD0">id PK</text>
+<text x="546" y="73.6" fill="#0F9C8E">person_id ~</text>
+<text x="546" y="84.2" fill="#3B4A66">device (fingerprint)</text>
+<text x="546" y="94.8" fill="#3B4A66">phone (model)</text>
+<text x="546" y="105.4" fill="#3B4A66">doc, version, lang</text>
+<text x="546" y="116.0" fill="#3B4A66">text_sha256</text>
+<text x="546" y="126.6" fill="#3B4A66">app_version</text>
+<text x="546" y="137.2" fill="#3B4A66">accepted_at</text>
+<rect x="540" y="177.8" width="160" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M540 181.8 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="546" y="188.3" font-weight="bold" font-size="7.8" fill="#13223F">person_keys</text>
+<text x="546" y="200.8" fill="#6D5BD0">person_id PK FK</text>
+<text x="546" y="211.4" fill="#3B4A66">sealed_key</text>
+<text x="546" y="222.0" fill="#3B4A66">status, checked_at</text>
+<text x="546" y="232.60000000000002" fill="#3B4A66">created_at</text>
+<rect x="540" y="273.20000000000005" width="160" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M540 277.20000000000005 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="546" y="283.70000000000005" font-weight="bold" font-size="7.8" fill="#13223F">scan_usage</text>
+<text x="546" y="296.20000000000005" fill="#6D5BD0">person_id PK ~</text>
+<text x="546" y="306.80000000000007" fill="#3B4A66">window_start</text>
+<text x="546" y="317.40000000000003" fill="#3B4A66">scans</text>
+<text x="546" y="328.00000000000006" fill="#3B4A66">micro_usd</text>
+<rect x="8" y="436.4" width="104" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M8 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="14" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">web_codes</text>
+<text x="14" y="459.4" fill="#6D5BD0">code_hash PK</text>
+<text x="14" y="470.0" fill="#0F9C8E">person_id ~</text>
+<text x="14" y="480.59999999999997" fill="#3B4A66">expires_at</text>
+<text x="14" y="491.2" fill="#3B4A66">owner</text>
+<rect x="128" y="436.4" width="104" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M128 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="134" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">web_sessions</text>
+<text x="134" y="459.4" fill="#6D5BD0">id_hash PK</text>
+<text x="134" y="470.0" fill="#0F9C8E">person_id ~</text>
+<text x="134" y="480.59999999999997" fill="#3B4A66">expires_at</text>
+<text x="134" y="491.2" fill="#3B4A66">owner</text>
+<rect x="248" y="436.4" width="104" height="61.4" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M248 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="254" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">web_shares</text>
+<text x="254" y="459.4" fill="#6D5BD0">token_hash PK</text>
+<text x="254" y="470.0" fill="#0F9C8E">person_id ~</text>
+<text x="254" y="480.59999999999997" fill="#3B4A66">date_from, date_to</text>
+<text x="254" y="491.2" fill="#3B4A66">expires_at</text>
+<rect x="368" y="436.4" width="104" height="72.0" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M368 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="374" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">ledger</text>
+<text x="374" y="459.4" fill="#6D5BD0">seq PK</text>
+<text x="374" y="470.0" fill="#0F9C8E">person_id ~</text>
+<text x="374" y="480.59999999999997" fill="#3B4A66">kind, amount_micro</text>
+<text x="374" y="491.2" fill="#0F9C8E">payer, scan_id ~</text>
+<text x="374" y="501.79999999999995" fill="#3B4A66">created_at</text>
+<rect x="488" y="436.4" width="104" height="72.0" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M488 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="494" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">invites</text>
+<text x="494" y="459.4" fill="#6D5BD0">code PK</text>
+<text x="494" y="470.0" fill="#3B4A66">type</text>
+<text x="494" y="480.59999999999997" fill="#0F9C8E">created_by ~</text>
+<text x="494" y="491.2" fill="#0F9C8E">used_by ~</text>
+<text x="494" y="501.79999999999995" fill="#3B4A66">expires_at, used_at</text>
+<rect x="608" y="436.4" width="104" height="72.0" rx="4" fill="#fff" stroke="#6D5BD0" stroke-width="1"/>
+<path d="M608 440.4 a4 4 0 0 1 4 -4 h96 a4 4 0 0 1 4 4 v11 h-104 z" fill="#EDE9FB" stroke="#6D5BD0" stroke-width="1"/>
+<text x="614" y="446.9" font-weight="bold" font-size="7.8" fill="#13223F">error_log</text>
+<text x="614" y="459.4" fill="#3B4A66">day, source, code, place</text>
+<text x="614" y="470.0" fill="#3B4A66">app_version  (PK)</text>
+<text x="614" y="480.59999999999997" fill="#3B4A66">count, first/last_at</text>
+<text x="614" y="491.2" fill="#3B4A66">message</text>
+<text x="614" y="501.79999999999995" fill="#0F9C8E">person_id ~ (optional)</text>
+<rect x="540" y="570.4" width="160" height="103.8" rx="4" fill="#fff" stroke="#0F9C8E" stroke-width="1"/>
+<path d="M540 574.4 a4 4 0 0 1 4 -4 h152 a4 4 0 0 1 4 4 v11 h-160 z" fill="#E2F5F2" stroke="#0F9C8E" stroke-width="1"/>
+<text x="546" y="580.9" font-weight="bold" font-size="7.8" fill="#13223F">acceptances_backup</text>
+<text x="546" y="593.4" fill="#6D5BD0">id PK</text>
+<text x="546" y="604.0" fill="#3B4A66">person_id</text>
+<text x="546" y="614.6" fill="#3B4A66">google_fp</text>
+<text x="546" y="625.1999999999999" fill="#3B4A66">device, phone</text>
+<text x="546" y="635.8" fill="#3B4A66">doc, version, lang</text>
+<text x="546" y="646.4" fill="#3B4A66">text_sha256</text>
+<text x="546" y="657.0" fill="#3B4A66">accepted_at</text>
+<text x="546" y="667.6" fill="#3B4A66">copied_at</text>
+<rect x="14" y="570.4" width="150" height="72.0" rx="4" fill="#fff" stroke="#B7860B" stroke-width="1"/>
+<path d="M14 574.4 a4 4 0 0 1 4 -4 h142 a4 4 0 0 1 4 4 v11 h-150 z" fill="#FFF4DE" stroke="#B7860B" stroke-width="1"/>
+<text x="20" y="580.9" font-weight="bold" font-size="7.8" fill="#13223F">security_findings</text>
+<text x="20" y="593.4" fill="#6D5BD0">kind, ref, name, location PK</text>
+<text x="20" y="604.0" fill="#3B4A66">version</text>
+<text x="20" y="614.6" fill="#3B4A66">severity, rating</text>
+<text x="20" y="625.1999999999999" fill="#3B4A66">fixed, summary</text>
+<text x="20" y="635.8" fill="#3B4A66">found_at</text>
+<rect x="214" y="570.4" width="140" height="50.8" rx="4" fill="#fff" stroke="#B7860B" stroke-width="1"/>
+<path d="M214 574.4 a4 4 0 0 1 4 -4 h132 a4 4 0 0 1 4 4 v11 h-140 z" fill="#FFF4DE" stroke="#B7860B" stroke-width="1"/>
+<text x="220" y="580.9" font-weight="bold" font-size="7.8" fill="#13223F">security_notes</text>
+<text x="220" y="593.4" fill="#6D5BD0">kind, ref, name, location PK</text>
+<text x="220" y="604.0" fill="#3B4A66">first_at</text>
+<text x="220" y="614.6" fill="#3B4A66">reason</text>
+<rect x="214" y="645.1999999999999" width="140" height="40.2" rx="4" fill="#fff" stroke="#B7860B" stroke-width="1"/>
+<path d="M214 649.1999999999999 a4 4 0 0 1 4 -4 h132 a4 4 0 0 1 4 4 v11 h-140 z" fill="#FFF4DE" stroke="#B7860B" stroke-width="1"/>
+<text x="220" y="655.6999999999999" font-weight="bold" font-size="7.8" fill="#13223F">security_fixes</text>
+<text x="220" y="668.1999999999999" fill="#6D5BD0">kind, ref, name, location PK</text>
+<text x="220" y="678.8" fill="#3B4A66">status, note (unused)</text>
+<rect x="390" y="570.4" width="130" height="40.2" rx="4" fill="#fff" stroke="#B7860B" stroke-width="1"/>
+<path d="M390 574.4 a4 4 0 0 1 4 -4 h122 a4 4 0 0 1 4 4 v11 h-130 z" fill="#FFF4DE" stroke="#B7860B" stroke-width="1"/>
+<text x="396" y="580.9" font-weight="bold" font-size="7.8" fill="#13223F">security_fix_requests</text>
+<text x="396" y="593.4" fill="#6D5BD0">id PK</text>
+<text x="396" y="604.0" fill="#3B4A66">(unused: Fix button removed)</text>
+<rect x="8" y="735.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M8 739.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="14" y="745.9" font-weight="bold" font-size="7.8" fill="#13223F">settings</text>
+<text x="14" y="758.4" fill="#6D5BD0">key PK</text>
+<text x="14" y="769.0" fill="#3B4A66">value</text>
+<rect x="186" y="735.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M186 739.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="192" y="745.9" font-weight="bold" font-size="7.8" fill="#13223F">seen_sigs</text>
+<text x="192" y="758.4" fill="#6D5BD0">sig_hash PK</text>
+<text x="192" y="769.0" fill="#3B4A66">expires_at</text>
+<rect x="364" y="735.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M364 739.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="370" y="745.9" font-weight="bold" font-size="7.8" fill="#13223F">scan_trials</text>
+<text x="370" y="758.4" fill="#6D5BD0">fp PK (fingerprint)</text>
+<text x="370" y="769.0" fill="#3B4A66">started_at</text>
+<rect x="542" y="735.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M542 739.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="548" y="745.9" font-weight="bold" font-size="7.8" fill="#13223F">rate_limits</text>
+<text x="548" y="758.4" fill="#6D5BD0">key PK</text>
+<text x="548" y="769.0" fill="#3B4A66">window_start, count</text>
+<rect x="8" y="797.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M8 801.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="14" y="807.9" font-weight="bold" font-size="7.8" fill="#13223F">ai_spend_daily</text>
+<text x="14" y="820.4" fill="#6D5BD0">day PK</text>
+<text x="14" y="831.0" fill="#3B4A66">scans, micro_usd</text>
+<rect x="186" y="797.4" width="166" height="40.2" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M186 801.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="192" y="807.9" font-weight="bold" font-size="7.8" fill="#13223F">sub_sales_daily</text>
+<text x="192" y="820.4" fill="#6D5BD0">day PK</text>
+<text x="192" y="831.0" fill="#3B4A66">sales, gross_cents</text>
+<rect x="364" y="797.4" width="166" height="50.8" rx="4" fill="#fff" stroke="#2E66AE" stroke-width="1"/>
+<path d="M364 801.4 a4 4 0 0 1 4 -4 h158 a4 4 0 0 1 4 4 v11 h-166 z" fill="#E6EEFA" stroke="#2E66AE" stroke-width="1"/>
+<text x="370" y="807.9" font-weight="bold" font-size="7.8" fill="#13223F">event_log</text>
+<text x="370" y="820.4" fill="#3B4A66">day, code, place</text>
+<text x="370" y="831.0" fill="#3B4A66">app_version (PK)</text>
+<text x="370" y="841.6" fill="#3B4A66">count</text>
+<path d="M275 64 L250 64 L250 64 L174 64" fill="none" stroke="#3B4A66" stroke-width="1"/>
+<line x1="269" y1="68" x2="269" y2="60" stroke="#3B4A66" stroke-width="1"/>
+<line x1="265" y1="68" x2="265" y2="60" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="64" x2="174.0" y2="68.5" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="64" x2="174" y2="64" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="64" x2="174.0" y2="59.5" stroke="#3B4A66" stroke-width="1"/>
+<line x1="186" y1="60" x2="186" y2="68" stroke="#3B4A66" stroke-width="1"/>
+<path d="M275 80 L236 80 L236 212.39999999999998 L174 212.39999999999998" fill="none" stroke="#3B4A66" stroke-width="1"/>
+<line x1="269" y1="84" x2="269" y2="76" stroke="#3B4A66" stroke-width="1"/>
+<line x1="265" y1="84" x2="265" y2="76" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="212.39999999999998" x2="174.0" y2="216.89999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="212.39999999999998" x2="174" y2="212.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="212.39999999999998" x2="174.0" y2="207.89999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="186" y1="208.39999999999998" x2="186" y2="216.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<path d="M275 96 L222 96 L222 307.79999999999995 L174 307.79999999999995" fill="none" stroke="#3B4A66" stroke-width="1"/>
+<line x1="269" y1="100" x2="269" y2="92" stroke="#3B4A66" stroke-width="1"/>
+<line x1="265" y1="100" x2="265" y2="92" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="307.79999999999995" x2="174.0" y2="312.29999999999995" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="307.79999999999995" x2="174" y2="307.79999999999995" stroke="#3B4A66" stroke-width="1"/>
+<line x1="183" y1="307.79999999999995" x2="174.0" y2="303.29999999999995" stroke="#3B4A66" stroke-width="1"/>
+<line x1="186" y1="303.79999999999995" x2="186" y2="311.79999999999995" stroke="#3B4A66" stroke-width="1"/>
+<text x="225" y="58" text-anchor="middle" font-size="6.6" fill="#5B6B88">person_id</text>
+<path d="M445 64 L470 64 L470 64 L540 64" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="451" y1="60" x2="451" y2="68" stroke="#3B4A66" stroke-width="1"/>
+<line x1="455" y1="60" x2="455" y2="68" stroke="#3B4A66" stroke-width="1"/>
+<line x1="531" y1="64" x2="540.0" y2="59.5" stroke="#3B4A66" stroke-width="1"/>
+<line x1="531" y1="64" x2="540" y2="64" stroke="#3B4A66" stroke-width="1"/>
+<line x1="531" y1="64" x2="540.0" y2="68.5" stroke="#3B4A66" stroke-width="1"/>
+<line x1="528" y1="68" x2="528" y2="60" stroke="#3B4A66" stroke-width="1"/>
+<path d="M445 80 L484 80 L484 201.8 L540 201.8" fill="none" stroke="#3B4A66" stroke-width="1"/>
+<line x1="451" y1="76" x2="451" y2="84" stroke="#3B4A66" stroke-width="1"/>
+<line x1="455" y1="76" x2="455" y2="84" stroke="#3B4A66" stroke-width="1"/>
+<line x1="534" y1="205.8" x2="534" y2="197.8" stroke="#3B4A66" stroke-width="1"/>
+<line x1="530" y1="205.8" x2="530" y2="197.8" stroke="#3B4A66" stroke-width="1"/>
+<path d="M445 96 L498 96 L498 297.20000000000005 L540 297.20000000000005" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="451" y1="92" x2="451" y2="100" stroke="#3B4A66" stroke-width="1"/>
+<line x1="455" y1="92" x2="455" y2="100" stroke="#3B4A66" stroke-width="1"/>
+<line x1="534" y1="301.20000000000005" x2="534" y2="293.20000000000005" stroke="#3B4A66" stroke-width="1"/>
+<line x1="530" y1="301.20000000000005" x2="530" y2="293.20000000000005" stroke="#3B4A66" stroke-width="1"/>
+<text x="495" y="58" text-anchor="middle" font-size="6.6" fill="#5B6B88">person_id</text>
+<path d="M54 154.39999999999998 L54 188.39999999999998" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="58" y1="160.39999999999998" x2="50" y2="160.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="58" y1="164.39999999999998" x2="50" y2="164.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="54" y1="179.39999999999998" x2="58.5" y2="188.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="54" y1="179.39999999999998" x2="54" y2="188.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="54" y1="179.39999999999998" x2="49.5" y2="188.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<line x1="50" y1="176.39999999999998" x2="58" y2="176.39999999999998" stroke="#3B4A66" stroke-width="1"/>
+<text x="58" y="174.39999999999998" text-anchor="start" font-size="6.6" fill="#5B6B88">measurement_id</text>
+<path d="M14 303.79999999999995 L6 303.79999999999995 L6 60 L14 60" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="8" y1="307.79999999999995" x2="8" y2="299.79999999999995" stroke="#3B4A66" stroke-width="1"/>
+<line x1="4" y1="307.79999999999995" x2="4" y2="299.79999999999995" stroke="#3B4A66" stroke-width="1"/>
+<line x1="8" y1="64" x2="8" y2="56" stroke="#3B4A66" stroke-width="1"/>
+<line x1="4" y1="64" x2="4" y2="56" stroke="#3B4A66" stroke-width="1"/>
+<path d="M360.0 228.6 L360.0 406.4" fill="none" stroke="#3B4A66" stroke-width="1"/>
+<line x1="364.0" y1="234.6" x2="356.0" y2="234.6" stroke="#3B4A66" stroke-width="1"/>
+<line x1="364.0" y1="238.6" x2="356.0" y2="238.6" stroke="#3B4A66" stroke-width="1"/>
+<path d="M61 406.4 L661 406.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<path d="M61 406.4 L61 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="61" y1="427.4" x2="65.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="61" y1="427.4" x2="61" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="61" y1="427.4" x2="56.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="57" y1="424.4" x2="65" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M181 406.4 L181 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="181" y1="427.4" x2="185.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="181" y1="427.4" x2="181" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="181" y1="427.4" x2="176.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="177" y1="424.4" x2="185" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M301 406.4 L301 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="301" y1="427.4" x2="305.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="301" y1="427.4" x2="301" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="301" y1="427.4" x2="296.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="297" y1="424.4" x2="305" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M421 406.4 L421 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="421" y1="427.4" x2="425.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="421" y1="427.4" x2="421" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="421" y1="427.4" x2="416.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="417" y1="424.4" x2="425" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M541 406.4 L541 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="541" y1="427.4" x2="545.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="541" y1="427.4" x2="541" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="541" y1="427.4" x2="536.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="537" y1="424.4" x2="545" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M661 406.4 L661 436.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="661" y1="427.4" x2="665.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="661" y1="427.4" x2="661" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="661" y1="427.4" x2="656.5" y2="436.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="657" y1="424.4" x2="665" y2="424.4" stroke="#3B4A66" stroke-width="1"/>
+<text x="364.0" y="400.4" text-anchor="start" font-size="6.6" fill="#5B6B88">person_id (created_by, used_by in invites)</text>
+<path d="M700 60 L716 60 L716 590.4 L700 590.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="706" y1="56" x2="706" y2="64" stroke="#3B4A66" stroke-width="1"/>
+<line x1="710" y1="56" x2="710" y2="64" stroke="#3B4A66" stroke-width="1"/>
+<line x1="706" y1="586.4" x2="706" y2="594.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="710" y1="586.4" x2="710" y2="594.4" stroke="#3B4A66" stroke-width="1"/>
+<text x="712" y="564.4" text-anchor="end" font-size="6.6" fill="#5B6B88">copy, every night and at once</text>
+<path d="M164 590.4 L190 590.4 L190 590.4 L214 590.4" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="170" y1="586.4" x2="170" y2="594.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="174" y1="586.4" x2="174" y2="594.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="208" y1="594.4" x2="208" y2="586.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="204" y1="594.4" x2="204" y2="586.4" stroke="#3B4A66" stroke-width="1"/>
+<path d="M164 606.4 L190 606.4 L190 665.1999999999999 L214 665.1999999999999" fill="none" stroke="#3B4A66" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="170" y1="602.4" x2="170" y2="610.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="174" y1="602.4" x2="174" y2="610.4" stroke="#3B4A66" stroke-width="1"/>
+<line x1="208" y1="669.1999999999999" x2="208" y2="661.1999999999999" stroke="#3B4A66" stroke-width="1"/>
+<line x1="204" y1="669.1999999999999" x2="204" y2="661.1999999999999" stroke="#3B4A66" stroke-width="1"/>
+</svg><p class="cap">Figure: the tables and their relations. <b>PK</b> = the key of the row; <b>FK</b> = linked to another table by the database itself (solid line);
+<b>~</b> = the same code kept by the server, without a database link (dashed line). Line ends: two bars = exactly one; crow's foot = many.
+So persons → measurements is one to many; persons → person_keys is one to one; acceptances → acceptances_backup is one to one (a copy in the other database).
+The tables at the bottom have no relations.</p></div>
+<table>
+  <tr><th>Table</th><th>What it holds</th><th>Kept</th></tr>
+  <tr><td><code>persons</code></td><td>one row per account: the coded public key of the phone, the Google fingerprint (never the email), year of birth and sex if given, owner flag, subscription state, last app version seen</td><td>until the account is deleted</td></tr>
+  <tr><td><code>measurements</code></td><td>the readings (SYS, DIA, PUL with date and time) and the lab results (date and values as printed)</td><td>readings 365 days; lab results until the person deletes them</td></tr>
+  <tr><td><code>lab_files</code></td><td>the coded fingerprint of each imported lab file, so the same file is never saved twice</td><td>with the lab result</td></tr>
+  <tr><td><code>scans</code></td><td>the outcome codes of the old photo reader (no photo)</td><td>365 days</td></tr>
+  <tr><td><code>acceptances</code></td><td>each acceptance of the terms: account code, phone fingerprint and model, version, language, fingerprint of the text, date</td><td>kept as proof</td></tr>
+  <tr><td><code>acceptances_backup</code></td><td>the same acceptances, copied into a second database in the EU</td><td>kept as proof</td></tr>
+  <tr><td><code>person_keys</code></td><td>an encrypted key of the account, kept only for older features</td><td>with the account</td></tr>
+  <tr><td><code>scan_usage</code></td><td>how many AI Scans and how much AI cost in the 12 months since the first Scan</td><td>with the account</td></tr>
+  <tr><td><code>web_codes, web_sessions</code></td><td>the one-minute code that opens the Web Dashboard and the browser session (coded)</td><td>minutes / 7 days</td></tr>
+  <tr><td><code>web_shares</code></td><td>the read-only links sent to a doctor (coded), with their date range</td><td>7 days</td></tr>
+  <tr><td><code>ledger, invites</code></td><td>older accounting and invitation codes, kept for the record</td><td>with the service</td></tr>
+  <tr><td><code>error_log, event_log</code></td><td>error and outcome codes per day, place and app version, with a counter; never values</td><td>90 days</td></tr>
+  <tr><td><code>security_findings, security_notes</code></td><td>the open weaknesses found by the weekly scan, with the date first seen and the reason</td><td>replaced at every scan</td></tr>
+  <tr><td><code>security_fixes, security_fix_requests</code></td><td>left from the removed Fix button; empty</td><td>—</td></tr>
+  <tr><td><code>settings</code></td><td>switches of the service (blocked versions, billing mode)</td><td>—</td></tr>
+  <tr><td><code>seen_sigs, rate_limits</code></td><td>protection: signatures already used (no replay) and request counters</td><td>minutes to one day</td></tr>
+  <tr><td><code>scan_trials</code></td><td>coded fingerprints of Google accounts and phones that already had the AI trial</td><td>2 years</td></tr>
+  <tr><td><code>ai_spend_daily, sub_sales_daily</code></td><td>totals per day: Scans and AI cost, subscriptions sold</td><td>for the accounts</td></tr>
+</table>
 <h2>5. Keys and secrets, in plain words</h2>
 <p>A key is like a house key: whoever has it can open a door. None of them is ever written in the code. They live in GitHub's secret
 store (encrypted: nobody can read them back, not even the developer, also when the repository is public) or in Cloudflare.</p>
@@ -536,7 +861,7 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
   <li><b>Small updates</b> (patch and minor): merged by the morning routine once all checks are green, then released.</li>
   <li><b>Large updates</b> (major): proposed to the owner, because they can change how things work.</li>
   <li><b>Security patches</b> are applied on Monday, together with the weekly scan; a critical one found in the app can be fixed any day, with a release the same day.</li>
-  <li>After a security release, old versions with the weakness can be blocked so that everyone updates.</li>
+  <li>After a security release every older version stops by itself: only the newest version works, and the app offers the update.</li>
 </ul>
 
 <h2>12. Change management: how a change is made</h2>
@@ -646,12 +971,13 @@ which waits for the owner's go. The Kotlin build plugin (issue #97) is an accept
   <li>The owner tests that version from Google Play.</li>
   <li>The owner promotes it to <b>production</b>, with a <b>staged rollout</b> (for example 20% of users, then 100% after a day without new errors).</li>
   <li>Google reviews the version (from a few hours to a few days); then phones update by themselves.</li>
-  <li>The server always accepts the previous versions, so people who have not updated yet keep working. When the terms of use change, nobody is blocked: an older version keeps the terms it shows (their acceptance is recorded with that version), and the new terms are asked right after the update.</li>
+  <li><b>Only one version is kept.</b> The app asks Google Play at every start: when a newer version exists, Google's own update window opens inside the app (the standard "in-app update" of Google Play; the App Store equivalent on iPhone later), and the person updates without leaving the app. The server, too, accepts only the newest version: an older app cannot save anything until it is updated. After the update the new terms of use are asked, if they changed.</li>
+  <li>On Google Play the server's newest version must follow the version really live on the store (not the one just built), so that nobody is stopped before Google offers the update: this switch is to be set when HINT 365 is published.</li>
 </ol>
 <h3>If something goes wrong</h3>
 <ul>
   <li>Stop the rollout in the Play Console, or put the previous verified version back online (<i>Promote verified APK and server</i>).</li>
-  <li>Block one or more faulty versions on every phone at once (Actions → <i>App versions</i>): the app shows only the link to update. Data stay.</li>
+  <li>Block one or more faulty versions on every phone at once (Actions → <i>App versions</i>): the app offers only the update. Data stay.</li>
 </ul>
 
 <h2>14. Costs: what is free, and up to where</h2>
