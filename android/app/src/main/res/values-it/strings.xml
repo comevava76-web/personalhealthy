@@ -551,5 +551,6 @@
     <string name="scan_trial_left">Prova AI: ancora %1$d giorni</string>
     <string name="ai_trial_title">La prova AI sta per finire</string>
     <string name="ai_trial_body">Il tuo periodo di prova delle funzionalità AI finisce tra 2 giorni. Per continuare a usare lo Scan con foto e AI abbonati a 4 $ all\'anno; altrimenti lo Scan verrà disattivato. Potrai comunque continuare a registrare a voce e a usare tutte le altre funzioni dell\'app.</string>
-    <string name="last7_avg">Ultimi 7 giorni · media del giorno</string>
+    <string name="last7_avg">Valori medi degli ultimi 7 giorni</string>
+    <string name="week_avg">valori medi</string>
 </resources>

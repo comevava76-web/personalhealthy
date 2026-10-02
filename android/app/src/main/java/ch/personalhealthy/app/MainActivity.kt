@@ -1436,8 +1436,7 @@ fun WeekPanel(readings: List<Reading>) {
     val labelW = 52.dp
     Panel {
         Row { Text(t(R.string.last7_avg), color = C.Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text(t(R.string.n_readings, byDay.values.sumOf { it.size }), color = C.Muted, fontSize = 13.sp) }
-        // said before the numbers: each box is the day's average, so it matches the last reading only when it is the first of the day
-        Text(t(R.string.week_hint), color = C.Muted, fontSize = 12.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(labelW))
             days.forEach { d ->
@@ -1447,7 +1446,8 @@ fun WeekPanel(readings: List<Reading>) {
                 }
             }
         }
-        WeekRow("mmHg", labelW) {
+        // each box is the day's average, not the last reading: said in the title and, small, under "mmHg"
+        WeekRow("mmHg", labelW, sub = t(R.string.week_avg)) {
             days.forEach { d ->
                 val l = byDay.getValue(d)
                 Column(Modifier.weight(1f).then(cell), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1551,9 +1551,12 @@ fun BrandHeader() {
 }
 
 @Composable
-private fun WeekRow(label: String, labelW: Dp, cells: @Composable RowScope.() -> Unit) {
+private fun WeekRow(label: String, labelW: Dp, sub: String? = null, cells: @Composable RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.width(labelW))
+        Column(Modifier.width(labelW)) {
+            Text(label, color = C.Muted, fontSize = 12.sp, maxLines = 1)
+            if (sub != null) Text(sub, color = C.Muted, fontSize = 9.sp, lineHeight = 10.sp, maxLines = 2)
+        }
         cells()
     }
 }

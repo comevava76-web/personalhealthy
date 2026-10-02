@@ -549,5 +549,6 @@
     <string name="scan_trial_left">Essai IA : encore %1$d jours</string>
     <string name="ai_trial_title">Votre essai IA se termine</string>
     <string name="ai_trial_body">Votre essai gratuit des fonctions IA se termine dans 2 jours. Pour continuer à utiliser le Scan photo avec l\'IA, abonnez-vous pour 4 $ par an ; sinon le Scan sera désactivé. Vous pourrez toujours enregistrer à la voix et utiliser toutes les autres fonctions de l\'app.</string>
-    <string name="last7_avg">7 derniers jours · moyenne du jour</string>
+    <string name="last7_avg">Valeurs moyennes des 7 derniers jours</string>
+    <string name="week_avg">valeurs moyennes</string>
 </resources>
