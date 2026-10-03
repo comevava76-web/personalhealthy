@@ -123,29 +123,32 @@ jobs:
           npx wrangler d1 execute personalhealthy --remote --command \
             "UPDATE ledger SET payer = (SELECT id FROM persons WHERE is_admin = 1 LIMIT 1) WHERE COALESCE(payer, 'owner') = 'owner' AND EXISTS (SELECT 1 FROM persons WHERE is_admin = 1); UPDATE persons SET pays = 'self' WHERE COALESCE(pays, 'owner') <> 'self'"
 
-      - name: workers.dev subdomain
+      - name: Server address (config/server.json)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          # The address is personalhealthy-api.<subdomain>.workers.dev. The subdomain is hint365 (free, not the
-          # definitive domain: see docs/operations/domain.md). The app has the address built in, so if the subdomain
-          # cannot be hint365 the build stops: it must never ship an app that points nowhere.
-          WANT=hint365
+          # The app is not tied to one address: it asks /v1/where at every opening and follows "api", or "next" when the
+          # old address no longer answers. Here the Worker is told both, and the workers.dev subdomain is checked.
+          API=$(jq -r '.api' config/server.json); NEXT=$(jq -r '.next // ""' config/server.json)
+          sub() { echo "$1" | sed -nE 's#^https://[^.]+\.([^.]+)\.workers\.dev/?$#\1#p'; }
           U="https://api.cloudflare.com/client/v4/accounts/6c6de5312c59db866e1a8e07d3c21c63/workers/subdomain"
-          R=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$U")
-          HAVE=$(echo "$R" | jq -r '.result.subdomain // empty')
-          echo "Check: $(echo "$R" | jq -c '{success, subdomain: .result.subdomain, errors}')"
-          if [ -z "$HAVE" ]; then
-            echo "Registering the workers.dev subdomain $WANT"
-            P=$(curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
-              "$U" --data "{\"subdomain\":\"$WANT\"}")
-            echo "$P" | jq -c '{success, errors}'
-            [ "$(echo "$P" | jq -r '.success')" = "true" ] || { echo "::error::The subdomain $WANT could not be registered (taken?): set the GitHub variable BATTITO_API_URL to the real address and run Build again"; exit 1; }
-          elif [ "$HAVE" != "$WANT" ]; then
-            # Cloudflare's API cannot rename an existing subdomain (error 10036): only the owner can, in the dashboard
-            echo "::error::The workers.dev subdomain is $HAVE, not $WANT. Owner, by hand: Cloudflare dashboard → Workers & Pages → Account details → Subdomain → Change → $WANT. Then run Build again."
-            exit 1
+          HAVE=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$U" | jq -r '.result.subdomain // empty')
+          echo "workers.dev subdomain of the account: ${HAVE:-none} · api $API · next ${NEXT:-none}"
+          if [ -z "$HAVE" ] && [ -n "$(sub "$API")" ]; then
+            echo "Registering the workers.dev subdomain $(sub "$API") (new Cloudflare account)"
+            curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+              "$U" --data "{\"subdomain\":\"$(sub "$API")\"}" | jq -c '{success, errors}'
+          elif [ -n "$(sub "$API")" ] && [ "$HAVE" != "$(sub "$API")" ]; then
+            if [ -n "$NEXT" ] && [ "$HAVE" = "$(sub "$NEXT")" ]; then
+              # the owner has already renamed it: the address in "next" is the live one, the apps move there by themselves
+              echo "::warning::The account is already on $HAVE: move next to api in config/server.json"
+              API="$NEXT"; NEXT=""
+            else
+              echo "::error::The workers.dev subdomain is $HAVE, but config/server.json says $(sub "$API"). Fix config/server.json or the subdomain (Cloudflare → Workers & Pages → Account details → Subdomain)."
+              exit 1
+            fi
           fi
+          echo "SERVER_URL=$API" >> "$GITHUB_ENV"; echo "SERVER_NEXT=$NEXT" >> "$GITHUB_ENV"
 
       - id: deploy
         name: Deploy the server
@@ -188,7 +191,7 @@ jobs:
           else
             gh release create "$TAG" ../apk/HealthyInstantTracker-*.apk ../apk/HINT365-*.aab --target "${{ github.sha }}" --title "HINT 365 0.1.${{ github.run_number }}" --notes "Android APK update; no uninstall required." --repo "${{ github.repository }}"
           fi
-          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}" 2>&1 | tee deploy.log
+          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:${{ github.run_number }}" --var "SERVER_URL:$SERVER_URL" --var "SERVER_NEXT:$SERVER_NEXT" 2>&1 | tee deploy.log
           jq -n --arg f "$FAMILY_CODE" '{FAMILY_CODE:$f}' > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
@@ -235,7 +238,7 @@ jobs:
             echo "KEY_ENCRYPTION_KEY created"
           fi
           URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
-          if [ -z "$URL" ]; then URL="${{ vars.BATTITO_API_URL }}"; fi
+          if [ -z "$URL" ]; then URL="$SERVER_URL"; fi
           if [ -z "$URL" ]; then echo "Server address not found"; exit 1; fi
           curl -sf "$URL/v1/health" && echo " <- server reachable"
           # the phone link must deliver exactly this APK (joined from public/dl by the Worker), without GitHub login
@@ -279,13 +282,16 @@ jobs:
             echo "::error::ANDROID_KEYSTORE_B64 is required. Provision a new private signing key."
             exit 1
           fi
+      - name: Server address built into the app (config/server.json; the app then follows /v1/where by itself)
+        run: |
+          echo "BATTITO_API_URL=$(jq -r '.api' config/server.json)" >> "$GITHUB_ENV"
+          echo "BATTITO_API_NEXT=$(jq -r '.next // ""' config/server.json)" >> "$GITHUB_ENV"
       - name: Compile
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          BATTITO_API_URL: ${{ vars.BATTITO_API_URL || 'https://personalhealthy-api.hint365.workers.dev' }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID || '556501292660-jpsjfj7ob3em9dl5q2obq6j94l836grm.apps.googleusercontent.com' }}
         run: |
           gradle testDebugUnitTest assembleRelease bundleRelease --no-daemon --stacktrace

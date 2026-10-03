@@ -5,6 +5,8 @@ plugins {
 
 val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 val apiUrl = System.getenv("BATTITO_API_URL")?.takeIf { it.isNotBlank() } ?: "https://example.invalid"
+// the address the server will move to (config/server.json "next"): the app tries it when the old one stops answering
+val apiNext = System.getenv("BATTITO_API_NEXT")?.trim() ?: ""
 // Google Cloud "Web client ID" for Sign in with Google (GitHub repository variable); empty = invite codes only
 val googleClientId = System.getenv("GOOGLE_WEB_CLIENT_ID")?.trim() ?: ""
 
@@ -19,6 +21,7 @@ android {
         versionCode = runNumber
         versionName = "0.1.$runNumber"
         buildConfigField("String", "API_URL", "\"$apiUrl\"")
+        buildConfigField("String", "API_NEXT", "\"$apiNext\"")
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
     }
 

@@ -28,6 +28,8 @@ interface Env {
   PRICE_OUT_PER_MTOK?: string; // dollars per million output tokens
   PLAY_SERVICE_ACCOUNT?: string; // JSON key of the service account that checks subscriptions with Google Play
   APP_VERSION?: string;          // the newest app build (the pipeline's run number, set at deploy)
+  SERVER_URL?: string;           // where the app must talk to the server now (config/server.json "api", set at deploy)
+  SERVER_NEXT?: string;          // the address it will move to (config/server.json "next"): the app keeps it as a fallback
   GITHUB_FIX_TOKEN?: string;     // Security console "Fix": a GitHub token that may open issues in the repository (owner sets it)
   AI_API_KEY?: string;           // the owner's AI key for the photo Scan (terms v21; today Anthropic): paid by the owner
   GITHUB_REPO?: string;          // owner/name of the repository (default comevava76-web/personalhealthy)
@@ -464,6 +466,10 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     if (req.method === "GET" && url.pathname === "/HINT.apk") return downloadApk(env, url);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
+      // asked by the app every time it opens or comes back: where the server is now, and the address it will move to.
+      // The app is not tied to one address: when the domain changes it follows by itself (config/server.json).
+      if (req.method === "GET" && url.pathname === "/v1/where")
+        return json({ service: "hint365", api: (env.SERVER_URL || url.origin).replace(/\/$/, ""), next: (env.SERVER_NEXT || "").replace(/\/$/, "") });
       // asked by the app when it opens, before anything else: is this version still allowed?
       if (req.method === "GET" && url.pathname === "/v1/app-status")
         return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0, Number(env.APP_VERSION) || 0), download: url.origin + "/download" });

@@ -44,6 +44,6 @@ jobs:
           sed -i "s/D1_DATABASE_ID/$ID/" wrangler.toml
           cp ../docs/HINT-*.pdf public/
           rm -f public/HINT.apk
-          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:$APP_VERSION"
-          curl -fsS https://personalhealthy-api.hint365.workers.dev/v1/health
-          curl -fsS 'https://personalhealthy-api.hint365.workers.dev/terms?lang=en' | grep -q 'Version 16'
+          npx wrangler deploy --var "GOOGLE_CLIENT_ID:$GOOGLE_WEB_CLIENT_ID" --var "CONTACT_EMAIL:$CONTACT_EMAIL" --var "APP_VERSION:$APP_VERSION" --var "SERVER_URL:$(jq -r .api ../config/server.json)" --var "SERVER_NEXT:$(jq -r '.next // ""' ../config/server.json)"
+          curl -fsS "$(jq -r .api ../config/server.json)/v1/health"
+          curl -fsS "$(jq -r .api ../config/server.json)/terms?lang=en" | grep -q 'Version'

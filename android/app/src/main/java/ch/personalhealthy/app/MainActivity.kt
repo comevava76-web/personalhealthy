@@ -257,6 +257,7 @@ class MainActivity : FragmentActivity() {
             hiddenAt = savedInstanceState.getLong("hiddenAt", 0L)
         }
         Txt.init(this)   // texts in the phone's language
+        Server.init(this)   // the server's address last seen (it can move: see Server)
         // a crash is written down here and sent to the error log the next time the app opens
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, e ->
@@ -437,10 +438,14 @@ fun App() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             // back in the app: fresh readings (there is no refresh button)
-            if (event == Lifecycle.Event.ON_RESUME) checkAppGate()
+            // first where the server is now (it follows a new domain by itself), then the version and fresh readings
+            if (event == Lifecycle.Event.ON_RESUME) scope.launch {
+                Server.refresh()
+                checkAppGate()
+                if (!loading) reload()
+            }
             // a newer version on Google Play: Google's own update window, like every app on the store
             if (event == Lifecycle.Event.ON_RESUME) (ctx as? android.app.Activity)?.let { PlayUpdate.check(it) }
-            if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -1031,7 +1036,7 @@ fun Colophon(onTerms: () -> Unit) {
             val u = androidx.compose.ui.text.style.TextDecoration.Underline
             Text(t(R.string.disc_legal), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable(onClick = onTerms).then(link))
             Text(t(R.string.colophon_privacy), color = C.Muted, fontSize = 11.sp, textDecoration = u, modifier = Modifier.clickable {
-                try { openInBrowser(ctx, BuildConfig.API_URL.trimEnd('/') + "/privacy?lang=" + appLocale().language) } catch (e: Exception) { ErrorReport.report("Colophon/privacy", e) }
+                try { openInBrowser(ctx, Server.base + "/privacy?lang=" + appLocale().language) } catch (e: Exception) { ErrorReport.report("Colophon/privacy", e) }
             }.then(link))
         }
     }
