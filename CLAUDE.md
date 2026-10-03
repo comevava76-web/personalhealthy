@@ -92,12 +92,17 @@ Before closing a session, refresh the handover's current state, append a dated e
   riserva: Actions → *Owner phone*. Non togliere questo controllo.
 - **Disaster recovery** (chiesto da Human): cartella `DR/` con l'Infrastructure as Code (`DR/infrastructure-as-code/infrastructure.json` dichiara i tre D1 UE, Worker, secret, servizi esterni, RPO/RTO; `rebuild.sh` crea ciò che manca e non cancella mai). Backup: D1 Time Travel (7 giorni sul piano Free) + backup notturno cifrato AES-256 (`BACKUP_PASSPHRASE`) nel D1 `personalhealthy-vault` (UE, 30 notti, gratis, niente carta); mai backup su Git. Actions → *Disaster recovery*: `rebuild` (database + tabelle + restore + Build), `restore`, `time-travel`, `drill` ogni mese. Impegni RPO/RTO basati sul piano Cloudflare in uso, sezione 8 del documento generale e runbook `docs/operations/disaster-recovery.md` con ogni passo manuale. R2 / copia fuori account: al lancio su Google Play. Ogni nuova risorsa va in `infrastructure.json` nello stesso commit.
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
-  Indirizzo oggi `personalhealthy-api.hint365.workers.dev` (sottodominio gratuito, dal 02.10.2026, **non definitivo**); il dominio
-  definitivo (GoDaddy, DNS su Cloudflare) segue i passi di `docs/operations/domain.md`: nuova build con il nuovo indirizzo e versione vecchia invalidata.
+  Indirizzo oggi `personalhealthy-api.comevava76.workers.dev` (sottodominio gratuito, **non definitivo**: prossimo `hint365`, poi il dominio
+  dell'owner su GoDaddy con DNS su Cloudflare). **L'indirizzo non è fisso nell'app** (chiesto da Human): unica fonte `config/server.json`
+  (`api` attuale, `next` prossimo); il Worker li aggiunge alla risposta del controllo versione che l'app fa già (`/v1/app-status`):
+  nessuna chiamata in più, nessuna attesa (chiesto da Human: l'app non deve diventare meno veloce). L'app (`Server` in `Core.kt`) passa
+  a un indirizzo nuovo solo se risponde come HINT 365 (`GET /v1/where`); se il server non risponde, o risponde una pagina non nostra,
+  prova `next` e ripete la chiamata una volta, così segue anche un'app rimasta aperta. Punto di ripristino «dominio-web-hardcoded» = v0.1.131.
+  Passi e prova in `docs/operations/domain.md`. Non togliere questo meccanismo.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:
-  https://personalhealthy-api.hint365.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
+  https://personalhealthy-api.comevava76.workers.dev/download (servito dal Worker, nessun login GitHub; sempre l'ultima versione).
 - **Documento generale** `docs/HINT365-How-it-works.pdf` (cinque parti, sempre in quest'ordine: funzionale, architettura applicativa, esercizio con job, log e disaster recovery, processi, riferimenti; un argomento nuovo va nella sua parte) (da `docs/overview/overview.html`, `node docs/overview/render.cjs`): scritto semplice,
   è il primo documento da leggere e va aggiornato a ogni cambio di processo, job automatico, chiave, prezzo o fornitore (chiesto da Human).
 - **Tutti i documenti in `docs/`** (indice `docs/README.md`: cosa, chi, quando). Ogni aggiunta, modifica o rimozione aggiorna nello

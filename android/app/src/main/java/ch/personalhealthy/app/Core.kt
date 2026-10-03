@@ -53,12 +53,76 @@ object Txt {
     fun init(ctx: Context) { res = ctx.resources }
 }
 
+/** The server's address. It is not fixed in the app, and following it costs no extra call and no waiting:
+ *  - the version check the app already makes at every opening and return also says where the server is ("api") and
+ *    where it will move ("next"): the app keeps both ([learn]);
+ *  - a different "api" is taken only after it answers, over HTTPS, as the current HINT 365 server (/v1/where): this
+ *    extra call happens only on the day of a move;
+ *  - if a call cannot reach the server (an app left open during a move, or an app opened after it), the app tries
+ *    "next" and the addresses built in, moves if one answers, and sends the call once more ([recover]).
+ *  Source of the addresses: config/server.json in the repository; steps in docs/operations/domain.md. */
+object Server {
+    @Volatile var base: String = BuildConfig.API_URL.trimEnd('/')
+        private set
+    @Volatile private var next: String = BuildConfig.API_NEXT.trimEnd('/')
+    private var prefs: android.content.SharedPreferences? = null
+
+    fun init(ctx: Context) {
+        if (prefs != null) return
+        val p = ctx.applicationContext.getSharedPreferences("server", Context.MODE_PRIVATE)
+        prefs = p
+        p.getString("api", null)?.takeIf { ok(it) }?.let { base = it }
+        p.getString("next", null)?.takeIf { ok(it) }?.let { next = it }
+    }
+
+    private fun ok(u: String) = try {
+        val x = URL(u)
+        x.protocol == "https" && x.host.isNotEmpty() && x.query == null && (x.path.isEmpty() || x.path == "/") && x.userInfo == null
+    } catch (_: Exception) { false }
+
+    /** {service, api, next} from [at], or null if it does not answer as HINT 365. */
+    private fun where(at: String): JSONObject? = try {
+        val c = URL("$at/v1/where").openConnection() as HttpURLConnection
+        c.connectTimeout = 8000; c.readTimeout = 8000; c.instanceFollowRedirects = false
+        try {
+            if (c.responseCode != 200) null
+            else JSONObject(c.inputStream.bufferedReader().use { it.readText() }).takeIf { it.optString("service") == "hint365" }
+        } finally { c.disconnect() }
+    } catch (_: Exception) { null }
+
+    /** A new address is taken only if it answers itself as the current HINT 365 server. */
+    private fun moveTo(cand: String): Boolean {
+        if (!ok(cand) || cand == base) return false
+        val there = where(cand) ?: return false
+        if (there.optString("api").trimEnd('/') != cand) return false
+        base = cand
+        val n = there.optString("next").trimEnd('/')
+        next = if (ok(n)) n else ""
+        prefs?.edit()?.putString("api", base)?.putString("next", next)?.apply()
+        return true
+    }
+
+    /** What the version check says about the address (called with its answer). True if the app moved. */
+    fun learn(status: JSONObject): Boolean {
+        val n = status.optString("next").trimEnd('/')
+        if (ok(n) && n != next) { next = n; prefs?.edit()?.putString("next", n)?.apply() }
+        val api = status.optString("api").trimEnd('/')
+        return ok(api) && api != base && moveTo(api)
+    }
+
+    /** The address in use does not answer: try the announced one, then those built in. True if the app moved. */
+    suspend fun recover(): Boolean = withContext(Dispatchers.IO) {
+        if (where(base) != null) return@withContext false   // the server is there: the problem is elsewhere (or offline)
+        listOf(next, BuildConfig.API_URL.trimEnd('/'), BuildConfig.API_NEXT.trimEnd('/')).distinct().any { moveTo(it) }
+    }
+}
+
 /** Where anyone can download the latest app (the server publishes it; the repository is private). */
-val DOWNLOAD_URL: String get() = BuildConfig.API_URL.trimEnd('/') + "/download"
+val DOWNLOAD_URL: String get() = Server.base + "/download"
 
 /** Opens the phone's share sheet with the app's download link, to send to a friend. */
 /** The notice on the web, the same text the app shows before first use. */
-val TERMS_URL = BuildConfig.API_URL.trimEnd('/') + "/terms"
+val TERMS_URL: String get() = Server.base + "/terms"
 /** Version of the notice: must match the server's; a new version asks everyone to accept again. */
 const val DISCLAIMER_VERSION = "22"
 
@@ -266,7 +330,9 @@ object Keys {
 
 /* ---------------- Server connection ---------------- */
 
-class ApiException(val code: String) : Exception(errorText(code))
+/** [foreign]: the answer did not come from HINT 365's server (for example Cloudflare's page for an address that no
+ *  longer exists): the app then looks for the server at its announced address. */
+class ApiException(val code: String, val foreign: Boolean = false) : Exception(errorText(code))
 
 /**
  * Errors met in the app go to the server's grouped error log (worker/src/errors.ts), so bugs users run into are seen
@@ -348,7 +414,7 @@ fun errorText(code: String): String = when (code) {
 }
 
 object Api {
-    private val base = BuildConfig.API_URL.trimEnd('/')
+    private val base: String get() = Server.base
     /** This phone's Android id (same app, same phone): the server keeps only an HMAC of it, to count the Scan trial
      *  once per phone. Set at start-up. */
     var device: String? = null
@@ -356,7 +422,15 @@ object Api {
     private fun sha256Hex(b: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
 
+    /** One call to the server. If the server cannot be reached (for example its address changed while the app stayed
+     *  open), the app looks for it at the announced address and, if it moved, sends the call once more there. */
     suspend fun call(method: String, path: String, body: JSONObject?, personId: String?): JSONObject =
+        try { once(method, path, body, personId) } catch (e: ApiException) {
+            if ((e.code != "network" && !e.foreign) || !Server.recover()) throw e
+            once(method, path, body, personId)
+        }
+
+    private suspend fun once(method: String, path: String, body: JSONObject?, personId: String?): JSONObject =
         withContext(Dispatchers.IO) {
             val bytes = body?.toString()?.toByteArray(Charsets.UTF_8) ?: ByteArray(0)
             val ts = System.currentTimeMillis().toString()
@@ -386,6 +460,7 @@ object Api {
                 val txt = stream?.bufferedReader()?.use { it.readText() } ?: ""
                 val j = try { JSONObject(txt) } catch (e: Exception) { JSONObject() }
                 if (code !in 200..299) {
+                    if (!j.has("code")) throw ApiException(if (code >= 500) "server" else "generic", foreign = true)
                     val err = j.optString("code", if (code >= 500) "server" else "generic")
                     if (err == "app_disabled") AppGate.disabled = true
                     if (err == "sub_expired") AppGate.subExpired = true
@@ -490,11 +565,11 @@ object Repo {
     /** Is this version of the app still allowed? Asked when the app opens. null = no answer (offline): nothing changes. */
     suspend fun appAllowed(): Boolean? = withContext(Dispatchers.IO) {
         try {
-            val c = URL(BuildConfig.API_URL.trimEnd('/') + "/v1/app-status?v=" + BuildConfig.VERSION_CODE).openConnection() as HttpURLConnection
+            val c = URL(Server.base + "/v1/app-status?v=" + BuildConfig.VERSION_CODE).openConnection() as HttpURLConnection
             c.connectTimeout = 10000; c.readTimeout = 10000
             try {
                 if (c.responseCode != 200) null
-                else JSONObject(c.inputStream.bufferedReader().use { it.readText() }).optBoolean("ok", true)
+                else JSONObject(c.inputStream.bufferedReader().use { it.readText() }).let { Server.learn(it); it.optBoolean("ok", true) }
             } finally { c.disconnect() }
         } catch (e: Exception) { null }
     }

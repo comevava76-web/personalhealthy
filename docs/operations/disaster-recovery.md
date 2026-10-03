@@ -56,7 +56,7 @@ account); until then, losing the account means starting with empty databases.
 | Database `personalhealthy` (accounts, readings, lab results, logs, settings) | Cloudflare D1, EU | pipeline (*Disaster recovery*) |
 | Database `personalhealthy-backup` (copy of the acceptances of the terms) | Cloudflare D1, EU | pipeline |
 | Database `personalhealthy-vault` (the nightly backups) | Cloudflare D1, EU | pipeline |
-| Server and Web Dashboard (Worker `personalhealthy-api`, address `personalhealthy-api.hint365.workers.dev`) | Cloudflare Workers | pipeline (*Build*) |
+| Server and Web Dashboard (Worker `personalhealthy-api`, address `personalhealthy-api.comevava76.workers.dev`) | Cloudflare Workers | pipeline (*Build*) |
 | Code, documents, pipelines | GitHub `comevava76-web/personalhealthy` | — (any clone) |
 | Keys and secrets | GitHub secrets; the Worker gets them from *Build* | **BY HAND** (section 6) |
 | Sign in with Google | Google Cloud project, OAuth clients | **BY HAND**, only if the address changes |
@@ -88,7 +88,7 @@ The full list, in machine form: `DR/infrastructure-as-code/infrastructure.json`.
 
 **Step 1 · Cloudflare (BY HAND, 10 min)**
 1. Sign in to Cloudflare (a new account if the old one is lost). Copy the **Account ID** (right column of the home page).
-2. Workers & Pages → choose the subdomain **`hint365`** (so the address stays `personalhealthy-api.hint365.workers.dev`). Once the owner's own domain is in use, also add it back to Cloudflare (`docs/operations/domain.md`, steps 2 and 4).
+2. Workers & Pages → choose the subdomain written in `config/server.json` (`api`; today **`comevava76`**, so the address stays `personalhealthy-api.comevava76.workers.dev`). Once the owner's own domain is in use, also add it back to Cloudflare (`docs/operations/domain.md`, steps 2 and 4).
    If that name is not available, the address changes: see step 6.
 3. My Profile → API Tokens → Create Token → Custom: permissions *Account · D1 · Edit*, *Account · Workers Scripts · Edit*,
    *Account · Account Settings · Read*; limited to this account. Copy the token.
@@ -131,13 +131,14 @@ download link serves it.
 - **Google Play Console** (once on the store): Users and permissions → the service account still has access.
 - **Owner's phone**: open the app; if it asks for the owner code, type `OWNER_CODE`.
 
-**Step 6 · Only if the address changed** (new subdomain): the app has the address built in, so:
-set the GitHub variable `BATTITO_API_URL` to the new address, run *Build* (a new app is made with it), add the new
-address to the Google OAuth web client (Authorized JavaScript origins), and send the new download link to the people.
-On Google Play, publish the new version (Google review: hours to 3 days).
+**Step 6 · Only if the address changed** (another subdomain, or a new account without the old one): put the new
+address in `config/server.json` (`api`), run *Build*. Apps on 0.1.134 or later ask `/v1/where`; if the old address
+is gone they try `next` and the addresses built in: put the old address's replacement in `next` beforehand whenever
+you can (`docs/operations/domain.md`). Older apps, or an address nobody announced, need the new app from the new
+download link; on Google Play, publish the new version (Google review: hours to 3 days).
 
 **Step 7 · Check (BY HAND, 5 min)**
-1. `https://personalhealthy-api.hint365.workers.dev/v1/health` shows `{"ok":true}`.
+1. `https://personalhealthy-api.comevava76.workers.dev/v1/health` shows `{"ok":true}`.
 2. The app opens, sign in with Google: your readings and lab results are there.
 3. Web Dashboard (from the app): the 7 days and the lab table are there.
 4. Admin console: the numbers of users and readings are as expected; Observability opens.

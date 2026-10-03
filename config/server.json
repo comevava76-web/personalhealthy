@@ -1,0 +1,5 @@
+{
+  "_": "The server's address, read by Build: built into the app and given to every app at each opening (/v1/where). To move: put the new address in next, release, then make it live and move it to api. Steps: docs/operations/domain.md",
+  "api": "https://personalhealthy-api.comevava76.workers.dev",
+  "next": "https://personalhealthy-api.hint365.workers.dev"
+}
