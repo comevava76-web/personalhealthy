@@ -94,9 +94,11 @@ Before closing a session, refresh the handover's current state, append a dated e
 - **Dove gira**: tutto su Cloudflare, un solo Worker (API `/v1`, Web Dashboard `/my`, link `/s`) con D1 in UE; niente Vercel.
   Indirizzo oggi `personalhealthy-api.comevava76.workers.dev` (sottodominio gratuito, **non definitivo**: prossimo `hint365`, poi il dominio
   dell'owner su GoDaddy con DNS su Cloudflare). **L'indirizzo non è fisso nell'app** (chiesto da Human): unica fonte `config/server.json`
-  (`api` attuale, `next` prossimo); il Worker lo dice in `GET /v1/where`; l'app lo chiede a ogni apertura e ritorno (`Server` in `Core.kt`),
-  passa al nuovo solo se risponde come HINT 365, prova `next` se il vecchio non risponde, e un'app rimasta aperta segue al primo errore di rete.
-  Passi in `docs/operations/domain.md`. Non togliere questo meccanismo.
+  (`api` attuale, `next` prossimo); il Worker li aggiunge alla risposta del controllo versione che l'app fa già (`/v1/app-status`):
+  nessuna chiamata in più, nessuna attesa (chiesto da Human: l'app non deve diventare meno veloce). L'app (`Server` in `Core.kt`) passa
+  a un indirizzo nuovo solo se risponde come HINT 365 (`GET /v1/where`); se il server non risponde, o risponde una pagina non nostra,
+  prova `next` e ripete la chiamata una volta, così segue anche un'app rimasta aperta. Punto di ripristino «dominio-web-hardcoded» = v0.1.131.
+  Passi e prova in `docs/operations/domain.md`. Non togliere questo meccanismo.
   App e browser non toccano mai D1: passa tutto dal Worker.
 - **Ruoli**: Human è l'architetto (decide design e priorità in chat, prova ogni APK); Claude sviluppa, testa, unisce, controlla
   il deploy e manda l'APK in chat. **Ogni messaggio a Human che parla dell'app finisce sempre con il link all'APK**:

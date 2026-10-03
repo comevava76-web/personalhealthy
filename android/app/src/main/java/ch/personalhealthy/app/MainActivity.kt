@@ -438,12 +438,14 @@ fun App() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             // back in the app: fresh readings (there is no refresh button)
-            // first where the server is now (it follows a new domain by itself), then the version and fresh readings
+            // the version check (it also says where the server is) and fresh readings, side by side: no waiting.
+            // Only on the day the server moves, the readings are loaded again from the new address.
             if (event == Lifecycle.Event.ON_RESUME) scope.launch {
-                Server.refresh()
-                checkAppGate()
-                if (!loading) reload()
+                val before = Server.base
+                checkAppGate().join()
+                if (Server.base != before && !loading) reload()
             }
+            if (event == Lifecycle.Event.ON_RESUME && !loading) reload()
             // a newer version on Google Play: Google's own update window, like every app on the store
             if (event == Lifecycle.Event.ON_RESUME) (ctx as? android.app.Activity)?.let { PlayUpdate.check(it) }
         }

@@ -251,6 +251,8 @@ r = await web("GET", "/v1/app-status?v=100");
 S.check("gate", "G4", "app-status v=100 -> ok false", r.status === 200 && r.json.ok === false, r.text);
 r = await web("GET", "/v1/app-status?v=200");
 S.check("gate", "G5", "app-status v=200 -> ok true", r.json?.ok === true, r.text);
+S.check("gate", "G12", "app-status also says where the server is (api, next): the app follows a move with no extra call",
+  r.json?.api === BASE.replace(/\/$/, "") && typeof r.json?.next === "string", r.text);
 // the app follows the server's address by itself: /v1/where answers who it is and where the app must talk to it
 r = await web("GET", "/v1/where");
 S.check("gate", "G11", "/v1/where answers service hint365, its own address as api and the next one, without signing in",

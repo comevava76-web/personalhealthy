@@ -476,3 +476,11 @@ For every future checkpoint update record: developer/tool, date, base/head SHA, 
 - Fix: Admin versions treated the live Google Play version as old (gate query missed `app_live_version`); harness test G10.
 - Demo: `docs/demo/hint365-demo/` (player, ripple click, trust strip) with frames captured on test data by `demo-tour.mjs`. Human will send the screens to use; not yet on the Tandem AI site.
 - Next: put Human's screens into the demo, then a Tandem AI pull request (work.html), shown to Human before publishing.
+
+### 2026-10-03 — Claude Code — the app follows the server's address (draft for Human's phone test)
+
+- Request (Human): no address fixed in the app; it must not make the app slower; restore point «dominio-web-hardcoded»; test the move on Human's phone (the only user today) before the own domain, which is bought only if people install from Google Play.
+- State found: Builds 132 and 133 stopped at the subdomain step (Cloudflare's API cannot rename a subdomain, error 10036), nothing deployed; live = 0.1.131 on comevava76.
+- Restore point: v0.1.131 (c16e1d7, release with APK). Tags and new branches cannot be pushed from this session (proxy 403): the name «dominio-web-hardcoded» is recorded in docs/operations/domain.md; Human can add the tag on GitHub.
+- Change: `config/server.json` (api comevava76, next hint365) is the only source; Build builds both into the app and gives them to the Worker; `/v1/app-status` also returns api/next (no extra call); `/v1/where` confirms a new address; app `Server` in Core.kt learns from the version check, moves only to an address answering as HINT 365, and on a network error or a non-HINT answer tries next and retries the call once. Readings load in parallel with the check. Tests G11, G12 (198 PASS, 0 FAIL). The Android part is compiled by CI only (no SDK here).
+- Next: PR → CI (apk) → merge → Build 0.1.134; Human installs it; Human renames the subdomain to hint365; check the app follows with the app open and after reopening; then move next to api in config/server.json.

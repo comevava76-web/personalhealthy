@@ -466,13 +466,15 @@ async function serve(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknow
     if (req.method === "GET" && url.pathname === "/HINT.apk") return downloadApk(env, url);
     const q: Q = async (text, params = []) => (await env.DB.prepare(text).bind(...params).all()).results || [];
     try {
-      // asked by the app every time it opens or comes back: where the server is now, and the address it will move to.
-      // The app is not tied to one address: when the domain changes it follows by itself (config/server.json).
+      // Who this server is and where the app must talk to it: the app asks it only to confirm a new address before moving,
+      // or when the address it knows no longer answers. The app is not tied to one address (config/server.json).
       if (req.method === "GET" && url.pathname === "/v1/where")
         return json({ service: "hint365", api: (env.SERVER_URL || url.origin).replace(/\/$/, ""), next: (env.SERVER_NEXT || "").replace(/\/$/, "") });
       // asked by the app when it opens, before anything else: is this version still allowed?
       if (req.method === "GET" && url.pathname === "/v1/app-status")
-        return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0, Number(env.APP_VERSION) || 0), download: url.origin + "/download" });
+        return json({ ok: await appAllowed(q, Number(url.searchParams.get("v")) || 0, Number(env.APP_VERSION) || 0), download: url.origin + "/download",
+          // where the server is (no extra call for the app: it learns a new address with the check it already makes)
+          api: (env.SERVER_URL || url.origin).replace(/\/$/, ""), next: (env.SERVER_NEXT || "").replace(/\/$/, "") });
       // My Dash in the browser (/my/...) and the links shared with the doctor (/s/...)
       const res = (await handleWeb(req, env, q, url, async () => true, () => AUTHENTICATED.add(req)))   // the web is never behind the subscription
         ?? (await handle(req, env, q, url));
